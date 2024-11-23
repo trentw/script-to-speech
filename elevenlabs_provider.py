@@ -33,6 +33,13 @@ class ElevenLabsProvider(TTSProvider):
         self.voice_dict = {
             voice.voice_id: voice for voice in self.available_voices}
 
+    def get_speaker_identifier(self, speaker):
+        voice = self.get_voice_for_speaker(speaker)
+        return voice.voice_id
+
+    def get_provider_identifier(self):
+        return "elevenlabs"
+
     def load_yaml_config(self):
         with open(self.yaml_config, 'r') as file:
             config = yaml.safe_load(file)
@@ -80,7 +87,7 @@ class ElevenLabsProvider(TTSProvider):
     def set_voice(self, voice):
         self.current_voice = voice
 
-    def generate_audio(self, text, output_file):
+    def generate_audio(self, text):
         response = self.client.text_to_speech.convert(
             voice_id=self.current_voice.voice_id,
             optimize_streaming_latency="0",
@@ -95,10 +102,12 @@ class ElevenLabsProvider(TTSProvider):
             ),
         )
 
-        with open(output_file, "wb") as f:
-            for chunk in response:
-                if chunk:
-                    f.write(chunk)
+        audio_data = b''
+        for chunk in response:
+            if chunk:
+                audio_data += chunk
+
+        return audio_data
 
     @staticmethod
     def generate_yaml_config(json_file, output_yaml):
