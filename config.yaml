@@ -1,0 +1,32 @@
+submodules:
+  - name: skip
+    config:
+      skip_types:
+        - page number
+  - name: text_substitute
+    config:
+      substitutions:
+        - from: "CONT’D"
+          to: "CONTINUED"
+          fields:
+            - text
+        - from: "CONT'D"
+          to: "CONTINUED"
+          fields:
+            - text
+        - from: "V.O."
+          to: "VOICE OVER"
+          fields:
+            - text
+        - from: "INT."
+          to: "INTERIOR"
+          fields:
+            - text
+        - from: "EXT."
+          to: "EXTERIOR"
+          fields:
+            - text
+        - from: "O.S."
+          to: "OFF SCREEN"
+          fields:
+            - text

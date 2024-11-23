@@ -7,6 +7,7 @@ from pydub import AudioSegment
 from pyttsx3_provider import Pyttsx3Provider
 from elevenlabs_provider import ElevenLabsProvider
 from datetime import datetime
+from processing_module import ProcessingModule
 
 # Use a less common delimiter
 DELIMITER = "~~"
@@ -38,18 +39,24 @@ def create_output_folders(input_file, output_folder=None):
     return output_folder, cache_folder, sequence_folder
 
 
-def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder, sequence_folder, verbose=False, dry_run=False):
+def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder, sequence_folder, processor, verbose=False, dry_run=False):
     print("Starting generate_audio_clips function")
     audio_clips = []
+    modified_dialogues = []
     existing_files = set(os.listdir(cache_folder))
     provider_id = tts_provider.get_provider_identifier()
     print(f"Provider ID: {provider_id}")
 
     for idx, dialogue in enumerate(dialogues):
         print(f"\nProcessing dialogue {idx}")
-        speaker = dialogue.get('speaker', 'none')
-        text = dialogue.get('text', '')
-        dialogue_type = dialogue.get('type', '')
+
+        # Process the dialogue
+        processed_dialogue, was_modified = processor.process_chunk(dialogue)
+        modified_dialogues.append(processed_dialogue)
+
+        speaker = processed_dialogue.get('speaker', 'none')
+        text = processed_dialogue.get('text', '')
+        dialogue_type = processed_dialogue.get('type', '')
 
         print(f"Speaker: {speaker}, Type: {dialogue_type}")
         print(f"Text: {text[:50]}...")
@@ -58,14 +65,17 @@ def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder,
             speaker = 'none'
             print("Speaker set to 'none' based on dialogue type")
 
-        chunk_hash = generate_chunk_hash(text, speaker)
-        print(f"Generated chunk hash: {chunk_hash}")
+        original_hash = generate_chunk_hash(dialogue.get(
+            'text', ''), dialogue.get('speaker', 'none'))
+        processed_hash = generate_chunk_hash(text, speaker)
+        print(f"Original hash: {original_hash}")
+        print(f"Processed hash: {processed_hash}")
 
         tts_speaker_id = tts_provider.get_speaker_identifier(speaker)
         print(f"TTS Speaker ID: {tts_speaker_id}")
 
-        cache_filename = f"{chunk_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
-        sequence_filename = f"{idx:04d}{DELIMITER}{chunk_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
+        cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
+        sequence_filename = f"{idx:04d}{DELIMITER}{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
 
         cache_filepath = os.path.join(cache_folder, cache_filename)
         sequence_filepath = os.path.join(sequence_folder, sequence_filename)
@@ -132,7 +142,7 @@ def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder,
             print(f"[{idx:04d}][{status}][{speaker}][{text[:20]}...]")
 
     print("Finished processing all dialogues")
-    return audio_clips
+    return audio_clips, modified_dialogues
 
 
 def concatenate_audio_clips(audio_clips, output_file):
@@ -169,7 +179,9 @@ def main():
     parser.add_argument('--provider', choices=['pyttsx3', 'elevenlabs'],
                         default='pyttsx3', help='Choose the TTS provider (default: pyttsx3)')
     parser.add_argument(
-        '--yaml-config', help='Path to YAML configuration file for ElevenLabs voices')
+        '--tts-config', help='Path to YAML configuration file for TTS provider')
+    parser.add_argument('--processing-config',
+                        help='Path to YAML configuration file for processing module')
     parser.add_argument('--generate-yaml', action='store_true',
                         help='Generate a template YAML configuration file')
     parser.add_argument('--list-voices', action='store_true',
@@ -201,7 +213,7 @@ def main():
     if args.provider == 'pyttsx3':
         tts_provider = Pyttsx3Provider()
     elif args.provider == 'elevenlabs':
-        tts_provider = ElevenLabsProvider(yaml_config=args.yaml_config)
+        tts_provider = ElevenLabsProvider(yaml_config=args.tts_config)
     else:
         raise ValueError("Invalid TTS provider specified")
 
@@ -221,14 +233,25 @@ def main():
     output_folder, cache_folder, sequence_folder = create_output_folders(
         args.input_file, args.output_folder)
 
+    # Initialize processing module
+    processor = ProcessingModule(args.processing_config)
+    print("Processing module initialized")
+
     print("Generating audio clips")
-    audio_clips = generate_audio_clips(
-        dialogues, args.gap, tts_provider, cache_folder, sequence_folder, args.verbose, args.dry_run)
+    audio_clips, modified_dialogues = generate_audio_clips(
+        dialogues, args.gap, tts_provider, cache_folder, sequence_folder, processor, args.verbose, args.dry_run)
 
     if not args.dry_run:
         print(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
         print(f'Audio file generated: {output_file}')
+
+        # Save modified JSON
+        modified_json_path = os.path.join(
+            output_folder, f"{os.path.splitext(os.path.basename(args.input_file))[0]}-modified.json")
+        with open(modified_json_path, 'w', encoding='utf-8') as f:
+            json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
+        print(f'Modified JSON file generated: {modified_json_path}')
     else:
         print('Dry run completed. No audio files were generated.')
 

@@ -1,3 +1,4 @@
+import unicodedata
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from tts_provider import TTSProvider
@@ -6,6 +7,10 @@ import random
 import yaml
 import json
 from collections import Counter
+
+
+def normalize_unicode(s):
+    return unicodedata.normalize('NFKC', s)
 
 
 class ElevenLabsProvider(TTSProvider):
@@ -32,22 +37,28 @@ class ElevenLabsProvider(TTSProvider):
         self.available_voices = response.voices
         self.voice_dict = {
             voice.voice_id: voice for voice in self.available_voices}
+        # Debug print
+        print(
+            f"Available voices in library: {[{voice.voice_id: voice.name} for voice in self.available_voices]}")
 
     def get_speaker_identifier(self, speaker):
         voice = self.get_voice_for_speaker(speaker)
-        return voice.voice_id
+        return voice.voice_id if hasattr(voice, 'voice_id') else voice
 
     def get_provider_identifier(self):
         return "elevenlabs"
 
     def load_yaml_config(self):
-        with open(self.yaml_config, 'r') as file:
+        with open(self.yaml_config, 'r', encoding='utf-8') as file:
             config = yaml.safe_load(file)
+
+        print(f"Loaded config: {config}")  # Debug print
 
         # Load default voice
         default_voice_id = config.get('default', '')
-        if default_voice_id and default_voice_id in self.voice_dict:
-            self.default_voice = self.voice_dict[default_voice_id]
+        if default_voice_id:
+            self.default_voice = self.voice_dict.get(
+                default_voice_id, default_voice_id)
             self.used_voice_ids.add(default_voice_id)
         else:
             self.default_voice = random.choice(self.available_voices)
@@ -55,21 +66,35 @@ class ElevenLabsProvider(TTSProvider):
 
         # Load speaker voices
         for speaker, voice_id in config.items():
-            if speaker != 'default' and voice_id and voice_id in self.voice_dict:
-                if voice_id not in self.used_voice_ids:
-                    self.speaker_voice_map[speaker] = self.voice_dict[voice_id]
-                    self.used_voice_ids.add(voice_id)
+            if speaker == 'default':
+                continue
+            normalized_speaker = normalize_unicode(speaker)
+            # Debug print
+            print(
+                f"Processing speaker: '{normalized_speaker}', Voice ID: '{voice_id}'")
+            if voice_id:
+                if voice_id in self.voice_dict:
+                    self.speaker_voice_map[normalized_speaker] = self.voice_dict[voice_id]
                 else:
                     print(
-                        f"Warning: Voice for {speaker} is already in use. Assigning a random voice.")
-                    self.assign_random_voice(speaker)
+                        f"Voice ID '{voice_id}' not in library. Using as-is.")
+                    self.speaker_voice_map[normalized_speaker] = voice_id
+                self.used_voice_ids.add(voice_id)
+            else:
+                print(
+                    f"Warning: No voice ID provided for speaker '{normalized_speaker}'. Assigning a random voice.")
+                self.assign_random_voice(normalized_speaker)
+
+        print("Loaded speaker_voice_map:")
+        for speaker, voice in self.speaker_voice_map.items():
+            print(
+                f"  '{speaker}': {voice if isinstance(voice, str) else voice.voice_id}")
 
     def assign_random_voice(self, speaker):
         available_voices = [
             v for v in self.available_voices if v.voice_id not in self.used_voice_ids]
         if not available_voices:
-            available_voices = [
-                v for v in self.available_voices if v.voice_id != self.default_voice.voice_id]
+            available_voices = self.available_voices
         voice = random.choice(available_voices)
         self.speaker_voice_map[speaker] = voice
         self.used_voice_ids.add(voice.voice_id)
@@ -78,22 +103,38 @@ class ElevenLabsProvider(TTSProvider):
         return self.available_voices
 
     def get_voice_for_speaker(self, speaker):
-        if speaker == 'none':
+        normalized_speaker = normalize_unicode(speaker)
+        # Debug print
+        print(f"Getting voice for speaker: '{normalized_speaker}'")
+        # Debug print
+        print(f"Unicode code points: {[ord(c) for c in normalized_speaker]}")
+        if normalized_speaker.lower() == 'none':
+            print("Returning default voice for 'none'")
             return self.default_voice
-        if speaker not in self.speaker_voice_map:
-            self.assign_random_voice(speaker)
-        return self.speaker_voice_map[speaker]
+
+        voice = self.speaker_voice_map.get(normalized_speaker)
+        if voice:
+            print(
+                f"Got voice: {voice if isinstance(voice, str) else voice.voice_id}")
+            return voice
+
+        print(
+            f"Warning: No voice assigned for speaker '{normalized_speaker}'. Assigning a random voice.")
+        self.assign_random_voice(normalized_speaker)
+        return self.speaker_voice_map[normalized_speaker]
 
     def set_voice(self, voice):
         self.current_voice = voice
 
     def generate_audio(self, text):
+        voice_id = self.current_voice if isinstance(
+            self.current_voice, str) else self.current_voice.voice_id
         response = self.client.text_to_speech.convert(
-            voice_id=self.current_voice.voice_id,
+            voice_id=voice_id,
             optimize_streaming_latency="0",
-            output_format="mp3_22050_32",
+            output_format="mp3_44100_192",
             text=text,
-            model_id="eleven_monolingual_v1",
+            model_id="eleven_multilingual_v2",
             voice_settings=VoiceSettings(
                 stability=0.5,
                 similarity_boost=0.75,
