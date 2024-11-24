@@ -8,22 +8,25 @@ from pyttsx3_provider import Pyttsx3Provider
 from elevenlabs_provider import ElevenLabsProvider
 from datetime import datetime
 from processing_module import ProcessingModule
+from typing import Optional, List, Dict, Tuple
 
 # Use a less common delimiter
 DELIMITER = "~~"
 
 
-def load_dialogues(input_file):
+def load_dialogues(input_file: str) -> List[Dict]:
     with open(input_file, 'r', encoding='utf-8') as f:
         dialogues = json.load(f)
     return dialogues
 
 
-def generate_chunk_hash(text, speaker):
-    return hashlib.md5(f"{text}{speaker}".encode()).hexdigest()
+def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
+    # Convert None to empty string for hashing purposes
+    speaker_str = '' if speaker is None else speaker
+    return hashlib.md5(f"{text}{speaker_str}".encode()).hexdigest()
 
 
-def create_output_folders(input_file, output_folder=None):
+def create_output_folders(input_file: str, output_folder: Optional[str] = None) -> Tuple[str, str, str]:
     base_name = os.path.splitext(os.path.basename(input_file))[0]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -39,7 +42,27 @@ def create_output_folders(input_file, output_folder=None):
     return output_folder, cache_folder, sequence_folder
 
 
-def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder, sequence_folder, processor, verbose=False, dry_run=False):
+def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
+    """
+    Determine the speaker for a dialogue chunk.
+    Returns None for non-dialog sections that should use the default voice.
+    """
+    dialogue_type = dialogue.get('type', '')
+    if dialogue_type in ['scene header', 'scene description', 'dialog modifier', 'title page', 'page number']:
+        return None
+    return dialogue.get('speaker')
+
+
+def generate_audio_clips(
+    dialogues: List[Dict],
+    gap_duration_ms: int,
+    tts_provider: TTSProvider,
+    cache_folder: str,
+    sequence_folder: str,
+    processor: ProcessingModule,
+    verbose: bool = False,
+    dry_run: bool = False
+) -> Tuple[List[AudioSegment], List[Dict]]:
     print("Starting generate_audio_clips function")
     audio_clips = []
     modified_dialogues = []
@@ -54,19 +77,17 @@ def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder,
         processed_dialogue, was_modified = processor.process_chunk(dialogue)
         modified_dialogues.append(processed_dialogue)
 
-        speaker = processed_dialogue.get('speaker', 'none')
+        speaker = determine_speaker(processed_dialogue)
         text = processed_dialogue.get('text', '')
         dialogue_type = processed_dialogue.get('type', '')
 
         print(f"Speaker: {speaker}, Type: {dialogue_type}")
         print(f"Text: {text[:50]}...")
 
-        if dialogue_type in ['scene header', 'scene description', 'dialog modifier']:
-            speaker = 'none'
-            print("Speaker set to 'none' based on dialogue type")
-
-        original_hash = generate_chunk_hash(dialogue.get(
-            'text', ''), dialogue.get('speaker', 'none'))
+        original_hash = generate_chunk_hash(
+            dialogue.get('text', ''),
+            determine_speaker(dialogue)
+        )
         processed_hash = generate_chunk_hash(text, speaker)
         print(f"Original hash: {original_hash}")
         print(f"Processed hash: {processed_hash}")
@@ -101,12 +122,8 @@ def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder,
             if not cache_hit:
                 print("Generating new audio file")
                 try:
-                    voice = tts_provider.get_voice_for_speaker(speaker)
-                    print(f"Got voice for speaker: {voice}")
-                    tts_provider.set_voice(voice)
-                    print("Voice set")
-                    audio_data = tts_provider.generate_audio(text)
-                    print(f"Audio generated")
+                    audio_data = tts_provider.generate_audio(speaker, text)
+                    print("Audio generated")
 
                     # Save to cache
                     with open(cache_filepath, 'wb') as f:
@@ -139,13 +156,14 @@ def generate_audio_clips(dialogues, gap_duration_ms, tts_provider, cache_folder,
 
         if verbose or (dry_run and not cache_hit):
             status = "cache hit" if cache_hit else "cache miss"
-            print(f"[{idx:04d}][{status}][{speaker}][{text[:20]}...]")
+            speaker_display = speaker if speaker is not None else "(default)"
+            print(f"[{idx:04d}][{status}][{speaker_display}][{text[:20]}...]")
 
     print("Finished processing all dialogues")
     return audio_clips, modified_dialogues
 
 
-def concatenate_audio_clips(audio_clips, output_file):
+def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -> None:
     print("Starting audio concatenation")
     final_audio = AudioSegment.empty()
     for clip in audio_clips:
@@ -154,17 +172,6 @@ def concatenate_audio_clips(audio_clips, output_file):
     print(f"Exporting final audio to: {output_file}")
     final_audio.export(output_file, format="mp3")
     print("Audio concatenation completed")
-
-
-def print_available_voices(provider):
-    voices = provider.get_available_voices()
-    print("Available voices:")
-    for voice in voices:
-        print(f"- Name: {voice.name}")
-        print(f"  ID: {voice.voice_id}")
-        print(f"  Labels: {voice.labels}")
-        print("---")
-
 
 def main():
     print("Starting main function")
@@ -184,8 +191,6 @@ def main():
                         help='Path to YAML configuration file for processing module')
     parser.add_argument('--generate-yaml', action='store_true',
                         help='Generate a template YAML configuration file')
-    parser.add_argument('--list-voices', action='store_true',
-                        help='List available voices for the selected provider')
     parser.add_argument('--output-folder',
                         help='Specify custom output folder name')
     parser.add_argument('--verbose', action='store_true',
@@ -209,21 +214,21 @@ def main():
         print(f"YAML configuration template generated: {yaml_output}")
         return
 
+    if args.list_voices:
+        print("Warning: The --list-voices option is deprecated.")
+        print("Please refer to the provider's documentation for voice IDs.")
+        return
+
     print(f"Initializing TTS provider: {args.provider}")
     if args.provider == 'pyttsx3':
         tts_provider = Pyttsx3Provider()
     elif args.provider == 'elevenlabs':
-        tts_provider = ElevenLabsProvider(yaml_config=args.tts_config)
+        tts_provider = ElevenLabsProvider()
     else:
         raise ValueError("Invalid TTS provider specified")
 
-    tts_provider.initialize()
+    tts_provider.initialize(args.tts_config)
     print("TTS provider initialized")
-
-    if args.list_voices:
-        print("Listing available voices")
-        print_available_voices(tts_provider)
-        return
 
     print(f"Loading dialogues from: {args.input_file}")
     dialogues = load_dialogues(args.input_file)

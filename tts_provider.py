@@ -1,38 +1,71 @@
 from abc import ABC, abstractmethod
+from typing import Dict, Optional
+
+
+class TTSError(Exception):
+    """Base exception class for TTS-related errors"""
+    pass
+
+
+class VoiceNotFoundError(TTSError):
+    """Raised when a requested voice is not found"""
+    pass
 
 
 class TTSProvider(ABC):
     @abstractmethod
-    def initialize(self):
-        """Initialize the TTS provider."""
+    def initialize(self, config_path: Optional[str] = None) -> None:
+        """
+        Initialize the TTS provider with optional configuration.
+
+        Args:
+            config_path: Path to configuration file (optional)
+
+        Raises:
+            TTSError: If initialization fails
+        """
         pass
 
     @abstractmethod
-    def get_available_voices(self):
-        """Get a list of available voices."""
+    def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
+        """
+        Generate audio for the given speaker and text.
+
+        Args:
+            speaker: The speaker to determine which voice to use, or None for default voice
+            text: The text to convert to speech
+
+        Returns:
+            bytes: The generated audio data
+
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+            TTSError: If audio generation fails
+        """
         pass
 
     @abstractmethod
-    def get_voice_for_speaker(self, speaker):
-        """Get the voice object for a given speaker."""
+    def get_speaker_identifier(self, speaker: Optional[str]) -> str:
+        """
+        Get the voice identifier for a given speaker.
+
+        Args:
+            speaker: The speaker to get the voice identifier for, or None for default voice
+
+        Returns:
+            str: The voice identifier for the speaker
+
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+        """
         pass
 
     @abstractmethod
-    def set_voice(self, voice):
-        """Set the current voice to be used."""
-        pass
+    def get_provider_identifier(self) -> str:
+        """
+        Get a unique identifier for this TTS provider.
 
-    @abstractmethod
-    def generate_audio(self, text, output_file):
-        """Generate audio for the given text and save it to the output file."""
-        pass
-
-    @abstractmethod
-    def get_speaker_identifier(self, speaker):
-        """Get a unique identifier for the given speaker."""
-        pass
-
-    @abstractmethod
-    def get_provider_identifier(self):
-        """Get a unique identifier for this TTS provider."""
+        Returns:
+            str: Provider identifier (e.g., 'elevenlabs', 'pyttsx3')
+        """
         pass

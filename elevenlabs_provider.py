@@ -1,185 +1,205 @@
 import unicodedata
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
-from tts_provider import TTSProvider
 import os
-import random
 import yaml
-import json
-from collections import Counter
+from typing import Dict, Optional
+from tts_provider import TTSProvider, TTSError, VoiceNotFoundError
 
 
-def normalize_unicode(s):
+def normalize_unicode(s: str) -> str:
+    """Normalize Unicode string to NFKC form."""
     return unicodedata.normalize('NFKC', s)
 
 
 class ElevenLabsProvider(TTSProvider):
-    def __init__(self, yaml_config=None):
+    def __init__(self):
         self.client = None
-        self.available_voices = None
-        self.speaker_voice_map = {}
-        self.current_voice = None
-        self.yaml_config = yaml_config
-        self.default_voice = None
-        self.used_voice_ids = set()
+        self.voice_map: Dict[str, str] = {}  # Maps speaker names to voice IDs
+        self.default_voice_id: Optional[str] = None
 
-    def initialize(self):
+    def initialize(self, config_path: Optional[str] = None) -> None:
+        """
+        Initialize the ElevenLabs provider with API key and voice configuration.
+
+        Args:
+            config_path: Path to YAML configuration file for voice mappings
+
+        Raises:
+            TTSError: If initialization fails or configuration is invalid
+        """
+        # Initialize API client
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
-            raise ValueError("ELEVEN_API_KEY environment variable is not set")
-        self.client = ElevenLabs(api_key=api_key)
-        self.refresh_voices()
-        if self.yaml_config:
-            self.load_yaml_config()
+            raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
-    def refresh_voices(self):
-        response = self.client.voices.get_all()
-        self.available_voices = response.voices
-        self.voice_dict = {
-            voice.voice_id: voice for voice in self.available_voices}
-        # Debug print
-        print(
-            f"Available voices in library: {[{voice.voice_id: voice.name} for voice in self.available_voices]}")
+        try:
+            self.client = ElevenLabs(api_key=api_key)
+        except Exception as e:
+            raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
 
-    def get_speaker_identifier(self, speaker):
-        voice = self.get_voice_for_speaker(speaker)
-        return voice.voice_id if hasattr(voice, 'voice_id') else voice
+        # Load voice configuration if provided
+        if config_path:
+            self._load_voice_config(config_path)
 
-    def get_provider_identifier(self):
-        return "elevenlabs"
+        # Verify we can access the API
+        try:
+            self.client.voices.get_all()
+        except Exception as e:
+            raise TTSError(f"Failed to verify ElevenLabs API access: {e}")
 
-    def load_yaml_config(self):
-        with open(self.yaml_config, 'r', encoding='utf-8') as file:
-            config = yaml.safe_load(file)
+    def _load_voice_config(self, config_path: str) -> None:
+        """
+        Load voice mappings from YAML configuration.
 
-        print(f"Loaded config: {config}")  # Debug print
+        Args:
+            config_path: Path to YAML configuration file
+
+        Raises:
+            TTSError: If configuration file is invalid or cannot be loaded
+        """
+        try:
+            with open(config_path, 'r', encoding='utf-8') as file:
+                config = yaml.safe_load(file)
+        except Exception as e:
+            raise TTSError(f"Failed to load voice configuration file: {e}")
 
         # Load default voice
-        default_voice_id = config.get('default', '')
-        if default_voice_id:
-            self.default_voice = self.voice_dict.get(
-                default_voice_id, default_voice_id)
-            self.used_voice_ids.add(default_voice_id)
-        else:
-            self.default_voice = random.choice(self.available_voices)
-            self.used_voice_ids.add(self.default_voice.voice_id)
+        self.default_voice_id = config.get('default')
+        if not self.default_voice_id:
+            raise TTSError("No default voice ID specified in configuration")
 
-        # Load speaker voices
+        # Load speaker voice mappings
         for speaker, voice_id in config.items():
             if speaker == 'default':
                 continue
-            normalized_speaker = normalize_unicode(speaker)
-            # Debug print
-            print(
-                f"Processing speaker: '{normalized_speaker}', Voice ID: '{voice_id}'")
-            if voice_id:
-                if voice_id in self.voice_dict:
-                    self.speaker_voice_map[normalized_speaker] = self.voice_dict[voice_id]
-                else:
-                    print(
-                        f"Voice ID '{voice_id}' not in library. Using as-is.")
-                    self.speaker_voice_map[normalized_speaker] = voice_id
-                self.used_voice_ids.add(voice_id)
-            else:
-                print(
-                    f"Warning: No voice ID provided for speaker '{normalized_speaker}'. Assigning a random voice.")
-                self.assign_random_voice(normalized_speaker)
+            if not voice_id:
+                raise TTSError(
+                    f"No voice ID specified for speaker '{speaker}'")
+            self.voice_map[normalize_unicode(speaker)] = voice_id
 
-        print("Loaded speaker_voice_map:")
-        for speaker, voice in self.speaker_voice_map.items():
-            print(
-                f"  '{speaker}': {voice if isinstance(voice, str) else voice.voice_id}")
+    def get_speaker_identifier(self, speaker: Optional[str]) -> str:
+        """
+        Get the voice ID for a given speaker.
 
-    def assign_random_voice(self, speaker):
-        available_voices = [
-            v for v in self.available_voices if v.voice_id not in self.used_voice_ids]
-        if not available_voices:
-            available_voices = self.available_voices
-        voice = random.choice(available_voices)
-        self.speaker_voice_map[speaker] = voice
-        self.used_voice_ids.add(voice.voice_id)
+        Args:
+            speaker: The speaker to get the voice ID for, or None for default voice
 
-    def get_available_voices(self):
-        return self.available_voices
+        Returns:
+            str: The voice ID for the speaker
 
-    def get_voice_for_speaker(self, speaker):
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+        """
+        # Use default voice when speaker is None
+        if speaker is None:
+            if not self.default_voice_id:
+                raise VoiceNotFoundError("No default voice configured")
+            return self.default_voice_id
+
         normalized_speaker = normalize_unicode(speaker)
-        # Debug print
-        print(f"Getting voice for speaker: '{normalized_speaker}'")
-        # Debug print
-        print(f"Unicode code points: {[ord(c) for c in normalized_speaker]}")
-        if normalized_speaker.lower() == 'none':
-            print("Returning default voice for 'none'")
-            return self.default_voice
+        voice_id = self.voice_map.get(normalized_speaker)
+        if not voice_id:
+            raise VoiceNotFoundError(
+                f"No voice assigned for speaker '{speaker}'. "
+                "Please update the voice configuration file."
+            )
 
-        voice = self.speaker_voice_map.get(normalized_speaker)
-        if voice:
-            print(
-                f"Got voice: {voice if isinstance(voice, str) else voice.voice_id}")
-            return voice
+        return voice_id
 
-        print(
-            f"Warning: No voice assigned for speaker '{normalized_speaker}'. Assigning a random voice.")
-        self.assign_random_voice(normalized_speaker)
-        return self.speaker_voice_map[normalized_speaker]
+    def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
+        """
+        Generate audio for the given speaker and text.
 
-    def set_voice(self, voice):
-        self.current_voice = voice
+        Args:
+            speaker: The speaker to generate audio for, or None for default voice
+            text: The text to convert to speech
 
-    def generate_audio(self, text):
-        voice_id = self.current_voice if isinstance(
-            self.current_voice, str) else self.current_voice.voice_id
-        response = self.client.text_to_speech.convert(
-            voice_id=voice_id,
-            optimize_streaming_latency="0",
-            output_format="mp3_44100_192",
-            text=text,
-            model_id="eleven_multilingual_v2",
-            voice_settings=VoiceSettings(
-                stability=0.5,
-                similarity_boost=0.75,
-                style=0.0,
-                use_speaker_boost=True,
-            ),
-        )
+        Returns:
+            bytes: The generated audio data
 
-        audio_data = b''
-        for chunk in response:
-            if chunk:
-                audio_data += chunk
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+            TTSError: If audio generation fails
+        """
+        if not self.client:
+            raise TTSError(
+                "Provider not initialized. Call initialize() first.")
 
-        return audio_data
+        voice_id = self.get_speaker_identifier(speaker)
+
+        try:
+            response = self.client.text_to_speech.convert(
+                voice_id=voice_id,
+                optimize_streaming_latency="0",
+                output_format="mp3_44100_192",
+                text=text,
+                model_id="eleven_multilingual_v2",
+                voice_settings=VoiceSettings(
+                    stability=0.5,
+                    similarity_boost=0.75,
+                    style=0.0,
+                    use_speaker_boost=True,
+                )
+            )
+
+            audio_data = b''
+            for chunk in response:
+                if chunk:
+                    audio_data += chunk
+
+            return audio_data
+
+        except Exception as e:
+            raise TTSError(f"Failed to generate audio: {e}")
+
+    def get_provider_identifier(self) -> str:
+        """Get the provider identifier."""
+        return "elevenlabs"
 
     @staticmethod
-    def generate_yaml_config(json_file, output_yaml):
-        with open(json_file, 'r') as f:
-            dialogues = json.load(f)
+    def generate_yaml_config(json_file: str, output_yaml: str) -> None:
+        """
+        Generate a template YAML configuration file from a JSON script.
 
-        speaker_count = Counter(
-            dialogue['speaker'] for dialogue in dialogues if dialogue['type'] == 'dialog')
+        Args:
+            json_file: Path to the input JSON script file
+            output_yaml: Path where the YAML template should be saved
+        """
+        from collections import Counter
+        import json
 
-        yaml_content = """# Voice configuration for speakers
-# 
+        try:
+            with open(json_file, 'r') as f:
+                dialogues = json.load(f)
+
+            speaker_count = Counter(
+                dialogue['speaker'] for dialogue in dialogues
+                if dialogue['type'] == 'dialog'
+            )
+
+            yaml_content = """# Voice configuration for speakers
+#
 # Instructions:
-# - For each speaker and the default voice, you can specify a voice_id from ElevenLabs.
-# - If you leave the voice_id empty or remove the line, a random voice will be assigned.
-# - To see available voices and their IDs, run the script with --list-voices option.
+# - Specify a voice_id from ElevenLabs for each speaker and the default voice
+# - The default voice is required and will be used for scene descriptions
+# - All speakers must have a voice_id specified
+# - Use --list-voices to see available voices and their IDs
 #
-# Example:
+# Format:
 # default: voice_id_here
-# SPEAKER_NAME: another_voice_id_here
-# ANOTHER_SPEAKER: 
-#
-# The number of lines for each speaker is provided as a comment.
+# SPEAKER_NAME: voice_id_here
 
-# The default voice will be used for all scene headings, scene descriptions, and dialog modifiers.
-# It will remain distinct from all other voices.
 default: 
 
 """
-        for speaker, count in speaker_count.items():
-            yaml_content += f"# {speaker}: {count} lines\n"
-            yaml_content += f"{speaker}: \n\n"
+            # Add speakers sorted by number of lines
+            for speaker, count in sorted(speaker_count.items(), key=lambda x: (-x[1], x[0])):
+                yaml_content += f"# {speaker}: {count} lines\n"
+                yaml_content += f"{speaker}: \n\n"
 
-        with open(output_yaml, 'w') as f:
-            f.write(yaml_content)
+            with open(output_yaml, 'w') as f:
+                f.write(yaml_content)
+
+        except Exception as e:
+            raise TTSError(f"Failed to generate YAML template: {e}")
