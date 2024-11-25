@@ -1,17 +1,66 @@
+from tts_provider import TTSProvider
+from typing import Optional, List, Dict, Tuple
+from processing_module import ProcessingModule
+from datetime import datetime
+from elevenlabs_provider import ElevenLabsProvider
+from pyttsx3_provider import Pyttsx3Provider
+from pydub import AudioSegment
+import hashlib
+import argparse
+import io
 import json
 import os
-import io
-import argparse
-import hashlib
-from pydub import AudioSegment
-from pyttsx3_provider import Pyttsx3Provider
-from elevenlabs_provider import ElevenLabsProvider
-from datetime import datetime
-from processing_module import ProcessingModule
-from typing import Optional, List, Dict, Tuple
+import sys
 
 # Use a less common delimiter
 DELIMITER = "~~"
+
+
+def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
+    """
+    Configure the ffmpeg binary path for pydub and system PATH.
+
+    Args:
+        ffmpeg_path: Optional path to ffmpeg binary directory or executable.
+                    If not provided, system ffmpeg will be used.
+
+    Raises:
+        ValueError: If the provided path is invalid or executables aren't accessible
+    """
+    if ffmpeg_path:
+        ffmpeg_path = os.path.abspath(ffmpeg_path)
+
+        # Add to system PATH
+        os.environ["PATH"] = f"{ffmpeg_path}:{os.environ.get('PATH', '')}"
+
+        # Handle both directory and direct executable paths
+        if os.path.isdir(ffmpeg_path):
+            ffmpeg_executable = os.path.join(ffmpeg_path, 'ffmpeg')
+            ffprobe_executable = os.path.join(ffmpeg_path, 'ffprobe')
+        else:
+            ffmpeg_executable = ffmpeg_path
+            ffprobe_executable = os.path.join(
+                os.path.dirname(ffmpeg_path), 'ffprobe')
+
+        # Verify executables exist and are executable
+        for exe in [ffmpeg_executable, ffprobe_executable]:
+            if not os.path.exists(exe):
+                raise ValueError(f"Executable not found: {exe}")
+            if not os.access(exe, os.X_OK):
+                raise ValueError(f"File is not executable: {exe}")
+
+        # Configure pydub
+        AudioSegment.converter = ffmpeg_executable
+        AudioSegment.ffmpeg = ffmpeg_executable
+        AudioSegment.ffprobe = ffprobe_executable
+
+    # Verify ffmpeg works
+    try:
+        test_file = AudioSegment.silent(duration=1)
+        test_file.export("test.mp3", format="mp3")
+        os.remove("test.mp3")
+    except Exception as e:
+        raise RuntimeError("Failed to verify ffmpeg installation") from e
 
 
 def load_dialogues(input_file: str) -> List[Dict]:
@@ -46,11 +95,25 @@ def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
     """
     Determine the speaker for a dialogue chunk.
     Returns None for non-dialog sections that should use the default voice.
+
+    Args:
+        dialogue: Dictionary containing dialogue information
+
+    Returns:
+        Optional[str]: Speaker name or None for default voice
     """
+    # Check if the dialogue type should use default voice
     dialogue_type = dialogue.get('type', '')
-    if dialogue_type in ['scene header', 'scene description', 'dialog modifier', 'title page', 'page number']:
+    if dialogue_type in ['scene header', 'scene description', 'dialog modifier',
+                         'title page', 'page number', 'speaker attribution']:
         return None
-    return dialogue.get('speaker')
+
+    # Get speaker and handle 'none' case
+    speaker = dialogue.get('speaker')
+    if speaker is None or speaker.lower() == 'none':
+        return None
+
+    return speaker
 
 
 def generate_audio_clips(
@@ -173,6 +236,7 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
     final_audio.export(output_file, format="mp3")
     print("Audio concatenation completed")
 
+
 def main():
     print("Starting main function")
     parser = argparse.ArgumentParser(
@@ -197,9 +261,18 @@ def main():
                         help='Enable verbose output')
     parser.add_argument('--dry-run', action='store_true',
                         help='Perform a dry run without generating new audio files')
+    parser.add_argument('--ffmpeg-path',
+                        help='Path to ffmpeg binary or directory containing ffmpeg binaries')
 
     print("Parsing arguments")
     args = parser.parse_args()
+
+    try:
+        configure_ffmpeg(args.ffmpeg_path)
+        print("FFMPEG configuration successful")
+    except Exception as e:
+        print(f"Error configuring FFMPEG: {e}")
+        return 1
 
     # Ensure the output file has .mp3 extension
     output_file = args.output_file
@@ -212,11 +285,6 @@ def main():
         yaml_output = args.input_file.rsplit('.', 1)[0] + '_voice_config.yaml'
         ElevenLabsProvider.generate_yaml_config(args.input_file, yaml_output)
         print(f"YAML configuration template generated: {yaml_output}")
-        return
-
-    if args.list_voices:
-        print("Warning: The --list-voices option is deprecated.")
-        print("Please refer to the provider's documentation for voice IDs.")
         return
 
     print(f"Initializing TTS provider: {args.provider}")
