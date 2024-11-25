@@ -1,63 +1,35 @@
-import unicodedata
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 import os
 import yaml
 from typing import Dict, Optional
 from tts_provider import TTSProvider, TTSError, VoiceNotFoundError
-
-
-def normalize_unicode(s: str) -> str:
-    """Normalize Unicode string to NFKC form."""
-    return unicodedata.normalize('NFKC', s)
+from elevenlabs_voice_library_manager import ElevenLabsVoiceLibraryManager
 
 
 class ElevenLabsProvider(TTSProvider):
     def __init__(self):
         self.client = None
-        self.voice_map: Dict[str, str] = {}  # Maps speaker names to voice IDs
+        self.voice_library_manager = None
+        # Maps speaker names to public voice IDs
+        self.voice_map: Dict[str, str] = {}
         self.default_voice_id: Optional[str] = None
 
     def initialize(self, config_path: Optional[str] = None) -> None:
-        """
-        Initialize the ElevenLabs provider with API key and voice configuration.
-
-        Args:
-            config_path: Path to YAML configuration file for voice mappings
-
-        Raises:
-            TTSError: If initialization fails or configuration is invalid
-        """
-        # Initialize API client
+        """Initialize the provider with API key and voice configuration."""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
-        try:
-            self.client = ElevenLabs(api_key=api_key)
-        except Exception as e:
-            raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
+        self.client = ElevenLabs(api_key=api_key)
+        self.voice_library_manager = ElevenLabsVoiceLibraryManager(
+            api_key, debug=True)  # Enable debug logging
 
-        # Load voice configuration if provided
         if config_path:
             self._load_voice_config(config_path)
 
-        # Verify we can access the API
-        try:
-            self.client.voices.get_all()
-        except Exception as e:
-            raise TTSError(f"Failed to verify ElevenLabs API access: {e}")
-
     def _load_voice_config(self, config_path: str) -> None:
-        """
-        Load voice mappings from YAML configuration.
-
-        Args:
-            config_path: Path to YAML configuration file
-
-        Raises:
-            TTSError: If configuration file is invalid or cannot be loaded
-        """
+        """Load voice mappings from YAML configuration."""
         try:
             with open(config_path, 'r', encoding='utf-8') as file:
                 config = yaml.safe_load(file)
@@ -76,53 +48,27 @@ class ElevenLabsProvider(TTSProvider):
             if not voice_id:
                 raise TTSError(
                     f"No voice ID specified for speaker '{speaker}'")
-            self.voice_map[normalize_unicode(speaker)] = voice_id
+            self.voice_map[speaker] = voice_id
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
-        """
-        Get the voice ID for a given speaker.
-
-        Args:
-            speaker: The speaker to get the voice ID for, or None for default voice
-
-        Returns:
-            str: The voice ID for the speaker
-
-        Raises:
-            VoiceNotFoundError: If no voice is assigned to the speaker
-        """
-        # Use default voice when speaker is None
+        """Get the voice ID for a given speaker."""
         if speaker is None:
             if not self.default_voice_id:
                 raise VoiceNotFoundError("No default voice configured")
-            return self.default_voice_id
+            return self.voice_library_manager.get_library_voice_id(self.default_voice_id)
 
-        normalized_speaker = normalize_unicode(speaker)
-        voice_id = self.voice_map.get(normalized_speaker)
+        voice_id = self.voice_map.get(speaker)
         if not voice_id:
             raise VoiceNotFoundError(
                 f"No voice assigned for speaker '{speaker}'. "
                 "Please update the voice configuration file."
             )
 
-        return voice_id
+        return self.voice_library_manager.get_library_voice_id(voice_id)
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
-        """
-        Generate audio for the given speaker and text.
-
-        Args:
-            speaker: The speaker to generate audio for, or None for default voice
-            text: The text to convert to speech
-
-        Returns:
-            bytes: The generated audio data
-
-        Raises:
-            VoiceNotFoundError: If no voice is assigned to the speaker
-            TTSError: If audio generation fails
-        """
-        if not self.client:
+        """Generate audio for the given speaker and text."""
+        if not self.client or not self.voice_library_manager:
             raise TTSError(
                 "Provider not initialized. Call initialize() first.")
 
