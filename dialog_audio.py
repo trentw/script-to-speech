@@ -185,7 +185,15 @@ def generate_audio_clips(
             if not cache_hit:
                 print("Generating new audio file")
                 try:
-                    audio_data = tts_provider.generate_audio(speaker, text)
+                    if not text.strip():
+                        # Create a silent audio segment for empty text
+                        print("Creating silent audio for empty text")
+                        silent_segment = AudioSegment.silent(
+                            duration=10)  # 10ms of silence
+                        audio_data = silent_segment.export(format="mp3").read()
+                    else:
+                        # Generate audio normally for non-empty text
+                        audio_data = tts_provider.generate_audio(speaker, text)
                     print("Audio generated")
 
                     # Save to cache
