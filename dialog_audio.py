@@ -94,21 +94,14 @@ def create_output_folders(input_file: str, output_folder: Optional[str] = None) 
 def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
     """
     Determine the speaker for a dialogue chunk.
-    Returns None for non-dialog sections that should use the default voice.
+    Returns None if no speaker is specified.
 
     Args:
         dialogue: Dictionary containing dialogue information
 
     Returns:
-        Optional[str]: Speaker name or None for default voice
+        Optional[str]: Speaker name or None if no speaker specified
     """
-    # Check if the dialogue type should use default voice
-    dialogue_type = dialogue.get('type', '')
-    if dialogue_type in ['scene header', 'scene description', 'dialog modifier',
-                         'title page', 'page number', 'speaker attribution']:
-        return None
-
-    # Get speaker and handle 'none' case
     speaker = dialogue.get('speaker')
     if speaker is None or speaker.lower() == 'none':
         return None
@@ -186,7 +179,7 @@ def generate_audio_clips(
                 print("Generating new audio file")
                 try:
                     if not text.strip():
-                        # Create a silent audio segment for empty text
+                        # Create a very short silent audio for empty text
                         print("Creating silent audio for empty text")
                         silent_segment = AudioSegment.silent(
                             duration=10)  # 10ms of silence
@@ -217,7 +210,8 @@ def generate_audio_clips(
                     audio_clips.append(audio_segment)
                     print("Audio added to clips list")
 
-                    if idx < len(dialogues) - 1:
+                    # Only add gap if this isn't empty text and isn't the last item
+                    if idx < len(dialogues) - 1 and text.strip():
                         print("Adding gap between dialogues")
                         gap = AudioSegment.silent(duration=gap_duration_ms)
                         audio_clips.append(gap)
@@ -272,9 +266,9 @@ def main():
     parser.add_argument('--ffmpeg-path',
                         help='Path to ffmpeg binary or directory containing ffmpeg binaries')
 
-    print("Parsing arguments")
     args = parser.parse_args()
 
+    # Configure ffmpeg
     try:
         configure_ffmpeg(args.ffmpeg_path)
         print("FFMPEG configuration successful")
