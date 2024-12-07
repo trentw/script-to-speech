@@ -11,8 +11,9 @@ class ElevenLabsVoiceLibraryManager:
     def __init__(self, api_key: str, debug: bool = False):
         self.api_key = api_key
         self.client = ElevenLabs(api_key=api_key)
+        # Maps public_voice_id -> (library_voice_id, category)
         self.voice_library: Dict[str, Tuple[str, str]] = {}
-        self.voice_lru = OrderedDict()
+        self.voice_lru = OrderedDict()  # Maintains order of voice usage
         self.is_initialized = False
 
         # Setup logging
@@ -30,13 +31,18 @@ class ElevenLabsVoiceLibraryManager:
     def _initialize_voice_library(self) -> None:
         """
         Initialize the voice library by querying current voices.
+        Maintains LRU order while ensuring consistency with actual voice library.
         """
-        if self.is_initialized:
-            return
-
         self.logger.info("Initializing voice library mapping")
         response = self.client.voices.get_all()
 
+        # Clear existing voice library
+        self.voice_library.clear()
+
+        # Keep track of currently valid voice IDs
+        current_voice_ids = set()
+
+        # Build new voice library
         for voice in response.voices:
             if self.logger.isEnabledFor(logging.DEBUG):
                 self.logger.debug(f"\nVoice object details:")
@@ -52,16 +58,14 @@ class ElevenLabsVoiceLibraryManager:
                         self.logger.debug(
                             f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}")
 
-            # Handle voices with no sharing attribute or None sharing
+            # Handle premade voices (no sharing attribute)
             if not hasattr(voice, 'sharing') or voice.sharing is None:
                 public_id = voice.voice_id
                 library_id = voice.voice_id
-                category = voice.category
-            # Handle voices with valid sharing attribute
+                category = getattr(voice, 'category', 'premade')
+            # Handle shared/cloned voices
             else:
-                public_id = (voice.sharing.original_voice_id
-                             if hasattr(voice.sharing, 'original_voice_id') and voice.sharing.original_voice_id
-                             else voice.voice_id)
+                public_id = voice.sharing.original_voice_id or voice.voice_id
                 library_id = voice.voice_id
                 category = voice.category
 
@@ -69,7 +73,7 @@ class ElevenLabsVoiceLibraryManager:
 
             # Add to LRU if not premade
             if category != "premade":
-                self.voice_lru[public_id] = None
+                current_voice_ids.add(public_id)
 
             self.logger.debug(
                 f"Successfully mapped voice:"
@@ -77,6 +81,13 @@ class ElevenLabsVoiceLibraryManager:
                 f"\n  Library ID: {library_id}"
                 f"\n  Category: {category}"
             )
+
+        # Prune LRU of voices that no longer exist while maintaining order
+        valid_lru = OrderedDict()
+        for voice_id in list(self.voice_lru.keys()):
+            if voice_id in current_voice_ids:
+                valid_lru[voice_id] = None
+        self.voice_lru = valid_lru
 
         self.logger.info(
             f"Initialized voice library with {len(self.voice_library)} voices "
@@ -102,7 +113,7 @@ class ElevenLabsVoiceLibraryManager:
 
     def _add_voice_to_library(self, public_voice_id: str, public_owner_id: str) -> None:
         """
-        Add a voice to the user's voice library.
+        Add a voice to the user's voice library and refresh local state.
         """
         self.logger.info(f"Adding voice {public_voice_id} to library")
         url = f"https://api.elevenlabs.io/v1/voices/add/{public_owner_id}/{public_voice_id}"
@@ -123,13 +134,12 @@ class ElevenLabsVoiceLibraryManager:
         self.logger.info(
             f"Successfully added voice {public_voice_id} to library")
 
-        # Refresh voice library mapping
-        self.is_initialized = False
+        # Refresh voice library and LRU state
         self._initialize_voice_library()
 
     def _remove_voice_from_library(self, library_voice_id: str) -> None:
         """
-        Remove a voice from the user's voice library.
+        Remove a voice from the user's voice library and refresh local state.
         """
         self.logger.info(f"Removing voice {library_voice_id} from library")
         url = f"https://api.elevenlabs.io/v1/voices/{library_voice_id}"
@@ -143,8 +153,7 @@ class ElevenLabsVoiceLibraryManager:
 
         self.logger.info(f"Successfully removed voice {library_voice_id}")
 
-        # Refresh voice library mapping
-        self.is_initialized = False
+        # Refresh voice library and LRU state
         self._initialize_voice_library()
 
     def _make_room_in_library(self) -> None:
@@ -188,9 +197,10 @@ class ElevenLabsVoiceLibraryManager:
             RuntimeError: If the voice cannot be added to the library
         """
         # Initialize if needed
-        self._initialize_voice_library()
+        if not self.is_initialized:
+            self._initialize_voice_library()
 
-        # Update LRU cache
+        # Update LRU cache if it's a non-premade voice
         if public_voice_id in self.voice_lru:
             self.voice_lru.move_to_end(public_voice_id)
 
@@ -218,5 +228,5 @@ class ElevenLabsVoiceLibraryManager:
         # Add voice to library
         self._add_voice_to_library(public_voice_id, public_owner_id)
 
-        # Return the new library ID
+        # Return the new library ID (voice library was refreshed in _add_voice_to_library)
         return self.voice_library[public_voice_id][0]
