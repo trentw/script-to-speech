@@ -22,8 +22,7 @@ class ElevenLabsProvider(TTSProvider):
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
         self.client = ElevenLabs(api_key=api_key)
-        self.voice_library_manager = ElevenLabsVoiceLibraryManager(
-            api_key, debug=True)  # Enable debug logging
+        self.voice_library_manager = ElevenLabsVoiceLibraryManager(api_key)
 
         if config_path:
             self._load_voice_config(config_path)
@@ -51,11 +50,14 @@ class ElevenLabsProvider(TTSProvider):
             self.voice_map[speaker] = voice_id
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
-        """Get the voice ID for a given speaker."""
+        """
+        Get the voice ID from configuration for a given speaker.
+        This returns the public/config voice ID, not the library ID.
+        """
         if speaker is None:
             if not self.default_voice_id:
                 raise VoiceNotFoundError("No default voice configured")
-            return self.voice_library_manager.get_library_voice_id(self.default_voice_id)
+            return self.default_voice_id
 
         voice_id = self.voice_map.get(speaker)
         if not voice_id:
@@ -64,7 +66,7 @@ class ElevenLabsProvider(TTSProvider):
                 "Please update the voice configuration file."
             )
 
-        return self.voice_library_manager.get_library_voice_id(voice_id)
+        return voice_id
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
@@ -72,11 +74,16 @@ class ElevenLabsProvider(TTSProvider):
             raise TTSError(
                 "Provider not initialized. Call initialize() first.")
 
-        voice_id = self.get_speaker_identifier(speaker)
+        # Get the public voice ID first
+        public_voice_id = self.get_speaker_identifier(speaker)
+
+        # Then get the library voice ID for actual generation
+        library_voice_id = self.voice_library_manager.get_library_voice_id(
+            public_voice_id)
 
         try:
             response = self.client.text_to_speech.convert(
-                voice_id=voice_id,
+                voice_id=library_voice_id,  # Use library ID here
                 optimize_streaming_latency="0",
                 output_format="mp3_44100_192",
                 text=text,
