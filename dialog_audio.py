@@ -1,5 +1,7 @@
 from tts_provider import TTSProvider
 from typing import Optional, List, Dict, Tuple
+from collections import defaultdict
+from dataclasses import dataclass
 from processing_module import ProcessingModule
 from datetime import datetime
 from elevenlabs_provider import ElevenLabsProvider
@@ -14,6 +16,18 @@ import sys
 
 # Use a less common delimiter
 DELIMITER = "~~"
+
+
+@dataclass
+class CacheMissInfo:
+    """Information about cache misses for a speaker"""
+    line_count: int = 0
+    char_count: int = 0
+    texts: List[str] = None  # Optional, for detailed debugging
+
+    def __post_init__(self):
+        if self.texts is None:
+            self.texts = []
 
 
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
@@ -126,6 +140,10 @@ def generate_audio_clips(
     provider_id = tts_provider.get_provider_identifier()
     print(f"Provider ID: {provider_id}")
 
+    # Track cache misses by speaker
+    cache_misses: DefaultDict[Tuple[str, str],
+                              CacheMissInfo] = defaultdict(CacheMissInfo)
+
     for idx, dialogue in enumerate(dialogues):
         print(f"\nProcessing dialogue {idx}")
 
@@ -148,11 +166,11 @@ def generate_audio_clips(
         print(f"Original hash: {original_hash}")
         print(f"Processed hash: {processed_hash}")
 
-        tts_speaker_id = tts_provider.get_speaker_identifier(speaker)
-        print(f"TTS Speaker ID: {tts_speaker_id}")
+        speaker_id = tts_provider.get_speaker_identifier(speaker)
+        print(f"Speaker ID: {speaker_id}")
 
-        cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
-        sequence_filename = f"{idx:04d}{DELIMITER}{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{tts_speaker_id}.mp3"
+        cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
+        sequence_filename = f"{idx:04d}{DELIMITER}{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
 
         cache_filepath = os.path.join(cache_folder, cache_filename)
         sequence_filepath = os.path.join(sequence_folder, sequence_filename)
@@ -162,6 +180,14 @@ def generate_audio_clips(
 
         cache_hit = cache_filename in existing_files
         print(f"Cache hit: {cache_hit}")
+
+        if not cache_hit:
+            # Track cache miss information
+            speaker_display = speaker if speaker is not None else "(default)"
+            cache_misses[(speaker_display, speaker_id)].line_count += 1
+            cache_misses[(speaker_display, speaker_id)].char_count += len(text)
+            if verbose:
+                cache_misses[(speaker_display, speaker_id)].texts.append(text)
 
         if not dry_run:
             audio_data = None
@@ -224,7 +250,29 @@ def generate_audio_clips(
             speaker_display = speaker if speaker is not None else "(default)"
             print(f"[{idx:04d}][{status}][{speaker_display}][{text[:20]}...]")
 
-    print("Finished processing all dialogues")
+    print("\nDialogue processing complete")
+
+    if dry_run:
+        if not cache_misses:
+            print("\nAll audio clips are cached. No new audio generation needed.")
+        else:
+            print("\nCache misses (audio that would need to be generated):")
+            for (speaker_display, speaker_id), info in sorted(cache_misses.items()):
+                print(
+                    f"- {speaker_display} ({speaker_id}): {info.line_count} lines ({info.char_count} characters)")
+                if verbose:
+                    for text in info.texts:
+                        print(f"  • {text[:50]}...")
+
+            print(
+                f"\nTotal unique speakers requiring generation: {len(cache_misses)}")
+            total_lines = sum(
+                info.line_count for info in cache_misses.values())
+            total_chars = sum(
+                info.char_count for info in cache_misses.values())
+            print(f"Total lines to generate: {total_lines}")
+            print(f"Total characters to generate: {total_chars}")
+
     return audio_clips, modified_dialogues
 
 
