@@ -13,6 +13,7 @@ import io
 import json
 import os
 import sys
+import traceback
 
 # Use a less common delimiter
 DELIMITER = "~~"
@@ -277,14 +278,59 @@ def generate_audio_clips(
 
 
 def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -> None:
-    print("Starting audio concatenation")
-    final_audio = AudioSegment.empty()
-    for clip in audio_clips:
-        final_audio += clip
+    """
+    Concatenate audio clips using pydub with detailed progress tracking.
 
-    print(f"Exporting final audio to: {output_file}")
-    final_audio.export(output_file, format="mp3")
-    print("Audio concatenation completed")
+    Args:
+        audio_clips: List of AudioSegment objects
+        output_file: Path for the output audio file
+    """
+    print(f"\nStarting audio concatenation of {len(audio_clips)} clips")
+    print("Memory usage and clip details:")
+
+    total_duration = 0
+    for i, clip in enumerate(audio_clips):
+        duration_ms = len(clip)
+        total_duration += duration_ms
+        print(f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
+
+    print(
+        f"\nTotal duration to process: {total_duration}ms ({total_duration/1000:.2f}s)")
+
+    try:
+        print("\nStarting clip concatenation...")
+        final_audio = AudioSegment.empty()
+
+        for i, clip in enumerate(audio_clips, 1):
+            print(
+                f"Adding clip {i}/{len(audio_clips)} (duration: {len(clip)}ms)")
+            final_audio += clip
+            print(f"Current total duration: {len(final_audio)}ms")
+
+        print(
+            f"\nExporting final audio (duration: {len(final_audio)}ms) to: {output_file}")
+        final_audio.export(output_file, format="mp3")
+        print("Audio export completed")
+
+        # Verify the output file
+        if os.path.exists(output_file):
+            file_size = os.path.getsize(output_file)
+            print(f"Output file size: {file_size/1024/1024:.2f}MB")
+
+            # Try to load the output file as a sanity check
+            try:
+                verify_audio = AudioSegment.from_mp3(output_file)
+                print(
+                    f"Output file verification successful. Duration: {len(verify_audio)}ms")
+            except Exception as e:
+                print(f"Warning: Output file verification failed: {e}")
+        else:
+            print("Warning: Output file was not created")
+
+    except Exception as e:
+        print(f"\nError during audio concatenation: {str(e)}")
+        traceback.print_exc()
+        raise
 
 
 def main():
