@@ -78,6 +78,34 @@ def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
         raise RuntimeError("Failed to verify ffmpeg installation") from e
 
 
+def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
+    """
+    Create and return paths for output folders following the standard structure.
+
+    Args:
+        input_file: Path to the input JSON file
+
+    Returns:
+        Tuple of (main_output_folder, cache_folder, sequence_folder, output_file)
+    """
+    # Get base name without extension
+    base_name = os.path.splitext(os.path.basename(input_file))[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Set up folder structure
+    main_output_folder = os.path.join("output", base_name)
+    cache_folder = os.path.join(main_output_folder, "cache")
+    sequence_folder = os.path.join(
+        main_output_folder, "sequence", f"sequence_{timestamp}")
+    output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
+
+    # Create all necessary directories
+    os.makedirs(cache_folder, exist_ok=True)
+    os.makedirs(sequence_folder, exist_ok=True)
+
+    return main_output_folder, cache_folder, sequence_folder, output_file
+
+
 def load_dialogues(input_file: str) -> List[Dict]:
     with open(input_file, 'r', encoding='utf-8') as f:
         dialogues = json.load(f)
@@ -90,20 +118,32 @@ def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
     return hashlib.md5(f"{text}{speaker_str}".encode()).hexdigest()
 
 
-def create_output_folders(input_file: str, output_folder: Optional[str] = None) -> Tuple[str, str, str]:
+def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
+    """
+    Create and return paths for output folders following the standard structure.
+
+    Args:
+        input_file: Path to the input JSON file
+
+    Returns:
+        Tuple of (main_output_folder, cache_folder, sequence_folder, output_file)
+    """
+    # Get base name without extension
     base_name = os.path.splitext(os.path.basename(input_file))[0]
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    if output_folder is None:
-        output_folder = f"{base_name}_output"
+    # Set up folder structure
+    main_output_folder = os.path.join("output", base_name)
+    cache_folder = os.path.join(main_output_folder, "cache")
+    sequence_folder = os.path.join(
+        main_output_folder, "sequence", f"sequence_{timestamp}")
+    output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
 
-    cache_folder = os.path.join(output_folder, "cache")
-    sequence_folder = os.path.join(output_folder, f"sequence_{timestamp}")
-
+    # Create all necessary directories
     os.makedirs(cache_folder, exist_ok=True)
     os.makedirs(sequence_folder, exist_ok=True)
 
-    return output_folder, cache_folder, sequence_folder
+    return main_output_folder, cache_folder, sequence_folder, output_file
 
 
 def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
@@ -334,13 +374,10 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
 
 
 def main():
-    print("Starting main function")
     parser = argparse.ArgumentParser(
         description='Generate an audio file from dialogues.')
     parser.add_argument(
         'input_file', help='Path to the input JSON file containing dialogues.')
-    parser.add_argument(
-        'output_file', help='Path for the output audio file (will be saved as .mp3)')
     parser.add_argument('--gap', type=int, default=500,
                         help='Gap duration between dialogues in milliseconds (default: 500ms).')
     parser.add_argument('--provider', choices=['pyttsx3', 'elevenlabs'],
@@ -351,8 +388,6 @@ def main():
                         help='Path to YAML configuration file for processing module')
     parser.add_argument('--generate-yaml', action='store_true',
                         help='Generate a template YAML configuration file')
-    parser.add_argument('--output-folder',
-                        help='Specify custom output folder name')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     parser.add_argument('--dry-run', action='store_true',
@@ -362,6 +397,36 @@ def main():
 
     args = parser.parse_args()
 
+    # Verify input file exists
+    if not os.path.exists(args.input_file):
+        raise FileNotFoundError(f"Input file not found: {args.input_file}")
+
+    if args.generate_yaml:
+        print("Generating YAML configuration")
+        # Generate yaml in same directory as input file
+        input_dir = os.path.dirname(args.input_file)
+        base_name = os.path.splitext(os.path.basename(args.input_file))[0]
+        yaml_output = os.path.join(input_dir, f"{base_name}_voice_config.yaml")
+        ElevenLabsProvider.generate_yaml_config(args.input_file, yaml_output)
+        print(f"YAML configuration template generated: {yaml_output}")
+        return
+
+    # Verify TTS config exists if provided
+    if args.tts_config and not os.path.exists(args.tts_config):
+        raise FileNotFoundError(
+            f"TTS config file not found: {args.tts_config}")
+
+    # Verify processing config exists if provided
+    if args.processing_config and not os.path.exists(args.processing_config):
+        raise FileNotFoundError(
+            f"Processing config file not found: {args.processing_config}")
+
+    # Create output folders and get paths
+    print("Creating output folders")
+    output_folder, cache_folder, sequence_folder, output_file = create_output_folders(
+        args.input_file)
+    print(f"Output will be saved to: {output_file}")
+
     # Configure ffmpeg
     try:
         configure_ffmpeg(args.ffmpeg_path)
@@ -370,19 +435,7 @@ def main():
         print(f"Error configuring FFMPEG: {e}")
         return 1
 
-    # Ensure the output file has .mp3 extension
-    output_file = args.output_file
-    if not output_file.lower().endswith('.mp3'):
-        output_file = f"{os.path.splitext(output_file)[0]}.mp3"
-        print(f"Output file name adjusted to: {output_file}")
-
-    if args.generate_yaml:
-        print("Generating YAML configuration")
-        yaml_output = args.input_file.rsplit('.', 1)[0] + '_voice_config.yaml'
-        ElevenLabsProvider.generate_yaml_config(args.input_file, yaml_output)
-        print(f"YAML configuration template generated: {yaml_output}")
-        return
-
+    # Initialize provider
     print(f"Initializing TTS provider: {args.provider}")
     if args.provider == 'pyttsx3':
         tts_provider = Pyttsx3Provider()
@@ -398,26 +451,25 @@ def main():
     dialogues = load_dialogues(args.input_file)
     print(f"Loaded {len(dialogues)} dialogues")
 
-    print("Creating output folders")
-    output_folder, cache_folder, sequence_folder = create_output_folders(
-        args.input_file, args.output_folder)
-
     # Initialize processing module
     processor = ProcessingModule(args.processing_config)
     print("Processing module initialized")
 
+    # Generate and process audio
     print("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
-        dialogues, args.gap, tts_provider, cache_folder, sequence_folder, processor, args.verbose, args.dry_run)
+        dialogues, args.gap, tts_provider, cache_folder, sequence_folder,
+        processor, args.verbose, args.dry_run)
 
     if not args.dry_run:
         print(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
         print(f'Audio file generated: {output_file}')
 
-        # Save modified JSON
+        # Save modified JSON in output folder
+        base_name = os.path.splitext(os.path.basename(args.input_file))[0]
         modified_json_path = os.path.join(
-            output_folder, f"{os.path.splitext(os.path.basename(args.input_file))[0]}-modified.json")
+            output_folder, f"{base_name}-modified.json")
         with open(modified_json_path, 'w', encoding='utf-8') as f:
             json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
         print(f'Modified JSON file generated: {modified_json_path}')
