@@ -1,17 +1,19 @@
 import pyttsx3
-import random
 from typing import Dict, Optional
-from tts_provider import TTSProvider, TTSError, VoiceNotFoundError
+from ..tts_provider_base import TTSProvider, TTSError, VoiceNotFoundError
+import io
+import os
+import wave
 
 
-class Pyttsx3Provider(TTSProvider):
+class Pyttsx3TTSProvider(TTSProvider):
     """
     TTS Provider implementation using pyttsx3 for local text-to-speech generation.
     Uses system voices and maintains consistent voice assignments for speakers.
     """
 
     def __init__(self):
-        self.engine = None
+        self.engine: Optional[pyttsx3.Engine] = None
         self.available_voices: Dict[str, pyttsx3.voice.Voice] = {}
         # Maps speakers to voice IDs
         self.speaker_voice_map: Dict[str, str] = {}
@@ -93,17 +95,14 @@ class Pyttsx3Provider(TTSProvider):
             bytes: The generated audio data in wave format
 
         Raises:
+            TTSError: If provider not initialized or audio generation fails
             VoiceNotFoundError: If no voice is available for the speaker
-            TTSError: If audio generation fails
         """
         if not self.engine:
             raise TTSError(
                 "Provider not initialized. Call initialize() first.")
 
         try:
-            import io
-            import wave
-
             voice_id = self.get_speaker_identifier(speaker)
             self.engine.setProperty('voice', voice_id)
 
@@ -119,11 +118,12 @@ class Pyttsx3Provider(TTSProvider):
                 audio_data = f.read()
 
             # Clean up the temporary file
-            import os
             os.remove('temp.wav')
 
             return audio_data
 
+        except VoiceNotFoundError:
+            raise  # Re-raise voice not found errors
         except Exception as e:
             raise TTSError(f"Failed to generate audio: {e}")
 

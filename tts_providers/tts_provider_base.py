@@ -13,6 +13,8 @@ class VoiceNotFoundError(TTSError):
 
 
 class TTSProvider(ABC):
+    """Base class for all TTS providers that defines the required interface."""
+
     @abstractmethod
     def initialize(self, config_path: Optional[str] = None) -> None:
         """

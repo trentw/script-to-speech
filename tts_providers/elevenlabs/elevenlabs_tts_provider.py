@@ -1,16 +1,21 @@
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
+from .elevenlabs_voice_registry_manager import ElevenLabsVoiceRegistryManager
 import os
 import yaml
 from typing import Dict, Optional
-from tts_provider import TTSProvider, TTSError, VoiceNotFoundError
-from elevenlabs_voice_library_manager import ElevenLabsVoiceLibraryManager
+from ..tts_provider_base import TTSProvider, TTSError, VoiceNotFoundError
 
 
-class ElevenLabsProvider(TTSProvider):
+class ElevenLabsTTSProvider(TTSProvider):
+    """
+    TTS Provider implementation for ElevenLabs API. Handles voice mapping and audio generation
+    while abstracting away the complexity of ElevenLabs' voice registry system.
+    """
+
     def __init__(self):
         self.client = None
-        self.voice_library_manager = None
+        self.voice_registry_manager = None
         # Maps speaker names to public voice IDs
         self.voice_map: Dict[str, str] = {}
         self.default_voice_id: Optional[str] = None
@@ -22,7 +27,7 @@ class ElevenLabsProvider(TTSProvider):
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
         self.client = ElevenLabs(api_key=api_key)
-        self.voice_library_manager = ElevenLabsVoiceLibraryManager(api_key)
+        self.voice_registry_manager = ElevenLabsVoiceRegistryManager(api_key)
 
         if config_path:
             self._load_voice_config(config_path)
@@ -52,7 +57,7 @@ class ElevenLabsProvider(TTSProvider):
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
         Get the voice ID from configuration for a given speaker.
-        This returns the public/config voice ID, not the library ID.
+        This returns the public/config voice ID, not the registry ID.
         """
         if speaker is None:
             if not self.default_voice_id:
@@ -70,20 +75,20 @@ class ElevenLabsProvider(TTSProvider):
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
-        if not self.client or not self.voice_library_manager:
+        if not self.client or not self.voice_registry_manager:
             raise TTSError(
                 "Provider not initialized. Call initialize() first.")
 
         # Get the public voice ID first
         public_voice_id = self.get_speaker_identifier(speaker)
 
-        # Then get the library voice ID for actual generation
-        library_voice_id = self.voice_library_manager.get_library_voice_id(
+        # Then get the registry voice ID for actual generation
+        registry_voice_id = self.voice_registry_manager.get_library_voice_id(
             public_voice_id)
 
         try:
             response = self.client.text_to_speech.convert(
-                voice_id=library_voice_id,  # Use library ID here
+                voice_id=registry_voice_id,
                 optimize_streaming_latency="0",
                 output_format="mp3_44100_192",
                 text=text,

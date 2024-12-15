@@ -1,12 +1,11 @@
-from tts_provider import TTSProvider
 from typing import Optional, List, Dict, Tuple
 from collections import defaultdict
 from dataclasses import dataclass
 from processing_module import ProcessingModule
 from datetime import datetime
-from elevenlabs_provider import ElevenLabsProvider
-from pyttsx3_provider import Pyttsx3Provider
 from pydub import AudioSegment
+
+from tts_providers import get_provider, TTSProvider
 import hashlib
 import argparse
 import io
@@ -397,6 +396,15 @@ def main():
 
     args = parser.parse_args()
 
+    # Get and initialize the TTS provider
+    try:
+        tts_provider_class = get_provider(args.provider)
+        tts_provider = tts_provider_class()
+        tts_provider.initialize(args.tts_config)
+    except Exception as e:
+        print(f"Error setting up TTS provider: {e}")
+        return 1
+
     # Verify input file exists
     if not os.path.exists(args.input_file):
         raise FileNotFoundError(f"Input file not found: {args.input_file}")
@@ -434,15 +442,6 @@ def main():
     except Exception as e:
         print(f"Error configuring FFMPEG: {e}")
         return 1
-
-    # Initialize provider
-    print(f"Initializing TTS provider: {args.provider}")
-    if args.provider == 'pyttsx3':
-        tts_provider = Pyttsx3Provider()
-    elif args.provider == 'elevenlabs':
-        tts_provider = ElevenLabsProvider()
-    else:
-        raise ValueError("Invalid TTS provider specified")
 
     tts_provider.initialize(args.tts_config)
     print("TTS provider initialized")
