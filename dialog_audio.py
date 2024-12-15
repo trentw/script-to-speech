@@ -1,7 +1,7 @@
 from typing import Optional, List, Dict, Tuple
 from collections import defaultdict
 from dataclasses import dataclass
-from processing_module import ProcessingModule
+from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
 from pydub import AudioSegment
 
@@ -169,7 +169,7 @@ def generate_audio_clips(
     tts_provider: TTSProvider,
     cache_folder: str,
     sequence_folder: str,
-    processor: ProcessingModule,
+    processor: TextProcessorManager,
     verbose: bool = False,
     dry_run: bool = False
 ) -> Tuple[List[AudioSegment], List[Dict]]:
@@ -451,7 +451,7 @@ def main():
     print(f"Loaded {len(dialogues)} dialogues")
 
     # Initialize processing module
-    processor = ProcessingModule(args.processing_config)
+    processor = TextProcessorManager(args.processing_config)
     print("Processing module initialized")
 
     # Generate and process audio

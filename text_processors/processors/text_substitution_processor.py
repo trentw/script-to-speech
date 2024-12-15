@@ -1,9 +1,11 @@
 from typing import Dict, Tuple, List
-from processing_submodule import ProcessingSubModule
+from ..text_processor_base import TextProcessor
 import re
 
 
-class TextSubstituteSubModule(ProcessingSubModule):
+class TextSubstitutionProcessor(TextProcessor):
+    """Processor that performs text substitutions (e.g., expanding abbreviations)."""
+
     def __init__(self, config: Dict):
         super().__init__(config)
         self.substitutions = self.prepare_substitutions()

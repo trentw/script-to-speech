@@ -1,9 +1,9 @@
-submodules:
-  - name: skip
+processors:
+  - name: skip_empty
     config:
       skip_types:
         - page number
-  - name: text_substitute
+  - name: text_substitution
     config:
       substitutions:
         - from: "CONT’D"
