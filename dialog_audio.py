@@ -5,7 +5,7 @@ from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
 from pydub import AudioSegment
 
-from tts_providers import get_provider, TTSProvider
+from tts_providers import get_provider, TTSProvider, get_available_providers
 import hashlib
 import argparse
 import io
@@ -373,14 +373,18 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
 
 
 def main():
+    # Get available providers for the help text
+    available_providers = get_available_providers().keys()
+
     parser = argparse.ArgumentParser(
         description='Generate an audio file from dialogues.')
     parser.add_argument(
         'input_file', help='Path to the input JSON file containing dialogues.')
     parser.add_argument('--gap', type=int, default=500,
                         help='Gap duration between dialogues in milliseconds (default: 500ms).')
-    parser.add_argument('--provider', choices=['pyttsx3', 'elevenlabs'],
-                        default='pyttsx3', help='Choose the TTS provider (default: pyttsx3)')
+    parser.add_argument('--provider', choices=available_providers,
+                        help=f'Choose the TTS provider (choices: {", ".join(available_providers)})',
+                        required=True)
     parser.add_argument(
         '--tts-config', help='Path to YAML configuration file for TTS provider')
     parser.add_argument('--processing-config',
@@ -411,11 +415,15 @@ def main():
 
     if args.generate_yaml:
         print("Generating YAML configuration")
+        # Get the provider class
+        provider_class = get_provider(args.provider)
+
         # Generate yaml in same directory as input file
         input_dir = os.path.dirname(args.input_file)
         base_name = os.path.splitext(os.path.basename(args.input_file))[0]
         yaml_output = os.path.join(input_dir, f"{base_name}_voice_config.yaml")
-        ElevenLabsProvider.generate_yaml_config(args.input_file, yaml_output)
+
+        provider_class.generate_yaml_config(args.input_file, yaml_output)
         print(f"YAML configuration template generated: {yaml_output}")
         return
 
