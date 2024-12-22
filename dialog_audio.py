@@ -468,18 +468,18 @@ def main():
         dialogues, args.gap, tts_provider, cache_folder, sequence_folder,
         processor, args.verbose, args.dry_run)
 
+    # Save modified JSON in output folder
+    base_name = os.path.splitext(os.path.basename(args.input_file))[0]
+    modified_json_path = os.path.join(
+        output_folder, f"{base_name}-modified.json")
+    with open(modified_json_path, 'w', encoding='utf-8') as f:
+        json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
+    print(f'Modified JSON file generated: {modified_json_path}')
+
     if not args.dry_run:
         print(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
         print(f'Audio file generated: {output_file}')
-
-        # Save modified JSON in output folder
-        base_name = os.path.splitext(os.path.basename(args.input_file))[0]
-        modified_json_path = os.path.join(
-            output_folder, f"{base_name}-modified.json")
-        with open(modified_json_path, 'w', encoding='utf-8') as f:
-            json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
-        print(f'Modified JSON file generated: {modified_json_path}')
     else:
         print('Dry run completed. No audio files were generated.')
 
