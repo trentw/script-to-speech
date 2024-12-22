@@ -30,3 +30,12 @@ processors:
           to: "OFF SCREEN"
           fields:
             - text
+  - name: pattern_replace
+    config:
+      replacements:
+        # Replace the speaker for "dialog modifiers" -- parenteticals in dialog, e.g. "(gasps)" --
+        # with an empty speaker, so that these are read using the narrator / default speaker
+        - match_field: "type"
+          match_pattern: "^dialog modifier$"
+          replace_field: "speaker"
+          replace_pattern: ".*"
