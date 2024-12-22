@@ -157,7 +157,7 @@ def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
         Optional[str]: Speaker name or None if no speaker specified
     """
     speaker = dialogue.get('speaker')
-    if speaker is None or speaker.lower() == 'none':
+    if speaker is None or speaker.lower() == 'none' or speaker == '':
         return None
 
     return speaker
