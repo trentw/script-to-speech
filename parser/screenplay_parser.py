@@ -23,9 +23,10 @@ class State(Enum):
 
 @dataclass
 class Chunk:
-    type: str
-    speaker: str
-    text: List[str]
+    type: str      # State name in snake_case
+    speaker: str   # Speaker name or empty string
+    raw_text: str  # Original text with formatting
+    text: str      # Cleaned text
 
 
 class IndentationContext:
@@ -49,10 +50,18 @@ class ScreenplayParser:
     def __init__(self):
         self.state = State.TITLE  # Start in TITLE state
         self.has_left_title = False
-        self.current_speaker = None
+        self.current_speaker = ""  # Empty string instead of 'none'
         self.current_chunk = None
         self.chunks = []
         self.indent_context = IndentationContext()
+
+    def state_to_type(self, state: State) -> str:
+        """Convert state enum to snake_case string."""
+        return state.name.lower()
+
+    def clean_speaker_name(self, text: str) -> str:
+        """Remove parentheticals and whitespace from speaker name."""
+        return re.sub(r'\([^)]*\)', '', text).strip()
 
     def calculate_probabilities(self, line: str, indentation: int) -> Dict[State, float]:
         """Calculate probability scores for each possible state."""
@@ -174,7 +183,6 @@ class ScreenplayParser:
 
     def handle_state_transition(self, line: str, new_state: Optional[State]):
         """Handle transition between states."""
-
         if new_state and new_state != State.TITLE:
             self.has_left_title = True
 
@@ -186,32 +194,36 @@ class ScreenplayParser:
         self.indent_context.update(new_state, indentation)
 
         if new_state != self.state or self.current_chunk is None:
-            if self.current_chunk and self.current_chunk.text:
+            if self.current_chunk:
                 self.chunks.append(self.current_chunk)
 
             chunk_type = new_state.name.lower()
-            speaker = 'none'
+            speaker = None
 
             if new_state == State.SPEAKER_ATTRIBUTION:
                 self.current_speaker = re.sub(
                     r'\([^)]*\)', '', line.strip()).strip()
-
-            elif new_state == State.DIALOG:
+            elif new_state in [State.DIALOG, State.DUAL_DIALOG]:
                 speaker = self.current_speaker
 
             self.current_chunk = Chunk(
                 type=chunk_type,
                 speaker=speaker,
-                text=[line.rstrip()]
+                raw_text=line,
+                text=line.strip()
             )
         else:
-            self.current_chunk.text.append(line.rstrip())
+            # Preserve exact formatting in raw_text
+            self.current_chunk.raw_text += '\n' + line
+            # Append cleaned text with space
+            self.current_chunk.text += ' ' + line.strip()
 
         self.state = new_state
 
     def parse_screenplay(self, text: str) -> List[Dict]:
         """Parse screenplay using probabilistic state machine approach."""
-        self.state = State.ACTION
+        self.state = State.TITLE
+        self.has_left_title = False
         self.current_speaker = None
         self.current_chunk = None
         self.chunks = []
@@ -224,13 +236,14 @@ class ScreenplayParser:
             line = lines[i]
 
             if self.is_page_number(line):
-                if self.current_chunk and self.current_chunk.text:
+                if self.current_chunk:
                     self.chunks.append(self.current_chunk)
 
                 self.chunks.append(Chunk(
                     type='page_number',
-                    speaker='none',
-                    text=[line.strip()]
+                    speaker='',
+                    raw_text=line,
+                    text=line.strip()
                 ))
 
                 self.current_chunk = None
@@ -243,11 +256,13 @@ class ScreenplayParser:
 
             i += 1
 
-        if self.current_chunk and self.current_chunk.text:
+        if self.current_chunk:
             self.chunks.append(self.current_chunk)
 
+        # Convert None speakers to empty strings in output
         return [{
             'type': chunk.type,
-            'speaker': chunk.speaker,
-            'text': '\n'.join(chunk.text)
+            'speaker': '' if chunk.speaker is None else chunk.speaker,
+            'raw_text': chunk.raw_text,
+            'text': chunk.text
         } for chunk in self.chunks]
