@@ -32,8 +32,19 @@ class OpenAITTSProvider(TTSProvider):
         if config_path:
             self._load_voice_config(config_path)
 
-    def get_speaker_identifier(self, speaker: Optional[str]) -> str:
-        """Get the voice name for a given speaker."""
+    def _get_base_voice(self, speaker: Optional[str]) -> str:
+        """
+        Get the base voice identifier for a given speaker.
+
+        Args:
+            speaker: The speaker to get the voice for, or None for default voice
+
+        Returns:
+            str: The base voice identifier
+
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+        """
         if speaker is None:
             if not self.default_voice:
                 raise VoiceNotFoundError("No default voice configured")
@@ -48,6 +59,18 @@ class OpenAITTSProvider(TTSProvider):
 
         return voice
 
+    def get_speaker_identifier(self, speaker: Optional[str]) -> str:
+        """
+        Get the voice identifier with model information for a given speaker.
+
+        Args:
+            speaker: The speaker to get the voice for, or None for default voice
+
+        Returns:
+            str: The voice identifier including model info
+        """
+        return f"{self._get_base_voice(speaker)}_{self.MODEL}"
+
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
         if not self.client:
@@ -55,7 +78,7 @@ class OpenAITTSProvider(TTSProvider):
                 "Provider not initialized. Call initialize() first.")
 
         try:
-            voice = self.get_speaker_identifier(speaker)
+            voice = self._get_base_voice(speaker)
             response = self.client.audio.speech.create(
                 model=self.MODEL,
                 voice=voice,
@@ -76,7 +99,7 @@ class OpenAITTSProvider(TTSProvider):
 
     def get_provider_identifier(self) -> str:
         """Get the provider identifier."""
-        return f"openai_{self.MODEL}"
+        return "openai"
 
     def _load_voice_config(self, config_path: str) -> None:
         """Load and validate voice configuration from YAML."""
