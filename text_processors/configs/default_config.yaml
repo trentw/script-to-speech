@@ -2,7 +2,7 @@ processors:
   - name: skip_empty
     config:
       skip_types:
-        - page number
+        - page_number
   - name: text_substitution
     config:
       substitutions:
@@ -36,6 +36,6 @@ processors:
         # Replace the speaker for "dialog modifiers" -- parenteticals in dialog, e.g. "(gasps)" --
         # with an empty speaker, so that these are read using the narrator / default speaker
         - match_field: "type"
-          match_pattern: "^dialog modifier$"
+          match_pattern: "^dialog_modifier$"
           replace_field: "speaker"
           replace_pattern: ".*"
