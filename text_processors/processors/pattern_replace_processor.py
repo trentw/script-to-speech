@@ -21,7 +21,8 @@ class PatternReplaceProcessor(TextProcessor):
                     'match_field': replacement['match_field'],
                     'match_pattern': re.compile(replacement['match_pattern']),
                     'replace_field': replacement['replace_field'],
-                    'replace_pattern': replacement['replace_pattern']
+                    'replace_pattern': replacement['replace_pattern'],
+                    'replace_string': replacement['replace_string']
                 })
             except re.error as e:
                 raise ValueError(f"Invalid regex pattern in replacement: {e}")
@@ -42,7 +43,7 @@ class PatternReplaceProcessor(TextProcessor):
                         json_chunk[replacement['replace_field']])
                     modified_text = re.sub(
                         replacement['replace_pattern'],
-                        '',  # Replace with empty string
+                        replacement['replace_string'] if replacement['replace_string'] else '',
                         original_text
                     )
 
@@ -62,7 +63,7 @@ class PatternReplaceProcessor(TextProcessor):
             return False
 
         required_keys = {'match_field', 'match_pattern',
-                         'replace_field', 'replace_pattern'}
+                         'replace_field', 'replace_pattern', 'replace_string'}
 
         for replacement in self.config.get('replacements', []):
             # Verify all required keys are present
