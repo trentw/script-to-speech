@@ -175,7 +175,11 @@ class ScreenplayParser:
     def is_page_number(self, line: str) -> bool:
         """Check if line is a page number."""
         stripped = line.strip()
-        return bool(re.match(r'^\s*\d+\.?\s*$', stripped))
+        indentation = self.get_indentation(line)
+
+        # Page numbers should be both numeric and highly indented
+        return (bool(re.match(r'^\s*\d+\.?\s*$', stripped)) and
+                indentation >= DIALOG_INDENT_MAX + 5)
 
     def get_indentation(self, line: str) -> int:
         """Get line indentation level."""
@@ -200,11 +204,16 @@ class ScreenplayParser:
             chunk_type = new_state.name.lower()
             speaker = None
 
+            # Handle speaker transitions
             if new_state == State.SPEAKER_ATTRIBUTION:
                 self.current_speaker = re.sub(
                     r'\([^)]*\)', '', line.strip()).strip()
-            elif new_state in [State.DIALOG, State.DUAL_DIALOG]:
+            elif new_state == State.DIALOG:
                 speaker = self.current_speaker
+            elif new_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
+                # Reset speaker for dual dialog sections
+                self.current_speaker = None
+                speaker = None
 
             self.current_chunk = Chunk(
                 type=chunk_type,
