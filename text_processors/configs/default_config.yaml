@@ -1,3 +1,10 @@
+preprocessors:
+  - name: skip_and_merge
+    config:
+      skip_types:
+        - page_number
+  - name: dual_dialog
+
 processors:
   - name: skip_empty
     config:
