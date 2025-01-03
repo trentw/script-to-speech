@@ -35,6 +35,7 @@ class IndentationContext:
         self.last_dialog_indent = None
         self.last_action_indent = None
         self.current_indent = None
+        self.saw_blank_line = False
 
     def update(self, state: State, indent: int):
         self.current_indent = indent
@@ -85,8 +86,9 @@ class ScreenplayParser:
         # High probability (0.8) for less indented dialog lines
         # Significant penalty (-0.8) to action detection in dual dialog
         if self.state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
-            if not stripped:
-                probs[State.DUAL_DIALOG] = 0.1  # Reset to baseline
+            if self.saw_blank_line:
+                # If we just saw a blank line, reset dual dialog probability
+                probs[State.DUAL_DIALOG] = 0.1  # Back to baseline
             elif indentation < DIALOG_INDENT_MIN:
                 probs[State.DUAL_DIALOG] += 0.8
                 probs[State.ACTION] -= 0.8
@@ -158,9 +160,13 @@ class ScreenplayParser:
     def determine_state(self, line: str, indentation: int) -> Optional[State]:
         """Determine state based on probability calculations."""
         if not line.strip():
+            self.saw_blank_line = True
             return None
 
         probs = self.calculate_probabilities(line, indentation)
+
+        # Reset flag after use
+        self.saw_blank_line = False
 
         # Log probabilities for analysis
         print(f"\nProbability Analysis for line: {line.strip()[:40]}...")
