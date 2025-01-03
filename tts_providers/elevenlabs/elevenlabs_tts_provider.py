@@ -3,7 +3,8 @@ from elevenlabs.client import ElevenLabs
 from .elevenlabs_voice_registry_manager import ElevenLabsVoiceRegistryManager
 import os
 import yaml
-from typing import Dict, Optional
+from typing import Dict, Optional, List
+from collections import Counter
 from ..tts_provider_base import TTSProvider, TTSError, VoiceNotFoundError
 
 
@@ -116,24 +117,13 @@ class ElevenLabsTTSProvider(TTSProvider):
         return "elevenlabs"
 
     @staticmethod
-    def generate_yaml_config(json_file: str, output_yaml: str) -> None:
-        """
-        Generate a template YAML configuration file from a JSON script.
-
-        Args:
-            json_file: Path to the input JSON script file
-            output_yaml: Path where the YAML template should be saved
-        """
-        from collections import Counter
-        import json
-
+    def generate_yaml_config(chunks: List[Dict], output_path: str) -> None:
+        """Generate a template YAML configuration file from processed chunks."""
         try:
-            with open(json_file, 'r') as f:
-                dialogues = json.load(f)
-
+            # Count dialog lines per speaker
             speaker_count = Counter(
-                dialogue['speaker'] for dialogue in dialogues
-                if dialogue['type'] == 'dialog'
+                chunk['speaker'] for chunk in chunks
+                if chunk['type'] == 'dialog' and chunk['speaker']
             )
 
             yaml_content = """# Voice configuration for speakers
@@ -156,7 +146,7 @@ default:
                 yaml_content += f"# {speaker}: {count} lines\n"
                 yaml_content += f"{speaker}: \n\n"
 
-            with open(output_yaml, 'w') as f:
+            with open(output_path, 'w') as f:
                 f.write(yaml_content)
 
         except Exception as e:

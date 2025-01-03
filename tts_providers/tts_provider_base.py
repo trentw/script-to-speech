@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 
 class TTSError(Exception):
@@ -69,5 +69,20 @@ class TTSProvider(ABC):
 
         Returns:
             str: Provider identifier (e.g., 'elevenlabs', 'pyttsx3')
+        """
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def generate_yaml_config(chunks: List[Dict], output_path: str) -> None:
+        """
+        Generate a template YAML configuration file from processed chunks.
+
+        Args:
+            chunks: List of processed screenplay chunks
+            output_path: Path where the YAML config should be saved
+
+        Raises:
+            TTSError: If YAML generation fails
         """
         pass

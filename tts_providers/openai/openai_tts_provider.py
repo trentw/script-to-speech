@@ -1,4 +1,5 @@
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, List
+from collections import Counter
 from openai import OpenAI, AuthenticationError, APIError, RateLimitError
 from ..tts_provider_base import TTSProvider, TTSError, VoiceNotFoundError
 import os
@@ -129,18 +130,13 @@ class OpenAITTSProvider(TTSProvider):
             self.voice_map[speaker] = voice
 
     @staticmethod
-    def generate_yaml_config(json_file: str, output_yaml: str) -> None:
-        """Generate a template YAML configuration file from a JSON script."""
-        from collections import Counter
-        import json
-
+    def generate_yaml_config(chunks: List[Dict], output_path: str) -> None:
+        """Generate a template YAML configuration file from processed chunks."""
         try:
-            with open(json_file, 'r') as f:
-                dialogues = json.load(f)
-
+            # Count dialog lines per speaker
             speaker_count = Counter(
-                dialogue['speaker'] for dialogue in dialogues
-                if dialogue['type'] == 'dialog'
+                chunk['speaker'] for chunk in chunks
+                if chunk['type'] == 'dialog' and chunk['speaker']
             )
 
             yaml_content = """# Voice configuration for speakers
@@ -163,7 +159,7 @@ default: alloy
                 yaml_content += f"# {speaker}: {count} lines\n"
                 yaml_content += f"{speaker}: alloy\n\n"
 
-            with open(output_yaml, 'w') as f:
+            with open(output_path, 'w') as f:
                 f.write(yaml_content)
 
         except Exception as e:

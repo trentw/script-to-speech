@@ -105,10 +105,13 @@ def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
     return main_output_folder, cache_folder, sequence_folder, output_file
 
 
-def load_dialogues(input_file: str) -> List[Dict]:
-    with open(input_file, 'r', encoding='utf-8') as f:
-        dialogues = json.load(f)
-    return dialogues
+def load_json_chunks(input_file: str) -> List[Dict]:
+    """Load and parse JSON chunks from input file."""
+    try:
+        with open(input_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        raise ValueError(f"Failed to load input file {input_file}: {e}")
 
 
 def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
@@ -180,11 +183,15 @@ def generate_audio_clips(
     provider_id = tts_provider.get_provider_identifier()
     print(f"Provider ID: {provider_id}")
 
+    # First run pre-processors
+    print("Running pre-processors")
+    preprocessed_chunks = processor.preprocess_chunks(dialogues)
+
     # Track cache misses by speaker
     cache_misses: DefaultDict[Tuple[str, str],
                               CacheMissInfo] = defaultdict(CacheMissInfo)
 
-    for idx, dialogue in enumerate(dialogues):
+    for idx, dialogue in enumerate(preprocessed_chunks):
         print(f"\nProcessing dialogue {idx}")
 
         # Process the dialogue
@@ -413,29 +420,43 @@ def main():
     if not os.path.exists(args.input_file):
         raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
+    # Verify processing config exists if provided
+    if args.processing_config and not os.path.exists(args.processing_config):
+        raise FileNotFoundError(
+            f"Processing config file not found: {args.processing_config}")
+
     if args.generate_yaml:
         print("Generating YAML configuration")
         # Get the provider class
         provider_class = get_provider(args.provider)
+        processor = TextProcessorManager(args.processing_config)
+
+        try:
+            # Load and process chunks
+            chunks = load_json_chunks(args.input_file)
+            processed_chunks = processor.process_chunks(chunks)
+        except Exception as e:
+            print(f"Error processing input file: {e}")
+            return 1
 
         # Generate yaml in same directory as input file
         input_dir = os.path.dirname(args.input_file)
         base_name = os.path.splitext(os.path.basename(args.input_file))[0]
         yaml_output = os.path.join(input_dir, f"{base_name}_voice_config.yaml")
 
-        provider_class.generate_yaml_config(args.input_file, yaml_output)
-        print(f"YAML configuration template generated: {yaml_output}")
-        return
+        try:
+            provider_class.generate_yaml_config(processed_chunks, yaml_output)
+            print(f"YAML configuration template generated: {yaml_output}")
+        except Exception as e:
+            print(f"Error generating YAML configuration: {e}")
+            return 1
+
+        return 0
 
     # Verify TTS config exists if provided
     if args.tts_config and not os.path.exists(args.tts_config):
         raise FileNotFoundError(
             f"TTS config file not found: {args.tts_config}")
-
-    # Verify processing config exists if provided
-    if args.processing_config and not os.path.exists(args.processing_config):
-        raise FileNotFoundError(
-            f"Processing config file not found: {args.processing_config}")
 
     # Create output folders and get paths
     print("Creating output folders")
@@ -455,7 +476,11 @@ def main():
     print("TTS provider initialized")
 
     print(f"Loading dialogues from: {args.input_file}")
-    dialogues = load_dialogues(args.input_file)
+    try:
+        dialogues = load_json_chunks(args.input_file)
+    except Exception as e:
+        print(f"Error loading input file: {e}")
+        return 1
     print(f"Loaded {len(dialogues)} dialogues")
 
     # Initialize processing module
