@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
 from pydub import AudioSegment
-
-from tts_providers import get_provider, TTSProvider, get_available_providers
+from tts_providers.tts_provider_manager import TTSProviderManager
 import hashlib
 import argparse
 import io
@@ -169,7 +168,7 @@ def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
 def generate_audio_clips(
     dialogues: List[Dict],
     gap_duration_ms: int,
-    tts_provider: TTSProvider,
+    tts_provider_manager: TTSProviderManager,
     cache_folder: str,
     sequence_folder: str,
     processor: TextProcessorManager,
@@ -180,7 +179,7 @@ def generate_audio_clips(
     audio_clips = []
     modified_dialogues = []
     existing_files = set(os.listdir(cache_folder))
-    provider_id = tts_provider.get_provider_identifier()
+    provider_id = tts_provider_manager.get_provider_identifier()
     print(f"Provider ID: {provider_id}")
 
     # First run pre-processors
@@ -213,7 +212,7 @@ def generate_audio_clips(
         print(f"Original hash: {original_hash}")
         print(f"Processed hash: {processed_hash}")
 
-        speaker_id = tts_provider.get_speaker_identifier(speaker)
+        speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
         print(f"Speaker ID: {speaker_id}")
 
         cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
@@ -259,7 +258,8 @@ def generate_audio_clips(
                         audio_data = silent_segment.export(format="mp3").read()
                     else:
                         # Generate audio normally for non-empty text
-                        audio_data = tts_provider.generate_audio(speaker, text)
+                        audio_data = tts_provider_manager.generate_audio(
+                            speaker, text)
                     print("Audio generated")
 
                     # Save to cache
@@ -379,42 +379,96 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
         raise
 
 
-def main():
-    # Get available providers for the help text
-    available_providers = get_available_providers().keys()
+def handle_yaml_generation(
+    tts_manager: TTSProviderManager,
+    input_file: str,
+    processing_config: Optional[str],
+    provider: Optional[str] = None,
+    populate_yaml: Optional[str] = None
+) -> int:
+    """
+    Handle YAML configuration generation or population.
 
+    Args:
+        tts_manager: Initialized TTSProviderManager instance
+        input_file: Path to input JSON file
+        processing_config: Path to processing configuration file
+        provider: Optional provider name for generation
+        populate_yaml: Optional path to YAML file to populate
+
+    Returns:
+        int: Exit code (0 for success, 1 for failure)
+    """
+    processor = TextProcessorManager(processing_config)
+
+    try:
+        # Load and process chunks
+        chunks = load_json_chunks(input_file)
+        processed_chunks = processor.process_chunks(chunks)
+    except Exception as e:
+        print(f"Error processing input file: {e}")
+        return 1
+
+    try:
+        if populate_yaml:
+            # Handle population case
+            print(
+                f"Populating provider-specific fields in YAML: {populate_yaml}")
+            input_dir = os.path.dirname(populate_yaml)
+            base_name = os.path.splitext(os.path.basename(populate_yaml))[0]
+            yaml_output = os.path.join(
+                input_dir, f"{base_name}_populated.yaml")
+
+            tts_manager.update_yaml_with_provider_fields(
+                populate_yaml, yaml_output, processed_chunks)
+            print(f"Updated YAML configuration generated: {yaml_output}")
+        else:
+            # Handle generation case
+            print("Generating YAML configuration")
+            input_dir = os.path.dirname(input_file)
+            base_name = os.path.splitext(os.path.basename(input_file))[0]
+            yaml_output = os.path.join(
+                input_dir, f"{base_name}_voice_config.yaml")
+
+            tts_manager.generate_yaml_config(
+                processed_chunks, yaml_output, provider)
+            print(f"YAML configuration template generated: {yaml_output}")
+
+        return 0
+
+    except Exception as e:
+        action = "populating" if populate_yaml else "generating"
+        print(f"Error {action} YAML configuration: {e}")
+        return 1
+
+
+def main():
     parser = argparse.ArgumentParser(
         description='Generate an audio file from dialogues.')
     parser.add_argument(
         'input_file', help='Path to the input JSON file containing dialogues.')
     parser.add_argument('--gap', type=int, default=500,
                         help='Gap duration between dialogues in milliseconds (default: 500ms).')
-    parser.add_argument('--provider', choices=available_providers,
-                        help=f'Choose the TTS provider (choices: {", ".join(available_providers)})',
-                        required=True)
+    parser.add_argument('--provider', choices=TTSProviderManager.get_available_providers(),
+                        help='Choose the TTS provider (if not specified in voice config)')
     parser.add_argument(
         '--tts-config', help='Path to YAML configuration file for TTS provider')
     parser.add_argument('--processing-config',
                         help='Path to YAML configuration file for processing module')
-    parser.add_argument('--generate-yaml', action='store_true',
-                        help='Generate a template YAML configuration file')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     parser.add_argument('--dry-run', action='store_true',
                         help='Perform a dry run without generating new audio files')
     parser.add_argument('--ffmpeg-path',
                         help='Path to ffmpeg binary or directory containing ffmpeg binaries')
+    # Add mutually exclusive group for YAML operations
+    yaml_group = parser.add_mutually_exclusive_group()
+    yaml_group.add_argument('--generate-yaml', action='store_true',
+                            help='Generate a template YAML configuration file')
+    yaml_group.add_argument('--populate-multi-provider-yaml',
+                            help='Path to YAML file to populate with provider-specific fields')
 
     args = parser.parse_args()
-
-    # Get and initialize the TTS provider
-    try:
-        tts_provider_class = get_provider(args.provider)
-        tts_provider = tts_provider_class()
-        tts_provider.initialize(args.tts_config)
-    except Exception as e:
-        print(f"Error setting up TTS provider: {e}")
-        return 1
 
     # Verify input file exists
     if not os.path.exists(args.input_file):
@@ -425,33 +479,19 @@ def main():
         raise FileNotFoundError(
             f"Processing config file not found: {args.processing_config}")
 
-    if args.generate_yaml:
-        print("Generating YAML configuration")
-        # Get the provider class
-        provider_class = get_provider(args.provider)
-        processor = TextProcessorManager(args.processing_config)
+    # Initialize TTS manager
+    tts_manager = TTSProviderManager(args.tts_config, args.provider)
+    print("TTS provider manager initialized")
 
-        try:
-            # Load and process chunks
-            chunks = load_json_chunks(args.input_file)
-            processed_chunks = processor.process_chunks(chunks)
-        except Exception as e:
-            print(f"Error processing input file: {e}")
-            return 1
-
-        # Generate yaml in same directory as input file
-        input_dir = os.path.dirname(args.input_file)
-        base_name = os.path.splitext(os.path.basename(args.input_file))[0]
-        yaml_output = os.path.join(input_dir, f"{base_name}_voice_config.yaml")
-
-        try:
-            provider_class.generate_yaml_config(processed_chunks, yaml_output)
-            print(f"YAML configuration template generated: {yaml_output}")
-        except Exception as e:
-            print(f"Error generating YAML configuration: {e}")
-            return 1
-
-        return 0
+    # Handle YAML generation/population cases
+    if args.generate_yaml or args.populate_multi_provider_yaml:
+        return handle_yaml_generation(
+            tts_manager=tts_manager,
+            input_file=args.input_file,
+            processing_config=args.processing_config,
+            provider=args.provider if args.generate_yaml else None,
+            populate_yaml=args.populate_multi_provider_yaml if args.populate_multi_provider_yaml else None
+        )
 
     # Verify TTS config exists if provided
     if args.tts_config and not os.path.exists(args.tts_config):
@@ -472,9 +512,6 @@ def main():
         print(f"Error configuring FFMPEG: {e}")
         return 1
 
-    tts_provider.initialize(args.tts_config)
-    print("TTS provider initialized")
-
     print(f"Loading dialogues from: {args.input_file}")
     try:
         dialogues = load_json_chunks(args.input_file)
@@ -490,7 +527,7 @@ def main():
     # Generate and process audio
     print("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
-        dialogues, args.gap, tts_provider, cache_folder, sequence_folder,
+        dialogues, args.gap, tts_manager, cache_folder, sequence_folder,
         processor, args.verbose, args.dry_run)
 
     # Save modified JSON in output folder

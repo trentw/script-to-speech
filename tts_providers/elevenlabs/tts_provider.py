@@ -1,11 +1,11 @@
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
-from .elevenlabs_voice_registry_manager import ElevenLabsVoiceRegistryManager
 import os
 import yaml
-from typing import Dict, Optional, List
-from collections import Counter
-from ..tts_provider_base import TTSProvider, TTSError, VoiceNotFoundError
+from typing import Dict, Optional, List, Any
+
+from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
+from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 
 
 class ElevenLabsTTSProvider(TTSProvider):
@@ -21,7 +21,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         self.voice_map: Dict[str, str] = {}
         self.default_voice_id: Optional[str] = None
 
-    def initialize(self, config_path: Optional[str] = None) -> None:
+    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the provider with API key and voice configuration."""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
@@ -30,30 +30,14 @@ class ElevenLabsTTSProvider(TTSProvider):
         self.client = ElevenLabs(api_key=api_key)
         self.voice_registry_manager = ElevenLabsVoiceRegistryManager(api_key)
 
-        if config_path:
-            self._load_voice_config(config_path)
-
-    def _load_voice_config(self, config_path: str) -> None:
-        """Load voice mappings from YAML configuration."""
-        try:
-            with open(config_path, 'r', encoding='utf-8') as file:
-                config = yaml.safe_load(file)
-        except Exception as e:
-            raise TTSError(f"Failed to load voice configuration file: {e}")
-
-        # Load default voice
-        self.default_voice_id = config.get('default')
-        if not self.default_voice_id:
-            raise TTSError("No default voice ID specified in configuration")
-
-        # Load speaker voice mappings
-        for speaker, voice_id in config.items():
+        # Extract voice IDs from speaker configs
+        for speaker, config in speaker_configs.items():
+            self.validate_speaker_config(config)
+            voice_id = config['voice_id']
             if speaker == 'default':
-                continue
-            if not voice_id:
-                raise TTSError(
-                    f"No voice ID specified for speaker '{speaker}'")
-            self.voice_map[speaker] = voice_id
+                self.default_voice_id = voice_id
+            else:
+                self.voice_map[speaker] = voice_id
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -112,42 +96,53 @@ class ElevenLabsTTSProvider(TTSProvider):
         except Exception as e:
             raise TTSError(f"Failed to generate audio: {e}")
 
-    def get_provider_identifier(self) -> str:
+    @classmethod
+    def get_provider_identifier(cls) -> str:
         """Get the provider identifier."""
         return "elevenlabs"
 
-    @staticmethod
-    def generate_yaml_config(chunks: List[Dict], output_path: str) -> None:
-        """Generate a template YAML configuration file from processed chunks."""
-        try:
-            # Count dialog lines per speaker
-            speaker_count = Counter(
-                chunk['speaker'] for chunk in chunks
-                if chunk['type'] == 'dialog' and chunk['speaker']
-            )
-
-            yaml_content = """# Voice configuration for speakers
+    @classmethod
+    def get_yaml_instructions(cls) -> str:
+        """Get configuration instructions."""
+        return """# ElevenLabs TTS Configuration
+#
+# Required Environment Variable:
+#   ELEVEN_API_KEY: Your ElevenLabs API key
+#
+# For each speaker, specify:
+#   voice_id: The ElevenLabs voice ID to use
 #
 # Instructions:
-# - Specify a voice_id from ElevenLabs for each speaker and the default voice
-# - The default voice is required and will be used for scene descriptions
-# - All speakers must have a voice_id specified
-# - Use --list-voices to see available voices and their IDs
+#   - For each speaker, specify:
+#       voice_id: The ElevenLabs voice ID to use
 #
-# Format:
-# default: voice_id_here
-# SPEAKER_NAME: voice_id_here
-
-default: 
-
+# Example:
+#   default:
+#     voice_id: i4CzbCVWoqvD0P1QJCUL
+#   DAVID:
+#     voice_id: XA2bIQ92TabjGbpO2xRr
 """
-            # Add speakers sorted by number of lines
-            for speaker, count in sorted(speaker_count.items(), key=lambda x: (-x[1], x[0])):
-                yaml_content += f"# {speaker}: {count} lines\n"
-                yaml_content += f"{speaker}: \n\n"
 
-            with open(output_path, 'w') as f:
-                f.write(yaml_content)
+    @classmethod
+    def get_required_fields(cls) -> List[str]:
+        """Get required configuration fields."""
+        return ['voice_id']
 
-        except Exception as e:
-            raise TTSError(f"Failed to generate YAML template: {e}")
+    @classmethod
+    def get_optional_fields(cls) -> List[str]:
+        """Get optional configuration fields."""
+        return []
+
+    @classmethod
+    def get_metadata_fields(cls) -> List[str]:
+        """Get metadata fields."""
+        return []
+
+    def validate_speaker_config(self, speaker_config: Dict[str, Any]) -> None:
+        """Validate speaker configuration."""
+        if 'voice_id' not in speaker_config:
+            raise ValueError(
+                "Missing required field 'voice_id' in speaker configuration")
+
+        if not isinstance(speaker_config['voice_id'], str):
+            raise ValueError("Field 'voice_id' must be a string")
