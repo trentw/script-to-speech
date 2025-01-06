@@ -1,4 +1,5 @@
 import os
+import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 import importlib
@@ -123,6 +124,11 @@ class TTSProviderManager:
         Raises:
             ValueError: If no provider is assigned to the speaker
         """
+        self._ensure_initialized()
+
+        if not speaker:
+            speaker = 'default'
+
         if speaker not in self._speaker_providers:
             raise ValueError(f"No provider assigned for speaker '{speaker}'")
 

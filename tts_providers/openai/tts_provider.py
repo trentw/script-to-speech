@@ -36,8 +36,7 @@ class OpenAITTSProvider(TTSProvider):
             voice = config['voice']
             if speaker == 'default':
                 self.default_voice = voice
-            else:
-                self.voice_map[speaker] = voice
+            self.voice_map[speaker] = voice
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
@@ -127,7 +126,7 @@ class OpenAITTSProvider(TTSProvider):
         """Validate speaker configuration."""
         if 'voice' not in speaker_config:
             raise ValueError(
-                "Missing required field 'voice' in speaker configuration")
+                f"Missing required field 'voice' in speaker configuration: {speaker_config}")
 
         voice = speaker_config['voice']
         if not isinstance(voice, str):

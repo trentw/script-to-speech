@@ -179,8 +179,6 @@ def generate_audio_clips(
     audio_clips = []
     modified_dialogues = []
     existing_files = set(os.listdir(cache_folder))
-    provider_id = tts_provider_manager.get_provider_identifier()
-    print(f"Provider ID: {provider_id}")
 
     # First run pre-processors
     print("Running pre-processors")
@@ -211,6 +209,9 @@ def generate_audio_clips(
         processed_hash = generate_chunk_hash(text, speaker)
         print(f"Original hash: {original_hash}")
         print(f"Processed hash: {processed_hash}")
+
+        provider_id = tts_provider_manager.get_provider_for_speaker(speaker)
+        print(f"Provider ID: {provider_id}")
 
         speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
         print(f"Speaker ID: {speaker_id}")

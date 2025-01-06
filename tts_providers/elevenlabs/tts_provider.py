@@ -36,8 +36,7 @@ class ElevenLabsTTSProvider(TTSProvider):
             voice_id = config['voice_id']
             if speaker == 'default':
                 self.default_voice_id = voice_id
-            else:
-                self.voice_map[speaker] = voice_id
+            self.voice_map[speaker] = voice_id
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -142,7 +141,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         """Validate speaker configuration."""
         if 'voice_id' not in speaker_config:
             raise ValueError(
-                "Missing required field 'voice_id' in speaker configuration")
+                f"Missing required field 'voice_id' in speaker configuration: {speaker_config}")
 
         if not isinstance(speaker_config['voice_id'], str):
             raise ValueError("Field 'voice_id' must be a string")
