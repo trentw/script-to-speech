@@ -11,7 +11,8 @@ class OpenAITTSProvider(TTSProvider):
     """
 
     MODEL = "tts-1-hd"
-    VALID_VOICES = {"alloy", "echo", "fable", "onyx", "nova", "shimmer"}
+    VALID_VOICES = {"alloy", "ash", "coral", "echo",
+                    "fable", "onyx", "nova", "sage", "shimmer"}
 
     def __init__(self):
         self.client = None
@@ -98,7 +99,7 @@ class OpenAITTSProvider(TTSProvider):
 #
 # Instructions:
 #   - For each speaker, specify:
-#       voice: One of [alloy, echo, fable, onyx, nova, shimmer]
+#       voice: One of [alloy, ash, coral, echo, fable, onyx, nova, sage, shimmer]
 #
 # Example:
 #   default:
