@@ -55,3 +55,11 @@ processors:
           replace_field: "text"
           replace_pattern: '^\(|\)$'
           replace_string: ""
+        # Remove the parenthesis in "speaker attributions" -- e.g. TOM (CONTINUED) --
+        # as some TTS providers (such as OpenAI) seem to occasionally drop parentheticals
+        # in short phrases
+        - match_field: "type"
+          match_pattern: "^speaker_attribution$"
+          replace_field: "text"
+          replace_pattern: '\(([^\)]*)\)'
+          replace_string: '\1'
