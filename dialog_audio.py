@@ -178,7 +178,7 @@ def generate_audio_clips(
     print("Starting generate_audio_clips function")
     audio_clips = []
     modified_dialogues = []
-    existing_files = set(os.listdir(cache_folder))
+    existing_files = set(os.listdir(cache_folder))  # Initial cache inventory
 
     # First run pre-processors
     print("Running pre-processors")
@@ -266,6 +266,8 @@ def generate_audio_clips(
                     # Save to cache
                     with open(cache_filepath, 'wb') as f:
                         f.write(audio_data)
+                    # Track the new cache file
+                    existing_files.add(cache_filename)
                     print(f"Audio saved to cache: {cache_filepath}")
                 except Exception as e:
                     print(f"Error generating new audio: {e}")
