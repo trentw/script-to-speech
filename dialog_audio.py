@@ -173,7 +173,8 @@ def generate_audio_clips(
     sequence_folder: str,
     processor: TextProcessorManager,
     verbose: bool = False,
-    dry_run: bool = False
+    dry_run: bool = False,
+    populate_cache: bool = False
 ) -> Tuple[List[AudioSegment], List[Dict]]:
     print("Starting generate_audio_clips function")
     audio_clips = []
@@ -272,7 +273,8 @@ def generate_audio_clips(
                 except Exception as e:
                     print(f"Error generating new audio: {e}")
 
-            if audio_data:
+            # Only handle sequence files and audio clips if not populating cache
+            if not populate_cache and audio_data:
                 try:
                     # Save to sequence folder
                     with open(sequence_filepath, 'wb') as f:
@@ -460,10 +462,17 @@ def main():
                         help='Path to YAML configuration file for processing module')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
-    parser.add_argument('--dry-run', action='store_true',
-                        help='Perform a dry run without generating new audio files')
     parser.add_argument('--ffmpeg-path',
                         help='Path to ffmpeg binary or directory containing ffmpeg binaries')
+    
+    # Add mutually exlusive group for additional run modes
+    run_mode_group = parser.add_mutually_exclusive_group()
+    run_mode_group.add_argument('--dry-run', action='store_true',
+                        help='Perform a dry run without generating new audio files')
+    run_mode_group.add_argument('--populate-cache', action='store_true',
+                        help='Generate and cache audio files without creating sequence or output files')
+    
+    
     # Add mutually exclusive group for YAML operations
     yaml_group = parser.add_mutually_exclusive_group()
     yaml_group.add_argument('--generate-yaml', action='store_true',
@@ -531,7 +540,7 @@ def main():
     print("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
         dialogues, args.gap, tts_manager, cache_folder, sequence_folder,
-        processor, args.verbose, args.dry_run)
+        processor, args.verbose, args.dry_run, args.populate_cache)
 
     # Save modified JSON in output folder
     base_name = os.path.splitext(os.path.basename(args.input_file))[0]
@@ -541,10 +550,12 @@ def main():
         json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
     print(f'Modified JSON file generated: {modified_json_path}')
 
-    if not args.dry_run:
+    if not args.dry_run and not args.populate_cache:
         print(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
         print(f'Audio file generated: {output_file}')
+    elif args.populate_cache:
+        print('Cache population completed.')
     else:
         print('Dry run completed. No audio files were generated.')
 
