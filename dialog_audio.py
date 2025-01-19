@@ -278,7 +278,7 @@ def generate_audio_clips(
 
     print("\nDialogue processing complete")
 
-    if dry_run:
+    if dry_run or populate_cache:
         if not cache_misses:
             print("\nAll audio clips are cached. No new audio generation needed.")
         else:
