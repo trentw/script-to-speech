@@ -63,3 +63,10 @@ processors:
           replace_field: "text"
           replace_pattern: '\(([^\)]*)\)'
           replace_string: '\1'
+        # Remove second occurrence of scene number in scene headings,
+        # e.g. "22 INT. HEADQUARTERS -- NIGHT 22" -> "22 INT. HEADQUARTERS -- NIGHT"
+        - match_field: "type"
+          match_pattern: "^scene_heading$"
+          replace_field: "text"
+          replace_pattern: '^(?P<scene_num>[A-Z]?\d+(\.\d+)?)\b(.*)\b(?P=scene_num)$'
+          replace_string: '\1\3'
