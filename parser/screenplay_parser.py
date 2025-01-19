@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 # Indentation level constants
 SPEAKER_INDENT_MIN = 30     # Minimum indentation for speaker attribution
+SPEAKER_INDENT_MAX = 45     # Maximum indentation for speaker attribution
 DIALOG_INDENT_MIN = 20      # Minimum indentation for dialog blocks
 DIALOG_INDENT_MAX = 29      # Maximum indentation for dialog blocks
 DUAL_SPEAKER_MIN_SPACING = 8  # Minimum spaces between dual speakers
@@ -93,12 +94,6 @@ class ScreenplayParser:
                 probs[State.DUAL_DIALOG] += 0.8
                 probs[State.ACTION] -= 0.8
 
-        # Scene heading detection
-        # High probability (0.8) for INT./EXT. markers
-        if re.match(r'^(\s*\d+\s+)?(INT\.|EXT\.)', stripped):
-            probs[State.SCENE_HEADING] += 0.8
-            probs[State.TITLE] = 0.0  # Exit title state
-
         # Relative indentation effects
         # Moderate boost (0.4) for maintaining same dialog indentation
         # Strong action boost (0.6) and slight dialog penalty (-0.1) for significant dedent
@@ -126,11 +121,18 @@ class ScreenplayParser:
         # Speaker attribution
         # Strong base probability (0.6) for properly indented speaker names
         # Additional boost (0.2) when coming from action block
-        if (indentation >= SPEAKER_INDENT_MIN and stripped.isupper() and
+        if (indentation >= SPEAKER_INDENT_MIN and indentation <= SPEAKER_INDENT_MAX and stripped.isupper() and
                 not any(word in stripped.lower() for word in ['int.', 'ext.'])):
             probs[State.SPEAKER_ATTRIBUTION] += 0.6
             if self.state == State.ACTION:
                 probs[State.SPEAKER_ATTRIBUTION] += 0.2
+
+        # Right-aligned action blocks (CUT TO:, etc.)
+        # Probability boost when we have an all-caps, non-scene header block indented far more than
+        # a speaker attribtuion
+        if (indentation >= SPEAKER_INDENT_MAX and stripped.isupper() and
+                not any(word in stripped.lower() for word in ['int.', 'ext.'])):
+            probs[State.ACTION] += 0.8
 
         # Dialog indicators
         # Moderate probability boost (0.4) for properly indented lines with speaker
@@ -153,6 +155,14 @@ class ScreenplayParser:
                 if indentation < self.indent_context.last_dialog_indent:
                     probs[State.ACTION] += 0.3
                     probs[State.DIALOG] -= 0.2
+            probs[State.TITLE] = 0.0  # Exit title state
+
+        # Scene heading detection
+        # High probability (0.8) for INT./EXT. markers
+        if re.match(r'^(\s*[A-Z]?\d+(\.\d+)?\s+)?(INT\.|EXT\.)', stripped):
+            probs[State.SCENE_HEADING] += 0.8
+            probs[State.DUAL_SPEAKER_ATTRIBUTION] = 0.1
+            probs[State.ACTION] = 0.1
             probs[State.TITLE] = 0.0  # Exit title state
 
         return probs
