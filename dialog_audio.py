@@ -76,12 +76,13 @@ def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
         raise RuntimeError("Failed to verify ffmpeg installation") from e
 
 
-def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
+def create_output_folders(input_file: str, create_sequence: bool = True) -> Tuple[str, str, str, str]:
     """
     Create and return paths for output folders following the standard structure.
 
     Args:
         input_file: Path to the input JSON file
+        create_sequence: Whether to create sequence folder (False for dry-run/populate-cache)
 
     Returns:
         Tuple of (main_output_folder, cache_folder, sequence_folder, output_file)
@@ -97,9 +98,10 @@ def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
         main_output_folder, "sequence", f"sequence_{timestamp}")
     output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
 
-    # Create all necessary directories
+    # Create directories
     os.makedirs(cache_folder, exist_ok=True)
-    os.makedirs(sequence_folder, exist_ok=True)
+    if create_sequence:
+        os.makedirs(sequence_folder, exist_ok=True)
 
     return main_output_folder, cache_folder, sequence_folder, output_file
 
@@ -117,34 +119,6 @@ def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
     # Convert None to empty string for hashing purposes
     speaker_str = '' if speaker is None else speaker
     return hashlib.md5(f"{text}{speaker_str}".encode()).hexdigest()
-
-
-def create_output_folders(input_file: str) -> Tuple[str, str, str, str]:
-    """
-    Create and return paths for output folders following the standard structure.
-
-    Args:
-        input_file: Path to the input JSON file
-
-    Returns:
-        Tuple of (main_output_folder, cache_folder, sequence_folder, output_file)
-    """
-    # Get base name without extension
-    base_name = os.path.splitext(os.path.basename(input_file))[0]
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Set up folder structure
-    main_output_folder = os.path.join("output", base_name)
-    cache_folder = os.path.join(main_output_folder, "cache")
-    sequence_folder = os.path.join(
-        main_output_folder, "sequence", f"sequence_{timestamp}")
-    output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
-
-    # Create all necessary directories
-    os.makedirs(cache_folder, exist_ok=True)
-    os.makedirs(sequence_folder, exist_ok=True)
-
-    return main_output_folder, cache_folder, sequence_folder, output_file
 
 
 def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
@@ -273,7 +247,7 @@ def generate_audio_clips(
                 except Exception as e:
                     print(f"Error generating new audio: {e}")
 
-            # Only handle sequence files and audio clips if not populating cache
+            # Only handle sequence files and audio clips if doing full run
             if not populate_cache and audio_data:
                 try:
                     # Save to sequence folder
@@ -512,9 +486,13 @@ def main():
 
     # Create output folders and get paths
     print("Creating output folders")
+    # Only create sequence folder if we're doing a full run
+    create_sequence = not (args.dry_run or args.populate_cache)
     output_folder, cache_folder, sequence_folder, output_file = create_output_folders(
-        args.input_file)
-    print(f"Output will be saved to: {output_file}")
+        args.input_file, create_sequence)
+
+    if create_sequence:
+        print(f"Output will be saved to: {output_file}")
 
     # Configure ffmpeg
     try:
