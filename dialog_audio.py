@@ -139,6 +139,25 @@ def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
     return speaker
 
 
+def get_audio_dbfs(audio_data: bytes) -> Optional[float]:
+    """
+    Get the maximum dBFS level of audio data.
+
+    Args:
+        audio_data: Raw audio bytes
+
+    Returns:
+        Optional[float]: The maximum dBFS level, or None if analysis fails
+    """
+    try:
+        # Convert bytes to AudioSegment
+        audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
+        return audio_segment.max_dBFS
+    except Exception as e:
+        print(f"Warning: Error analyzing audio: {e}")
+        return None
+
+
 def generate_audio_clips(
     dialogues: List[Dict],
     gap_duration_ms: int,
@@ -148,7 +167,8 @@ def generate_audio_clips(
     processor: TextProcessorManager,
     verbose: bool = False,
     dry_run: bool = False,
-    populate_cache: bool = False
+    populate_cache: bool = False,
+    silence_threshold: Optional[float] = None
 ) -> Tuple[List[AudioSegment], List[Dict]]:
     print("Starting generate_audio_clips function")
     audio_clips = []
@@ -198,10 +218,30 @@ def generate_audio_clips(
         sequence_filepath = os.path.join(sequence_folder, sequence_filename)
 
         print(f"Cache filepath: {cache_filepath}")
-        print(f"Sequence filepath: {sequence_filepath}")
+        if not dry_run and not populate_cache:
+            print(f"Sequence filepath: {sequence_filepath}")
 
         cache_hit = cache_filename in existing_files
         print(f"Cache hit: {cache_hit}")
+
+        # Check for empty text - these should be silent
+        expect_silence = not text.strip()
+
+        if cache_hit and not expect_silence and silence_threshold is not None:
+            # Check cached files for silence if requested
+            try:
+                with open(cache_filepath, 'rb') as f:
+                    audio_data = f.read()
+                max_dbfs = get_audio_dbfs(audio_data)
+                print(f"Audio level (dBFS): {max_dbfs}")
+
+                if max_dbfs is not None and max_dbfs < silence_threshold:
+                    print(
+                        f"WARNING: Audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
+                    cache_hit = False
+            except Exception as e:
+                print(f"Error checking audio file: {e}")
+                cache_hit = False
 
         if not cache_hit:
             # Track cache miss information
@@ -226,16 +266,24 @@ def generate_audio_clips(
             if not cache_hit:
                 print("Generating new audio file")
                 try:
-                    if not text.strip():
+                    if expect_silence:
                         # Create a very short silent audio for empty text
-                        print("Creating silent audio for empty text")
-                        silent_segment = AudioSegment.silent(
-                            duration=10)  # 10ms of silence
+                        print("Creating intentional silent audio for empty text")
+                        silent_segment = AudioSegment.silent(duration=10)
                         audio_data = silent_segment.export(format="mp3").read()
                     else:
                         # Generate audio normally for non-empty text
                         audio_data = tts_provider_manager.generate_audio(
                             speaker, text)
+
+                        # Check newly generated audio for silence if requested
+                        if silence_threshold is not None:
+                            max_dbfs = get_audio_dbfs(audio_data)
+                            print(f"Generated audio level (dBFS): {max_dbfs}")
+                            if max_dbfs is not None and max_dbfs < silence_threshold:
+                                print(
+                                    f"WARNING: Generated audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
+
                     print("Audio generated")
 
                     # Save to cache
@@ -438,15 +486,16 @@ def main():
                         help='Enable verbose output')
     parser.add_argument('--ffmpeg-path',
                         help='Path to ffmpeg binary or directory containing ffmpeg binaries')
-    
+    parser.add_argument('--check-silence', type=float, nargs='?', const=-40.0, metavar='DBFS',
+                        help='Check audio files for silence. Optional dBFS threshold (default: -40.0)')
+
     # Add mutually exlusive group for additional run modes
     run_mode_group = parser.add_mutually_exclusive_group()
     run_mode_group.add_argument('--dry-run', action='store_true',
-                        help='Perform a dry run without generating new audio files')
+                                help='Perform a dry run without generating new audio files')
     run_mode_group.add_argument('--populate-cache', action='store_true',
-                        help='Generate and cache audio files without creating sequence or output files')
-    
-    
+                                help='Generate and cache audio files without creating sequence or output files')
+
     # Add mutually exclusive group for YAML operations
     yaml_group = parser.add_mutually_exclusive_group()
     yaml_group.add_argument('--generate-yaml', action='store_true',
@@ -518,7 +567,7 @@ def main():
     print("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
         dialogues, args.gap, tts_manager, cache_folder, sequence_folder,
-        processor, args.verbose, args.dry_run, args.populate_cache)
+        processor, args.verbose, args.dry_run, args.populate_cache, args.check_silence)
 
     # Save modified JSON in output folder
     base_name = os.path.splitext(os.path.basename(args.input_file))[0]
