@@ -29,6 +29,17 @@ class CacheMissInfo:
             self.texts = []
 
 
+@dataclass
+class SilentClipInfo:
+    """Information about silent audio clips"""
+    filename_to_info: Dict[str, Tuple[str, float, str, str]
+                           ] = None  # cache_filename -> (text, dbfs_level, speaker_display, speaker_id)
+
+    def __post_init__(self):
+        if self.filename_to_info is None:
+            self.filename_to_info = {}
+
+
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
     """
     Configure the ffmpeg binary path for pydub and system PATH.
@@ -183,6 +194,9 @@ def generate_audio_clips(
     cache_misses: DefaultDict[Tuple[str, str],
                               CacheMissInfo] = defaultdict(CacheMissInfo)
 
+    # Track silent clips by unique cache file
+    silent_clips = SilentClipInfo()
+
     for idx, dialogue in enumerate(preprocessed_chunks):
         print(f"\nProcessing dialogue {idx}")
 
@@ -239,6 +253,11 @@ def generate_audio_clips(
                     print(
                         f"WARNING: Audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
                     cache_hit = False
+                    # Track silent clip if we haven't seen this cache file before
+                    if cache_filename not in silent_clips.filename_to_info:
+                        speaker_display = speaker if speaker is not None else "(default)"
+                        silent_clips.filename_to_info[cache_filename] = (
+                            text, max_dbfs, speaker_display, speaker_id)
             except Exception as e:
                 print(f"Error checking audio file: {e}")
                 cache_hit = False
@@ -283,6 +302,11 @@ def generate_audio_clips(
                             if max_dbfs is not None and max_dbfs < silence_threshold:
                                 print(
                                     f"WARNING: Generated audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
+                                # Track silent clip if we haven't seen this cache file before
+                                if cache_filename not in silent_clips.filename_to_info:
+                                    speaker_display = speaker if speaker is not None else "(default)"
+                                    silent_clips.filename_to_info[cache_filename] = (
+                                        text, max_dbfs, speaker_display, speaker_id)
 
                     print("Audio generated")
 
@@ -346,6 +370,42 @@ def generate_audio_clips(
                 info.char_count for info in cache_misses.values())
             print(f"Total lines to generate: {total_lines}")
             print(f"Total characters to generate: {total_chars}")
+
+    # Report silent clips if silence checking was enabled
+    if silence_threshold is not None and silent_clips.filename_to_info:
+        print("\nSilent clips detected:")
+
+        # For populate_cache mode, recheck all clips before reporting
+        if populate_cache:
+            still_silent = {}
+            for cache_filename, (text, dbfs, speaker_display, speaker_id) in silent_clips.filename_to_info.items():
+                cache_filepath = os.path.join(cache_folder, cache_filename)
+                try:
+                    with open(cache_filepath, 'rb') as f:
+                        audio_data = f.read()
+                    current_dbfs = get_audio_dbfs(audio_data)
+                    if current_dbfs is not None and current_dbfs < silence_threshold:
+                        still_silent[cache_filename] = (
+                            text, current_dbfs, speaker_display, speaker_id)
+                except Exception as e:
+                    print(f"Error rechecking audio file {cache_filepath}: {e}")
+
+            silent_clips.filename_to_info = still_silent
+
+        # Group by speaker for output
+        by_speaker: Dict[Tuple[str, str],
+                         List[Tuple[str, float, str]]] = defaultdict(list)
+        for cache_filename, (text, dbfs, speaker_display, speaker_id) in silent_clips.filename_to_info.items():
+            by_speaker[(speaker_display, speaker_id)].append(
+                (text, dbfs, cache_filename))
+
+        # Print results
+        for (speaker_display, speaker_id), clips in sorted(by_speaker.items()):
+            print(f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
+            for text, dbfs, cache_filename in sorted(clips):
+                print(f"  • dBFS: {dbfs}")
+                print(f"    Cache: {cache_filename}")
+                print(f"    Text: \"{text}\"")
 
     return audio_clips, modified_dialogues
 
