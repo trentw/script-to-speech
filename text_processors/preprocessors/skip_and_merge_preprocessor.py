@@ -1,5 +1,8 @@
 from typing import Dict, List, Tuple, Set
 from ..text_preprocessor_base import TextPreProcessor
+from utils.logging import get_screenplay_logger
+
+logger = get_screenplay_logger("text_processors.preprocessors.skip_and_merge")
 
 
 class SkipAndMergePreProcessor(TextPreProcessor):
@@ -86,7 +89,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
                             prev_chunk, next_chunk)
                         result_chunks.append(merged_chunk)
                         i += 2  # Skip both current and next chunk
-                        print(
+                        logger.info(
                             f"Merged chunks around removed {current_chunk['type']}. Text: {current_chunk['text']}")
                         continue
 

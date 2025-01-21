@@ -1,8 +1,11 @@
-import logging
 from collections import OrderedDict
 from typing import Dict, Optional, Tuple
 from elevenlabs.client import ElevenLabs
 import requests
+from utils.logging import get_screenplay_logger
+
+# Get logger for this module
+logger = get_screenplay_logger("tts_providers.elevenlabs.registry")
 
 
 class ElevenLabsVoiceRegistryManager:
@@ -26,18 +29,6 @@ class ElevenLabsVoiceRegistryManager:
         self.voice_usage_order = OrderedDict()
         self.is_initialized = False
 
-        # Setup logging
-        self.logger = logging.getLogger('ElevenLabsVoiceRegistryManager')
-        level = logging.DEBUG if debug else logging.INFO
-        self.logger.setLevel(level)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
-
     def _initialize_voice_registry(self) -> None:
         """
         Initialize the voice registry by querying current voices.
@@ -54,19 +45,18 @@ class ElevenLabsVoiceRegistryManager:
 
         # Build new voice registry
         for voice in response.voices:
-            if self.logger.isEnabledFor(logging.DEBUG):
-                self.logger.debug(f"\nVoice object details:")
-                self.logger.debug(f"Voice ID: {voice.voice_id}")
-                self.logger.debug(f"Name: {getattr(voice, 'name', 'N/A')}")
-                self.logger.debug(f"Category: {voice.category}")
+            logger.debug(f"\nVoice object details:")
+            logger.debug(f"Voice ID: {voice.voice_id}")
+            logger.debug(f"Name: {getattr(voice, 'name', 'N/A')}")
+            logger.debug(f"Category: {voice.category}")
 
-                # Log sharing attribute details
-                if hasattr(voice, 'sharing'):
-                    self.logger.debug(
-                        f"Has sharing attribute: {voice.sharing is not None}")
-                    if voice.sharing is not None:
-                        self.logger.debug(
-                            f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}")
+            # Log sharing attribute details
+            if hasattr(voice, 'sharing'):
+                logger.debug(
+                    f"Has sharing attribute: {voice.sharing is not None}")
+                if voice.sharing is not None:
+                    logger.debug(
+                        f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}")
 
             # Handle premade voices (no sharing attribute)
             if not hasattr(voice, 'sharing') or voice.sharing is None:
@@ -85,7 +75,7 @@ class ElevenLabsVoiceRegistryManager:
             if category != "premade":
                 current_voice_ids.add(public_id)
 
-            self.logger.debug(
+            logger.debug(
                 f"Successfully mapped voice:"
                 f"\n  Public ID: {public_id}"
                 f"\n  Registry ID: {registry_id}"
@@ -99,7 +89,7 @@ class ElevenLabsVoiceRegistryManager:
                 valid_usage_order[voice_id] = None
         self.voice_usage_order = valid_usage_order
 
-        self.logger.info(
+        logger.info(
             f"Initialized voice registry with {len(self.voice_registry)} voices "
             f"({len(self.voice_usage_order)} non-premade)"
         )
@@ -120,7 +110,7 @@ class ElevenLabsVoiceRegistryManager:
 
         for voice in response.voices:
             if voice.voice_id == public_voice_id:
-                self.logger.debug(
+                logger.debug(
                     f"Found owner {voice.public_owner_id} for voice {public_voice_id}"
                 )
                 return voice.public_owner_id
@@ -151,12 +141,11 @@ class ElevenLabsVoiceRegistryManager:
 
         response = requests.post(url, json=payload, headers=headers)
         if not response.ok:
-            raise RuntimeError(
-                f"Failed to add voice to registry: {response.text}")
+            error_msg = f"Failed to add voice to registry: {response.text}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
-        self.logger.info(
-            f"Successfully added voice {public_voice_id} to registry")
-
+        logger.info(f"Successfully added voice {public_voice_id} to registry")
         # Refresh voice registry and LRU state
         self._initialize_voice_registry()
 
@@ -177,11 +166,11 @@ class ElevenLabsVoiceRegistryManager:
 
         response = requests.delete(url, headers=headers)
         if not response.ok:
-            raise RuntimeError(
-                f"Failed to remove voice from registry: {response.text}")
+            error_msg = f"Failed to remove voice from registry: {response.text}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
-        self.logger.info(f"Successfully removed voice {registry_voice_id}")
-
+        logger.info(f"Successfully removed voice {registry_voice_id}")
         # Refresh voice registry and LRU state
         self._initialize_voice_registry()
 
@@ -196,7 +185,7 @@ class ElevenLabsVoiceRegistryManager:
         if self.voice_usage_order:
             lru_public_id = next(iter(self.voice_usage_order))
             lru_registry_id = self.voice_registry[lru_public_id][0]
-            self.logger.info(
+            logger.info(
                 f"Removing least recently used voice {lru_public_id} "
                 f"(registry ID: {lru_registry_id})"
             )
@@ -206,14 +195,16 @@ class ElevenLabsVoiceRegistryManager:
         # If no LRU history, remove a random non-premade voice
         for public_id, (registry_id, category) in self.voice_registry.items():
             if category != "premade":
-                self.logger.info(
+                logger.info(
                     f"Removing random non-premade voice {public_id} "
                     f"(registry ID: {registry_id})"
                 )
                 self._remove_voice_from_registry(registry_id)
                 return
 
-        raise RuntimeError("No removable voices found in registry")
+        error_msg = "No removable voices found in registry"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
 
     def get_library_voice_id(self, public_voice_id: str) -> str:
         """
@@ -260,8 +251,9 @@ class ElevenLabsVoiceRegistryManager:
         # Find voice owner
         public_owner_id = self._find_voice_owner(public_voice_id)
         if not public_owner_id:
-            raise RuntimeError(
-                f"Could not find owner for voice {public_voice_id}")
+            error_msg = f"Could not find owner for voice {public_voice_id}"
+            logger.error(error_msg)
+            raise RuntimeError(error_msg)
 
         # Add voice to registry
         self._add_voice_to_registry(public_voice_id, public_owner_id)

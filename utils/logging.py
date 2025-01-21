@@ -1,0 +1,85 @@
+# utils/logging.py
+import logging
+from typing import Optional
+
+
+class SimpleFormatter(logging.Formatter):
+    """Custom formatter that only adds prefixes for warnings and errors."""
+
+    def format(self, record):
+        if record.levelno >= logging.ERROR:
+            return f"[ERROR] {record.getMessage()}"
+        elif record.levelno >= logging.WARNING:
+            return f"[WARN] {record.getMessage()}"
+        return record.getMessage()
+
+
+def get_screenplay_logger(name: str) -> logging.Logger:
+    """
+    Get a logger that will inherit from screenplay logger if it exists,
+    otherwise just log to console.
+
+    Args:
+        name: Logger name/identifier
+
+    Returns:
+        Logger instance configured based on provided parameters
+    """
+    logger = logging.getLogger(f"screenplay.{name}")
+
+    # If no handlers are set up anywhere in the hierarchy,
+    # set up temporary console-only logging
+    if not logger.handlers and not any(handler for handler in logging.getLogger().handlers):
+        formatter = SimpleFormatter()
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+        # Don't propagate to root logger to avoid duplicate messages
+        logger.propagate = False
+
+    return logger
+
+
+def setup_screenplay_logging(log_file: str) -> None:
+    """
+    Set up root screenplay logger with both console and file output.
+    This should be called at the start of the main script execution.
+
+    Args:
+        log_file: Path to log file for this execution
+    """
+    # Remove existing handlers from the entire logging hierarchy
+    root = logging.getLogger()
+    screenplay_logger = logging.getLogger("screenplay")
+    for logger in [root, screenplay_logger]:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+
+    # Create formatter and handlers
+    formatter = SimpleFormatter()
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(formatter)
+
+    # Configure screenplay logger
+    screenplay_logger.setLevel(logging.INFO)
+    screenplay_logger.addHandler(console_handler)
+    screenplay_logger.addHandler(file_handler)
+    screenplay_logger.propagate = False  # Don't propagate to root logger
+
+    # Reset all existing screenplay.* loggers to use the new configuration
+    existing_loggers = [
+        name for name in logging.root.manager.loggerDict
+        if name.startswith("screenplay.")
+    ]
+    for name in existing_loggers:
+        logger = logging.getLogger(name)
+        # Remove any existing handlers
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+        # Reset to use parent handlers
+        logger.propagate = True
+        logger.setLevel(logging.INFO)

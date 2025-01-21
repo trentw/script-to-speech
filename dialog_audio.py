@@ -5,6 +5,8 @@ from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
 from pydub import AudioSegment
 from tts_providers.tts_provider_manager import TTSProviderManager
+from utils.logging import setup_screenplay_logging, get_screenplay_logger
+import logging
 import hashlib
 import argparse
 import io
@@ -16,6 +18,7 @@ import traceback
 # Use a less common delimiter
 DELIMITER = "~~"
 
+logger = get_screenplay_logger("dialog_audio")
 
 @dataclass
 class CacheMissInfo:
@@ -87,16 +90,17 @@ def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
         raise RuntimeError("Failed to verify ffmpeg installation") from e
 
 
-def create_output_folders(input_file: str, create_sequence: bool = True) -> Tuple[str, str, str, str]:
+def create_output_folders(input_file: str, create_sequence: bool = True, run_mode: str = "") -> Tuple[str, str, str, str, str]:
     """
     Create and return paths for output folders following the standard structure.
 
     Args:
         input_file: Path to the input JSON file
         create_sequence: Whether to create sequence folder (False for dry-run/populate-cache)
+        run_mode: String indicating run mode for log file name prefix
 
     Returns:
-        Tuple of (main_output_folder, cache_folder, sequence_folder, output_file)
+        Tuple of (main_output_folder, cache_folder, sequence_folder, output_file, log_file)
     """
     # Get base name without extension
     base_name = os.path.splitext(os.path.basename(input_file))[0]
@@ -107,14 +111,20 @@ def create_output_folders(input_file: str, create_sequence: bool = True) -> Tupl
     cache_folder = os.path.join(main_output_folder, "cache")
     sequence_folder = os.path.join(
         main_output_folder, "sequence", f"sequence_{timestamp}")
+    logs_folder = os.path.join(main_output_folder, "logs")
     output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
+
+    # Create log filename with run mode prefix
+    mode_prefix = f"[{run_mode}]_" if run_mode else ""
+    log_file = os.path.join(logs_folder, f"{mode_prefix}log_{timestamp}.txt")
 
     # Create directories
     os.makedirs(cache_folder, exist_ok=True)
+    os.makedirs(logs_folder, exist_ok=True)
     if create_sequence:
         os.makedirs(sequence_folder, exist_ok=True)
 
-    return main_output_folder, cache_folder, sequence_folder, output_file
+    return main_output_folder, cache_folder, sequence_folder, output_file, log_file
 
 
 def load_json_chunks(input_file: str) -> List[Dict]:
@@ -165,7 +175,7 @@ def get_audio_dbfs(audio_data: bytes) -> Optional[float]:
         audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
         return audio_segment.max_dBFS
     except Exception as e:
-        print(f"Warning: Error analyzing audio: {e}")
+        logger.error(f"Error analyzing audio: {e}")
         return None
 
 
@@ -181,13 +191,13 @@ def generate_audio_clips(
     populate_cache: bool = False,
     silence_threshold: Optional[float] = None
 ) -> Tuple[List[AudioSegment], List[Dict]]:
-    print("Starting generate_audio_clips function")
+    logger.info("Starting generate_audio_clips function")
     audio_clips = []
     modified_dialogues = []
     existing_files = set(os.listdir(cache_folder))  # Initial cache inventory
 
     # First run pre-processors
-    print("Running pre-processors")
+    logger.info("Running pre-processors")
     preprocessed_chunks = processor.preprocess_chunks(dialogues)
 
     # Track cache misses by speaker
@@ -198,7 +208,7 @@ def generate_audio_clips(
     silent_clips = SilentClipInfo()
 
     for idx, dialogue in enumerate(preprocessed_chunks):
-        print(f"\nProcessing dialogue {idx}")
+        logger.info(f"\nProcessing dialogue {idx}")
 
         # Process the dialogue
         processed_dialogue, was_modified = processor.process_chunk(dialogue)
@@ -208,22 +218,22 @@ def generate_audio_clips(
         text = processed_dialogue.get('text', '')
         dialogue_type = processed_dialogue.get('type', '')
 
-        print(f"Speaker: {speaker}, Type: {dialogue_type}")
-        print(f"Text: {text[:50]}...")
+        logger.info(f"Speaker: {speaker}, Type: {dialogue_type}")
+        logger.info(f"Text: {text[:50]}...")
 
         original_hash = generate_chunk_hash(
             dialogue.get('text', ''),
             determine_speaker(dialogue)
         )
         processed_hash = generate_chunk_hash(text, speaker)
-        print(f"Original hash: {original_hash}")
-        print(f"Processed hash: {processed_hash}")
+        logger.info(f"Original hash: {original_hash}")
+        logger.info(f"Processed hash: {processed_hash}")
 
         provider_id = tts_provider_manager.get_provider_for_speaker(speaker)
-        print(f"Provider ID: {provider_id}")
+        logger.info(f"Provider ID: {provider_id}")
 
         speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
-        print(f"Speaker ID: {speaker_id}")
+        logger.info(f"Speaker ID: {speaker_id}")
 
         cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
         sequence_filename = f"{idx:04d}{DELIMITER}{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
@@ -231,12 +241,12 @@ def generate_audio_clips(
         cache_filepath = os.path.join(cache_folder, cache_filename)
         sequence_filepath = os.path.join(sequence_folder, sequence_filename)
 
-        print(f"Cache filepath: {cache_filepath}")
+        logger.info(f"Cache filepath: {cache_filepath}")
         if not dry_run and not populate_cache:
-            print(f"Sequence filepath: {sequence_filepath}")
+            logger.info(f"Sequence filepath: {sequence_filepath}")
 
         cache_hit = cache_filename in existing_files
-        print(f"Cache hit: {cache_hit}")
+        logger.info(f"Cache hit: {cache_hit}")
 
         # Check for empty text - these should be silent
         expect_silence = not text.strip()
@@ -247,11 +257,11 @@ def generate_audio_clips(
                 with open(cache_filepath, 'rb') as f:
                     audio_data = f.read()
                 max_dbfs = get_audio_dbfs(audio_data)
-                print(f"Audio level (dBFS): {max_dbfs}")
+                logger.info(f"Audio level (dBFS): {max_dbfs}")
 
                 if max_dbfs is not None and max_dbfs < silence_threshold:
-                    print(
-                        f"WARNING: Audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
+                    logger.warning(
+                        f"Audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
                     cache_hit = False
                     # Track silent clip if we haven't seen this cache file before
                     if cache_filename not in silent_clips.filename_to_info:
@@ -259,7 +269,7 @@ def generate_audio_clips(
                         silent_clips.filename_to_info[cache_filename] = (
                             text, max_dbfs, speaker_display, speaker_id)
             except Exception as e:
-                print(f"Error checking audio file: {e}")
+                logger.error(f"Error checking audio file: {e}")
                 cache_hit = False
 
         if not cache_hit:
@@ -273,21 +283,22 @@ def generate_audio_clips(
         if not dry_run:
             audio_data = None
             if cache_hit:
-                print("Using cached audio file")
+                logger.info("Using cached audio file")
                 try:
                     with open(cache_filepath, 'rb') as f:
                         audio_data = f.read()
-                    print("Successfully read cached audio")
+                    logger.info("Successfully read cached audio")
                 except Exception as e:
-                    print(f"Error reading cached audio: {e}")
+                    logger.error(f"Error reading cached audio: {e}")
                     cache_hit = False  # Force regeneration
 
             if not cache_hit:
-                print("Generating new audio file")
+                logger.info("Generating new audio file")
                 try:
                     if expect_silence:
                         # Create a very short silent audio for empty text
-                        print("Creating intentional silent audio for empty text")
+                        logger.info(
+                            "Creating intentional silent audio for empty text")
                         silent_segment = AudioSegment.silent(duration=10)
                         audio_data = silent_segment.export(format="mp3").read()
                     else:
@@ -298,26 +309,27 @@ def generate_audio_clips(
                         # Check newly generated audio for silence if requested
                         if silence_threshold is not None:
                             max_dbfs = get_audio_dbfs(audio_data)
-                            print(f"Generated audio level (dBFS): {max_dbfs}")
+                            logger.info(
+                                f"Generated audio level (dBFS): {max_dbfs}")
                             if max_dbfs is not None and max_dbfs < silence_threshold:
-                                print(
-                                    f"WARNING: Generated audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
+                                logger.warning(
+                                    f"Generated audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
                                 # Track silent clip if we haven't seen this cache file before
                                 if cache_filename not in silent_clips.filename_to_info:
                                     speaker_display = speaker if speaker is not None else "(default)"
                                     silent_clips.filename_to_info[cache_filename] = (
                                         text, max_dbfs, speaker_display, speaker_id)
 
-                    print("Audio generated")
+                    logger.info("Audio generated")
 
                     # Save to cache
                     with open(cache_filepath, 'wb') as f:
                         f.write(audio_data)
                     # Track the new cache file
                     existing_files.add(cache_filename)
-                    print(f"Audio saved to cache: {cache_filepath}")
+                    logger.info(f"Audio saved to cache: {cache_filepath}")
                 except Exception as e:
-                    print(f"Error generating new audio: {e}")
+                    logger.error(f"Error generating new audio: {e}")
 
             # Only handle sequence files and audio clips if doing full run
             if not populate_cache and audio_data:
@@ -325,55 +337,58 @@ def generate_audio_clips(
                     # Save to sequence folder
                     with open(sequence_filepath, 'wb') as f:
                         f.write(audio_data)
-                    print(
+                    logger.info(
                         f"Audio saved to sequence folder: {sequence_filepath}")
 
                     # Add to audio clips
                     audio_segment = AudioSegment.from_mp3(
                         io.BytesIO(audio_data))
                     audio_clips.append(audio_segment)
-                    print("Audio added to clips list")
+                    logger.info("Audio added to clips list")
 
                     # Only add gap if this isn't empty text and isn't the last item
                     if idx < len(dialogues) - 1 and text.strip():
-                        print("Adding gap between dialogues")
+                        logger.info("Adding gap between dialogues")
                         gap = AudioSegment.silent(duration=gap_duration_ms)
                         audio_clips.append(gap)
-                        print("Gap added")
+                        logger.info("Gap added")
                 except Exception as e:
-                    print(f"Error processing audio data: {e}")
+                    logger.error(f"Error processing audio data: {e}")
 
         if verbose or (dry_run and not cache_hit):
             status = "cache hit" if cache_hit else "cache miss"
             speaker_display = speaker if speaker is not None else "(default)"
-            print(f"[{idx:04d}][{status}][{speaker_display}][{text[:20]}...]")
+            logger.info(
+                f"[{idx:04d}][{status}][{speaker_display}][{text[:20]}...]")
 
-    print("\nDialogue processing complete")
+    logger.info("\nDialogue processing complete")
 
     if dry_run or populate_cache:
         if not cache_misses:
-            print("\nAll audio clips are cached. No new audio generation needed.")
+            logger.info(
+                "\nAll audio clips are cached. No new audio generation needed.")
         else:
-            print("\nCache misses (audio that would need to be generated):")
+            logger.info(
+                "\nCache misses (audio that would need to be generated):")
             for (speaker_display, speaker_id), info in sorted(cache_misses.items()):
-                print(
+                logger.info(
                     f"- {speaker_display} ({speaker_id}): {info.line_count} lines ({info.char_count} characters)")
                 if verbose:
                     for text in info.texts:
-                        print(f"  • {text[:50]}...")
+                        logger.info(f"  • {text[:50]}...")
 
-            print(
+            logger.info(
                 f"\nTotal unique speakers requiring generation: {len(cache_misses)}")
             total_lines = sum(
                 info.line_count for info in cache_misses.values())
             total_chars = sum(
                 info.char_count for info in cache_misses.values())
-            print(f"Total lines to generate: {total_lines}")
-            print(f"Total characters to generate: {total_chars}")
+            logger.info(f"Total lines to generate: {total_lines}")
+            logger.info(f"Total characters to generate: {total_chars}")
 
     # Report silent clips if silence checking was enabled
     if silence_threshold is not None and silent_clips.filename_to_info:
-        print("\nSilent clips detected:")
+        logger.info("\nSilent clips detected:")
 
         # For populate_cache mode, recheck all clips before reporting
         if populate_cache:
@@ -388,7 +403,8 @@ def generate_audio_clips(
                         still_silent[cache_filename] = (
                             text, current_dbfs, speaker_display, speaker_id)
                 except Exception as e:
-                    print(f"Error rechecking audio file {cache_filepath}: {e}")
+                    logger.error(
+                        f"Error rechecking audio file {cache_filepath}: {e}")
 
             silent_clips.filename_to_info = still_silent
 
@@ -401,11 +417,12 @@ def generate_audio_clips(
 
         # Print results
         for (speaker_display, speaker_id), clips in sorted(by_speaker.items()):
-            print(f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
+            logger.info(
+                f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
             for text, dbfs, cache_filename in sorted(clips):
-                print(f"  • dBFS: {dbfs}")
-                print(f"    Cache: {cache_filename}")
-                print(f"    Text: \"{text}\"")
+                logger.info(f"  • dBFS: {dbfs}")
+                logger.info(f"    Cache: {cache_filename}")
+                logger.info(f"    Text: \"{text}\"")
 
     return audio_clips, modified_dialogues
 
@@ -418,50 +435,51 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
         audio_clips: List of AudioSegment objects
         output_file: Path for the output audio file
     """
-    print(f"\nStarting audio concatenation of {len(audio_clips)} clips")
-    print("Memory usage and clip details:")
+    logger.info(f"\nStarting audio concatenation of {len(audio_clips)} clips")
+    logger.info("Memory usage and clip details:")
 
     total_duration = 0
     for i, clip in enumerate(audio_clips):
         duration_ms = len(clip)
         total_duration += duration_ms
-        print(f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
+        logger.info(
+            f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
 
-    print(
+    logger.info(
         f"\nTotal duration to process: {total_duration}ms ({total_duration/1000:.2f}s)")
 
     try:
-        print("\nStarting clip concatenation...")
+        logger.info("\nStarting clip concatenation...")
         final_audio = AudioSegment.empty()
 
         for i, clip in enumerate(audio_clips, 1):
-            print(
+            logger.info(
                 f"Adding clip {i}/{len(audio_clips)} (duration: {len(clip)}ms)")
             final_audio += clip
-            print(f"Current total duration: {len(final_audio)}ms")
+            logger.info(f"Current total duration: {len(final_audio)}ms")
 
-        print(
+        logger.info(
             f"\nExporting final audio (duration: {len(final_audio)}ms) to: {output_file}")
         final_audio.export(output_file, format="mp3")
-        print("Audio export completed")
+        logger.info("Audio export completed")
 
         # Verify the output file
         if os.path.exists(output_file):
             file_size = os.path.getsize(output_file)
-            print(f"Output file size: {file_size/1024/1024:.2f}MB")
+            logger.info(f"Output file size: {file_size/1024/1024:.2f}MB")
 
             # Try to load the output file as a sanity check
             try:
                 verify_audio = AudioSegment.from_mp3(output_file)
-                print(
+                logger.info(
                     f"Output file verification successful. Duration: {len(verify_audio)}ms")
             except Exception as e:
-                print(f"Warning: Output file verification failed: {e}")
+                logger.error(f"Output file verification failed: {e}")
         else:
-            print("Warning: Output file was not created")
+            logger.warn("Output file was not created")
 
     except Exception as e:
-        print(f"\nError during audio concatenation: {str(e)}")
+        logger.error(f"\nError during audio concatenation: {str(e)}")
         traceback.print_exc()
         raise
 
@@ -493,13 +511,13 @@ def handle_yaml_generation(
         chunks = load_json_chunks(input_file)
         processed_chunks = processor.process_chunks(chunks)
     except Exception as e:
-        print(f"Error processing input file: {e}")
+        logger.error(f"Error processing input file: {e}")
         return 1
 
     try:
         if populate_yaml:
             # Handle population case
-            print(
+            logger.info(
                 f"Populating provider-specific fields in YAML: {populate_yaml}")
             input_dir = os.path.dirname(populate_yaml)
             base_name = os.path.splitext(os.path.basename(populate_yaml))[0]
@@ -508,10 +526,11 @@ def handle_yaml_generation(
 
             tts_manager.update_yaml_with_provider_fields(
                 populate_yaml, yaml_output, processed_chunks)
-            print(f"Updated YAML configuration generated: {yaml_output}")
+            logger.info(
+                f"Updated YAML configuration generated: {yaml_output}")
         else:
             # Handle generation case
-            print("Generating YAML configuration")
+            logger.info("Generating YAML configuration")
             input_dir = os.path.dirname(input_file)
             base_name = os.path.splitext(os.path.basename(input_file))[0]
             yaml_output = os.path.join(
@@ -519,13 +538,14 @@ def handle_yaml_generation(
 
             tts_manager.generate_yaml_config(
                 processed_chunks, yaml_output, provider)
-            print(f"YAML configuration template generated: {yaml_output}")
+            logger.info(
+                f"YAML configuration template generated: {yaml_output}")
 
         return 0
 
     except Exception as e:
         action = "populating" if populate_yaml else "generating"
-        print(f"Error {action} YAML configuration: {e}")
+        logger.error(f"Error {action} YAML configuration: {e}")
         return 1
 
 
@@ -565,6 +585,26 @@ def main():
 
     args = parser.parse_args()
 
+    if args.check_silence is not None:
+        logger.info(
+            f"Silence checking enabled with threshold: {args.check_silence} dBFS")
+
+    # Determine run mode for log file naming
+    run_mode = "dry-run" if args.dry_run else "populate-cache" if args.populate_cache else "generate-output"
+
+    # Create output folders and get paths
+    create_sequence = not (args.dry_run or args.populate_cache)
+    output_folder, cache_folder, sequence_folder, output_file, log_file = create_output_folders(
+        args.input_file, create_sequence, run_mode)
+
+    # Set up logging
+    setup_screenplay_logging(log_file)
+
+    logger.info("Output folders created")
+
+    if create_sequence:
+        logger.info(f"Output will be saved to: {output_file}")
+
     # Verify input file exists
     if not os.path.exists(args.input_file):
         raise FileNotFoundError(f"Input file not found: {args.input_file}")
@@ -576,7 +616,7 @@ def main():
 
     # Initialize TTS manager
     tts_manager = TTSProviderManager(args.tts_config, args.provider)
-    print("TTS provider manager initialized")
+    logger.info("TTS provider manager initialized")
 
     # Handle YAML generation/population cases
     if args.generate_yaml or args.populate_multi_provider_yaml:
@@ -593,38 +633,28 @@ def main():
         raise FileNotFoundError(
             f"TTS config file not found: {args.tts_config}")
 
-    # Create output folders and get paths
-    print("Creating output folders")
-    # Only create sequence folder if we're doing a full run
-    create_sequence = not (args.dry_run or args.populate_cache)
-    output_folder, cache_folder, sequence_folder, output_file = create_output_folders(
-        args.input_file, create_sequence)
-
-    if create_sequence:
-        print(f"Output will be saved to: {output_file}")
-
     # Configure ffmpeg
     try:
         configure_ffmpeg(args.ffmpeg_path)
-        print("FFMPEG configuration successful")
+        logger.info("FFMPEG configuration successful")
     except Exception as e:
-        print(f"Error configuring FFMPEG: {e}")
+        logger.error(f"Error configuring FFMPEG: {e}")
         return 1
 
-    print(f"Loading dialogues from: {args.input_file}")
+    logger.info(f"Loading dialogues from: {args.input_file}")
     try:
         dialogues = load_json_chunks(args.input_file)
     except Exception as e:
-        print(f"Error loading input file: {e}")
+        logger.error(f"Error loading input file: {e}")
         return 1
-    print(f"Loaded {len(dialogues)} dialogues")
+    logger.info(f"Loaded {len(dialogues)} dialogues")
 
     # Initialize processing module
     processor = TextProcessorManager(args.processing_config)
-    print("Processing module initialized")
+    logger.info("Processing module initialized")
 
     # Generate and process audio
-    print("Generating audio clips")
+    logger.info("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
         dialogues, args.gap, tts_manager, cache_folder, sequence_folder,
         processor, args.verbose, args.dry_run, args.populate_cache, args.check_silence)
@@ -635,20 +665,20 @@ def main():
         output_folder, f"{base_name}-modified.json")
     with open(modified_json_path, 'w', encoding='utf-8') as f:
         json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
-    print(f'Modified JSON file generated: {modified_json_path}')
+    logger.info(f'Modified JSON file generated: {modified_json_path}')
 
     if not args.dry_run and not args.populate_cache:
-        print(f"Concatenating audio clips and saving to: {output_file}")
+        logger.info(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
-        print(f'Audio file generated: {output_file}')
+        logger.info(f'Audio file generated: {output_file}')
     elif args.populate_cache:
-        print('Cache population completed.')
+        logger.info('Cache population completed.')
     else:
-        print('Dry run completed. No audio files were generated.')
+        logger.info('Dry run completed. No audio files were generated.')
 
-    print(f'Cache folder: {cache_folder}')
-    print(f'Sequence folder: {sequence_folder}')
-    print("Main function completed")
+    logger.info(f'Cache folder: {cache_folder}')
+    logger.info(f'Sequence folder: {sequence_folder}')
+    logger.info("Main function completed")
 
 
 if __name__ == '__main__':

@@ -3,6 +3,10 @@ from typing import Dict, List, Tuple
 import importlib
 from .text_processor_base import TextProcessor
 from .text_preprocessor_base import TextPreProcessor
+from utils.logging import get_screenplay_logger
+
+# Get logger for this module
+logger = get_screenplay_logger("text_processors.manager")
 
 
 class TextProcessorManager:
@@ -37,10 +41,12 @@ class TextProcessorManager:
                         f"Invalid configuration for pre-processor {module_name}")
 
                 preprocessors.append(preprocessor)
-                print(f"Successfully loaded pre-processor: {module_name}")
+                logger.info(
+                    f"Successfully loaded pre-processor: {module_name}")
             except Exception as e:
-                raise ValueError(
-                    f"Error loading pre-processor {module_name}: {e}")
+                error_msg = f"Error loading pre-processor {module_name}: {e}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
 
         return preprocessors
 
@@ -60,9 +66,9 @@ class TextProcessorManager:
                                      for word in module_name.split('_')) + 'Processor'
                 processor_class = getattr(module, class_name)
                 processors.append(processor_class(config))
-                print(f"Successfully loaded processor: {module_name}")
+                logger.info(f"Successfully loaded processor: {module_name}")
             except (ImportError, AttributeError) as e:
-                print(f"Error loading processor {module_name}: {e}")
+                logger.error(f"Error loading processor {module_name}: {e}")
 
         return processors
 
@@ -108,10 +114,11 @@ class TextProcessorManager:
         for preprocessor in self.preprocessors:
             processed_chunks, modified = preprocessor.process(processed_chunks)
             if processed_chunks is None:
-                raise ValueError(
-                    f"Pre-processor {preprocessor.__class__.__name__} returned None")
+                error_msg = f"Pre-processor {preprocessor.__class__.__name__} returned None"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
             if modified:
-                print(
+                logger.info(
                     f"Pre-processor {preprocessor.__class__.__name__} modified chunks")
 
         self.preprocessed_chunks = processed_chunks
@@ -128,8 +135,9 @@ class TextProcessorManager:
             Tuple[Dict, bool]: Processed chunk and whether it was modified
         """
         if self.preprocessed_chunks is None:
-            raise ValueError(
-                "Must call preprocess_chunks before processing individual chunks")
+            error_msg = "Must call preprocess_chunks before processing individual chunks"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
 
         modified_chunk = chunk
         was_modified = False
