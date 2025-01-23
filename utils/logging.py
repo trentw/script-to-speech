@@ -1,4 +1,3 @@
-# utils/logging.py
 import logging
 from typing import Optional
 
@@ -27,15 +26,15 @@ def get_screenplay_logger(name: str) -> logging.Logger:
     """
     logger = logging.getLogger(f"screenplay.{name}")
 
-    # If no handlers are set up anywhere in the hierarchy,
-    # set up temporary console-only logging
-    if not logger.handlers and not any(handler for handler in logging.getLogger().handlers):
+    # Check if screenplay logger has any handlers configured
+    screenplay_logger = logging.getLogger("screenplay")
+    if not screenplay_logger.handlers:
+        # Set up console logging if no handlers configured
         formatter = SimpleFormatter()
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
-        # Don't propagate to root logger to avoid duplicate messages
-        logger.propagate = False
+        screenplay_logger.addHandler(console_handler)
+        screenplay_logger.setLevel(logging.INFO)
 
     return logger
 

@@ -34,7 +34,7 @@ class ElevenLabsVoiceRegistryManager:
         Initialize the voice registry by querying current voices.
         Maps public voice IDs to registry-specific IDs while maintaining LRU order.
         """
-        self.logger.info("Initializing voice registry mapping")
+        logger.info("Initializing voice registry mapping")
         response = self.client.voices.get_all()
 
         # Clear existing registry
@@ -105,7 +105,7 @@ class ElevenLabsVoiceRegistryManager:
         Returns:
             Optional[str]: The public owner ID of the voice, if found
         """
-        self.logger.debug(f"Searching for owner of voice {public_voice_id}")
+        logger.debug(f"Searching for owner of voice {public_voice_id}")
         response = self.client.voices.get_shared(search=public_voice_id)
 
         for voice in response.voices:
