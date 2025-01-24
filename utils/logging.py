@@ -39,13 +39,19 @@ def get_screenplay_logger(name: str) -> logging.Logger:
     return logger
 
 
-def setup_screenplay_logging(log_file: str) -> None:
+def setup_screenplay_logging(
+    log_file: str,
+    file_level: int = logging.INFO,
+    console_level: int = logging.INFO
+) -> None:
     """
     Set up root screenplay logger with both console and file output.
     This should be called at the start of the main script execution.
 
     Args:
         log_file: Path to log file for this execution
+        file_level: Logging level for file output (default: INFO)
+        console_level: Logging level for console output (default: INFO)
     """
     # Remove existing handlers from the entire logging hierarchy
     root = logging.getLogger()
@@ -57,14 +63,18 @@ def setup_screenplay_logging(log_file: str) -> None:
     # Create formatter and handlers
     formatter = SimpleFormatter()
 
+    # Console handler
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
+    console_handler.setLevel(console_level)
 
+    # File handler
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(formatter)
+    file_handler.setLevel(file_level)
 
-    # Configure screenplay logger
-    screenplay_logger.setLevel(logging.INFO)
+    # Configure screenplay logger - set to lowest level to allow all messages through to handlers
+    screenplay_logger.setLevel(logging.DEBUG)
     screenplay_logger.addHandler(console_handler)
     screenplay_logger.addHandler(file_handler)
     screenplay_logger.propagate = False  # Don't propagate to root logger
@@ -81,4 +91,4 @@ def setup_screenplay_logging(log_file: str) -> None:
             logger.removeHandler(handler)
         # Reset to use parent handlers
         logger.propagate = True
-        logger.setLevel(logging.INFO)
+        logger.setLevel(logging.DEBUG)  # Allow all messages through to parent
