@@ -12,7 +12,9 @@ SPEAKER_INDENT_MIN = 30     # Minimum indentation for speaker attribution
 SPEAKER_INDENT_MAX = 45     # Maximum indentation for speaker attribution
 DIALOG_INDENT_MIN = 20      # Minimum indentation for dialog blocks
 DIALOG_INDENT_MAX = 29      # Maximum indentation for dialog blocks
-DUAL_SPEAKER_MIN_SPACING = 8  # Minimum spaces between dual speakers
+DUAL_SPEAKER_MIN_SPEAKER_SPACING = 8  # Minimum spaces between dual speakers
+# Minimum spaces between blocks of dual dialog
+DUAL_SPEAKER_MIN_DIALOG_SPACING = 4
 
 
 class State(Enum):
@@ -87,7 +89,7 @@ class ScreenplayParser:
         # Dual speaker detection
         # Very high probability (1.0) when we see two speakers with sufficient spacing
         if (stripped.isupper() and indentation < SPEAKER_INDENT_MIN and
-                re.search(f'[A-Z]+\\s{{{DUAL_SPEAKER_MIN_SPACING},}}[A-Z]+', stripped)):
+                re.search(f'[A-Z]+\\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}[A-Z]+', stripped)):
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
             logger.debug("Detected potential dual speaker attribution")
 
@@ -96,8 +98,10 @@ class ScreenplayParser:
         # High probability (0.8) for less indented dialog lines
         # Significant penalty (-0.8) to action detection in dual dialog
         if self.state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
-            if self.saw_blank_line:
-                # If we just saw a blank line, reset dual dialog probability
+            if (self.saw_blank_line or
+                    self.get_max_internal_spacing(stripped) < DUAL_SPEAKER_MIN_DIALOG_SPACING):
+                # If we just saw a blank line or the line doesn't have enough internal spacing,
+                # reset dual dialog probability
                 probs[State.DUAL_DIALOG] = 0.1  # Back to baseline
             elif indentation < DIALOG_INDENT_MIN:
                 probs[State.DUAL_DIALOG] += 0.8
@@ -215,6 +219,24 @@ class ScreenplayParser:
     def get_indentation(self, line: str) -> int:
         """Get line indentation level."""
         return len(line) - len(line.lstrip())
+
+    def get_max_internal_spacing(self, line: str) -> int:
+        """
+        Get the maximum number of consecutive spaces in a line after stripping.
+
+        Args:
+            line: Input line to check
+
+        Returns:
+            Maximum number of consecutive spaces found
+        """
+        stripped = line.strip()
+        if not stripped:
+            return 0
+
+        # Find all sequences of spaces and get the length of the longest one
+        spaces = re.findall(r' +', stripped)
+        return len(max(spaces, default=''))
 
     def handle_state_transition(self, line: str, new_state: Optional[State]):
         """Handle transition between states."""
