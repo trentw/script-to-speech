@@ -2,6 +2,10 @@ from enum import Enum, auto
 from typing import List, Dict, Optional
 import re
 from dataclasses import dataclass
+from collections import OrderedDict
+from utils.logging import get_screenplay_logger
+
+logger = get_screenplay_logger("parser.screenplay")
 
 # Indentation level constants
 SPEAKER_INDENT_MIN = 30     # Minimum indentation for speaker attribution
@@ -75,12 +79,17 @@ class ScreenplayParser:
         probs[State.TITLE] = 2.0 if not self.has_left_title else 0.0
 
         stripped = line.strip()
+        logger.debug(
+            f"\nCalculating probabilities for line: {stripped[:40]}...")
+        logger.debug(f"Current state: {self.state}")
+        logger.debug(f"Indentation: {indentation}")
 
         # Dual speaker detection
         # Very high probability (1.0) when we see two speakers with sufficient spacing
         if (stripped.isupper() and indentation < SPEAKER_INDENT_MIN and
                 re.search(f'[A-Z]+\\s{{{DUAL_SPEAKER_MIN_SPACING},}}[A-Z]+', stripped)):
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
+            logger.debug("Detected potential dual speaker attribution")
 
         # Dual dialog handling
         # Reset to base probability on blank lines
@@ -165,6 +174,10 @@ class ScreenplayParser:
             probs[State.ACTION] = 0.1
             probs[State.TITLE] = 0.0  # Exit title state
 
+        # Log final probabilities at debug level
+        for state, prob in sorted(probs.items(), key=lambda x: x[1], reverse=True):
+            logger.debug(f"{state.name}: {prob:.2f}")
+
         return probs
 
     def determine_state(self, line: str, indentation: int) -> Optional[State]:
@@ -178,15 +191,12 @@ class ScreenplayParser:
         # Reset flag after use
         self.saw_blank_line = False
 
-        # Log probabilities for analysis
-        print(f"\nProbability Analysis for line: {line.strip()[:40]}...")
-        print(f"Current state: {self.state}")
-        print(f"Indentation: {indentation}")
-        for state, prob in sorted(probs.items(), key=lambda x: x[1], reverse=True):
-            print(f"{state.name}: {prob:.2f}")
+        # Get the state with highest probability
+        new_state = max(probs.items(), key=lambda x: x[1])[0]
+        logger.debug(
+            f"Determined state: {new_state} for line: {line.strip()[:40]}...")
 
-        # Return the state with highest probability
-        return max(probs.items(), key=lambda x: x[1])[0]
+        return new_state
 
     def is_page_number(self, line: str) -> bool:
         """Check if line is a page number."""
@@ -196,6 +206,11 @@ class ScreenplayParser:
         # Page numbers should be both numeric and highly indented
         return (bool(re.match(r'^\s*\d+\.?\s*$', stripped)) and
                 indentation >= DIALOG_INDENT_MAX + 5)
+
+        if is_page:
+            logger.debug(f"Detected page number: {stripped}")
+
+        return is_page
 
     def get_indentation(self, line: str) -> int:
         """Get line indentation level."""
@@ -216,6 +231,7 @@ class ScreenplayParser:
         if new_state != self.state or self.current_chunk is None:
             if self.current_chunk:
                 self.chunks.append(self.current_chunk)
+                logger.debug(f"Added chunk type: {self.current_chunk.type}")
 
             chunk_type = new_state.name.lower()
             speaker = None
@@ -224,6 +240,7 @@ class ScreenplayParser:
             if new_state == State.SPEAKER_ATTRIBUTION:
                 self.current_speaker = re.sub(
                     r'\([^)]*\)', '', line.strip()).strip()
+                logger.debug(f"New speaker: {self.current_speaker}")
             elif new_state == State.DIALOG:
                 speaker = self.current_speaker
             elif new_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
@@ -243,10 +260,15 @@ class ScreenplayParser:
             # Append cleaned text with space
             self.current_chunk.text += ' ' + line.strip()
 
+        if new_state != self.state:
+            logger.debug(f"State transition: {self.state} -> {new_state}")
+
         self.state = new_state
 
     def parse_screenplay(self, text: str) -> List[Dict]:
         """Parse screenplay using probabilistic state machine approach."""
+        logger.info("Starting screenplay parsing")
+
         self.state = State.TITLE
         self.has_left_title = False
         self.current_speaker = None
@@ -270,6 +292,7 @@ class ScreenplayParser:
                     raw_text=line,
                     text=line.strip()
                 ))
+                logger.debug("Added page number chunk")
 
                 self.current_chunk = None
                 i += 1
@@ -283,6 +306,8 @@ class ScreenplayParser:
 
         if self.current_chunk:
             self.chunks.append(self.current_chunk)
+
+        logger.info(f"Parsing completed. Generated {len(self.chunks)} chunks")
 
         # Convert None speakers to empty strings in output
         return [{
