@@ -128,7 +128,7 @@ class ElevenLabsVoiceRegistryManager:
         Raises:
             RuntimeError: If the voice cannot be added to the registry
         """
-        self.logger.info(f"Adding voice {public_voice_id} to registry")
+        logger.info(f"Adding voice {public_voice_id} to registry")
         url = f"https://api.elevenlabs.io/v1/voices/add/{public_owner_id}/{public_voice_id}"
 
         headers = {
@@ -159,7 +159,7 @@ class ElevenLabsVoiceRegistryManager:
         Raises:
             RuntimeError: If the voice cannot be removed from the registry
         """
-        self.logger.info(f"Removing voice {registry_voice_id} from registry")
+        logger.info(f"Removing voice {registry_voice_id} from registry")
         url = f"https://api.elevenlabs.io/v1/voices/{registry_voice_id}"
 
         headers = {"xi-api-key": self.api_key}
