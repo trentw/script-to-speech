@@ -84,6 +84,70 @@ def create_directory_structure() -> None:
         logger.info(f"Ensured directory exists: {dir_path}")
 
 
+def analyze_screenplay_chunks(json_path: str) -> None:
+    """
+    Analyze a screenplay chunks JSON file and output statistics.
+
+    Args:
+        json_path: Path to the JSON chunks file
+    """
+    try:
+        with open(json_path, 'r', encoding='utf-8') as f:
+            chunks = json.load(f)
+        analyze_chunks(chunks)
+    except Exception as e:
+        logger.error(
+            f"Error analyzing screenplay chunks: {str(e)}", exc_info=True)
+        raise
+
+
+def analyze_chunks(chunks: list) -> None:
+    """
+    Analyze screenplay chunks and log statistics.
+
+    Args:
+        chunks: List of screenplay chunks
+    """
+    # Count chunk types
+    chunk_type_counts = {}
+    speaker_counts = {}
+    speakers = set()
+
+    for chunk in chunks:
+        # Count chunk types
+        chunk_type = chunk['type']
+        chunk_type_counts[chunk_type] = chunk_type_counts.get(
+            chunk_type, 0) + 1
+
+        # Track speakers
+        if chunk_type == 'dialog':
+            # For dialog, use the specified speaker or default
+            speaker = chunk.get('speaker', '') or '(default)'
+        else:
+            # For non-dialog chunks, always attribute to default
+            speaker = '(default)'
+
+        speakers.add(speaker)
+        speaker_counts[speaker] = speaker_counts.get(speaker, 0) + 1
+
+    # Log results
+    logger.info("\n###########################")
+    logger.info("### Screenplay Analysis ###")
+    logger.info("###########################")
+
+    # Chunk type counts
+    logger.info("\nChunk Type Counts:")
+    for chunk_type, count in sorted(chunk_type_counts.items()):
+        logger.info(f"  {chunk_type}: {count}")
+
+    # Speaker statistics
+    logger.info(f"\nTotal Distinct Speakers:\n  {len(speakers)}")
+
+    logger.info("\nSpeaker Line Counts:")
+    for speaker, count in sorted(speaker_counts.items(), key=lambda x: (-x[1], x[0])):
+        logger.info(f"  {speaker}: {count}")
+
+
 def create_output_folders(screenplay_name: str, run_mode: str = "") -> Tuple[str, str]:
     """
     Create and return paths for output folders following the standard structure.
@@ -210,6 +274,9 @@ def process_screenplay(
             json.dump(chunks, f, ensure_ascii=False, indent=2)
         logger.info(f"JSON chunks saved to {json_path}")
 
+        # Analyze the chunks
+        analyze_chunks(chunks)
+
         logger.info("Processing completed successfully")
 
     except Exception as e:
@@ -221,17 +288,31 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description='Process screenplay files (PDF or TXT) to generate JSON chunks.')
+        description='Process and analyze screenplay files.')
+    subparsers = parser.add_subparsers(dest='command', required=True)
 
-    parser.add_argument('input_file', help='Path to input file (PDF or TXT)')
-    parser.add_argument('--output-dir', help='Custom output directory')
-    parser.add_argument('--text-only', action='store_true',
-                        help='Only generate text file without JSON chunks (PDF only)')
+    # Process command
+    process_parser = subparsers.add_parser('process',
+                                           help='Process screenplay files (PDF or TXT) to generate JSON chunks')
+    process_parser.add_argument(
+        'input_file', help='Path to input file (PDF or TXT)')
+    process_parser.add_argument('--output-dir', help='Custom output directory')
+    process_parser.add_argument('--text-only', action='store_true',
+                                help='Only generate text file without JSON chunks (PDF only)')
+
+    # Analyze command
+    analyze_parser = subparsers.add_parser('analyze',
+                                           help='Analyze an existing screenplay JSON chunks file')
+    analyze_parser.add_argument('json_file', help='Path to JSON chunks file')
 
     args = parser.parse_args()
 
     try:
-        process_screenplay(args.input_file, args.output_dir, args.text_only)
+        if args.command == 'process':
+            process_screenplay(
+                args.input_file, args.output_dir, args.text_only)
+        elif args.command == 'analyze':
+            analyze_screenplay_chunks(args.json_file)
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)
