@@ -89,7 +89,7 @@ class ScreenplayParser:
         # Dual speaker detection
         # Very high probability (1.0) when we see two speakers with sufficient spacing
         if (stripped.isupper() and indentation < SPEAKER_INDENT_MIN and
-                re.search(f'[A-Z]+\\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}[A-Z]+', stripped)):
+                re.search(rf'[A-Z]+(?:[\(\)\'A-Z]*)\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}[A-Z]+(?:[\(\)\'A-Z]*)', stripped)):
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
             logger.debug("Detected potential dual speaker attribution")
 
@@ -98,10 +98,14 @@ class ScreenplayParser:
         # High probability (0.8) for less indented dialog lines
         # Significant penalty (-0.8) to action detection in dual dialog
         if self.state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
+            internal_spacing = self.get_max_internal_spacing(stripped)
+            logger.debug(
+                f"Dual dialog max internal spacing: {internal_spacing}")
             if (self.saw_blank_line or
-                    self.get_max_internal_spacing(stripped) < DUAL_SPEAKER_MIN_DIALOG_SPACING):
-                # If we just saw a blank line or the line doesn't have enough internal spacing,
-                # reset dual dialog probability
+                    (internal_spacing < DUAL_SPEAKER_MIN_DIALOG_SPACING and len(line.strip()) + indentation > len(line) / 2)):
+                # Reset dual dialog probability if:
+                # The last line was a blank line
+                # OR the line has less than the minimum spacing between speakers AND the text extends beyond half way across the page
                 probs[State.DUAL_DIALOG] = 0.1  # Back to baseline
             elif indentation < DIALOG_INDENT_MIN:
                 probs[State.DUAL_DIALOG] += 0.8
