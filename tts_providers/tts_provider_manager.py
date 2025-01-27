@@ -6,6 +6,7 @@ import importlib
 from collections import defaultdict
 from typing import Dict, Optional, Type, Any, List
 import json
+from io import StringIO  
 
 from .base.tts_provider import TTSProvider
 
@@ -425,3 +426,146 @@ class TTSProviderManager:
 
         with open(output_path, 'w') as f:
             yaml.dump(content, f)
+    
+    def update_yaml_with_provider_fields_preserving_comments(self, yaml_path: str, output_path: str, dialogues: List[Dict]) -> None:
+        """
+        Update YAML with provider-specific fields while preserving comments and existing field values.
+        Maintains the original structure and ordering within provider groups.
+        
+        Args:
+            yaml_path: Path to existing YAML file
+            output_path: Where to save the updated YAML
+            dialogues: List of dialog chunks (not used in this version, kept for interface compatibility)
+        """
+        # Read the entire file
+        with open(yaml_path, 'r') as f:
+            content = f.read()
+        
+        # Split content into chunks based on blank lines
+        # Each chunk includes all content (comments + yaml) until the next blank line
+        chunks = []
+        current_chunk = []
+        
+        for line in content.split('\n'):
+            if line.strip():  # Non-empty line
+                current_chunk.append(line)
+            elif current_chunk:  # Empty line and we have content
+                chunks.append('\n'.join(current_chunk))
+                current_chunk = []
+        
+        # Add the final chunk if it exists
+        if current_chunk:
+            chunks.append('\n'.join(current_chunk))
+        
+        # Filter out chunks that don't contain YAML (e.g., header comments)
+        speaker_chunks = []
+        for chunk in chunks:
+            # Look for lines that could be YAML (not starting with #)
+            has_yaml = any(line.strip() and not line.strip().startswith('#') 
+                        for line in chunk.split('\n'))
+            if has_yaml:
+                speaker_chunks.append(chunk)
+        
+        # Group chunks by provider
+        provider_chunks = {}
+        yaml = YAML()
+        
+        for chunk in speaker_chunks:
+            # Find all lines that could be YAML (not comments)
+            yaml_lines = [line for line in chunk.split('\n') 
+                        if line.strip() and not line.strip().startswith('#')]
+            
+            # Try to parse the YAML portion
+            try:
+                # Join potential YAML lines and parse
+                yaml_text = '\n'.join(yaml_lines)
+                config = yaml.load(yaml_text)
+                
+                if not isinstance(config, dict):
+                    raise ValueError(f"Invalid YAML structure in chunk: {chunk}")
+                
+                # Check for multiple root-level keys (indicates missing blank line between speakers)
+                if len(config) > 1:
+                    speaker_names = list(config.keys())
+                    raise ValueError(
+                        f"Multiple speakers found in single chunk - missing blank line between speaker chunks?\n"
+                        f"Speakers: {', '.join(speaker_names)}\n"
+                        f"Chunk:\n{chunk}"
+                    )
+                
+                first_key = next(iter(config))
+                if not isinstance(config[first_key], dict):
+                    raise ValueError(f"Invalid YAML structure for speaker {first_key}")
+                    
+                provider = config[first_key].get('provider')
+                if not provider:
+                    raise ValueError(f"No provider specified for speaker {first_key}")
+                    
+                # Verify provider is valid
+                if provider not in self.get_available_providers():
+                    raise ValueError(f"Invalid provider '{provider}' for speaker {first_key}. "
+                                f"Valid providers are: {', '.join(self.get_available_providers())}")
+                    
+                provider_chunks.setdefault(provider, []).append(chunk)
+                
+            except Exception as e:
+                raise ValueError(f"Error processing YAML chunk:\n{chunk}\n\nError: {str(e)}")
+        
+        # Build the new content with provider instructions and missing fields
+        new_content = []
+        first_provider = True
+        
+        for provider, chunks in provider_chunks.items():
+            provider_class = self._get_provider_class(provider)
+            required_fields = provider_class.get_required_fields()
+            
+            # Add provider instructions
+            if first_provider:
+                new_content.append(provider_class.get_yaml_instructions())
+                first_provider = False
+            else:
+                # Add a blank line and instructions before next provider's chunks
+                instructions = provider_class.get_yaml_instructions()
+                new_content.append(f"\n{instructions}")
+            
+            # Process each chunk in this provider group
+            for chunk in chunks:
+                # Split into lines for processing
+                lines = chunk.split('\n')
+                yaml_lines = []
+                comment_lines = []
+                
+                # Separate YAML from comments while preserving order
+                for line in lines:
+                    if line.strip().startswith('#'):
+                        comment_lines.append(line)
+                    elif line.strip():
+                        yaml_lines.append(line)
+                
+                # Parse the YAML content
+                yaml_text = '\n'.join(yaml_lines)
+                config = yaml.load(yaml_text)
+                speaker = next(iter(config))
+                speaker_config = config[speaker]
+                
+                # Add any missing required fields
+                for field in required_fields:
+                    if field != 'provider' and field not in speaker_config:
+                        speaker_config[field] = None
+                
+                # Reconstruct the chunk with added fields
+                yaml_str = StringIO()
+                yaml.dump({speaker: speaker_config}, yaml_str)
+                new_yaml = yaml_str.getvalue().strip()
+                
+                # Reconstruct the full chunk with comments and YAML
+                reconstructed_chunk = []
+                reconstructed_chunk.extend(comment_lines)
+                reconstructed_chunk.append(new_yaml)
+                
+                new_content.append('\n'.join(reconstructed_chunk))
+                new_content.append('')  # Add blank line between chunks
+        
+        # Write the final content
+        with open(output_path, 'w') as f:
+            f.write('\n'.join(new_content))

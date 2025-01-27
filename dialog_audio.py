@@ -524,7 +524,7 @@ def handle_yaml_generation(
             yaml_output = os.path.join(
                 input_dir, f"{base_name}_populated.yaml")
 
-            tts_manager.update_yaml_with_provider_fields(
+            tts_manager.update_yaml_with_provider_fields_preserving_comments(
                 populate_yaml, yaml_output, processed_chunks)
             logger.info(
                 f"Updated YAML configuration generated: {yaml_output}")
