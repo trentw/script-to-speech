@@ -14,7 +14,7 @@ DIALOG_INDENT_MIN = 20      # Minimum indentation for dialog blocks
 DIALOG_INDENT_MAX = 29      # Maximum indentation for dialog blocks
 DUAL_SPEAKER_MIN_SPEAKER_SPACING = 8  # Minimum spaces between dual speakers
 # Minimum spaces between blocks of dual dialog
-DUAL_SPEAKER_MIN_DIALOG_SPACING = 4
+DUAL_SPEAKER_MIN_DIALOG_SPACING = 2
 
 
 class State(Enum):
@@ -99,15 +99,27 @@ class ScreenplayParser:
         # Significant penalty (-0.8) to action detection in dual dialog
         if self.state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
             internal_spacing = self.get_max_internal_spacing(stripped)
+            non_second_speaker_check = indentation < (len(line) / 2)
+            text_beyond_halway_of_line_check = len(
+                line.strip()) + indentation > (len(line) / 2)
+
             logger.debug(
                 f"Dual dialog max internal spacing: {internal_spacing}")
+            logger.debug(
+                f"Non-second speaker indentation: {non_second_speaker_check}")
+            logger.debug(
+                f"Text beyond halfway in line: {text_beyond_halway_of_line_check}")
+            logger.debug(
+                f"Last line blank line: {self.saw_blank_line}")
+
             if (self.saw_blank_line or
-                    (internal_spacing < DUAL_SPEAKER_MIN_DIALOG_SPACING and len(line.strip()) + indentation > len(line) / 2)):
+                    (internal_spacing < DUAL_SPEAKER_MIN_DIALOG_SPACING and non_second_speaker_check and text_beyond_halway_of_line_check)):
                 # Reset dual dialog probability if:
                 # The last line was a blank line
-                # OR the line has less than the minimum spacing between speakers AND the text extends beyond half way across the page
+                # OR the line has less than the minimum spacing between speakers AND the indentation looks like a scene header (and not the 2nd speaker) AND the text extends beyond half way across the page
                 probs[State.DUAL_DIALOG] = 0.1  # Back to baseline
-            elif indentation < DIALOG_INDENT_MIN:
+                logger.debug("Resetting dual dialog probabilty to baseline")
+            elif indentation < DIALOG_INDENT_MIN or indentation > (len(line) / 2):
                 probs[State.DUAL_DIALOG] += 0.8
                 probs[State.ACTION] -= 0.8
 
