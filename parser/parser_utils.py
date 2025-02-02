@@ -6,10 +6,14 @@ from pathlib import Path
 from typing import Optional
 import logging
 from typing import Optional, Tuple
+from text_processors.processor_manager import TextProcessorManager
 
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
 from .screenplay_parser import ScreenplayParser
 import json
+
+# Default configuration paths
+DEFAULT_PROCESSING_CONFIG = "text_processors/configs/default_config.yaml"
 
 logger = get_screenplay_logger("parser.utils")
 
@@ -174,6 +178,75 @@ def create_output_folders(screenplay_name: str, run_mode: str = "") -> Tuple[str
     return str(screenplay_dir), str(log_file)
 
 
+def process_json_chunks(
+    json_path: str,
+    processing_config: Optional[str] = None,
+    output_path: Optional[str] = None
+) -> None:
+    """
+    Process an existing JSON chunks file through text processors.
+
+    Args:
+        json_path: Path to input JSON chunks file
+        processing_config: Optional path to processing configuration file. 
+                         If not provided, uses DEFAULT_PROCESSING_CONFIG
+        output_path: Optional path for output file. If not provided, will use
+                    output/[json_name]/[json_name]-modified.json
+    """
+    try:
+        # Set up logging
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_dir = Path('parser/logs')
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_file = log_dir / f"process_chunks_{timestamp}.log"
+
+        setup_screenplay_logging(
+            str(log_file), file_level=logging.DEBUG, console_level=logging.INFO)
+        logger.info(f"Starting processing of {json_path}")
+
+        # Load JSON chunks
+        with open(json_path, 'r', encoding='utf-8') as f:
+            chunks = json.load(f)
+
+        # Use default config if none provided
+        processing_config = processing_config or DEFAULT_PROCESSING_CONFIG
+
+        # Initialize text processor manager
+        processor = TextProcessorManager(processing_config)
+        logger.info(
+            f"Text processor manager initialized with config: {processing_config}")
+
+        # Process chunks
+        modified_chunks = processor.process_chunks(chunks)
+
+        # Determine output path if not provided
+        if not output_path:
+            input_path = Path(json_path)
+            base_name = input_path.stem
+            root = get_project_root()
+
+            # Create output structure
+            output_dir = root / 'output' / base_name
+            output_dir.mkdir(parents=True, exist_ok=True)
+
+            output_path = output_dir / f"{base_name}-modified.json"
+
+        # Save modified chunks
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            json.dump(modified_chunks, f, ensure_ascii=False, indent=2)
+
+        logger.info(f"Modified chunks saved to {output_path}")
+
+        # Analyze the processed chunks
+        analyze_chunks(modified_chunks)
+
+    except Exception as e:
+        logger.error(f"Error processing chunks: {str(e)}", exc_info=True)
+        raise
+
+
 def process_screenplay(
     input_file: str,
     output_dir: Optional[str] = None,
@@ -305,6 +378,16 @@ if __name__ == "__main__":
                                            help='Analyze an existing screenplay JSON chunks file')
     analyze_parser.add_argument('json_file', help='Path to JSON chunks file')
 
+    # Process JSON command
+    process_json_parser = subparsers.add_parser('process-json',
+                                                help='Process existing JSON chunks through preprocessors and processors')
+    process_json_parser.add_argument(
+        'json_file', help='Path to JSON chunks file')
+    process_json_parser.add_argument('--processing-config',
+                                     help='Path to processing configuration file')
+    process_json_parser.add_argument('--output-path',
+                                     help='Custom output path for modified chunks')
+
     args = parser.parse_args()
 
     try:
@@ -313,6 +396,9 @@ if __name__ == "__main__":
                 args.input_file, args.output_dir, args.text_only)
         elif args.command == 'analyze':
             analyze_screenplay_chunks(args.json_file)
+        elif args.command == 'process-json':
+            process_json_chunks(
+                args.json_file, args.processing_config, args.output_path)
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)
