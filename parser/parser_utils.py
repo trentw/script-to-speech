@@ -198,7 +198,11 @@ def process_json_chunks(
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         log_dir = Path('parser/logs')
         log_dir.mkdir(parents=True, exist_ok=True)
-        log_file = log_dir / f"process_chunks_{timestamp}.log"
+        # Get original and sanitized names
+        original_name = Path(json_path).stem
+        sanitized_name = sanitize_name(original_name)
+        log_file = log_dir / \
+            f"[process_chunks]_{sanitized_name}_{timestamp}.log"
 
         setup_screenplay_logging(
             str(log_file), file_level=logging.DEBUG, console_level=logging.INFO)
