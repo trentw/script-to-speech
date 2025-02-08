@@ -13,10 +13,6 @@ processors:
   - name: text_substitution
     config:
       substitutions:
-        - from: "CONT’D"
-          to: "CONTINUED"
-          fields:
-            - text
         - from: "CONT'D"
           to: "CONTINUED"
           fields:
@@ -35,6 +31,10 @@ processors:
             - text
         - from: "O.S."
           to: "OFF SCREEN"
+          fields:
+            - text
+        - from: "O.C."
+          to: "OFF CAMERA"
           fields:
             - text
   - name: pattern_replace
