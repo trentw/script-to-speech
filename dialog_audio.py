@@ -1,6 +1,6 @@
-from typing import Optional, List, Dict, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
 from pydub import AudioSegment
@@ -20,27 +20,123 @@ DELIMITER = "~~"
 
 logger = get_screenplay_logger("dialog_audio")
 
-@dataclass
-class CacheMissInfo:
-    """Information about cache misses for a speaker"""
-    line_count: int = 0
-    char_count: int = 0
-    texts: List[str] = None  # Optional, for detailed debugging
-
-    def __post_init__(self):
-        if self.texts is None:
-            self.texts = []
-
 
 @dataclass
-class SilentClipInfo:
-    """Information about silent audio clips"""
-    filename_to_info: Dict[str, Tuple[str, float, str, str]
-                           ] = None  # cache_filename -> (text, dbfs_level, speaker_display, speaker_id)
+class AudioClipInfo:
+    """Information about an audio clip"""
+    text: str
+    cache_path: str
+    dbfs_level: Optional[float] = None
+    speaker_display: Optional[str] = None
+    speaker_id: Optional[str] = None
 
-    def __post_init__(self):
-        if self.filename_to_info is None:
-            self.filename_to_info = {}
+
+@dataclass
+class ReportingState:
+    """State for unified reporting of silent clips and cache misses"""
+    silent_clips: Dict[str, AudioClipInfo] = field(default_factory=dict)
+    cache_misses: Dict[str, AudioClipInfo] = field(default_factory=dict)
+
+
+def check_audio_level(audio_data: bytes) -> Optional[float]:
+    """Check audio data for silence level."""
+    try:
+        if not audio_data:
+            return None
+
+        audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
+        return audio_segment.max_dBFS
+    except Exception as e:
+        logger.error(f"Error analyzing audio: {e}")
+        return None
+
+
+def recheck_audio_files(reporting_state: ReportingState, cache_folder: str, silence_threshold: float, logger) -> None:
+    """Recheck all tracked audio files for current status."""
+
+    # Get current state of cache folder
+    existing_files = set(os.listdir(cache_folder))
+
+    # First recheck silent clips
+    still_silent = {}
+    for cache_filename, clip_info in reporting_state.silent_clips.items():
+        cache_filepath = os.path.join(cache_folder, cache_filename)
+        try:
+            with open(cache_filepath, 'rb') as f:
+                audio_data = f.read()
+            current_dbfs = check_audio_level(audio_data)
+            if current_dbfs is not None and current_dbfs < silence_threshold:
+                clip_info.dbfs_level = current_dbfs  # Update with current level
+                still_silent[cache_filename] = clip_info
+        except Exception as e:
+            logger.error(f"Error rechecking audio file {cache_filepath}: {e}")
+    reporting_state.silent_clips = still_silent
+
+    # Then recheck cache misses
+    actual_misses = {}
+    for cache_filename, clip_info in reporting_state.cache_misses.items():
+        if cache_filename not in existing_files:
+            actual_misses[cache_filename] = clip_info
+    reporting_state.cache_misses = actual_misses
+
+
+def print_unified_report(reporting_state: ReportingState, logger, silence_checking_enabled: bool = False) -> None:
+    """Print unified report of silent clips and cache misses."""
+
+    # Helper function to group clips by speaker
+    def group_by_speaker(clips: Dict[str, AudioClipInfo]) -> Dict[Tuple[str, str], List[AudioClipInfo]]:
+        grouped = defaultdict(list)
+        for clip_info in clips.values():
+            speaker_key = (clip_info.speaker_display or "(default)",
+                           clip_info.speaker_id or "")
+            grouped[speaker_key].append(clip_info)
+        return grouped
+
+    # Print silent clips section if silence checking was enabled
+    if silence_checking_enabled:
+        if reporting_state.silent_clips:
+            logger.info("\nSilent clips detected:")
+        else:
+            logger.info("\nNo silent clips detected.")
+        grouped_silent = group_by_speaker(reporting_state.silent_clips)
+
+        for (speaker_display, speaker_id), clips in sorted(grouped_silent.items()):
+            logger.info(
+                f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
+            for clip_info in sorted(clips, key=lambda x: x.text):
+                logger.info(f'  • Text: "{clip_info.text}"')
+                logger.info(f"    Cache: {clip_info.cache_path}")
+                logger.info(f"    dBFS: {clip_info.dbfs_level}")
+
+    # Print cache misses
+    if reporting_state.cache_misses:
+        header = "\nAdditional cache misses (audio that would need to be generated):" if reporting_state.silent_clips else "\nCache misses (audio that would need to be generated):"
+        logger.info(header)
+
+        grouped_misses = group_by_speaker(reporting_state.cache_misses)
+
+        for (speaker_display, speaker_id), clips in sorted(grouped_misses.items()):
+            logger.info(
+                f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
+            for clip_info in sorted(clips, key=lambda x: x.text):
+                logger.info(f'  • Text: "{clip_info.text}"')
+                logger.info(f"    Cache: {clip_info.cache_path}")
+
+    # Only show "all cached" if there were no cache misses, and no silent clips
+    elif not reporting_state.silent_clips:
+        logger.info(
+            "\nAll audio clips are cached. No additional audio generation needed\n")
+
+    # Print summary if either type of issue was found
+    if reporting_state.silent_clips or reporting_state.cache_misses:
+        logger.info("\nSummary:")
+        if reporting_state.silent_clips:
+            logger.info(f"- Silent clips: {len(reporting_state.silent_clips)}")
+        if reporting_state.cache_misses:
+            logger.info(f"- Cache misses: {len(reporting_state.cache_misses)}")
+            total_chars = sum(len(clip.text)
+                              for clip in reporting_state.cache_misses.values())
+            logger.info(f"- Total characters to generate: {total_chars}")
 
 
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
@@ -160,25 +256,6 @@ def determine_speaker(dialogue: Dict[str, str]) -> Optional[str]:
     return speaker
 
 
-def get_audio_dbfs(audio_data: bytes) -> Optional[float]:
-    """
-    Get the maximum dBFS level of audio data.
-
-    Args:
-        audio_data: Raw audio bytes
-
-    Returns:
-        Optional[float]: The maximum dBFS level, or None if analysis fails
-    """
-    try:
-        # Convert bytes to AudioSegment
-        audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
-        return audio_segment.max_dBFS
-    except Exception as e:
-        logger.error(f"Error analyzing audio: {e}")
-        return None
-
-
 def generate_audio_clips(
     dialogues: List[Dict],
     gap_duration_ms: int,
@@ -194,18 +271,16 @@ def generate_audio_clips(
     logger.info("Starting generate_audio_clips function")
     audio_clips = []
     modified_dialogues = []
-    existing_files = set(os.listdir(cache_folder))  # Initial cache inventory
+
+    # Track existing files for cache hit detection
+    existing_files = set(os.listdir(cache_folder))
+
+    # Initialize reporting state
+    reporting_state = ReportingState()
 
     # First run pre-processors
     logger.info("Running pre-processors")
     preprocessed_chunks = processor.preprocess_chunks(dialogues)
-
-    # Track cache misses by speaker
-    cache_misses: DefaultDict[Tuple[str, str],
-                              CacheMissInfo] = defaultdict(CacheMissInfo)
-
-    # Track silent clips by unique cache file
-    silent_clips = SilentClipInfo()
 
     for idx, dialogue in enumerate(preprocessed_chunks):
         logger.info(f"\nProcessing dialogue {idx}")
@@ -256,29 +331,35 @@ def generate_audio_clips(
             try:
                 with open(cache_filepath, 'rb') as f:
                     audio_data = f.read()
-                max_dbfs = get_audio_dbfs(audio_data)
+                max_dbfs = check_audio_level(audio_data)
                 logger.info(f"Audio level (dBFS): {max_dbfs}")
 
                 if max_dbfs is not None and max_dbfs < silence_threshold:
                     logger.warning(
                         f"Audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
                     cache_hit = False
-                    # Track silent clip if we haven't seen this cache file before
-                    if cache_filename not in silent_clips.filename_to_info:
-                        speaker_display = speaker if speaker is not None else "(default)"
-                        silent_clips.filename_to_info[cache_filename] = (
-                            text, max_dbfs, speaker_display, speaker_id)
+                    # Track silent clip
+                    speaker_display = speaker if speaker is not None else "(default)"
+                    reporting_state.silent_clips[cache_filename] = AudioClipInfo(
+                        text=text,
+                        cache_path=cache_filename,
+                        dbfs_level=max_dbfs,
+                        speaker_display=speaker_display,
+                        speaker_id=speaker_id
+                    )
             except Exception as e:
                 logger.error(f"Error checking audio file: {e}")
                 cache_hit = False
 
         if not cache_hit:
-            # Track cache miss information
+            # Track cache miss
             speaker_display = speaker if speaker is not None else "(default)"
-            cache_misses[(speaker_display, speaker_id)].line_count += 1
-            cache_misses[(speaker_display, speaker_id)].char_count += len(text)
-            if verbose:
-                cache_misses[(speaker_display, speaker_id)].texts.append(text)
+            reporting_state.cache_misses[cache_filename] = AudioClipInfo(
+                text=text,
+                cache_path=cache_filename,
+                speaker_display=speaker_display,
+                speaker_id=speaker_id
+            )
 
         if not dry_run:
             audio_data = None
@@ -308,17 +389,21 @@ def generate_audio_clips(
 
                         # Check newly generated audio for silence if requested
                         if silence_threshold is not None:
-                            max_dbfs = get_audio_dbfs(audio_data)
+                            max_dbfs = check_audio_level(audio_data)
                             logger.info(
                                 f"Generated audio level (dBFS): {max_dbfs}")
                             if max_dbfs is not None and max_dbfs < silence_threshold:
                                 logger.warning(
                                     f"Generated audio level {max_dbfs} dBFS is below threshold {silence_threshold} dBFS")
-                                # Track silent clip if we haven't seen this cache file before
-                                if cache_filename not in silent_clips.filename_to_info:
-                                    speaker_display = speaker if speaker is not None else "(default)"
-                                    silent_clips.filename_to_info[cache_filename] = (
-                                        text, max_dbfs, speaker_display, speaker_id)
+                                # Track silent clip
+                                speaker_display = speaker if speaker is not None else "(default)"
+                                reporting_state.silent_clips[cache_filename] = AudioClipInfo(
+                                    text=text,
+                                    cache_path=cache_filename,
+                                    dbfs_level=max_dbfs,
+                                    speaker_display=speaker_display,
+                                    speaker_id=speaker_id
+                                )
 
                     logger.info("Audio generated")
 
@@ -363,66 +448,12 @@ def generate_audio_clips(
 
     logger.info("\nDialogue processing complete")
 
+    # For populate_cache mode or dry_run, recheck all audio files before reporting
     if dry_run or populate_cache:
-        if not cache_misses:
-            logger.info(
-                "\nAll audio clips are cached. No new audio generation needed.")
-        else:
-            logger.info(
-                "\nCache misses (audio that would need to be generated):")
-            for (speaker_display, speaker_id), info in sorted(cache_misses.items()):
-                logger.info(
-                    f"- {speaker_display} ({speaker_id}): {info.line_count} lines ({info.char_count} characters)")
-                if verbose:
-                    for text in info.texts:
-                        logger.info(f"  • {text[:50]}...")
-
-            logger.info(
-                f"\nTotal unique speakers requiring generation: {len(cache_misses)}")
-            total_lines = sum(
-                info.line_count for info in cache_misses.values())
-            total_chars = sum(
-                info.char_count for info in cache_misses.values())
-            logger.info(f"Total lines to generate: {total_lines}")
-            logger.info(f"Total characters to generate: {total_chars}")
-
-    # Report silent clips if silence checking was enabled
-    if silence_threshold is not None and silent_clips.filename_to_info:
-        logger.info("\nSilent clips detected:")
-
-        # For populate_cache mode, recheck all clips before reporting
-        if populate_cache:
-            still_silent = {}
-            for cache_filename, (text, dbfs, speaker_display, speaker_id) in silent_clips.filename_to_info.items():
-                cache_filepath = os.path.join(cache_folder, cache_filename)
-                try:
-                    with open(cache_filepath, 'rb') as f:
-                        audio_data = f.read()
-                    current_dbfs = get_audio_dbfs(audio_data)
-                    if current_dbfs is not None and current_dbfs < silence_threshold:
-                        still_silent[cache_filename] = (
-                            text, current_dbfs, speaker_display, speaker_id)
-                except Exception as e:
-                    logger.error(
-                        f"Error rechecking audio file {cache_filepath}: {e}")
-
-            silent_clips.filename_to_info = still_silent
-
-        # Group by speaker for output
-        by_speaker: Dict[Tuple[str, str],
-                         List[Tuple[str, float, str]]] = defaultdict(list)
-        for cache_filename, (text, dbfs, speaker_display, speaker_id) in silent_clips.filename_to_info.items():
-            by_speaker[(speaker_display, speaker_id)].append(
-                (text, dbfs, cache_filename))
-
-        # Print results
-        for (speaker_display, speaker_id), clips in sorted(by_speaker.items()):
-            logger.info(
-                f"\n- {speaker_display} ({speaker_id}): {len(clips)} clips")
-            for text, dbfs, cache_filename in sorted(clips):
-                logger.info(f"  • dBFS: {dbfs}")
-                logger.info(f"    Cache: {cache_filename}")
-                logger.info(f"    Text: \"{text}\"")
+        recheck_audio_files(reporting_state, cache_folder,
+                            silence_threshold, logger)
+        print_unified_report(reporting_state, logger,
+                             silence_threshold is not None)
 
     return audio_clips, modified_dialogues
 
