@@ -515,71 +515,6 @@ def concatenate_audio_clips(audio_clips: List[AudioSegment], output_file: str) -
         raise
 
 
-def handle_yaml_generation(
-    tts_manager: TTSProviderManager,
-    input_file: str,
-    processing_config: Optional[str],
-    provider: Optional[str] = None,
-    populate_yaml: Optional[str] = None
-) -> int:
-    """
-    Handle YAML configuration generation or population.
-
-    Args:
-        tts_manager: Initialized TTSProviderManager instance
-        input_file: Path to input JSON file
-        processing_config: Path to processing configuration file
-        provider: Optional provider name for generation
-        populate_yaml: Optional path to YAML file to populate
-
-    Returns:
-        int: Exit code (0 for success, 1 for failure)
-    """
-    processor = TextProcessorManager(processing_config)
-
-    try:
-        # Load and process chunks
-        chunks = load_json_chunks(input_file)
-        processed_chunks = processor.process_chunks(chunks)
-    except Exception as e:
-        logger.error(f"Error processing input file: {e}")
-        return 1
-
-    try:
-        if populate_yaml:
-            # Handle population case
-            logger.info(
-                f"Populating provider-specific fields in YAML: {populate_yaml}")
-            input_dir = os.path.dirname(populate_yaml)
-            base_name = os.path.splitext(os.path.basename(populate_yaml))[0]
-            yaml_output = os.path.join(
-                input_dir, f"{base_name}_populated.yaml")
-
-            tts_manager.update_yaml_with_provider_fields_preserving_comments(
-                populate_yaml, yaml_output, processed_chunks)
-            logger.info(
-                f"Updated YAML configuration generated: {yaml_output}")
-        else:
-            # Handle generation case
-            logger.info("Generating YAML configuration")
-            input_dir = os.path.dirname(input_file)
-            base_name = os.path.splitext(os.path.basename(input_file))[0]
-            yaml_output = os.path.join(
-                input_dir, f"{base_name}_voice_config.yaml")
-
-            tts_manager.generate_yaml_config(
-                processed_chunks, yaml_output, provider)
-            logger.info(
-                f"YAML configuration template generated: {yaml_output}")
-
-        return 0
-
-    except Exception as e:
-        action = "populating" if populate_yaml else "generating"
-        logger.error(f"Error {action} YAML configuration: {e}")
-        return 1
-
-
 def main():
     parser = argparse.ArgumentParser(
         description='Generate an audio file from dialogues.')
@@ -600,19 +535,12 @@ def main():
     parser.add_argument('--check-silence', type=float, nargs='?', const=-40.0, metavar='DBFS',
                         help='Check audio files for silence. Optional dBFS threshold (default: -40.0)')
 
-    # Add mutually exlusive group for additional run modes
+    # Add mutually exclusive group for additional run modes
     run_mode_group = parser.add_mutually_exclusive_group()
     run_mode_group.add_argument('--dry-run', action='store_true',
                                 help='Perform a dry run without generating new audio files')
     run_mode_group.add_argument('--populate-cache', action='store_true',
                                 help='Generate and cache audio files without creating sequence or output files')
-
-    # Add mutually exclusive group for YAML operations
-    yaml_group = parser.add_mutually_exclusive_group()
-    yaml_group.add_argument('--generate-yaml', action='store_true',
-                            help='Generate a template YAML configuration file')
-    yaml_group.add_argument('--populate-multi-provider-yaml',
-                            help='Path to YAML file to populate with provider-specific fields')
 
     args = parser.parse_args()
 
@@ -648,16 +576,6 @@ def main():
     # Initialize TTS manager
     tts_manager = TTSProviderManager(args.tts_config, args.provider)
     logger.info("TTS provider manager initialized")
-
-    # Handle YAML generation/population cases
-    if args.generate_yaml or args.populate_multi_provider_yaml:
-        return handle_yaml_generation(
-            tts_manager=tts_manager,
-            input_file=args.input_file,
-            processing_config=args.processing_config,
-            provider=args.provider if args.generate_yaml else None,
-            populate_yaml=args.populate_multi_provider_yaml if args.populate_multi_provider_yaml else None
-        )
 
     # Verify TTS config exists if provided
     if args.tts_config and not os.path.exists(args.tts_config):
