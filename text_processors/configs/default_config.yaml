@@ -70,3 +70,15 @@ processors:
           replace_field: "text"
           replace_pattern: '^(?P<scene_num>[A-Z]?\d+(\.\d+)?)\b(.*)\b(?P=scene_num)$'
           replace_string: '\1\3'
+  - name: capitalization_transform
+    config:
+      # Some TTS providers (like OpenAI) have trouble generating audio for short ALL CAPS
+      # strings, which is exactly how speaker attributions are formatted (e.g. DAVE OFF SCREEN).
+      # This will change the string to "sentence case", e.g. "Dave off screen"
+      transformations:
+        - chunk_type: speaker_attribution
+          case: sentence_case
+        - chunk_type: scene_heading
+          case: sentence_case
+        - chunk_type: dialog_modifier
+          case: lower_case
