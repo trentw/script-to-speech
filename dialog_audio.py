@@ -18,6 +18,9 @@ import traceback
 # Use a less common delimiter
 DELIMITER = "~~"
 
+# Default configuration paths
+DEFAULT_PROCESSING_CONFIG = "text_processors/configs/default_config.yaml"
+
 logger = get_screenplay_logger("dialog_audio")
 
 
@@ -526,7 +529,7 @@ def main():
                         help='Choose the TTS provider (if not specified in voice config)')
     parser.add_argument(
         '--tts-config', help='Path to YAML configuration file for TTS provider')
-    parser.add_argument('--processing-config',
+    parser.add_argument('--processing-config', default=DEFAULT_PROCESSING_CONFIG,
                         help='Path to YAML configuration file for processing module')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
