@@ -269,7 +269,8 @@ def generate_audio_clips(
     verbose: bool = False,
     dry_run: bool = False,
     populate_cache: bool = False,
-    silence_threshold: Optional[float] = None
+    silence_threshold: Optional[float] = None,
+    cache_overrides_dir: Optional[str] = None
 ) -> Tuple[List[AudioSegment], List[Dict]]:
     logger.info("Starting generate_audio_clips function")
     audio_clips = []
@@ -323,6 +324,29 @@ def generate_audio_clips(
         if not dry_run and not populate_cache:
             logger.info(f"Sequence filepath: {sequence_filepath}")
 
+        # Check cache overrides directory first
+        if cache_overrides_dir:
+            cache_overrides_path = os.path.join(
+                cache_overrides_dir, cache_filename)
+            if os.path.exists(cache_overrides_path):
+                if dry_run:
+                    logger.info(
+                        f"Would move cache override audio file to cache: {cache_overrides_path} -> {cache_filepath}")
+                else:
+                    try:
+                        # Ensure cache directory exists
+                        os.makedirs(os.path.dirname(
+                            cache_filepath), exist_ok=True)
+                        # Move the file from cache override directory to cache (will overwrite if exists)
+                        os.replace(cache_overrides_path, cache_filepath)
+                        logger.info(
+                            f"Moved cache override audio file to cache: {cache_overrides_path} -> {cache_filepath}")
+                        # Add to existing files since we just moved it
+                        existing_files.add(cache_filename)
+                    except Exception as e:
+                        logger.error(f"Error moving preferred audio file: {e}")
+
+        # Check if file exists in cache
         cache_hit = cache_filename in existing_files
         logger.info(f"Cache hit: {cache_hit}")
 
@@ -537,6 +561,10 @@ def main():
                         help='Path to ffmpeg binary or directory containing ffmpeg binaries')
     parser.add_argument('--check-silence', type=float, nargs='?', const=-40.0, metavar='DBFS',
                         help='Check audio files for silence. Optional dBFS threshold (default: -40.0)')
+    parser.add_argument('--cache-overrides', nargs='?', const='standalone_speech', default='',
+                        help='Path to audio files that will override cache files if present. '
+                             'When flag is used without path, defaults to "standalone_speech". '
+                             'When flag is not used, no overrides are applied.')
 
     # Add mutually exclusive group for additional run modes
     run_mode_group = parser.add_mutually_exclusive_group()
@@ -609,7 +637,8 @@ def main():
     logger.info("Generating audio clips")
     audio_clips, modified_dialogues = generate_audio_clips(
         dialogues, args.gap, tts_manager, cache_folder, sequence_folder,
-        processor, args.verbose, args.dry_run, args.populate_cache, args.check_silence)
+        processor, args.verbose, args.dry_run, args.populate_cache, args.check_silence,
+        args.cache_overrides)
 
     # Save modified JSON in output folder
     base_name = os.path.splitext(os.path.basename(args.input_file))[0]
