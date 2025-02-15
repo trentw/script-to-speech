@@ -6,6 +6,7 @@ from datetime import datetime
 from pydub import AudioSegment
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
+from utils.generate_standalone_speech import get_command_string
 import logging
 import hashlib
 import argparse
@@ -32,6 +33,7 @@ class AudioClipInfo:
     dbfs_level: Optional[float] = None
     speaker_display: Optional[str] = None
     speaker_id: Optional[str] = None
+    provider_id: Optional[str] = None
 
 
 @dataclass
@@ -83,7 +85,13 @@ def recheck_audio_files(reporting_state: ReportingState, cache_folder: str, sile
     reporting_state.cache_misses = actual_misses
 
 
-def print_unified_report(reporting_state: ReportingState, logger, silence_checking_enabled: bool = False) -> None:
+def print_unified_report(
+    reporting_state: ReportingState,
+    logger,
+    silence_checking_enabled: bool = False,
+    max_misses_to_report: int = 20,
+    max_text_length: int = 30
+) -> None:
     """Print unified report of silent clips and cache misses."""
 
     # Helper function to group clips by speaker
@@ -140,6 +148,54 @@ def print_unified_report(reporting_state: ReportingState, logger, silence_checki
             total_chars = sum(len(clip.text)
                               for clip in reporting_state.cache_misses.values())
             logger.info(f"- Total characters to generate: {total_chars}")
+
+            # Generate CLI commands for missing audio
+            all_misses = {**reporting_state.silent_clips,
+                          **reporting_state.cache_misses}
+
+            # Group misses by (provider_id, speaker_id)
+            provider_groups = defaultdict(list)
+            for clip_info in all_misses.values():
+                if clip_info.provider_id and clip_info.speaker_id:
+                    provider_groups[(clip_info.provider_id, clip_info.speaker_id, clip_info.speaker_display)].append(
+                        clip_info.text)
+
+            # Filter out texts over max length
+            commands_to_show = []
+            for (provider_id, speaker_id, speaker_display), texts in provider_groups.items():
+                # Apply text length filter
+                filtered_texts = [
+                    t for t in texts
+                    if len(t) <= max_text_length
+                ]
+
+                if filtered_texts:
+                    commands_to_show.append({
+                        "provider": provider_id,
+                        "voice_id": speaker_id,
+                        "speaker": speaker_display,
+                        "texts": filtered_texts,
+                        "count": len(filtered_texts)
+                    })
+
+            # Apply reporting limits and show commands
+            if len(commands_to_show) > 0:
+                logger.info("\nCommands to generate missing audio clips:")
+                total_misses = sum(c["count"] for c in commands_to_show)
+
+                if total_misses > max_misses_to_report:
+                    logger.info(
+                        f"\nToo many misses to show commands ({total_misses} total).")
+                    logger.info(
+                        f"Use a higher --max-misses-to-report value to see more.")
+                else:
+                    for cmd in commands_to_show:
+                        command = get_command_string(
+                            cmd["provider"], cmd["voice_id"], cmd["texts"])
+                        if command:
+                            logger.info(
+                                f"\n# {cmd['count']} clips for {cmd['provider']} voice {cmd['voice_id']} ({cmd['speaker']}):")
+                            logger.info(command)
 
 
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
@@ -372,7 +428,8 @@ def generate_audio_clips(
                         cache_path=cache_filename,
                         dbfs_level=max_dbfs,
                         speaker_display=speaker_display,
-                        speaker_id=speaker_id
+                        speaker_id=speaker_id,
+                        provider_id=provider_id
                     )
             except Exception as e:
                 logger.error(f"Error checking audio file: {e}")
@@ -385,7 +442,8 @@ def generate_audio_clips(
                 text=text,
                 cache_path=cache_filename,
                 speaker_display=speaker_display,
-                speaker_id=speaker_id
+                speaker_id=speaker_id,
+                provider_id=provider_id
             )
 
         if not dry_run:
@@ -429,7 +487,8 @@ def generate_audio_clips(
                                     cache_path=cache_filename,
                                     dbfs_level=max_dbfs,
                                     speaker_display=speaker_display,
-                                    speaker_id=speaker_id
+                                    speaker_id=speaker_id,
+                                    provider_id=provider_id
                                 )
 
                     logger.info("Audio generated")
@@ -479,8 +538,13 @@ def generate_audio_clips(
     if dry_run or populate_cache:
         recheck_audio_files(reporting_state, cache_folder,
                             silence_threshold, logger)
-        print_unified_report(reporting_state, logger,
-                             silence_threshold is not None)
+        print_unified_report(
+            reporting_state,
+            logger,
+            silence_checking_enabled=silence_threshold is not None,
+            max_misses_to_report=20,
+            max_text_length=30
+        )
 
     return audio_clips, modified_dialogues
 
@@ -646,7 +710,7 @@ def main():
         output_folder, f"{base_name}-modified.json")
     with open(modified_json_path, 'w', encoding='utf-8') as f:
         json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
-    logger.info(f'Modified JSON file generated: {modified_json_path}')
+    logger.info(f'\nModified JSON file generated: {modified_json_path}')
 
     if not args.dry_run and not args.populate_cache:
         logger.info(f"Concatenating audio clips and saving to: {output_file}")

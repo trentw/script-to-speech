@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, List
 import os
 from datetime import datetime
 import re
@@ -77,6 +77,42 @@ def generate_standalone_speech(
 
     except Exception as e:
         logger.error(f"Error generating speech: {e}")
+
+
+def get_command_string(provider_name: str, voice_id: str, texts: List[str]) -> str:
+    """Generate command line string for standalone speech generation.
+
+    Args:
+        provider_name: Name of the TTS provider
+        voice_id: Voice identifier
+        texts: List of text strings to convert
+
+    Returns:
+        Command line string that can be used to generate the audio
+    """
+    try:
+        # Get provider class to determine required fields
+        provider_class = get_provider_class(provider_name)
+        required_fields = provider_class.get_required_fields()
+
+        if not required_fields:
+            logger.error(
+                f"No required fields found for provider {provider_name}")
+            return ""
+
+        # Build command with first required field as voice parameter
+        # TODO: Assumes only one required parameter to define voice
+        # TODO: TTS providers could return "clean" voice id instead of having
+        #       to depend on splitting by underscore
+        trimmed_voice_id = voice_id.split(
+            "_")[0] if "_" in voice_id else voice_id
+        voice_param = f"--{required_fields[0]} {trimmed_voice_id}"
+        texts_quoted = [f'"{t}"' for t in texts]
+
+        return f"python -m utils.generate_standalone_speech {provider_name} {voice_param} {' '.join(texts_quoted)}"
+    except Exception as e:
+        logger.error(f"Error generating command string: {e}")
+        return ""
 
 
 def main():
