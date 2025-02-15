@@ -1,20 +1,19 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 import os
 import json
 import logging
 from text_processors.processor_manager import TextProcessorManager
+from text_processors.utils import get_processor_configs
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import get_screenplay_logger
 
-# Default configuration paths
-DEFAULT_PROCESSING_CONFIG = "text_processors/configs/default_config.yaml"
 
 logger = get_screenplay_logger("utils.processor")
 
 
 def _handle_yaml_operation(
     input_json_path: str,
-    processing_config: Optional[str] = None,
+    processor_configs: Optional[List[str]] = None,
     provider: Optional[str] = None,
     existing_yaml_path: Optional[str] = None
 ) -> str:
@@ -35,13 +34,15 @@ def _handle_yaml_operation(
         with open(input_json_path, 'r', encoding='utf-8') as f:
             chunks = json.load(f)
 
-        # Initialize processing module with default or custom config
-        processor = TextProcessorManager(
-            processing_config or DEFAULT_PROCESSING_CONFIG)
+        # Get processor configs and initialize processing module
+        generated_processor_configs = get_processor_configs(
+            input_json_path, processor_configs)
+        processor = TextProcessorManager(generated_processor_configs)
         processed_chunks = processor.process_chunks(chunks)
 
         # Initialize TTS manager
-        tts_manager = TTSProviderManager(config_path=None, overall_provider=provider)
+        tts_manager = TTSProviderManager(
+            config_path=None, overall_provider=provider)
 
         # Determine output path and operation
         if existing_yaml_path:
@@ -78,7 +79,7 @@ def _handle_yaml_operation(
 
 def generate_yaml_config(
     input_json_path: str,
-    processing_config: Optional[str] = None,
+    processing_configs: Optional[List[str]] = None,
     provider: Optional[str] = None
 ) -> str:
     """
@@ -86,20 +87,20 @@ def generate_yaml_config(
 
     Args:
         input_json_path: Path to the input JSON chunks file
-        processing_config: Optional path to processing configuration file.
-                         If not provided, uses DEFAULT_PROCESSING_CONFIG
+        processing_configs: Optional list of paths to processing configuration files.
+                          If not provided, uses default config and any matching chunk config
         provider: Optional provider name to use for generation
 
     Returns:
         str: Path to the generated YAML configuration file
     """
-    return _handle_yaml_operation(input_json_path, processing_config, provider)
+    return _handle_yaml_operation(input_json_path, processing_configs, provider)
 
 
 def populate_multi_provider_yaml(
     input_json_path: str,
     voice_config_yaml_path: str,
-    processing_config: Optional[str] = None
+    processing_configs: Optional[List[str]] = None
 ) -> str:
     """
     Populate provider-specific fields in an existing YAML configuration.
@@ -107,13 +108,13 @@ def populate_multi_provider_yaml(
     Args:
         input_json_path: Path to the input JSON chunks file
         voice_config_yaml_path: Path to the YAML configuration to populate
-        processing_config: Optional path to processing configuration file.
-                         If not provided, uses DEFAULT_PROCESSING_CONFIG
+        processing_configs: Optional list of paths to processing configuration files.
+                          If not provided, uses default config and any matching chunk config
 
     Returns:
         str: Path to the populated YAML configuration file
     """
-    return _handle_yaml_operation(input_json_path, processing_config, None, voice_config_yaml_path)
+    return _handle_yaml_operation(input_json_path, processing_configs, None, voice_config_yaml_path)
 
 
 if __name__ == "__main__":
@@ -125,7 +126,7 @@ if __name__ == "__main__":
 
     # Common argument for both commands
     processing_config_arg = '--processing-config'
-    processing_config_help = 'Optional path to processing configuration file'
+    processing_config_help = 'Optional paths to processing configuration files. Multiple paths can be provided.'
 
     # Generate YAML command
     generate_parser = subparsers.add_parser('generate',
@@ -138,6 +139,7 @@ if __name__ == "__main__":
         help='Optional provider name for generation')
     generate_parser.add_argument(
         processing_config_arg,
+        nargs='*',
         help=processing_config_help)
 
     # Populate multi-provider YAML command
@@ -151,6 +153,7 @@ if __name__ == "__main__":
         help='Path to YAML configuration to populate')
     populate_parser.add_argument(
         processing_config_arg,
+        nargs='*',
         help=processing_config_help)
 
     args = parser.parse_args()

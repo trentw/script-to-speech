@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
-from typing import Dict, List, Tuple
+from abc import ABC, abstractmethod, abstractproperty
+from typing import Dict, List, Tuple, Literal
 
 
 class TextProcessor(ABC):
@@ -7,6 +7,17 @@ class TextProcessor(ABC):
 
     def __init__(self, config: Dict):
         self.config = config
+
+    @property
+    def multi_config_mode(self) -> Literal["chain", "override"]:
+        """
+        Determines how this processor behaves when multiple configs are loaded.
+        
+        Returns:
+            "chain": Multiple instances of this processor can exist and will be chained
+            "override": Only one instance can exist, last config's instance is used
+        """
+        return "chain"
 
     @abstractmethod
     def process(self, json_chunk: Dict) -> Tuple[Dict, bool]:

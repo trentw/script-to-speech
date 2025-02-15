@@ -7,6 +7,7 @@ from pydub import AudioSegment
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
 from utils.generate_standalone_speech import get_command_string
+from text_processors.utils import get_processor_configs
 import logging
 import hashlib
 import argparse
@@ -19,8 +20,6 @@ import traceback
 # Use a less common delimiter
 DELIMITER = "~~"
 
-# Default configuration paths
-DEFAULT_PROCESSING_CONFIG = "text_processors/configs/default_config.yaml"
 
 logger = get_screenplay_logger("dialog_audio")
 
@@ -617,8 +616,9 @@ def main():
                         help='Choose the TTS provider (if not specified in voice config)')
     parser.add_argument(
         '--tts-config', help='Path to YAML configuration file for TTS provider')
-    parser.add_argument('--processing-config', default=DEFAULT_PROCESSING_CONFIG,
-                        help='Path to YAML configuration file for processing module')
+    parser.add_argument('--processor-configs', nargs='*',
+                        help='Path(s) to YAML configuration file(s) for text (pre)processors. '
+                             'Multiple paths can be provided.')
     parser.add_argument('--verbose', action='store_true',
                         help='Enable verbose output')
     parser.add_argument('--ffmpeg-path',
@@ -663,11 +663,6 @@ def main():
     if not os.path.exists(args.input_file):
         raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
-    # Verify processing config exists if provided
-    if args.processing_config and not os.path.exists(args.processing_config):
-        raise FileNotFoundError(
-            f"Processing config file not found: {args.processing_config}")
-
     # Initialize TTS manager
     tts_manager = TTSProviderManager(args.tts_config, args.provider)
     logger.info("TTS provider manager initialized")
@@ -693,9 +688,12 @@ def main():
         return 1
     logger.info(f"Loaded {len(dialogues)} dialogues")
 
-    # Initialize processing module
-    processor = TextProcessorManager(args.processing_config)
-    logger.info("Processing module initialized")
+    # Initialize processing module with configs
+    generated_processor_configs = get_processor_configs(
+        args.input_file, args.processor_configs)
+    processor = TextProcessorManager(generated_processor_configs)
+    logger.info(
+        f"Processing module initialized with configs: {generated_processor_configs}")
 
     # Generate and process audio
     logger.info("Generating audio clips")

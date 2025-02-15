@@ -5,15 +5,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 import logging
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 from text_processors.processor_manager import TextProcessorManager
+from text_processors.utils import get_processor_configs
 
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
 from .screenplay_parser import ScreenplayParser
 import json
 
-# Default configuration paths
-DEFAULT_PROCESSING_CONFIG = "text_processors/configs/default_config.yaml"
 
 logger = get_screenplay_logger("parser.utils")
 
@@ -180,7 +179,7 @@ def create_output_folders(screenplay_name: str, run_mode: str = "") -> Tuple[str
 
 def process_json_chunks(
     json_path: str,
-    processing_config: Optional[str] = None,
+    processor_configs: Optional[List[str]] = None,
     output_path: Optional[str] = None
 ) -> None:
     """
@@ -188,8 +187,9 @@ def process_json_chunks(
 
     Args:
         json_path: Path to input JSON chunks file
-        processing_config: Optional path to processing configuration file. 
-                         If not provided, uses DEFAULT_PROCESSING_CONFIG
+        processor_configs: Optional path to processor configuration files. 
+                         If not provided, uses DEFAULT_PROCESSING_CONFIG from text_processors.utils and
+                         [file name]_processor_config.yaml if it exists
         output_path: Optional path for output file. If not provided, will use
                     output/[json_name]/[json_name]-modified.json
     """
@@ -212,13 +212,14 @@ def process_json_chunks(
         with open(json_path, 'r', encoding='utf-8') as f:
             chunks = json.load(f)
 
-        # Use default config if none provided
-        processing_config = processing_config or DEFAULT_PROCESSING_CONFIG
+        # Get processor configs
+        generated_processor_configs = get_processor_configs(
+            json_path, processor_configs)
 
         # Initialize text processor manager
-        processor = TextProcessorManager(processing_config)
+        processor = TextProcessorManager(generated_processor_configs)
         logger.info(
-            f"Text processor manager initialized with config: {processing_config}")
+            f"Text processor manager initialized with configs: {generated_processor_configs}")
 
         # Process chunks
         modified_chunks = processor.process_chunks(chunks)
@@ -387,8 +388,9 @@ if __name__ == "__main__":
                                                 help='Process existing JSON chunks through preprocessors and processors')
     process_json_parser.add_argument(
         'json_file', help='Path to JSON chunks file')
-    process_json_parser.add_argument('--processing-config',
-                                     help='Path to processing configuration file')
+    process_json_parser.add_argument('--processor-configs', nargs='*',
+                                     help='Path(s) to text (pre)processor configuration file(s). '
+                                          'Multiple paths can be provided.')
     process_json_parser.add_argument('--output-path',
                                      help='Custom output path for modified chunks')
 
@@ -402,7 +404,7 @@ if __name__ == "__main__":
             analyze_screenplay_chunks(args.json_file)
         elif args.command == 'process-json':
             process_json_chunks(
-                args.json_file, args.processing_config, args.output_path)
+                args.json_file, args.processor_configs, args.output_path)
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)

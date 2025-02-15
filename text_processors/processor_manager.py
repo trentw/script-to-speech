@@ -1,5 +1,5 @@
 import yaml
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import importlib
 from .text_processor_base import TextProcessor
 from .text_preprocessor_base import TextPreProcessor
@@ -12,65 +12,113 @@ logger = get_screenplay_logger("text_processors.manager")
 class TextProcessorManager:
     """Manages the loading and execution of text processors and pre-processors."""
 
-    def __init__(self, config_path: str):
-        with open(config_path, 'r') as config_file:
-            self.config = yaml.safe_load(config_file)
+    def __init__(self, config_paths: List[str]):
+        """
+        Initialize with multiple config files that will be processed in order.
+        
+        Args:
+            config_paths: List of paths to YAML config files
+        """
+        self.configs = []
+        for path in config_paths:
+            with open(path, 'r') as config_file:
+                self.configs.append(yaml.safe_load(config_file))
+        
         self.preprocessors = self._initialize_preprocessors()
         self.processors = self._initialize_processors()
         self.preprocessed_chunks = None
 
+    def _filter_by_mode(self, processors: List[Union[TextProcessor, TextPreProcessor]]) -> List[Union[TextProcessor, TextPreProcessor]]:
+        """
+        Filter processors based on their multi_config_mode.
+        
+        For "override" mode, only keep the last instance of each processor class.
+        For "chain" mode, keep all instances.
+        """
+        result = []
+        seen_override_classes = set()
+        
+        # Process in reverse to handle override mode (keep last instance)
+        for processor in reversed(processors):
+            processor_class = processor.__class__
+            
+            if processor.multi_config_mode == "override":
+                if processor_class not in seen_override_classes:
+                    seen_override_classes.add(processor_class)
+                    result.insert(0, processor)  # Insert at start to maintain original order
+            else:  # "chain" mode
+                result.insert(0, processor)  # Insert at start to maintain original order
+                
+        return result
+
     def _initialize_preprocessors(self) -> List[TextPreProcessor]:
-        """Initialize pre-processors based on configuration."""
-        preprocessors = []
-        for preproc_config in self.config.get('preprocessors', []):
-            module_name = preproc_config['name']
-            config = preproc_config.get('config', {})
+        """Initialize pre-processors from all configurations."""
+        all_preprocessors = []
+        
+        # Process each config file in order
+        for config in self.configs:
+            for preproc_config in config.get('preprocessors', []):
+                module_name = preproc_config['name']
+                config_params = preproc_config.get('config', {})
 
-            try:
-                # Import from preprocessors subdirectory
-                module = importlib.import_module(
-                    f"text_processors.preprocessors.{module_name}_preprocessor")
-                class_name = ''.join(word.capitalize()
-                                     for word in module_name.split('_')) + 'PreProcessor'
-                preprocessor_class = getattr(module, class_name)
+                try:
+                    # Import from preprocessors subdirectory
+                    module = importlib.import_module(
+                        f"text_processors.preprocessors.{module_name}_preprocessor")
+                    class_name = ''.join(word.capitalize()
+                                         for word in module_name.split('_')) + 'PreProcessor'
+                    preprocessor_class = getattr(module, class_name)
 
-                # Create and validate pre-processor
-                preprocessor = preprocessor_class(config)
-                if not preprocessor.validate_config():
-                    raise ValueError(
-                        f"Invalid configuration for pre-processor {module_name}")
+                    # Create and validate pre-processor
+                    preprocessor = preprocessor_class(config_params)
+                    if not preprocessor.validate_config():
+                        raise ValueError(
+                            f"Invalid configuration for pre-processor {module_name}")
 
-                preprocessors.append(preprocessor)
-                logger.info(
-                    f"Successfully loaded pre-processor: {module_name}")
-            except Exception as e:
-                error_msg = f"Error loading pre-processor {module_name}: {e}"
-                logger.error(error_msg)
-                raise ValueError(error_msg)
+                    all_preprocessors.append(preprocessor)
+                    logger.info(
+                        f"Successfully loaded pre-processor: {module_name} from config")
+                except Exception as e:
+                    error_msg = f"Error loading pre-processor {module_name}: {e}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
 
-        return preprocessors
+        # Apply mode-based filtering
+        return self._filter_by_mode(all_preprocessors)
 
     def _initialize_processors(self) -> List[TextProcessor]:
-        """Initialize text processors based on configuration."""
-        processors = []
-        for processor_config in self.config.get('processors', []):
-            module_name = processor_config['name']
-            config = processor_config.get('config', {})
+        """Initialize text processors from all configurations."""
+        all_processors = []
+        
+        # Process each config file in order
+        for config in self.configs:
+            for processor_config in config.get('processors', []):
+                module_name = processor_config['name']
+                config_params = processor_config.get('config', {})
 
-            try:
-                # Import from processors subdirectory
-                module = importlib.import_module(
-                    f"text_processors.processors.{module_name}_processor")
-                # Convert module_name to class name (e.g., skip_empty -> SkipEmptyProcessor)
-                class_name = ''.join(word.capitalize()
-                                     for word in module_name.split('_')) + 'Processor'
-                processor_class = getattr(module, class_name)
-                processors.append(processor_class(config))
-                logger.info(f"Successfully loaded processor: {module_name}")
-            except (ImportError, AttributeError) as e:
-                logger.error(f"Error loading processor {module_name}: {e}")
+                try:
+                    # Import from processors subdirectory
+                    module = importlib.import_module(
+                        f"text_processors.processors.{module_name}_processor")
+                    # Convert module_name to class name (e.g., skip_empty -> SkipEmptyProcessor)
+                    class_name = ''.join(word.capitalize()
+                                         for word in module_name.split('_')) + 'Processor'
+                    processor_class = getattr(module, class_name)
+                    
+                    processor = processor_class(config_params)
+                    if not processor.validate_config():
+                        raise ValueError(
+                            f"Invalid configuration for processor {module_name}")
+                            
+                    all_processors.append(processor)
+                    logger.info(f"Successfully loaded processor: {module_name} from config")
+                except Exception as e:
+                    error_msg = f"Error loading processor {module_name}: {e}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
 
-        return processors
+        # Apply mode-based filtering
+        return self._filter_by_mode(all_processors)
 
     def process_chunks(self, chunks: List[Dict]) -> List[Dict]:
         """

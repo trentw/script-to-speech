@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Literal
 from ..text_preprocessor_base import TextPreProcessor
 import re
 import logging
@@ -14,6 +14,14 @@ class DualDialogPreProcessor(TextPreProcessor):
     """
     MIN_SPEAKER_SPACING = 5  # Minimum spaces between speakers
     MIN_DIALOG_SPACING = 2   # Minimum spaces between dialog columns
+
+    @property
+    def multi_config_mode(self) -> Literal["chain", "override"]:
+        """
+        Override to ensure only one instance of dual dialog processor exists.
+        Last config's instance will be used if multiple configs specify this processor.
+        """
+        return "override"
 
     def validate_config(self) -> bool:
         """No user configuration, always return true"""
