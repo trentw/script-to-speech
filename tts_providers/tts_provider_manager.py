@@ -305,12 +305,21 @@ class TTSProviderManager:
             # Add the speaker with line count comment and spacing
             content[speaker] = speaker_config
 
+            # Calculate character statistics
+            total_chars = sum(len(str(dialogue.get('text', ''))) for dialogue in dialogues
+                              if (dialogue.get('speaker') == speaker
+                                  or (not dialogue.get('speaker') and speaker == 'default')))
+            longest_dialog = max((len(str(dialogue.get('text', ''))) for dialogue in dialogues
+                                  if (dialogue.get('speaker') == speaker
+                                      or (not dialogue.get('speaker') and speaker == 'default'))), default=0)
+
             # Special comment for default speaker
             if speaker == 'default':
                 comment = (f"\ndefault: {count} lines - Used for all non-dialogue pieces "
-                           "(scene descriptions, scene headings, etc.)")
+                           "(scene descriptions, scene headings, etc.)\n"
+                           f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters")
             else:
-                comment = f"\n{speaker}: {count} lines"
+                comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
 
             content.yaml_set_comment_before_after_key(
                 speaker,
@@ -403,12 +412,21 @@ class TTSProviderManager:
                 content[speaker] = speaker_config
                 count = speaker_counts.get(speaker, 0)
 
+                # Calculate character statistics
+                total_chars = sum(len(str(dialogue.get('text', ''))) for dialogue in dialogues
+                                  if (dialogue.get('speaker') == speaker
+                                      or (not dialogue.get('speaker') and speaker == 'default')))
+                longest_dialog = max((len(str(dialogue.get('text', ''))) for dialogue in dialogues
+                                      if (dialogue.get('speaker') == speaker
+                                          or (not dialogue.get('speaker') and speaker == 'default'))), default=0)
+
                 # Special comment for default speaker
                 if speaker == 'default':
                     comment = (f"\ndefault: {count} lines - Used for all non-dialogue pieces "
-                               "(scene descriptions, scene headings, etc.)")
+                               "(scene descriptions, scene headings, etc.)\n"
+                               f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters")
                 else:
-                    comment = f"\n{speaker}: {count} lines"
+                    comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
 
                 content.yaml_set_comment_before_after_key(
                     speaker,
