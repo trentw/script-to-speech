@@ -148,53 +148,53 @@ def print_unified_report(
                               for clip in reporting_state.cache_misses.values())
             logger.info(f"- Total characters to generate: {total_chars}")
 
-            # Generate CLI commands for missing audio
-            all_misses = {**reporting_state.silent_clips,
-                          **reporting_state.cache_misses}
+        # Generate CLI commands for missing audio
+        all_misses = {**reporting_state.silent_clips,
+                      **reporting_state.cache_misses}
 
-            # Group misses by (provider_id, speaker_id)
-            provider_groups = defaultdict(list)
-            for clip_info in all_misses.values():
-                if clip_info.provider_id and clip_info.speaker_id:
-                    provider_groups[(clip_info.provider_id, clip_info.speaker_id, clip_info.speaker_display)].append(
-                        clip_info.text)
+        # Group misses by (provider_id, speaker_id)
+        provider_groups = defaultdict(list)
+        for clip_info in all_misses.values():
+            if clip_info.provider_id and clip_info.speaker_id:
+                provider_groups[(clip_info.provider_id, clip_info.speaker_id, clip_info.speaker_display)].append(
+                    clip_info.text)
 
-            # Filter out texts over max length
-            commands_to_show = []
-            for (provider_id, speaker_id, speaker_display), texts in provider_groups.items():
-                # Apply text length filter
-                filtered_texts = [
-                    t for t in texts
-                    if len(t) <= max_text_length
-                ]
+        # Filter out texts over max length
+        commands_to_show = []
+        for (provider_id, speaker_id, speaker_display), texts in provider_groups.items():
+            # Apply text length filter
+            filtered_texts = [
+                t for t in texts
+                if len(t) <= max_text_length
+            ]
 
-                if filtered_texts:
-                    commands_to_show.append({
-                        "provider": provider_id,
-                        "voice_id": speaker_id,
-                        "speaker": speaker_display,
-                        "texts": filtered_texts,
-                        "count": len(filtered_texts)
-                    })
+            if filtered_texts:
+                commands_to_show.append({
+                    "provider": provider_id,
+                    "voice_id": speaker_id,
+                    "speaker": speaker_display,
+                    "texts": filtered_texts,
+                    "count": len(filtered_texts)
+                })
 
-            # Apply reporting limits and show commands
-            if len(commands_to_show) > 0:
-                logger.info("\nCommands to generate missing audio clips:")
-                total_misses = sum(c["count"] for c in commands_to_show)
+        # Apply reporting limits and show commands
+        if len(commands_to_show) > 0:
+            logger.info("\nCommands to generate missing audio clips:")
+            total_misses = sum(c["count"] for c in commands_to_show)
 
-                if total_misses > max_misses_to_report:
-                    logger.info(
-                        f"\nToo many misses to show commands ({total_misses} total).")
-                    logger.info(
-                        f"Use a higher --max-misses-to-report value to see more.")
-                else:
-                    for cmd in commands_to_show:
-                        command = get_command_string(
-                            cmd["provider"], cmd["voice_id"], cmd["texts"])
-                        if command:
-                            logger.info(
-                                f"\n# {cmd['count']} clips for {cmd['provider']} voice {cmd['voice_id']} ({cmd['speaker']}):")
-                            logger.info(command)
+            if total_misses > max_misses_to_report:
+                logger.info(
+                    f"\nToo many misses to show commands ({total_misses} total).")
+                logger.info(
+                    f"Use a higher --max-misses-to-report value to see more.")
+            else:
+                for cmd in commands_to_show:
+                    command = get_command_string(
+                        cmd["provider"], cmd["voice_id"], cmd["texts"])
+                    if command:
+                        logger.info(
+                            f"\n# {cmd['count']} clips for {cmd['provider']} voice {cmd['voice_id']} ({cmd['speaker']}):")
+                        logger.info(command)
 
 
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
