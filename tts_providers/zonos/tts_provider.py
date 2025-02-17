@@ -67,14 +67,12 @@ class ZonosTTSProvider(TTSProvider):
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
 
-            # Extract optional fields if present
-            optional_fields = config.get('optional_fields', {})
             speaker_config = SpeakerConfig(
                 voice_seed=config['voice_seed'],
-                speaking_rate=None if self._is_empty_value(optional_fields.get('speaking_rate'))
-                else optional_fields.get('speaking_rate'),
-                language_iso_code=None if self._is_empty_value(optional_fields.get('language_iso_code'))
-                else optional_fields.get('language_iso_code')
+                speaking_rate=None if self._is_empty_value(config.get('speaking_rate'))
+                else config.get('speaking_rate'),
+                language_iso_code=None if self._is_empty_value(config.get('language_iso_code'))
+                else config.get('language_iso_code')
             )
 
             if speaker == 'default':
@@ -153,16 +151,17 @@ class ZonosTTSProvider(TTSProvider):
     def get_yaml_instructions(cls) -> str:
         """Get configuration instructions."""
         return """# Zonos TTS Configuration
-# 
+#
 # Required Environment Variable:
 #   ZONOS_API_KEY: Your Zonos API key
 #
 # Instructions:
 #   - For each speaker, specify:
-#       voice_seed: Integer between -1 and 2147483647 (required)
-#       optional_fields:
-#         speaking_rate: Float between 5 and 35 (or empty)
-#         language_iso_code: One of [en-us, fr-fr, de, ja, ko, cmn] (or empty)
+#     Required fields:
+#       voice_seed: Integer between -1 and 2147483647
+#     Optional fields:
+#       speaking_rate: Float between 5 and 35
+#       language_iso_code: One of [en-us, fr-fr, de, ja, ko, cmn]
 #
 # Example (minimal):
 #   default:
@@ -171,16 +170,10 @@ class ZonosTTSProvider(TTSProvider):
 # Example (with optional fields):
 #   MARIA:
 #     voice_seed: 67890
-#     optional_fields:
-#       speaking_rate: 20
-#       language_iso_code: fr-fr
+#     speaking_rate: 20
+#     language_iso_code: fr-fr
 #
-# Example (with empty optional fields):
-#   JOHN:
-#     voice_seed: 54321
-#     optional_fields:
-#       speaking_rate: 
-#       language_iso_code: 
+# Note: Optional fields can be omitted entirely if not needed.
 """
 
     @classmethod
@@ -213,11 +206,7 @@ class ZonosTTSProvider(TTSProvider):
                 f"Invalid voice_seed '{voice_seed}'. Must be between {self.MIN_SEED} and {self.MAX_SEED}")
 
         # Validate optional fields if present and non-empty
-        optional_fields = speaker_config.get('optional_fields', {})
-        if not isinstance(optional_fields, dict):
-            raise ValueError("optional_fields must be a dictionary")
-
-        speaking_rate = optional_fields.get('speaking_rate')
+        speaking_rate = speaker_config.get('speaking_rate')
         if not self._is_empty_value(speaking_rate):
             if not isinstance(speaking_rate, (int, float)):
                 raise ValueError("Field 'speaking_rate' must be a number")
@@ -225,7 +214,7 @@ class ZonosTTSProvider(TTSProvider):
                 raise ValueError(
                     f"Invalid speaking_rate '{speaking_rate}'. Must be between {self.MIN_SPEAKING_RATE} and {self.MAX_SPEAKING_RATE}")
 
-        language_code = optional_fields.get('language_iso_code')
+        language_code = speaker_config.get('language_iso_code')
         if not self._is_empty_value(language_code):
             if not isinstance(language_code, str):
                 raise ValueError("Field 'language_iso_code' must be a string")

@@ -15,7 +15,8 @@ def _handle_yaml_operation(
     input_json_path: str,
     processor_configs: Optional[List[str]] = None,
     provider: Optional[str] = None,
-    existing_yaml_path: Optional[str] = None
+    existing_yaml_path: Optional[str] = None,
+    include_optional_fields: bool = False
 ) -> str:
     """
     Common functionality for YAML generation and population operations.
@@ -54,7 +55,7 @@ def _handle_yaml_operation(
                 input_dir, f"{base_name}_populated.yaml")
 
             tts_manager.update_yaml_with_provider_fields_preserving_comments(
-                existing_yaml_path, yaml_output, processed_chunks)
+                existing_yaml_path, yaml_output, processed_chunks, include_optional_fields)
             logger.info(
                 f"Generated populated YAML configuration: {yaml_output}")
         else:
@@ -65,7 +66,7 @@ def _handle_yaml_operation(
                 input_dir, f"{base_name}_voice_config.yaml")
 
             tts_manager.generate_yaml_config(
-                processed_chunks, yaml_output, provider)
+                processed_chunks, yaml_output, provider, include_optional_fields)
             logger.info(
                 f"Generated YAML configuration template: {yaml_output}")
 
@@ -80,7 +81,8 @@ def _handle_yaml_operation(
 def generate_yaml_config(
     input_json_path: str,
     processing_configs: Optional[List[str]] = None,
-    provider: Optional[str] = None
+    provider: Optional[str] = None,
+    include_optional_fields: bool = False
 ) -> str:
     """
     Generate a YAML voice configuration template from input JSON chunks.
@@ -94,13 +96,14 @@ def generate_yaml_config(
     Returns:
         str: Path to the generated YAML configuration file
     """
-    return _handle_yaml_operation(input_json_path, processing_configs, provider)
+    return _handle_yaml_operation(input_json_path, processing_configs, provider, None, include_optional_fields)
 
 
 def populate_multi_provider_yaml(
     input_json_path: str,
     voice_config_yaml_path: str,
-    processing_configs: Optional[List[str]] = None
+    processing_configs: Optional[List[str]] = None,
+    include_optional_fields: bool = False
 ) -> str:
     """
     Populate provider-specific fields in an existing YAML configuration.
@@ -114,7 +117,7 @@ def populate_multi_provider_yaml(
     Returns:
         str: Path to the populated YAML configuration file
     """
-    return _handle_yaml_operation(input_json_path, processing_configs, None, voice_config_yaml_path)
+    return _handle_yaml_operation(input_json_path, processing_configs, None, voice_config_yaml_path, include_optional_fields)
 
 
 if __name__ == "__main__":
@@ -141,6 +144,10 @@ if __name__ == "__main__":
         processing_config_arg,
         nargs='*',
         help=processing_config_help)
+    generate_parser.add_argument(
+        '--include-optional-fields',
+        action='store_true',
+        help='Include optional fields in the generated configuration')
 
     # Populate multi-provider YAML command
     populate_parser = subparsers.add_parser('populate',
@@ -155,6 +162,10 @@ if __name__ == "__main__":
         processing_config_arg,
         nargs='*',
         help=processing_config_help)
+    populate_parser.add_argument(
+        '--include-optional-fields',
+        action='store_true',
+        help='Include optional fields in the populated configuration')
 
     args = parser.parse_args()
 
@@ -163,14 +174,16 @@ if __name__ == "__main__":
             output_path = generate_yaml_config(
                 args.input_json,
                 args.processing_config,
-                args.provider)
+                args.provider,
+                args.include_optional_fields)
             print(f"Generated YAML configuration: {output_path}")
 
         elif args.command == 'populate':
             output_path = populate_multi_provider_yaml(
                 args.input_json,
                 args.voice_config,
-                args.processing_config)
+                args.processing_config,
+                args.include_optional_fields)
             print(f"Generated populated YAML: {output_path}")
 
     except Exception as e:

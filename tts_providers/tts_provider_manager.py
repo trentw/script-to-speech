@@ -253,7 +253,7 @@ class TTSProviderManager:
 
         return result
 
-    def generate_yaml_config(self, dialogues: List[Dict], output_path: str, provider_name: Optional[str] = None) -> None:
+    def generate_yaml_config(self, dialogues: List[Dict], output_path: str, provider_name: Optional[str] = None, include_optional_fields: bool = False) -> None:
         """
         Generate initial YAML configuration template for TTS providers.
 
@@ -285,7 +285,7 @@ class TTSProviderManager:
                 "Each speaker requires:\n"
                 "  provider: The TTS provider to use\n"
                 "  Additional provider-specific configuration fields\n"
-                "  Optional fields should be placed under optional_fields\n\n"
+                "  Optional fields can be included at the root level\n\n"
             )
 
         # Add sections with proper spacing
@@ -295,10 +295,9 @@ class TTSProviderManager:
                 provider_class = self._get_provider_class(provider_name)
                 for field in provider_class.get_required_fields():
                     speaker_config[field] = None
-                if provider_class.get_optional_fields():
-                    speaker_config['optional_fields'] = {
-                        field: None for field in provider_class.get_optional_fields()
-                    }
+                if include_optional_fields:
+                    for field in provider_class.get_optional_fields():
+                        speaker_config[field] = None
             else:
                 speaker_config['provider'] = None
 
@@ -330,7 +329,7 @@ class TTSProviderManager:
         # Write to file
         self._write_yaml(content, output_path)
 
-    def update_yaml_with_provider_fields(self, yaml_path: str, output_path: str, dialogues: List[Dict]) -> None:
+    def update_yaml_with_provider_fields(self, yaml_path: str, output_path: str, dialogues: List[Dict], include_optional_fields: bool = False) -> None:
         """
         Update YAML with provider-specific fields, grouped by provider.
 
@@ -403,10 +402,9 @@ class TTSProviderManager:
                 for field in provider_class.get_required_fields():
                     if field != 'provider':
                         speaker_config[field] = None
-                if provider_class.get_optional_fields():
-                    speaker_config['optional_fields'] = {
-                        field: None for field in provider_class.get_optional_fields()
-                    }
+                if include_optional_fields:
+                    for field in provider_class.get_optional_fields():
+                        speaker_config[field] = None
 
                 # Add speaker with line count and spacing
                 content[speaker] = speaker_config
@@ -445,7 +443,7 @@ class TTSProviderManager:
         with open(output_path, 'w') as f:
             yaml.dump(content, f)
 
-    def update_yaml_with_provider_fields_preserving_comments(self, yaml_path: str, output_path: str, dialogues: List[Dict]) -> None:
+    def update_yaml_with_provider_fields_preserving_comments(self, yaml_path: str, output_path: str, dialogues: List[Dict], include_optional_fields: bool = False) -> None:
         """
         Update YAML with provider-specific fields while preserving comments and existing field values.
         Maintains the original structure and ordering within provider groups.
@@ -480,7 +478,7 @@ class TTSProviderManager:
         for chunk in chunks:
             # Look for lines that could be YAML (not starting with #)
             has_yaml = any(line.strip() and not line.strip().startswith('#')
-                           for line in chunk.split('\n'))
+                           for line in chunk.split('\n')) 
             if has_yaml:
                 speaker_chunks.append(chunk)
 
@@ -574,6 +572,12 @@ class TTSProviderManager:
                 for field in required_fields:
                     if field != 'provider' and field not in speaker_config:
                         speaker_config[field] = None
+                
+                # Add optional fields if requested
+                if include_optional_fields:
+                    for field in provider_class.get_optional_fields():
+                        if field not in speaker_config:
+                            speaker_config[field] = None
 
                 # Reconstruct the chunk with added fields
                 yaml_str = StringIO()
