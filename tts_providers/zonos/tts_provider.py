@@ -1,4 +1,4 @@
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Union
 from zyphra import ZyphraClient, ZyphraError
 import os
 from dataclasses import dataclass
@@ -34,6 +34,24 @@ class ZonosTTSProvider(TTSProvider):
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
         self.default_config: Optional[SpeakerConfig] = None
 
+    @staticmethod
+    def _is_empty_value(value: Any) -> bool:
+        """Check if a value should be considered empty.
+
+        Handles:
+        - None
+        - Empty string
+        - Whitespace-only string
+        - Empty collections
+        """
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return not value.strip()
+        if isinstance(value, (list, dict, set, tuple)):
+            return len(value) == 0
+        return False
+
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the Zonos TTS provider with speaker configurations."""
         api_key = os.environ.get("ZONOS_API_KEY")
@@ -48,13 +66,15 @@ class ZonosTTSProvider(TTSProvider):
         # Validate and store voice configurations
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
-            
+
             # Extract optional fields if present
             optional_fields = config.get('optional_fields', {})
             speaker_config = SpeakerConfig(
                 voice_seed=config['voice_seed'],
-                speaking_rate=optional_fields.get('speaking_rate'),
-                language_iso_code=optional_fields.get('language_iso_code')
+                speaking_rate=None if self._is_empty_value(optional_fields.get('speaking_rate'))
+                else optional_fields.get('speaking_rate'),
+                language_iso_code=None if self._is_empty_value(optional_fields.get('language_iso_code'))
+                else optional_fields.get('language_iso_code')
             )
 
             if speaker == 'default':
@@ -71,14 +91,14 @@ class ZonosTTSProvider(TTSProvider):
             config = self._get_speaker_config(speaker)
             params = {
                 "text": text,
-                "seed": config.voice_seed,
+                "seed": int(config.voice_seed),
                 "mime_type": self.MIME_TYPE
             }
 
-            # Add optional parameters if configured
-            if config.speaking_rate is not None:
+            # Add optional parameters only if they have non-empty values
+            if not self._is_empty_value(config.speaking_rate):
                 params["speaking_rate"] = config.speaking_rate
-            if config.language_iso_code is not None:
+            if not self._is_empty_value(config.language_iso_code):
                 params["language_iso_code"] = config.language_iso_code
 
             response = self.client.audio.speech.create(**params)
@@ -92,18 +112,22 @@ class ZonosTTSProvider(TTSProvider):
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """Get the voice identifier that changes if any generation parameter changes."""
         config = self._get_speaker_config(speaker)
-        
-        # Create a dictionary of all parameters that affect voice generation
+
+        # Create a dictionary of all non-empty parameters that affect voice generation
         params = {
             "seed": config.voice_seed,
-            "speaking_rate": config.speaking_rate,
-            "language_iso_code": config.language_iso_code,
             "mime_type": self.MIME_TYPE
         }
-        
+
+        # Only include optional parameters if they have non-empty values
+        if not self._is_empty_value(config.speaking_rate):
+            params["speaking_rate"] = config.speaking_rate
+        if not self._is_empty_value(config.language_iso_code):
+            params["language_iso_code"] = config.language_iso_code
+
         # Create a hash of the parameters
         params_str = json.dumps(params, sort_keys=True)
-        return hashlib.md5(params_str.encode()).hexdigest()[:12]
+        return f"s{config.voice_seed}_{hashlib.md5(params_str.encode()).hexdigest()[:12]}"
 
     def _get_speaker_config(self, speaker: Optional[str]) -> SpeakerConfig:
         """Get the speaker configuration."""
@@ -137,8 +161,8 @@ class ZonosTTSProvider(TTSProvider):
 #   - For each speaker, specify:
 #       voice_seed: Integer between -1 and 2147483647 (required)
 #       optional_fields:
-#         speaking_rate: Float between 5 and 35
-#         language_iso_code: One of [en-us, fr-fr, de, ja, ko, cmn]
+#         speaking_rate: Float between 5 and 35 (or empty)
+#         language_iso_code: One of [en-us, fr-fr, de, ja, ko, cmn] (or empty)
 #
 # Example (minimal):
 #   default:
@@ -150,6 +174,13 @@ class ZonosTTSProvider(TTSProvider):
 #     optional_fields:
 #       speaking_rate: 20
 #       language_iso_code: fr-fr
+#
+# Example (with empty optional fields):
+#   JOHN:
+#     voice_seed: 54321
+#     optional_fields:
+#       speaking_rate: 
+#       language_iso_code: 
 """
 
     @classmethod
@@ -173,7 +204,7 @@ class ZonosTTSProvider(TTSProvider):
             raise ValueError(
                 f"Missing required field 'voice_seed' in speaker configuration: {speaker_config}")
 
-        voice_seed = speaker_config['voice_seed']
+        voice_seed = int(speaker_config['voice_seed'])
         if not isinstance(voice_seed, int):
             raise ValueError("Field 'voice_seed' must be an integer")
 
@@ -181,21 +212,21 @@ class ZonosTTSProvider(TTSProvider):
             raise ValueError(
                 f"Invalid voice_seed '{voice_seed}'. Must be between {self.MIN_SEED} and {self.MAX_SEED}")
 
-        # Validate optional fields if present
+        # Validate optional fields if present and non-empty
         optional_fields = speaker_config.get('optional_fields', {})
         if not isinstance(optional_fields, dict):
             raise ValueError("optional_fields must be a dictionary")
 
-        if 'speaking_rate' in optional_fields:
-            speaking_rate = optional_fields['speaking_rate']
+        speaking_rate = optional_fields.get('speaking_rate')
+        if not self._is_empty_value(speaking_rate):
             if not isinstance(speaking_rate, (int, float)):
                 raise ValueError("Field 'speaking_rate' must be a number")
             if not self.MIN_SPEAKING_RATE <= speaking_rate <= self.MAX_SPEAKING_RATE:
                 raise ValueError(
                     f"Invalid speaking_rate '{speaking_rate}'. Must be between {self.MIN_SPEAKING_RATE} and {self.MAX_SPEAKING_RATE}")
 
-        if 'language_iso_code' in optional_fields:
-            language_code = optional_fields['language_iso_code']
+        language_code = optional_fields.get('language_iso_code')
+        if not self._is_empty_value(language_code):
             if not isinstance(language_code, str):
                 raise ValueError("Field 'language_iso_code' must be a string")
             if language_code not in self.VALID_LANGUAGES:
