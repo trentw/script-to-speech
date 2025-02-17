@@ -32,7 +32,6 @@ class ZonosTTSProvider(TTSProvider):
         self.client = None
         # Maps speaker names to their configuration
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
-        self.default_config: Optional[SpeakerConfig] = None
 
     @staticmethod
     def _is_empty_value(value: Any) -> bool:
@@ -75,8 +74,6 @@ class ZonosTTSProvider(TTSProvider):
                 else config.get('language_iso_code')
             )
 
-            if speaker == 'default':
-                self.default_config = speaker_config
             self.speaker_configs[speaker] = speaker_config
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
@@ -130,9 +127,7 @@ class ZonosTTSProvider(TTSProvider):
     def _get_speaker_config(self, speaker: Optional[str]) -> SpeakerConfig:
         """Get the speaker configuration."""
         if not speaker:
-            if not self.default_config:
-                raise VoiceNotFoundError("No default voice configured")
-            return self.default_config
+            speaker = 'default'
 
         config = self.speaker_configs.get(speaker)
         if not config:

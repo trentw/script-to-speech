@@ -18,7 +18,6 @@ class OpenAITTSProvider(TTSProvider):
         self.client = None
         # Maps speaker names to voice names
         self.voice_map: Dict[str, str] = {}
-        self.default_voice: Optional[str] = None
 
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the OpenAI TTS provider with speaker configurations."""
@@ -35,8 +34,6 @@ class OpenAITTSProvider(TTSProvider):
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
             voice = config['voice']
-            if speaker == 'default':
-                self.default_voice = voice
             self.voice_map[speaker] = voice
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
@@ -72,9 +69,7 @@ class OpenAITTSProvider(TTSProvider):
     def _get_base_voice(self, speaker: Optional[str]) -> str:
         """Get the base voice name for a speaker."""
         if not speaker:
-            if not self.default_voice:
-                raise VoiceNotFoundError("No default voice configured")
-            return self.default_voice
+            speaker = 'default'
 
         voice = self.voice_map.get(speaker)
         if not voice:

@@ -19,7 +19,6 @@ class ElevenLabsTTSProvider(TTSProvider):
         self.voice_registry_manager = None
         # Maps speaker names to public voice IDs
         self.voice_map: Dict[str, str] = {}
-        self.default_voice_id: Optional[str] = None
 
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the provider with API key and voice configuration."""
@@ -34,8 +33,6 @@ class ElevenLabsTTSProvider(TTSProvider):
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
             voice_id = config['voice_id']
-            if speaker == 'default':
-                self.default_voice_id = voice_id
             self.voice_map[speaker] = voice_id
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
@@ -44,9 +41,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         This returns the public/config voice ID, not the registry ID.
         """
         if speaker is None:
-            if not self.default_voice_id:
-                raise VoiceNotFoundError("No default voice configured")
-            return self.default_voice_id
+            speaker = 'default'
 
         voice_id = self.voice_map.get(speaker)
         if not voice_id:
