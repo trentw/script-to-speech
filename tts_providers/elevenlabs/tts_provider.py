@@ -27,14 +27,21 @@ class ElevenLabsTTSProvider(TTSProvider):
         # Maps speaker names to their configurations
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
-    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
-        """Initialize the provider with API key and voice configuration."""
+    def _initialize_api_client(self):
+        """Initialize API client"""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
-        self.client = ElevenLabs(api_key=api_key)
+        try:
+            self.client = ElevenLabs(api_key=api_key)
+        except Exception as e:
+            raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
+
         self.voice_registry_manager = ElevenLabsVoiceRegistryManager(api_key)
+
+    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
+        """Initialize the ElevenLabs TTS provider with speaker configurations."""
 
         # Extract voice IDs from speaker configs
         for speaker, config in speaker_configs.items():
@@ -83,9 +90,9 @@ class ElevenLabsTTSProvider(TTSProvider):
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
-        if not self.client or not self.voice_registry_manager:
-            raise TTSError(
-                "Provider not initialized. Call initialize() first.")
+        if not self.client:
+            # Wait to initialize client for API calls until it is necessary for audio generation
+            self._initialize_api_client()
 
         # Get the public voice ID first
         public_voice_id = self.get_speaker_identifier(speaker)

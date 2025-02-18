@@ -26,8 +26,8 @@ class OpenAITTSProvider(TTSProvider):
         # Maps speaker names to their configurations
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
-    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
-        """Initialize the OpenAI TTS provider with speaker configurations."""
+    def _initialize_api_client(self):
+        """Initialize API client"""
         api_key = os.environ.get("OPENAI_API_KEY")
         if not api_key:
             raise TTSError("OPENAI_API_KEY environment variable is not set")
@@ -36,6 +36,9 @@ class OpenAITTSProvider(TTSProvider):
             self.client = OpenAI(api_key=api_key)
         except Exception as e:
             raise TTSError(f"Failed to initialize OpenAI client: {e}")
+
+    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
+        """Initialize the OpenAI TTS provider with speaker configurations."""
 
         # Validate and store voice configurations
         for speaker, config in speaker_configs.items():
@@ -48,8 +51,8 @@ class OpenAITTSProvider(TTSProvider):
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
         if not self.client:
-            raise TTSError(
-                "Provider not initialized. Call initialize() first.")
+            # Wait to initialize client for API calls until it is necessary for audio generation
+            self._initialize_api_client()
 
         try:
             voice = self._get_base_voice(speaker)
