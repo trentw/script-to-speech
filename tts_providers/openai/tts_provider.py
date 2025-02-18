@@ -1,8 +1,15 @@
 from typing import Dict, Optional, List, Any
 from openai import OpenAI, AuthenticationError, APIError, RateLimitError
 import os
+from dataclasses import dataclass, asdict
 
 from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
+
+
+@dataclass
+class SpeakerConfig:
+    """Configuration for a speaker using OpenAI TTS."""
+    voice: str
 
 
 class OpenAITTSProvider(TTSProvider):
@@ -16,8 +23,8 @@ class OpenAITTSProvider(TTSProvider):
 
     def __init__(self):
         self.client = None
-        # Maps speaker names to voice names
-        self.voice_map: Dict[str, str] = {}
+        # Maps speaker names to their configurations
+        self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the OpenAI TTS provider with speaker configurations."""
@@ -33,8 +40,10 @@ class OpenAITTSProvider(TTSProvider):
         # Validate and store voice configurations
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
-            voice = config['voice']
-            self.voice_map[speaker] = voice
+            speaker_config = SpeakerConfig(
+                voice=config['voice']
+            )
+            self.speaker_configs[speaker] = speaker_config
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
@@ -71,13 +80,33 @@ class OpenAITTSProvider(TTSProvider):
         if not speaker:
             speaker = 'default'
 
-        voice = self.voice_map.get(speaker)
-        if not voice:
+        config = self.speaker_configs.get(speaker)
+        if not config:
             raise VoiceNotFoundError(
                 f"No voice assigned for speaker '{speaker}'. "
                 "Please update the voice configuration file."
             )
-        return voice
+        return config.voice
+
+    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
+        """Get the configuration parameters for a given speaker."""
+        if not speaker:
+            speaker = 'default'
+
+        config = self.speaker_configs.get(speaker)
+        if not config:
+            raise VoiceNotFoundError(
+                f"No voice assigned for speaker '{speaker}'. "
+                "Please update the voice configuration file."
+            )
+
+        # Convert dataclass to dict and filter out empty values
+        speaker_config = {
+            k: v for k, v in asdict(config).items()
+            if not self._is_empty_value(v)
+        }
+
+        return speaker_config
 
     @classmethod
     def get_provider_identifier(cls) -> str:

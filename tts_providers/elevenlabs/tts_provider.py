@@ -3,9 +3,16 @@ from elevenlabs.client import ElevenLabs
 import os
 import yaml
 from typing import Dict, Optional, List, Any
+from dataclasses import dataclass, asdict
 
 from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
+
+
+@dataclass
+class SpeakerConfig:
+    """Configuration for a speaker using ElevenLabs TTS."""
+    voice_id: str
 
 
 class ElevenLabsTTSProvider(TTSProvider):
@@ -17,8 +24,8 @@ class ElevenLabsTTSProvider(TTSProvider):
     def __init__(self):
         self.client = None
         self.voice_registry_manager = None
-        # Maps speaker names to public voice IDs
-        self.voice_map: Dict[str, str] = {}
+        # Maps speaker names to their configurations
+        self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the provider with API key and voice configuration."""
@@ -32,8 +39,10 @@ class ElevenLabsTTSProvider(TTSProvider):
         # Extract voice IDs from speaker configs
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
-            voice_id = config['voice_id']
-            self.voice_map[speaker] = voice_id
+            speaker_config = SpeakerConfig(
+                voice_id=config['voice_id']
+            )
+            self.speaker_configs[speaker] = speaker_config
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -43,14 +52,34 @@ class ElevenLabsTTSProvider(TTSProvider):
         if speaker is None:
             speaker = 'default'
 
-        voice_id = self.voice_map.get(speaker)
-        if not voice_id:
+        config = self.speaker_configs.get(speaker)
+        if not config:
             raise VoiceNotFoundError(
                 f"No voice assigned for speaker '{speaker}'. "
                 "Please update the voice configuration file."
             )
 
-        return voice_id
+        return config.voice_id
+
+    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
+        """Get the configuration parameters for a given speaker."""
+        if speaker is None:
+            speaker = 'default'
+
+        config = self.speaker_configs.get(speaker)
+        if not config:
+            raise VoiceNotFoundError(
+                f"No voice assigned for speaker '{speaker}'. "
+                "Please update the voice configuration file."
+            )
+
+        # Convert dataclass to dict and filter out empty values
+        speaker_config = {
+            k: v for k, v in asdict(config).items()
+            if not self._is_empty_value(v)
+        }
+
+        return speaker_config
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""

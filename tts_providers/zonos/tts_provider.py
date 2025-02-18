@@ -1,7 +1,7 @@
 from typing import Dict, Optional, List, Any, Union
 from zyphra import ZyphraClient, ZyphraError
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 import hashlib
 import json
 
@@ -32,24 +32,6 @@ class ZonosTTSProvider(TTSProvider):
         self.client = None
         # Maps speaker names to their configuration
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
-
-    @staticmethod
-    def _is_empty_value(value: Any) -> bool:
-        """Check if a value should be considered empty.
-
-        Handles:
-        - None
-        - Empty string
-        - Whitespace-only string
-        - Empty collections
-        """
-        if value is None:
-            return True
-        if isinstance(value, str):
-            return not value.strip()
-        if isinstance(value, (list, dict, set, tuple)):
-            return len(value) == 0
-        return False
 
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """Initialize the Zonos TTS provider with speaker configurations."""
@@ -136,6 +118,18 @@ class ZonosTTSProvider(TTSProvider):
                 "Please update the voice configuration file."
             )
         return config
+
+    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
+        """Get the configuration parameters for a given speaker."""
+        config = self._get_speaker_config(speaker)
+        
+        # Convert dataclass to dict and filter out None values
+        speaker_config = {
+            k: v for k, v in asdict(config).items()
+            if not self._is_empty_value(v)
+        }
+        
+        return speaker_config
 
     @classmethod
     def get_provider_identifier(cls) -> str:

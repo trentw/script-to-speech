@@ -13,6 +13,24 @@ class VoiceNotFoundError(TTSError):
 
 
 class TTSProvider(ABC):
+    @staticmethod
+    def _is_empty_value(value: Any) -> bool:
+        """Check if a value should be considered empty.
+
+        Handles:
+        - None
+        - Empty string
+        - Whitespace-only string
+        - Empty collections
+        """
+        if value is None:
+            return True
+        if isinstance(value, str):
+            return not value.strip()
+        if isinstance(value, (list, dict, set, tuple)):
+            return len(value) == 0
+        return False
+
     @abstractmethod
     def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
         """
@@ -55,6 +73,22 @@ class TTSProvider(ABC):
 
         Returns:
             str: The voice identifier for the speaker
+
+        Raises:
+            VoiceNotFoundError: If no voice is assigned to the speaker
+        """
+        pass
+
+    @abstractmethod
+    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
+        """
+        Get the configuration parameters for a given speaker.
+
+        Args:
+            speaker: The speaker to get the configuration for, or None for default voice
+
+        Returns:
+            Dict[str, Any]: Configuration parameters that could be passed to initialize()
 
         Raises:
             VoiceNotFoundError: If no voice is assigned to the speaker

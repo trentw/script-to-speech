@@ -218,6 +218,25 @@ class TTSProviderManager:
         provider_name = self.get_provider_for_speaker(speaker)
         return self._providers[provider_name].get_provider_identifier()
 
+    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
+        """
+        Get speaker configuration from appropriate provider.
+        None or empty speaker values are treated as requests for the 'default' speaker.
+
+        Args:
+            speaker: The speaker to get configuration for, or None/empty for default speaker
+
+        Returns:
+            Dict[str, Any]: Configuration parameters from the appropriate provider
+        """
+        self._ensure_initialized()
+
+        if not speaker:
+            speaker = 'default'
+
+        provider_name = self.get_provider_for_speaker(speaker)
+        return self._providers[provider_name].get_speaker_configuration(speaker)
+
 ####
 # Voice Configuration YAML generation
 ####
