@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict, Any, Type, List
+from typing import Dict, Any, Type, List, Optional
 import os
 from datetime import datetime
 import re
@@ -79,37 +79,36 @@ def generate_standalone_speech(
         logger.error(f"Error generating speech: {e}")
 
 
-def get_command_string(provider_name: str, voice_id: str, texts: List[str]) -> str:
+def get_command_string(provider_manager: 'TTSProviderManager', speaker: Optional[str], texts: List[str]) -> str:
     """Generate command line string for standalone speech generation.
 
     Args:
-        provider_name: Name of the TTS provider
-        voice_id: Voice identifier
+        provider_manager: TTSProviderManager instance
+        speaker: The speaker to get configuration for, or None for default speaker
         texts: List of text strings to convert
 
     Returns:
         Command line string that can be used to generate the audio
     """
     try:
-        # Get provider class to determine required fields
-        provider_class = get_provider_class(provider_name)
-        required_fields = provider_class.get_required_fields()
+        # Reconciling how default speaker is displayed vs. used in voice configuration
+        if speaker == '(default)':
+            speaker = 'default'
 
-        if not required_fields:
-            logger.error(
-                f"No required fields found for provider {provider_name}")
-            return ""
+        # Get provider name and configuration for the speaker
+        provider_name = provider_manager.get_provider_for_speaker(
+            speaker or 'default')
+        config = provider_manager.get_speaker_configuration(speaker)
 
-        # Build command with first required field as voice parameter
-        # TODO: Assumes only one required parameter to define voice
-        # TODO: TTS providers could return "clean" voice id instead of having
-        #       to depend on splitting by underscore
-        trimmed_voice_id = voice_id.split(
-            "_")[0] if "_" in voice_id else voice_id
-        voice_param = f"--{required_fields[0]} {trimmed_voice_id}"
+        # Build command with all configuration parameters
+        config_params = []
+        for param_name, param_value in config.items():
+            if param_value is not None:  # Only include non-None values
+                config_params.append(f"--{param_name} {param_value}")
+
         texts_quoted = [f'"{t}"' for t in texts]
 
-        return f"python -m utils.generate_standalone_speech {provider_name} {voice_param} {' '.join(texts_quoted)}"
+        return f"python -m utils.generate_standalone_speech {provider_name} {' '.join(config_params)} {' '.join(texts_quoted)}"
     except Exception as e:
         logger.error(f"Error generating command string: {e}")
         return ""
@@ -131,14 +130,20 @@ def main():
     parser.add_argument('provider', choices=available_providers,
                         help='TTS provider to use')
 
-    # Get provider class to determine required fields
+    # Get provider class to determine fields
     provider_class = get_provider_class(parser.parse_known_args()[0].provider)
     required_fields = provider_class.get_required_fields()
+    optional_fields = provider_class.get_optional_fields()
 
     # Add arguments for each required field
     for field in required_fields:
         parser.add_argument(f'--{field}', required=True,
                             help=f'Required {field} parameter for {parser.parse_known_args()[0].provider}')
+
+    # Add arguments for each optional field
+    for field in optional_fields:
+        parser.add_argument(f'--{field}', required=False,
+                            help=f'Optional {field} parameter for {parser.parse_known_args()[0].provider}')
 
     parser.add_argument('texts', nargs='+',
                         help='Text strings to convert to speech')
@@ -149,10 +154,18 @@ def main():
 
     args = parser.parse_args()
 
-    # Create provider configuration with just the required voice settings
-    config = {
-        'default': {field: getattr(args, field) for field in required_fields}
-    }
+    # Create provider configuration with both required and optional voice settings
+    config = {'default': {}}
+
+    # Add required fields
+    for field in required_fields:
+        config['default'][field] = getattr(args, field)
+
+    # Add optional fields if provided
+    for field in optional_fields:
+        value = getattr(args, field, None)
+        if value is not None:
+            config['default'][field] = value
 
     try:
         # Initialize provider

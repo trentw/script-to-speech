@@ -87,6 +87,7 @@ def recheck_audio_files(reporting_state: ReportingState, cache_folder: str, sile
 def print_unified_report(
     reporting_state: ReportingState,
     logger,
+    tts_provider_manager: TTSProviderManager,
     silence_checking_enabled: bool = False,
     max_misses_to_report: int = 20,
     max_text_length: int = 30
@@ -189,8 +190,7 @@ def print_unified_report(
                     f"Use a higher --max-misses-to-report value to see more.")
             else:
                 for cmd in commands_to_show:
-                    command = get_command_string(
-                        cmd["provider"], cmd["voice_id"], cmd["texts"])
+                    command = get_command_string(tts_provider_manager, cmd["speaker"], cmd["texts"])
                     if command:
                         logger.info(
                             f"\n# {cmd['count']} clips for {cmd['provider']} voice {cmd['voice_id']} ({cmd['speaker']}):")
@@ -540,6 +540,7 @@ def generate_audio_clips(
         print_unified_report(
             reporting_state,
             logger,
+            tts_provider_manager,
             silence_checking_enabled=silence_threshold is not None,
             max_misses_to_report=20,
             max_text_length=30
