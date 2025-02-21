@@ -188,7 +188,7 @@ class ScreenplayParser:
 
         # Scene heading detection
         # High probability (0.8) for INT./EXT. markers
-        if re.match(r'^\s*(?:[A-Z]?\d+(\.\d+)?\s+)?(INT\.|EXT\.)', stripped):
+        if re.match(r'^\s*(?:[A-Z]?\d+(?:\.\d+)?[A-Z]?\s+)?(INT\.|EXT\.)', stripped):
             probs[State.SCENE_HEADING] += 0.8
             probs[State.DUAL_SPEAKER_ATTRIBUTION] = 0.1
             probs[State.ACTION] = 0.1
