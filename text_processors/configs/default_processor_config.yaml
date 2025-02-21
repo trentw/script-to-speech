@@ -4,6 +4,9 @@ preprocessors:
       skip_types:
         - page_number
   - name: dual_dialog
+  - name: extract_dialog_parentheticals
+    config:
+      max_words: 10
 
 processors:
   - name: skip_empty
