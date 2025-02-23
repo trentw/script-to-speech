@@ -45,10 +45,16 @@ class ElevenLabsTTSProvider(TTSProvider):
 
         # Extract voice IDs from speaker configs
         for speaker, config in speaker_configs.items():
-            self.validate_speaker_config(config)
+            try:
+                self.validate_speaker_config(config)
+            except ValueError as e:
+                raise TTSError(
+                    f"Failed validation for speaker {speaker}. Error: {e}")
+
             speaker_config = SpeakerConfig(
                 voice_id=config['voice_id']
             )
+
             self.speaker_configs[speaker] = speaker_config
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
