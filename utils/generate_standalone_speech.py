@@ -1,13 +1,18 @@
 import argparse
-from typing import Dict, Any, Type, List, Optional
+from typing import Dict, Any, Type, List, Optional, Tuple
 import os
+import io
 from datetime import datetime
 import re
 import importlib
 from utils.logging import get_screenplay_logger
 from tts_providers.base.tts_provider import TTSProvider
+from utils.audio_utils import configure_ffmpeg, split_audio_on_silence
 
 logger = get_screenplay_logger("utils.generate_standalone_speech")
+
+# Constant sentence to prepend in split mode
+SPLIT_SENTENCE = "this is a constant sentence. ... , ..."
 
 
 def clean_filename(text: str) -> str:
@@ -39,7 +44,11 @@ def generate_standalone_speech(
     provider: TTSProvider,
     text: str,
     variant_num: int = 1,
-    output_dir: str = "standalone_speech"
+    output_dir: str = "standalone_speech",
+    split_audio: bool = False,
+    silence_threshold: int = -40,
+    min_silence_len: int = 500,
+    keep_silence: int = 100
 ) -> None:
     """
     Generate speech using specified provider.
@@ -49,10 +58,17 @@ def generate_standalone_speech(
         text: Text to convert to speech
         variant_num: Variant number when generating multiple versions
         output_dir: Directory for output files
+        split_audio: Whether to split the audio after a constant sentence
+        silence_threshold: Silence threshold in dBFS for splitting
+        min_silence_len: Minimum silence length in ms for splitting
+        keep_silence: Amount of silence to keep in ms after splitting
     """
     try:
+        # Prepend constant sentence if split mode is enabled
+        generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
+        
         # Generate speech using default speaker
-        audio_data = provider.generate_audio(None, text)
+        audio_data = provider.generate_audio(None, generation_text)
 
         # Create timestamp for unique filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -60,12 +76,39 @@ def generate_standalone_speech(
         # Create output directory
         os.makedirs(output_dir, exist_ok=True)
 
-        # Create filename
+        # Create base filename components
         text_preview = clean_filename(text[:30])
         variant_suffix = f"_variant{variant_num}" if variant_num > 1 else ""
         provider_id = provider.get_provider_identifier()
-        voice_id = provider.get_speaker_identifier(
-            None)  # Get default voice ID
+        voice_id = provider.get_speaker_identifier(None)  # Get default voice ID
+
+        if split_audio:
+            # Process audio through splitter
+            try:
+                split_segment = split_audio_on_silence(
+                    audio_data,
+                    min_silence_len=min_silence_len,
+                    silence_thresh=silence_threshold,
+                    keep_silence=keep_silence
+                )
+                
+                if split_segment is None:
+                    logger.error("Failed to detect silence for splitting audio")
+                    return
+                
+                # Export split audio to bytes
+                output_buffer = io.BytesIO()
+                split_segment.export(output_buffer, format="mp3")
+                audio_data = output_buffer.getvalue()
+                
+                # Add split indicator to filename
+                text_preview = f"split_{text_preview}"
+                
+            except Exception as e:
+                logger.error(f"Error splitting audio: {e}")
+                return
+
+        # Create final filename and path
         filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}.mp3"
         output_path = os.path.join(output_dir, filename)
 
@@ -151,8 +194,30 @@ def main():
                         help='Number of variants to generate for each text (default: 1)')
     parser.add_argument('--output-dir', default='standalone_speech',
                         help='Directory for output files (default: standalone_speech)')
+    
+    # Add split audio arguments
+    parser.add_argument('--split-audio', action='store_true',
+                        help='Enable split audio mode - splits after constant sentence')
+    parser.add_argument('--silence-threshold', type=int, default=-40,
+                        help='Silence threshold in dBFS for splitting (default: -40)')
+    parser.add_argument('--min-silence-len', type=int, default=500,
+                        help='Minimum silence length in ms for splitting (default: 500)')
+    parser.add_argument('--keep-silence', type=int, default=100,
+                        help='Amount of silence to keep in ms after splitting (default: 100)')
+    
+    # Add ffmpeg configuration
+    parser.add_argument('--ffmpeg-path',
+                        help='Path to ffmpeg binary or directory containing ffmpeg binaries')
 
     args = parser.parse_args()
+
+    # Configure ffmpeg if path provided
+    if args.ffmpeg_path:
+        try:
+            configure_ffmpeg(args.ffmpeg_path)
+        except Exception as e:
+            logger.error(f"Error configuring ffmpeg: {e}")
+            return 1
 
     # Create provider configuration with both required and optional voice settings
     config = {'default': {}}
@@ -179,7 +244,11 @@ def main():
                     provider=provider,
                     text=text,
                     variant_num=variant if args.variants > 1 else 1,
-                    output_dir=args.output_dir
+                    output_dir=args.output_dir,
+                    split_audio=args.split_audio,
+                    silence_threshold=args.silence_threshold,
+                    min_silence_len=args.min_silence_len,
+                    keep_silence=args.keep_silence
                 )
 
     except Exception as e:
