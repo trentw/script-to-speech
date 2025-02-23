@@ -8,6 +8,7 @@ from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
 from utils.generate_standalone_speech import get_command_string
 from text_processors.utils import get_processor_configs
+from utils.audio_utils import configure_ffmpeg
 import logging
 import hashlib
 import argparse
@@ -195,53 +196,6 @@ def print_unified_report(
                         logger.info(
                             f"\n# {cmd['count']} clips for {cmd['provider']} voice {cmd['voice_id']} ({cmd['speaker']}):")
                         logger.info(command)
-
-
-def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
-    """
-    Configure the ffmpeg binary path for pydub and system PATH.
-
-    Args:
-        ffmpeg_path: Optional path to ffmpeg binary directory or executable.
-                    If not provided, system ffmpeg will be used.
-
-    Raises:
-        ValueError: If the provided path is invalid or executables aren't accessible
-    """
-    if ffmpeg_path:
-        ffmpeg_path = os.path.abspath(ffmpeg_path)
-
-        # Add to system PATH
-        os.environ["PATH"] = f"{ffmpeg_path}:{os.environ.get('PATH', '')}"
-
-        # Handle both directory and direct executable paths
-        if os.path.isdir(ffmpeg_path):
-            ffmpeg_executable = os.path.join(ffmpeg_path, 'ffmpeg')
-            ffprobe_executable = os.path.join(ffmpeg_path, 'ffprobe')
-        else:
-            ffmpeg_executable = ffmpeg_path
-            ffprobe_executable = os.path.join(
-                os.path.dirname(ffmpeg_path), 'ffprobe')
-
-        # Verify executables exist and are executable
-        for exe in [ffmpeg_executable, ffprobe_executable]:
-            if not os.path.exists(exe):
-                raise ValueError(f"Executable not found: {exe}")
-            if not os.access(exe, os.X_OK):
-                raise ValueError(f"File is not executable: {exe}")
-
-        # Configure pydub
-        AudioSegment.converter = ffmpeg_executable
-        AudioSegment.ffmpeg = ffmpeg_executable
-        AudioSegment.ffprobe = ffprobe_executable
-
-    # Verify ffmpeg works
-    try:
-        test_file = AudioSegment.silent(duration=1)
-        test_file.export("test.mp3", format="mp3")
-        os.remove("test.mp3")
-    except Exception as e:
-        raise RuntimeError("Failed to verify ffmpeg installation") from e
 
 
 def create_output_folders(input_file: str, create_sequence: bool = True, run_mode: str = "") -> Tuple[str, str, str, str, str]:
