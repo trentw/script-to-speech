@@ -89,7 +89,7 @@ class ScreenplayParser:
         # Dual speaker detection
         # Very high probability (1.0) when we see two speakers with sufficient spacing
         if (stripped.isupper() and indentation < SPEAKER_INDENT_MIN and
-                re.search(rf'[A-Z]+(?:[\(\)\'A-Z]*)\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}[A-Z]+(?:[\(\)\'A-Z]*)', stripped)):
+                re.search(rf"([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)", stripped)):
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
             logger.debug("Detected potential dual speaker attribution")
 
