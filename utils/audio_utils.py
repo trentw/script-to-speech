@@ -1,8 +1,9 @@
+import io
+import os
 from typing import Optional, Tuple
+
 from pydub import AudioSegment
 from pydub.silence import detect_silence
-import os
-import io
 
 
 def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:

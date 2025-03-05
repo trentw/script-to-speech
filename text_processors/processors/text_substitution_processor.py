@@ -1,6 +1,7 @@
-from typing import Dict, Tuple, List
-from ..text_processor_base import TextProcessor
 import re
+from typing import Dict, List, Tuple
+
+from ..text_processor_base import TextProcessor
 
 
 class TextSubstitutionProcessor(TextProcessor):

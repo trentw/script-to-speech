@@ -1,12 +1,13 @@
+import importlib
+import json
 import os
+from collections import defaultdict
+from io import StringIO
+from typing import Any, Dict, List, Optional, Type
+
 import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
-import importlib
-from collections import defaultdict
-from typing import Dict, Optional, Type, Any, List
-import json
-from io import StringIO
 
 from .base.tts_provider import TTSProvider
 

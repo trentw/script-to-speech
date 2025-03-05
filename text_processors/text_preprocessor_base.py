@@ -1,6 +1,6 @@
 # text_processors/text_preprocessor_base.py
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Dict, List, Tuple, Literal
+from typing import Dict, List, Literal, Tuple
 
 
 class TextPreProcessor(ABC):

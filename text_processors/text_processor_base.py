@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Dict, List, Tuple, Literal
+from typing import Dict, List, Literal, Tuple
 
 
 class TextProcessor(ABC):

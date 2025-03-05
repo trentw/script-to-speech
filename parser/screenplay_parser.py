@@ -1,8 +1,9 @@
-from enum import Enum, auto
-from typing import List, Dict, Optional
 import re
-from dataclasses import dataclass
 from collections import OrderedDict
+from dataclasses import dataclass
+from enum import Enum, auto
+from typing import Dict, List, Optional
+
 from utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("parser.screenplay")

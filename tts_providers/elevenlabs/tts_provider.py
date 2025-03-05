@@ -1,11 +1,12 @@
+import os
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional
+
+import yaml
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
-import os
-import yaml
-from typing import Dict, Optional, List, Any
-from dataclasses import dataclass, asdict
 
-from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
+from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 
 

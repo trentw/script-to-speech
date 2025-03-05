@@ -1,8 +1,10 @@
-from typing import Dict, List, Tuple, Literal
-from ..text_preprocessor_base import TextPreProcessor
-import re
 import logging
+import re
+from typing import Dict, List, Literal, Tuple
+
 from utils.logging import get_screenplay_logger
+
+from ..text_preprocessor_base import TextPreProcessor
 
 logger = get_screenplay_logger("parser.preprocessors.dual_dialog")
 

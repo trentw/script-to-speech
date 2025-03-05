@@ -1,9 +1,10 @@
-from typing import Dict, Optional, List, Any
-from openai import OpenAI, AuthenticationError, APIError, RateLimitError
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional
 
-from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
+from openai import APIError, AuthenticationError, OpenAI, RateLimitError
+
+from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
 
 
 @dataclass

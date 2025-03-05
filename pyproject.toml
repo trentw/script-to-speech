@@ -1,2 +1,9 @@
 [tool.black]
 line-length = 88
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+skip = ["ffmpeg", "input", "output", "__pycache__", "source_screenplays", "standalone_speech", "venv"]

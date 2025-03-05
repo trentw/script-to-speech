@@ -1,5 +1,6 @@
-from elevenlabs import ElevenLabs, VoiceSettings
 import os
+
+from elevenlabs import ElevenLabs, VoiceSettings
 
 
 def generate_test_audio(voice_id):

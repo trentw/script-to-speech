@@ -1,7 +1,9 @@
-from typing import Dict, List, Tuple
 import re
-from ..text_preprocessor_base import TextPreProcessor
+from typing import Dict, List, Tuple
+
 from utils.logging import get_screenplay_logger
+
+from ..text_preprocessor_base import TextPreProcessor
 
 logger = get_screenplay_logger(
     "text_processors.preprocessors.extract_dialog_parentheticals"

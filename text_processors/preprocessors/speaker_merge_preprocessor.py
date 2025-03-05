@@ -1,6 +1,8 @@
 from typing import Dict, List, Tuple
-from ..text_preprocessor_base import TextPreProcessor
+
 from utils.logging import get_screenplay_logger
+
+from ..text_preprocessor_base import TextPreProcessor
 
 logger = get_screenplay_logger("text_processors.preprocessors.speaker_merge")
 

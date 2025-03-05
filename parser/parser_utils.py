@@ -1,19 +1,18 @@
+import json
+import logging
 import os
-import shutil
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-import logging
-from typing import Optional, Tuple, List
+from typing import List, Optional, Tuple
+
 from text_processors.processor_manager import TextProcessorManager
 from text_processors.utils import get_processor_configs
-
-from utils.logging import setup_screenplay_logging, get_screenplay_logger
+from utils.logging import get_screenplay_logger, setup_screenplay_logging
 from utils.optional_config_generation import generate_optional_config
-from .screenplay_parser import ScreenplayParser
-import json
 
+from .screenplay_parser import ScreenplayParser
 
 logger = get_screenplay_logger("parser.utils")
 

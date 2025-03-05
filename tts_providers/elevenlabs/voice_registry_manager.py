@@ -1,7 +1,9 @@
 from collections import OrderedDict
 from typing import Dict, Optional, Tuple
-from elevenlabs.client import ElevenLabs
+
 import requests
+from elevenlabs.client import ElevenLabs
+
 from utils.logging import get_screenplay_logger
 
 # Get logger for this module

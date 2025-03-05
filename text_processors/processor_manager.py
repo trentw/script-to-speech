@@ -1,9 +1,12 @@
-import yaml
-from typing import Dict, List, Tuple, Union
 import importlib
-from .text_processor_base import TextProcessor
-from .text_preprocessor_base import TextPreProcessor
+from typing import Dict, List, Tuple, Union
+
+import yaml
+
 from utils.logging import get_screenplay_logger
+
+from .text_preprocessor_base import TextPreProcessor
+from .text_processor_base import TextProcessor
 
 # Get logger for this module
 logger = get_screenplay_logger("text_processors.manager")

@@ -8,3 +8,4 @@ openai
 zyphra
 eyeD3
 black
+isort
