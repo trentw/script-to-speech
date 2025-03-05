@@ -10,6 +10,7 @@ from text_processors.processor_manager import TextProcessorManager
 from text_processors.utils import get_processor_configs
 
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
+from utils.optional_config_generation import generate_optional_config
 from .screenplay_parser import ScreenplayParser
 import json
 
@@ -398,8 +399,27 @@ if __name__ == "__main__":
 
     try:
         if args.command == 'process':
+            # Process the screenplay
             process_screenplay(
                 args.input_file, args.output_dir, args.text_only)
+
+            # Generate optional configuration file
+            # First, determine the JSON path based on the input file
+            input_path = Path(args.input_file)
+            sanitized_name = sanitize_name(input_path.stem)
+
+            # If output_dir is specified, use that, otherwise use the default
+            if args.output_dir:
+                json_path = Path(args.output_dir) / f"{sanitized_name}.json"
+            else:
+                # Use the same logic as in process_screenplay to determine the JSON path
+                screenplay_dir = get_project_root() / 'input' / sanitized_name
+                json_path = screenplay_dir / f"{sanitized_name}.json"
+
+            # Generate the optional config file
+            if os.path.exists(json_path):
+                config_path = generate_optional_config(str(json_path))
+                logger.info(f"Optional configuration file: {config_path}")
         elif args.command == 'analyze':
             analyze_screenplay_chunks(args.json_file)
         elif args.command == 'process-json':

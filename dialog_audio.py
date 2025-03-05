@@ -3,6 +3,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from text_processors.processor_manager import TextProcessorManager
 from datetime import datetime
+from pathlib import Path
 from pydub import AudioSegment
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import setup_screenplay_logging, get_screenplay_logger
@@ -584,6 +585,8 @@ def main():
                         help='Path to audio files that will override cache files if present. '
                              'When flag is used without path, defaults to "standalone_speech". '
                              'When flag is not used, no overrides are applied.')
+    parser.add_argument('--optional-config',
+                        help='Path to optional configuration file. If not provided, will look for [input_json]_optional_config.yaml')
 
     # Add mutually exclusive group for additional run modes
     run_mode_group = parser.add_mutually_exclusive_group()
@@ -669,6 +672,25 @@ def main():
         logger.info(f"Concatenating audio clips and saving to: {output_file}")
         concatenate_audio_clips(audio_clips, output_file)
         logger.info(f'Audio file generated: {output_file}')
+        
+        # Set ID3 tags if optional config is available
+        config_path = args.optional_config
+        if not config_path:
+            # Try to find the default config file
+            input_path = Path(args.input_file)
+            base_name = input_path.stem
+            default_config_path = input_path.parent / f"{base_name}_optional_config.yaml"
+            if default_config_path.exists():
+                config_path = str(default_config_path)
+                logger.info(f"Found default optional config file: {config_path}")
+        
+        if config_path and os.path.exists(config_path):
+            from utils.id3_tag_utils import set_id3_tags_from_config
+            logger.info(f"Setting ID3 tags from config: {config_path}")
+            if set_id3_tags_from_config(output_file, config_path):
+                logger.info("ID3 tags set successfully")
+            else:
+                logger.warning("Failed to set ID3 tags or no tags specified in config")
     elif args.populate_cache:
         logger.info('Cache population completed.')
     else:
