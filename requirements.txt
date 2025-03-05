@@ -9,3 +9,4 @@ zyphra
 eyeD3
 black
 isort
+pre-commit
