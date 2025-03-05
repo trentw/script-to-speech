@@ -1,5 +1,16 @@
 [tool.black]
 line-length = 88
+exclude = '''
+/(
+    ffmpeg
+    | input
+    | output
+    | __pycache__
+    | source_screenplays
+    | standalone_speech
+    | venv
+)/.*
+'''
 
 [tool.isort]
 profile = "black"
