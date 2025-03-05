@@ -4,7 +4,8 @@ from ..text_preprocessor_base import TextPreProcessor
 from utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger(
-    "text_processors.preprocessors.extract_dialog_parentheticals")
+    "text_processors.preprocessors.extract_dialog_parentheticals"
+)
 
 
 class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
@@ -47,18 +48,17 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             return False
 
         # Validate max_words if present
-        max_words = self.config.get('max_words')
+        max_words = self.config.get("max_words")
         if max_words is not None and not (isinstance(max_words, int) and max_words > 0):
             logger.error("max_words must be a positive integer")
             return False
 
         # Validate extract_only and extract_all_except are mutually exclusive
-        extract_only = self.config.get('extract_only', [])
-        extract_all_except = self.config.get('extract_all_except', [])
+        extract_only = self.config.get("extract_only", [])
+        extract_all_except = self.config.get("extract_all_except", [])
 
         if extract_only and extract_all_except:
-            logger.error(
-                "Cannot specify both extract_only and extract_all_except")
+            logger.error("Cannot specify both extract_only and extract_all_except")
             return False
 
         # Validate pattern lists contain only strings
@@ -88,7 +88,7 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             bool: True if the parenthetical should be extracted
         """
         # Check max_words constraint
-        max_words = self.config.get('max_words')
+        max_words = self.config.get("max_words")
         if max_words and self._count_words(parenthetical) > max_words:
             return False
 
@@ -96,16 +96,20 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
         parenthetical = parenthetical.strip().lower()
 
         # Handle extract_only patterns
-        extract_only = self.config.get('extract_only', [])
+        extract_only = self.config.get("extract_only", [])
         if extract_only:
-            return any(self._matches_pattern(parenthetical, pattern)
-                       for pattern in extract_only)
+            return any(
+                self._matches_pattern(parenthetical, pattern)
+                for pattern in extract_only
+            )
 
         # Handle extract_all_except patterns
-        extract_all_except = self.config.get('extract_all_except', [])
+        extract_all_except = self.config.get("extract_all_except", [])
         if extract_all_except:
-            return not any(self._matches_pattern(parenthetical, pattern)
-                           for pattern in extract_all_except)
+            return not any(
+                self._matches_pattern(parenthetical, pattern)
+                for pattern in extract_all_except
+            )
 
         # If no patterns specified, extract all parentheticals
         return True
@@ -122,18 +126,14 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             bool: True if text matches pattern
         """
         pattern = pattern.lower().strip()
-        if pattern.endswith('*'):
+        if pattern.endswith("*"):
             # Remove asterisk and check if text starts with pattern
             pattern = pattern[:-1]
             return text.startswith(pattern)
         return pattern in text
 
     def _split_dialog_at_parenthetical(
-        self,
-        chunk: Dict,
-        start_idx: int,
-        end_idx: int,
-        parenthetical: str
+        self, chunk: Dict, start_idx: int, end_idx: int, parenthetical: str
     ) -> List[Dict]:
         """
         Split a dialog chunk at a parenthetical into multiple chunks.
@@ -147,32 +147,32 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
         Returns:
             List of new chunks (dialog, dialog_modifier, dialog)
         """
-        text = chunk['text']
+        text = chunk["text"]
         before_text = text[:start_idx].strip()
         after_text = text[end_idx:].strip()
         result_chunks = []
 
         logger.debug("\nExtracting parenthetical: %s", parenthetical)
         logger.debug("Original text: %s", text)
-        logger.debug("Speaker: %s", chunk['speaker'])
+        logger.debug("Speaker: %s", chunk["speaker"])
 
         # Add initial dialog chunk if text exists before parenthetical
         if before_text:
             dialog_before = {
-                'type': 'dialog',
-                'speaker': chunk['speaker'],
-                'raw_text': chunk['raw_text'],
-                'text': before_text
+                "type": "dialog",
+                "speaker": chunk["speaker"],
+                "raw_text": chunk["raw_text"],
+                "text": before_text,
             }
             result_chunks.append(dialog_before)
             logger.debug("Created dialog chunk (before): %s", before_text)
 
         # Add dialog modifier (parenthetical)
         dialog_mod = {
-            'type': 'dialog_modifier',
-            'speaker': '',
-            'raw_text': chunk['raw_text'],
-            'text': parenthetical
+            "type": "dialog_modifier",
+            "speaker": "",
+            "raw_text": chunk["raw_text"],
+            "text": parenthetical,
         }
         result_chunks.append(dialog_mod)
         logger.debug("Created dialog modifier: %s", parenthetical)
@@ -180,10 +180,10 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
         # Add final dialog chunk if text exists after parenthetical
         if after_text:
             dialog_after = {
-                'type': 'dialog',
-                'speaker': chunk['speaker'],
-                'raw_text': chunk['raw_text'],
-                'text': after_text
+                "type": "dialog",
+                "speaker": chunk["speaker"],
+                "raw_text": chunk["raw_text"],
+                "text": after_text,
             }
             result_chunks.append(dialog_after)
             logger.debug("Created dialog chunk (after): %s", after_text)
@@ -213,14 +213,14 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             chunk = chunks[i]
 
             # Only process dialog chunks
-            if chunk['type'] != 'dialog':
+            if chunk["type"] != "dialog":
                 result_chunks.append(chunk)
                 i += 1
                 continue
 
-            text = chunk['text']
+            text = chunk["text"]
             # Find first parenthetical
-            match = re.search(r'\(([^)]+)\)', text)
+            match = re.search(r"\(([^)]+)\)", text)
 
             if not match:
                 result_chunks.append(chunk)
@@ -228,36 +228,39 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
                 continue
 
             parenthetical = match.group(1).strip()
-            logger.info("Found dialog parenthetical: %s (in dialog: %s)",
-                        match.group(0), text)
+            logger.info(
+                "Found dialog parenthetical: %s (in dialog: %s)", match.group(0), text
+            )
 
             if not self._should_extract_parenthetical(parenthetical):
-                logger.debug("Skipping parenthetical: %s (does not match extraction rules)",
-                             match.group(0))
+                logger.debug(
+                    "Skipping parenthetical: %s (does not match extraction rules)",
+                    match.group(0),
+                )
                 result_chunks.append(chunk)
                 i += 1
                 continue
 
             # Split chunk at parenthetical
             new_chunks = self._split_dialog_at_parenthetical(
-                chunk,
-                match.start(),
-                match.end(),
-                match.group(0)
+                chunk, match.start(), match.end(), match.group(0)
             )
 
             made_changes = True
             result_chunks.extend(new_chunks)
 
             # Continue processing from last dialog chunk if it exists
-            last_dialog = next((c for c in reversed(new_chunks)
-                                if c['type'] == 'dialog'), None)
+            last_dialog = next(
+                (c for c in reversed(new_chunks) if c["type"] == "dialog"), None
+            )
             if last_dialog:
                 # Replace last chunk with the one to process next
                 result_chunks.pop()
                 chunks.insert(i + 1, last_dialog)
-                logger.debug("Continuing processing with remaining dialog: %s",
-                             last_dialog['text'])
+                logger.debug(
+                    "Continuing processing with remaining dialog: %s",
+                    last_dialog["text"],
+                )
 
             i += 1
 

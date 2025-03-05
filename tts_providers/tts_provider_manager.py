@@ -51,15 +51,18 @@ class TTSProviderManager:
         try:
             # Import the provider module based on directory name
             module = importlib.import_module(
-                f"tts_providers.{provider_name}.tts_provider")
+                f"tts_providers.{provider_name}.tts_provider"
+            )
 
             # Get the provider class
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and
-                    issubclass(attr, TTSProvider) and
-                    attr != TTSProvider and
-                        attr.get_provider_identifier() == provider_name):
+                if (
+                    isinstance(attr, type)
+                    and issubclass(attr, TTSProvider)
+                    and attr != TTSProvider
+                    and attr.get_provider_identifier() == provider_name
+                ):
                     return attr
 
             raise ValueError(
@@ -84,21 +87,21 @@ class TTSProviderManager:
         Raises:
             ValueError: If configuration is invalid or providers cannot be initialized
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
         # Group speakers by provider
-        provider_configs: Dict[str,
-                               Dict[str, Dict[str, Any]]] = defaultdict(dict)
+        provider_configs: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
 
         for speaker, speaker_config in config.items():
             # Get provider from config or use overall provider
-            provider_name = speaker_config.get('provider')
+            provider_name = speaker_config.get("provider")
             if not provider_name and self._overall_provider is not None:
                 provider_name = self._overall_provider
             elif not provider_name:
                 raise ValueError(
-                    f"No provider specified for speaker '{speaker}' and no overall provider set")
+                    f"No provider specified for speaker '{speaker}' and no overall provider set"
+                )
 
             # Store speaker config for this provider
             provider_configs[provider_name][speaker] = speaker_config
@@ -128,7 +131,7 @@ class TTSProviderManager:
         self._ensure_initialized()
 
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         if speaker not in self._speaker_providers:
             raise ValueError(f"No provider assigned for speaker '{speaker}'")
@@ -143,7 +146,7 @@ class TTSProviderManager:
 
         for item in os.listdir(provider_dir):
             dir_path = os.path.join(provider_dir, item)
-            if os.path.isdir(dir_path) and item not in ['base', '__pycache__']:
+            if os.path.isdir(dir_path) and item not in ["base", "__pycache__"]:
                 try:
                     # Try to load the provider to verify it's valid
                     cls._get_provider_class(item)
@@ -153,9 +156,9 @@ class TTSProviderManager:
 
         return providers
 
-####
-# TTS Provider pass-through methods
-###
+    ####
+    # TTS Provider pass-through methods
+    ###
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """
@@ -175,7 +178,7 @@ class TTSProviderManager:
         self._ensure_initialized()
 
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
         return self._providers[provider_name].generate_audio(speaker, text)
@@ -194,7 +197,7 @@ class TTSProviderManager:
         self._ensure_initialized()
 
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
         return self._providers[provider_name].get_speaker_identifier(speaker)
@@ -213,7 +216,7 @@ class TTSProviderManager:
         self._ensure_initialized()
 
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
         return self._providers[provider_name].get_provider_identifier()
@@ -232,14 +235,14 @@ class TTSProviderManager:
         self._ensure_initialized()
 
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
         return self._providers[provider_name].get_speaker_configuration(speaker)
 
-####
-# Voice Configuration YAML generation
-####
+    ####
+    # Voice Configuration YAML generation
+    ####
 
     def _analyze_speakers(self, dialogues: List[Dict]) -> Dict[str, int]:
         """
@@ -253,8 +256,8 @@ class TTSProviderManager:
         default_count = 0
 
         for dialogue in dialogues:
-            if dialogue['type'] == 'dialog':
-                speaker = dialogue.get('speaker')
+            if dialogue["type"] == "dialog":
+                speaker = dialogue.get("speaker")
                 if speaker:
                     counts[speaker] += 1
                 else:
@@ -264,7 +267,7 @@ class TTSProviderManager:
                 default_count += 1
 
         # Create ordered dict with default first
-        result = {'default': default_count}
+        result = {"default": default_count}
 
         # Add other speakers sorted by count (descending) then name
         for speaker, count in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
@@ -272,7 +275,13 @@ class TTSProviderManager:
 
         return result
 
-    def generate_yaml_config(self, dialogues: List[Dict], output_path: str, provider_name: Optional[str] = None, include_optional_fields: bool = False) -> None:
+    def generate_yaml_config(
+        self,
+        dialogues: List[Dict],
+        output_path: str,
+        provider_name: Optional[str] = None,
+        include_optional_fields: bool = False,
+    ) -> None:
         """
         Generate initial YAML configuration template for TTS providers.
 
@@ -297,7 +306,8 @@ class TTSProviderManager:
         if provider_name:
             provider_class = self._get_provider_class(provider_name)
             content.yaml_set_start_comment(
-                f"{provider_class.get_yaml_instructions()}\n")
+                f"{provider_class.get_yaml_instructions()}\n"
+            )
         else:
             content.yaml_set_start_comment(
                 "Voice configuration for speakers\n"
@@ -318,37 +328,56 @@ class TTSProviderManager:
                     for field in provider_class.get_optional_fields():
                         speaker_config[field] = None
             else:
-                speaker_config['provider'] = None
+                speaker_config["provider"] = None
 
             # Add the speaker with line count comment and spacing
             content[speaker] = speaker_config
 
             # Calculate character statistics
-            total_chars = sum(len(str(dialogue.get('text', ''))) for dialogue in dialogues
-                              if (dialogue.get('speaker') == speaker
-                                  or (not dialogue.get('speaker') and speaker == 'default')))
-            longest_dialog = max((len(str(dialogue.get('text', ''))) for dialogue in dialogues
-                                  if (dialogue.get('speaker') == speaker
-                                      or (not dialogue.get('speaker') and speaker == 'default'))), default=0)
+            total_chars = sum(
+                len(str(dialogue.get("text", "")))
+                for dialogue in dialogues
+                if (
+                    dialogue.get("speaker") == speaker
+                    or (not dialogue.get("speaker") and speaker == "default")
+                )
+            )
+            longest_dialog = max(
+                (
+                    len(str(dialogue.get("text", "")))
+                    for dialogue in dialogues
+                    if (
+                        dialogue.get("speaker") == speaker
+                        or (not dialogue.get("speaker") and speaker == "default")
+                    )
+                ),
+                default=0,
+            )
 
             # Special comment for default speaker
-            if speaker == 'default':
-                comment = (f"\ndefault: {count} lines - Used for all non-dialogue pieces "
-                           "(scene descriptions, scene headings, etc.)\n"
-                           f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters")
+            if speaker == "default":
+                comment = (
+                    f"\ndefault: {count} lines - Used for all non-dialogue pieces "
+                    "(scene descriptions, scene headings, etc.)\n"
+                    f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                )
             else:
                 comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
 
             content.yaml_set_comment_before_after_key(
-                speaker,
-                before=comment,
-                after="\n"
+                speaker, before=comment, after="\n"
             )
 
         # Write to file
         self._write_yaml(content, output_path)
 
-    def update_yaml_with_provider_fields(self, yaml_path: str, output_path: str, dialogues: List[Dict], include_optional_fields: bool = False) -> None:
+    def update_yaml_with_provider_fields(
+        self,
+        yaml_path: str,
+        output_path: str,
+        dialogues: List[Dict],
+        include_optional_fields: bool = False,
+    ) -> None:
         """
         Update YAML with provider-specific fields, grouped by provider.
 
@@ -359,7 +388,7 @@ class TTSProviderManager:
         """
         # Load existing YAML to get provider assignments
         yaml = YAML()
-        with open(yaml_path, 'r') as f:
+        with open(yaml_path, "r") as f:
             yaml_content = yaml.load(f)
 
         if not isinstance(yaml_content, dict):
@@ -370,18 +399,21 @@ class TTSProviderManager:
         for speaker, config in yaml_content.items():
             if not isinstance(config, dict):
                 raise ValueError(
-                    f"Configuration for speaker '{speaker}' must be a mapping, not {type(config)}")
+                    f"Configuration for speaker '{speaker}' must be a mapping, not {type(config)}"
+                )
 
-            if 'provider' not in config:
+            if "provider" not in config:
                 raise ValueError(
-                    f"Speaker '{speaker}' is missing the required 'provider' field")
+                    f"Speaker '{speaker}' is missing the required 'provider' field"
+                )
 
-            provider = config['provider']
-            if not provider or provider == 'None':
+            provider = config["provider"]
+            if not provider or provider == "None":
                 raise ValueError(
                     f"Speaker '{speaker}' has an empty or None provider. Please specify a valid provider "
-                    f"(e.g., 'elevenlabs', 'openai', etc.) in the voice configuration YAML.")
-            provider_groups[config['provider']].append(speaker)
+                    f"(e.g., 'elevenlabs', 'openai', etc.) in the voice configuration YAML."
+                )
+            provider_groups[config["provider"]].append(speaker)
 
         # Get speaker statistics for line counts
         speaker_counts = self._analyze_speakers(dialogues)
@@ -396,17 +428,15 @@ class TTSProviderManager:
 
             # Add provider instructions
             if first_provider:
-                content.yaml_set_start_comment(
-                    provider_class.get_yaml_instructions())
+                content.yaml_set_start_comment(provider_class.get_yaml_instructions())
                 first_provider = False
             else:
                 # Add a blank line and instructions before next provider's speakers
                 next_speaker = speakers[0]
                 # Remove comment marks from instructions to avoid double-commenting
-                instructions = provider_class.get_yaml_instructions().replace('# ', '')
+                instructions = provider_class.get_yaml_instructions().replace("# ", "")
                 content.yaml_set_comment_before_after_key(
-                    next_speaker,
-                    before=f"\n{instructions}\n"
+                    next_speaker, before=f"\n{instructions}\n"
                 )
 
             # Sort speakers by line count within this provider group
@@ -415,11 +445,11 @@ class TTSProviderManager:
             # Add speakers for this provider
             for speaker in speakers:
                 speaker_config = CommentedMap()
-                speaker_config['provider'] = provider
+                speaker_config["provider"] = provider
 
                 # Add provider-specific fields
                 for field in provider_class.get_required_fields():
-                    if field != 'provider':
+                    if field != "provider":
                         speaker_config[field] = None
                 if include_optional_fields:
                     for field in provider_class.get_optional_fields():
@@ -430,25 +460,38 @@ class TTSProviderManager:
                 count = speaker_counts.get(speaker, 0)
 
                 # Calculate character statistics
-                total_chars = sum(len(str(dialogue.get('text', ''))) for dialogue in dialogues
-                                  if (dialogue.get('speaker') == speaker
-                                      or (not dialogue.get('speaker') and speaker == 'default')))
-                longest_dialog = max((len(str(dialogue.get('text', ''))) for dialogue in dialogues
-                                      if (dialogue.get('speaker') == speaker
-                                          or (not dialogue.get('speaker') and speaker == 'default'))), default=0)
+                total_chars = sum(
+                    len(str(dialogue.get("text", "")))
+                    for dialogue in dialogues
+                    if (
+                        dialogue.get("speaker") == speaker
+                        or (not dialogue.get("speaker") and speaker == "default")
+                    )
+                )
+                longest_dialog = max(
+                    (
+                        len(str(dialogue.get("text", "")))
+                        for dialogue in dialogues
+                        if (
+                            dialogue.get("speaker") == speaker
+                            or (not dialogue.get("speaker") and speaker == "default")
+                        )
+                    ),
+                    default=0,
+                )
 
                 # Special comment for default speaker
-                if speaker == 'default':
-                    comment = (f"\ndefault: {count} lines - Used for all non-dialogue pieces "
-                               "(scene descriptions, scene headings, etc.)\n"
-                               f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters")
+                if speaker == "default":
+                    comment = (
+                        f"\ndefault: {count} lines - Used for all non-dialogue pieces "
+                        "(scene descriptions, scene headings, etc.)\n"
+                        f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                    )
                 else:
                     comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
 
                 content.yaml_set_comment_before_after_key(
-                    speaker,
-                    before=comment,
-                    after="\n"
+                    speaker, before=comment, after="\n"
                 )
 
         self._write_yaml(content, output_path)
@@ -459,10 +502,16 @@ class TTSProviderManager:
         yaml.indent(mapping=2, sequence=4, offset=2)
         yaml.width = 4096
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             yaml.dump(content, f)
 
-    def update_yaml_with_provider_fields_preserving_comments(self, yaml_path: str, output_path: str, dialogues: List[Dict], include_optional_fields: bool = False) -> None:
+    def update_yaml_with_provider_fields_preserving_comments(
+        self,
+        yaml_path: str,
+        output_path: str,
+        dialogues: List[Dict],
+        include_optional_fields: bool = False,
+    ) -> None:
         """
         Update YAML with provider-specific fields while preserving comments and existing field values.
         Maintains the original structure and ordering within provider groups.
@@ -473,7 +522,7 @@ class TTSProviderManager:
             dialogues: List of dialog chunks (not used in this version, kept for interface compatibility)
         """
         # Read the entire file
-        with open(yaml_path, 'r') as f:
+        with open(yaml_path, "r") as f:
             content = f.read()
 
         # Split content into chunks based on blank lines
@@ -481,23 +530,25 @@ class TTSProviderManager:
         chunks = []
         current_chunk = []
 
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             if line.strip():  # Non-empty line
                 current_chunk.append(line)
             elif current_chunk:  # Empty line and we have content
-                chunks.append('\n'.join(current_chunk))
+                chunks.append("\n".join(current_chunk))
                 current_chunk = []
 
         # Add the final chunk if it exists
         if current_chunk:
-            chunks.append('\n'.join(current_chunk))
+            chunks.append("\n".join(current_chunk))
 
         # Filter out chunks that don't contain YAML (e.g., header comments)
         speaker_chunks = []
         for chunk in chunks:
             # Look for lines that could be YAML (not starting with #)
-            has_yaml = any(line.strip() and not line.strip().startswith('#')
-                           for line in chunk.split('\n')) 
+            has_yaml = any(
+                line.strip() and not line.strip().startswith("#")
+                for line in chunk.split("\n")
+            )
             if has_yaml:
                 speaker_chunks.append(chunk)
 
@@ -507,18 +558,20 @@ class TTSProviderManager:
 
         for chunk in speaker_chunks:
             # Find all lines that could be YAML (not comments)
-            yaml_lines = [line for line in chunk.split('\n')
-                          if line.strip() and not line.strip().startswith('#')]
+            yaml_lines = [
+                line
+                for line in chunk.split("\n")
+                if line.strip() and not line.strip().startswith("#")
+            ]
 
             # Try to parse the YAML portion
             try:
                 # Join potential YAML lines and parse
-                yaml_text = '\n'.join(yaml_lines)
+                yaml_text = "\n".join(yaml_lines)
                 config = yaml.load(yaml_text)
 
                 if not isinstance(config, dict):
-                    raise ValueError(
-                        f"Invalid YAML structure in chunk: {chunk}")
+                    raise ValueError(f"Invalid YAML structure in chunk: {chunk}")
 
                 # Check for multiple root-level keys (indicates missing blank line between speakers)
                 if len(config) > 1:
@@ -531,24 +584,25 @@ class TTSProviderManager:
 
                 first_key = next(iter(config))
                 if not isinstance(config[first_key], dict):
-                    raise ValueError(
-                        f"Invalid YAML structure for speaker {first_key}")
+                    raise ValueError(f"Invalid YAML structure for speaker {first_key}")
 
-                provider = config[first_key].get('provider')
+                provider = config[first_key].get("provider")
                 if not provider:
-                    raise ValueError(
-                        f"No provider specified for speaker {first_key}")
+                    raise ValueError(f"No provider specified for speaker {first_key}")
 
                 # Verify provider is valid
                 if provider not in self.get_available_providers():
-                    raise ValueError(f"Invalid provider '{provider}' for speaker {first_key}. "
-                                     f"Valid providers are: {', '.join(self.get_available_providers())}")
+                    raise ValueError(
+                        f"Invalid provider '{provider}' for speaker {first_key}. "
+                        f"Valid providers are: {', '.join(self.get_available_providers())}"
+                    )
 
                 provider_chunks.setdefault(provider, []).append(chunk)
 
             except Exception as e:
                 raise ValueError(
-                    f"Error processing YAML chunk:\n{chunk}\n\nError: {str(e)}")
+                    f"Error processing YAML chunk:\n{chunk}\n\nError: {str(e)}"
+                )
 
         # Build the new content with provider instructions and missing fields
         new_content = []
@@ -570,28 +624,28 @@ class TTSProviderManager:
             # Process each chunk in this provider group
             for chunk in chunks:
                 # Split into lines for processing
-                lines = chunk.split('\n')
+                lines = chunk.split("\n")
                 yaml_lines = []
                 comment_lines = []
 
                 # Separate YAML from comments while preserving order
                 for line in lines:
-                    if line.strip().startswith('#'):
+                    if line.strip().startswith("#"):
                         comment_lines.append(line)
                     elif line.strip():
                         yaml_lines.append(line)
 
                 # Parse the YAML content
-                yaml_text = '\n'.join(yaml_lines)
+                yaml_text = "\n".join(yaml_lines)
                 config = yaml.load(yaml_text)
                 speaker = next(iter(config))
                 speaker_config = config[speaker]
 
                 # Add any missing required fields
                 for field in required_fields:
-                    if field != 'provider' and field not in speaker_config:
+                    if field != "provider" and field not in speaker_config:
                         speaker_config[field] = None
-                
+
                 # Add optional fields if requested
                 if include_optional_fields:
                     for field in provider_class.get_optional_fields():
@@ -608,9 +662,9 @@ class TTSProviderManager:
                 reconstructed_chunk.extend(comment_lines)
                 reconstructed_chunk.append(new_yaml)
 
-                new_content.append('\n'.join(reconstructed_chunk))
-                new_content.append('')  # Add blank line between chunks
+                new_content.append("\n".join(reconstructed_chunk))
+                new_content.append("")  # Add blank line between chunks
 
         # Write the final content
-        with open(output_path, 'w') as f:
-            f.write('\n'.join(new_content))
+        with open(output_path, "w") as f:
+            f.write("\n".join(new_content))

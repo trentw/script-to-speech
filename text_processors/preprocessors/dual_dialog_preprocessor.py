@@ -12,8 +12,9 @@ class DualDialogPreProcessor(TextPreProcessor):
     Pre-processor that splits dual dialog blocks into sequential dialog blocks,
     handling mid-dialog speaker transitions.
     """
+
     MIN_SPEAKER_SPACING = 5  # Minimum spaces between speakers
-    MIN_DIALOG_SPACING = 2   # Minimum spaces between dialog columns
+    MIN_DIALOG_SPACING = 2  # Minimum spaces between dialog columns
 
     @property
     def multi_config_mode(self) -> Literal["chain", "override"]:
@@ -32,8 +33,11 @@ class DualDialogPreProcessor(TextPreProcessor):
         Split dual speaker attribution into left and right speakers.
         Preserves parentheticals in speaker names.
         """
-        parts = [p for p in re.split(
-            r'\s{%d,}' % self.MIN_SPEAKER_SPACING, speaker_text) if p]
+        parts = [
+            p
+            for p in re.split(r"\s{%d,}" % self.MIN_SPEAKER_SPACING, speaker_text)
+            if p
+        ]
 
         if len(parts) != 2:
             raise ValueError(f"Could not split speakers from: {speaker_text}")
@@ -42,7 +46,7 @@ class DualDialogPreProcessor(TextPreProcessor):
 
     def _split_dialog(self, raw_dialog: str) -> Tuple[List[str], List[str]]:
         """Split dual dialog into left and right parts, preserving line structure."""
-        lines = raw_dialog.split('\n')
+        lines = raw_dialog.split("\n")
         left_lines = []
         right_lines = []
 
@@ -68,8 +72,9 @@ class DualDialogPreProcessor(TextPreProcessor):
             if indent <= left_indent:
                 # This line starts at left column position or is slightly un-indented
                 # Split it into left and right parts
-                parts = [p for p in re.split(
-                    r'\s{%d,}' % self.MIN_DIALOG_SPACING, line) if p]
+                parts = [
+                    p for p in re.split(r"\s{%d,}" % self.MIN_DIALOG_SPACING, line) if p
+                ]
                 logger.debug(f"Split into parts: {parts}")
                 if parts:
                     left_lines.append(parts[0])
@@ -77,7 +82,9 @@ class DualDialogPreProcessor(TextPreProcessor):
                     if len(parts) > 1:
                         right_lines.append(parts[-1])
                         logger.debug(f"Added to right: '{parts[-1]}'")
-            elif indent > left_indent + 10:  # Significantly indented, must be right speaker
+            elif (
+                indent > left_indent + 10
+            ):  # Significantly indented, must be right speaker
                 right_lines.append(line.strip())
                 logger.debug(f"Added to right (indented): '{line.strip()}'")
 
@@ -91,8 +98,13 @@ class DualDialogPreProcessor(TextPreProcessor):
 
         return left_lines, right_lines
 
-    def _process_buffer(self, lines: List[str], initial_speaker: str, speaker_raw_text: str,
-                        dialog_raw_text: str) -> List[Dict]:
+    def _process_buffer(
+        self,
+        lines: List[str],
+        initial_speaker: str,
+        speaker_raw_text: str,
+        dialog_raw_text: str,
+    ) -> List[Dict]:
         """Process a buffer of lines for one column."""
         chunks = []
         current_speaker = initial_speaker
@@ -100,34 +112,36 @@ class DualDialogPreProcessor(TextPreProcessor):
         current_parenthetical = []
         in_parenthetical = False
 
-        logger.debug(
-            f"\nProcessing buffer for initial speaker: {initial_speaker}")
+        logger.debug(f"\nProcessing buffer for initial speaker: {initial_speaker}")
         logger.debug("Input lines:")
         for line in lines:
             logger.debug(f"  '{line}'")
 
         # Add initial speaker attribution
         if current_speaker:
-            chunks.append({
-                'type': 'speaker_attribution',
-                'speaker': '',
-                'text': current_speaker,
-                'raw_text': speaker_raw_text
-            })
-            logger.debug(
-                f"Added initial speaker attribution for: {current_speaker}")
+            chunks.append(
+                {
+                    "type": "speaker_attribution",
+                    "speaker": "",
+                    "text": current_speaker,
+                    "raw_text": speaker_raw_text,
+                }
+            )
+            logger.debug(f"Added initial speaker attribution for: {current_speaker}")
 
         def flush_dialog_buffer():
             if current_buffer:
                 logger.debug(f"Flushing dialog buffer for {current_speaker}:")
                 for buf_line in current_buffer:
                     logger.debug(f"  '{buf_line}'")
-                chunks.append({
-                    'type': 'dialog',
-                    'speaker': self._clean_speaker_name(current_speaker),
-                    'text': ' '.join(current_buffer),
-                    'raw_text': dialog_raw_text
-                })
+                chunks.append(
+                    {
+                        "type": "dialog",
+                        "speaker": self._clean_speaker_name(current_speaker),
+                        "text": " ".join(current_buffer),
+                        "raw_text": dialog_raw_text,
+                    }
+                )
                 current_buffer.clear()
                 logger.debug("Added dialog chunk")
 
@@ -136,12 +150,14 @@ class DualDialogPreProcessor(TextPreProcessor):
                 logger.debug("Flushing parenthetical:")
                 for p_line in current_parenthetical:
                     logger.debug(f"  '{p_line}'")
-                chunks.append({
-                    'type': 'dialog_modifier',
-                    'speaker': '',
-                    'text': ' '.join(current_parenthetical),
-                    'raw_text': dialog_raw_text
-                })
+                chunks.append(
+                    {
+                        "type": "dialog_modifier",
+                        "speaker": "",
+                        "text": " ".join(current_parenthetical),
+                        "raw_text": dialog_raw_text,
+                    }
+                )
                 current_parenthetical.clear()
                 logger.debug("Added dialog_modifier chunk")
 
@@ -149,44 +165,52 @@ class DualDialogPreProcessor(TextPreProcessor):
             stripped = line.strip()
             logger.debug(f"\nProcessing line: '{stripped}'")
 
-            if stripped.isupper() and not stripped.startswith('('):
+            if stripped.isupper() and not stripped.startswith("("):
                 logger.debug(f"Found new speaker: {stripped}")
                 # Found a new speaker - flush any current buffers
                 flush_dialog_buffer()
                 flush_parenthetical()
 
                 # Add speaker attribution
-                chunks.append({
-                    'type': 'speaker_attribution',
-                    'speaker': '',
-                    'text': stripped,
-                    'raw_text': speaker_raw_text if stripped == initial_speaker else dialog_raw_text
-                })
+                chunks.append(
+                    {
+                        "type": "speaker_attribution",
+                        "speaker": "",
+                        "text": stripped,
+                        "raw_text": (
+                            speaker_raw_text
+                            if stripped == initial_speaker
+                            else dialog_raw_text
+                        ),
+                    }
+                )
                 logger.debug(f"Added speaker attribution for: {stripped}")
 
                 # Set new speaker
                 current_speaker = stripped
-            elif stripped.startswith('('):
+            elif stripped.startswith("("):
                 logger.debug("Found parenthetical")
                 # If we were in the middle of dialog, flush it
                 flush_dialog_buffer()
 
-                if stripped.endswith(')'):
+                if stripped.endswith(")"):
                     # Single-line parenthetical
                     logger.debug("Single-line parenthetical")
-                    chunks.append({
-                        'type': 'dialog_modifier',
-                        'speaker': '',
-                        'text': stripped,
-                        'raw_text': dialog_raw_text
-                    })
+                    chunks.append(
+                        {
+                            "type": "dialog_modifier",
+                            "speaker": "",
+                            "text": stripped,
+                            "raw_text": dialog_raw_text,
+                        }
+                    )
                     logger.debug(f"Added dialog_modifier: {stripped}")
                 else:
                     # Start of multi-line parenthetical
                     logger.debug("Starting multi-line parenthetical")
                     in_parenthetical = True
                     current_parenthetical.append(stripped)
-            elif stripped.endswith(')') and in_parenthetical:
+            elif stripped.endswith(")") and in_parenthetical:
                 logger.debug("Ending multi-line parenthetical")
                 current_parenthetical.append(stripped)
                 flush_parenthetical()
@@ -206,39 +230,45 @@ class DualDialogPreProcessor(TextPreProcessor):
 
     def _clean_speaker_name(self, name: str) -> str:
         """Remove parentheticals and whitespace from speaker name."""
-        return re.sub(r'\([^)]*\)', '', name).strip()
+        return re.sub(r"\([^)]*\)", "", name).strip()
 
-    def _process_dual_dialog_pair(self, speaker_chunk: Dict, dialog_chunk: Dict) -> List[Dict]:
+    def _process_dual_dialog_pair(
+        self, speaker_chunk: Dict, dialog_chunk: Dict
+    ) -> List[Dict]:
         """Process a pair of dual speaker attribution and dual dialog chunks."""
         # Get initial left and right speakers
-        left_speaker, right_speaker = self._split_speakers_full(
-            speaker_chunk['text'])
+        left_speaker, right_speaker = self._split_speakers_full(speaker_chunk["text"])
         logger.debug(
-            f"\nProcessing dual dialog pair with speakers: {left_speaker} | {right_speaker}")
+            f"\nProcessing dual dialog pair with speakers: {left_speaker} | {right_speaker}"
+        )
 
         # Split dialog into columns
-        left_lines, right_lines = self._split_dialog(dialog_chunk['raw_text'])
+        left_lines, right_lines = self._split_dialog(dialog_chunk["raw_text"])
 
         # Process each column
         result_chunks = []
 
         # Process left buffer
         logger.debug("\nProcessing left column...")
-        result_chunks.extend(self._process_buffer(
-            left_lines,
-            left_speaker,
-            speaker_chunk['raw_text'],
-            dialog_chunk['raw_text']
-        ))
+        result_chunks.extend(
+            self._process_buffer(
+                left_lines,
+                left_speaker,
+                speaker_chunk["raw_text"],
+                dialog_chunk["raw_text"],
+            )
+        )
 
         # Process right buffer
         logger.debug("\nProcessing right column...")
-        result_chunks.extend(self._process_buffer(
-            right_lines,
-            right_speaker,
-            speaker_chunk['raw_text'],
-            dialog_chunk['raw_text']
-        ))
+        result_chunks.extend(
+            self._process_buffer(
+                right_lines,
+                right_speaker,
+                speaker_chunk["raw_text"],
+                dialog_chunk["raw_text"],
+            )
+        )
 
         return result_chunks
 
@@ -255,15 +285,18 @@ class DualDialogPreProcessor(TextPreProcessor):
             current_chunk = chunks[i]
 
             # Look for dual speaker attribution
-            if current_chunk['type'] == 'dual_speaker_attribution' and i + 1 < len(chunks):
+            if current_chunk["type"] == "dual_speaker_attribution" and i + 1 < len(
+                chunks
+            ):
                 next_chunk = chunks[i + 1]
 
                 # Check if followed by dual dialog
-                if next_chunk['type'] == 'dual_dialog':
+                if next_chunk["type"] == "dual_dialog":
                     made_changes = True
                     # Process the dual dialog pair and create individual dialog chunks
                     new_chunks = self._process_dual_dialog_pair(
-                        current_chunk, next_chunk)
+                        current_chunk, next_chunk
+                    )
                     result_chunks.extend(new_chunks)
                     i += 2  # Skip both chunks
                     continue

@@ -12,7 +12,7 @@ class TextProcessor(ABC):
     def multi_config_mode(self) -> Literal["chain", "override"]:
         """
         Determines how this processor behaves when multiple configs are loaded.
-        
+
         Returns:
             "chain": Multiple instances of this processor can exist and will be chained
             "override": Only one instance can exist, last config's instance is used

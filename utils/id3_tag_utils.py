@@ -58,14 +58,14 @@ def set_id3_tags_from_config(mp3_path: str, config_path: str) -> bool:
     """
     try:
         # Load the configuration
-        with open(config_path, 'r', encoding='utf-8') as f:
+        with open(config_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
 
         # Extract ID3 tag configuration
-        id3_config = config.get('id3_tag_config', {})
-        title = id3_config.get('title', '')
-        screenplay_author = id3_config.get('screenplay_author', '')
-        date = id3_config.get('date', '')
+        id3_config = config.get("id3_tag_config", {})
+        title = id3_config.get("title", "")
+        screenplay_author = id3_config.get("screenplay_author", "")
+        date = id3_config.get("date", "")
 
         # Only set tags if at least title is provided
         if title:
@@ -73,8 +73,7 @@ def set_id3_tags_from_config(mp3_path: str, config_path: str) -> bool:
             set_id3_tags(mp3_path, title, screenplay_author, date)
             return True
         else:
-            logger.warning(
-                "No title provided in config, skipping ID3 tag setting")
+            logger.warning("No title provided in config, skipping ID3 tag setting")
 
         return False
     except Exception as e:

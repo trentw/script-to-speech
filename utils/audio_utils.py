@@ -25,12 +25,11 @@ def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
 
         # Handle both directory and direct executable paths
         if os.path.isdir(ffmpeg_path):
-            ffmpeg_executable = os.path.join(ffmpeg_path, 'ffmpeg')
-            ffprobe_executable = os.path.join(ffmpeg_path, 'ffprobe')
+            ffmpeg_executable = os.path.join(ffmpeg_path, "ffmpeg")
+            ffprobe_executable = os.path.join(ffmpeg_path, "ffprobe")
         else:
             ffmpeg_executable = ffmpeg_path
-            ffprobe_executable = os.path.join(
-                os.path.dirname(ffmpeg_path), 'ffprobe')
+            ffprobe_executable = os.path.join(os.path.dirname(ffmpeg_path), "ffprobe")
 
         # Verify executables exist and are executable
         for exe in [ffmpeg_executable, ffprobe_executable]:
@@ -89,7 +88,7 @@ def split_audio_on_silence(
             audio,
             min_silence_len=min_silence_len,
             silence_thresh=silence_thresh,
-            seek_step=1
+            seek_step=1,
         )
 
         # If no silence detected, return None
@@ -113,9 +112,7 @@ def split_audio_on_silence(
 
 
 def export_audio_segment(
-    audio_segment: AudioSegment,
-    output_path: str,
-    format: str = "mp3"
+    audio_segment: AudioSegment, output_path: str, format: str = "mp3"
 ) -> None:
     """
     Export an audio segment to a file with proper error handling.

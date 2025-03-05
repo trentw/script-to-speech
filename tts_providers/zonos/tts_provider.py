@@ -11,6 +11,7 @@ from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
 @dataclass
 class SpeakerConfig:
     """Configuration for a speaker using Zonos TTS."""
+
     voice_seed: int
     speaking_rate: Optional[float] = None
     language_iso_code: Optional[str] = None
@@ -52,11 +53,17 @@ class ZonosTTSProvider(TTSProvider):
             self.validate_speaker_config(config)
 
             speaker_config = SpeakerConfig(
-                voice_seed=config['voice_seed'],
-                speaking_rate=None if self._is_empty_value(config.get('speaking_rate'))
-                else config.get('speaking_rate'),
-                language_iso_code=None if self._is_empty_value(config.get('language_iso_code'))
-                else config.get('language_iso_code')
+                voice_seed=config["voice_seed"],
+                speaking_rate=(
+                    None
+                    if self._is_empty_value(config.get("speaking_rate"))
+                    else config.get("speaking_rate")
+                ),
+                language_iso_code=(
+                    None
+                    if self._is_empty_value(config.get("language_iso_code"))
+                    else config.get("language_iso_code")
+                ),
             )
 
             self.speaker_configs[speaker] = speaker_config
@@ -72,7 +79,7 @@ class ZonosTTSProvider(TTSProvider):
             params = {
                 "text": text,
                 "seed": int(config.voice_seed),
-                "mime_type": self.MIME_TYPE
+                "mime_type": self.MIME_TYPE,
             }
 
             # Add optional parameters only if they have non-empty values
@@ -94,10 +101,7 @@ class ZonosTTSProvider(TTSProvider):
         config = self._get_speaker_config(speaker)
 
         # Create a dictionary of all non-empty parameters that affect voice generation
-        params = {
-            "seed": config.voice_seed,
-            "mime_type": self.MIME_TYPE
-        }
+        params = {"seed": config.voice_seed, "mime_type": self.MIME_TYPE}
 
         # Only include optional parameters if they have non-empty values
         if not self._is_empty_value(config.speaking_rate):
@@ -107,12 +111,14 @@ class ZonosTTSProvider(TTSProvider):
 
         # Create a hash of the parameters
         params_str = json.dumps(params, sort_keys=True)
-        return f"s{config.voice_seed}_{hashlib.md5(params_str.encode()).hexdigest()[:12]}"
+        return (
+            f"s{config.voice_seed}_{hashlib.md5(params_str.encode()).hexdigest()[:12]}"
+        )
 
     def _get_speaker_config(self, speaker: Optional[str]) -> SpeakerConfig:
         """Get the speaker configuration."""
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         config = self.speaker_configs.get(speaker)
         if not config:
@@ -128,8 +134,7 @@ class ZonosTTSProvider(TTSProvider):
 
         # Convert dataclass to dict and filter out None values
         speaker_config = {
-            k: v for k, v in asdict(config).items()
-            if not self._is_empty_value(v)
+            k: v for k, v in asdict(config).items() if not self._is_empty_value(v)
         }
 
         return speaker_config
@@ -171,12 +176,12 @@ class ZonosTTSProvider(TTSProvider):
     @classmethod
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
-        return ['voice_seed']
+        return ["voice_seed"]
 
     @classmethod
     def get_optional_fields(cls) -> List[str]:
         """Get optional configuration fields."""
-        return ['speaking_rate', 'language_iso_code']
+        return ["speaking_rate", "language_iso_code"]
 
     @classmethod
     def get_metadata_fields(cls) -> List[str]:
@@ -185,31 +190,35 @@ class ZonosTTSProvider(TTSProvider):
 
     def validate_speaker_config(self, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
-        if 'voice_seed' not in speaker_config:
+        if "voice_seed" not in speaker_config:
             raise ValueError(
-                f"Missing required field 'voice_seed' in speaker configuration: {speaker_config}")
+                f"Missing required field 'voice_seed' in speaker configuration: {speaker_config}"
+            )
 
-        voice_seed = int(speaker_config['voice_seed'])
+        voice_seed = int(speaker_config["voice_seed"])
         if not isinstance(voice_seed, int):
             raise ValueError("Field 'voice_seed' must be an integer")
 
         if not self.MIN_SEED <= voice_seed <= self.MAX_SEED:
             raise ValueError(
-                f"Invalid voice_seed '{voice_seed}'. Must be between {self.MIN_SEED} and {self.MAX_SEED}")
+                f"Invalid voice_seed '{voice_seed}'. Must be between {self.MIN_SEED} and {self.MAX_SEED}"
+            )
 
         # Validate optional fields if present and non-empty
-        speaking_rate = speaker_config.get('speaking_rate')
+        speaking_rate = speaker_config.get("speaking_rate")
         if not self._is_empty_value(speaking_rate):
             if not isinstance(speaking_rate, (int, float)):
                 raise ValueError("Field 'speaking_rate' must be a number")
             if not self.MIN_SPEAKING_RATE <= speaking_rate <= self.MAX_SPEAKING_RATE:
                 raise ValueError(
-                    f"Invalid speaking_rate '{speaking_rate}'. Must be between {self.MIN_SPEAKING_RATE} and {self.MAX_SPEAKING_RATE}")
+                    f"Invalid speaking_rate '{speaking_rate}'. Must be between {self.MIN_SPEAKING_RATE} and {self.MAX_SPEAKING_RATE}"
+                )
 
-        language_code = speaker_config.get('language_iso_code')
+        language_code = speaker_config.get("language_iso_code")
         if not self._is_empty_value(language_code):
             if not isinstance(language_code, str):
                 raise ValueError("Field 'language_iso_code' must be a string")
             if language_code not in self.VALID_LANGUAGES:
                 raise ValueError(
-                    f"Invalid language_iso_code '{language_code}'. Must be one of: {', '.join(sorted(self.VALID_LANGUAGES))}")
+                    f"Invalid language_iso_code '{language_code}'. Must be one of: {', '.join(sorted(self.VALID_LANGUAGES))}"
+                )

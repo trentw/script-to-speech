@@ -51,18 +51,18 @@ class ElevenLabsVoiceRegistryManager:
             logger.debug(f"Category: {voice.category}")
 
             # Log sharing attribute details
-            if hasattr(voice, 'sharing'):
-                logger.debug(
-                    f"Has sharing attribute: {voice.sharing is not None}")
+            if hasattr(voice, "sharing"):
+                logger.debug(f"Has sharing attribute: {voice.sharing is not None}")
                 if voice.sharing is not None:
                     logger.debug(
-                        f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}")
+                        f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}"
+                    )
 
             # Handle premade voices (no sharing attribute)
-            if not hasattr(voice, 'sharing') or voice.sharing is None:
+            if not hasattr(voice, "sharing") or voice.sharing is None:
                 public_id = voice.voice_id
                 registry_id = voice.voice_id
-                category = getattr(voice, 'category', 'premade')
+                category = getattr(voice, "category", "premade")
             # Handle shared/cloned voices
             else:
                 public_id = voice.sharing.original_voice_id or voice.voice_id
@@ -117,7 +117,9 @@ class ElevenLabsVoiceRegistryManager:
 
         return None
 
-    def _add_voice_to_registry(self, public_voice_id: str, public_owner_id: str) -> None:
+    def _add_voice_to_registry(
+        self, public_voice_id: str, public_owner_id: str
+    ) -> None:
         """
         Add a voice to the user's voice registry and refresh registry state.
 
@@ -131,10 +133,7 @@ class ElevenLabsVoiceRegistryManager:
         logger.info(f"Adding voice {public_voice_id} to registry")
         url = f"https://api.elevenlabs.io/v1/voices/add/{public_owner_id}/{public_voice_id}"
 
-        headers = {
-            "Content-Type": "application/json",
-            "xi-api-key": self.api_key
-        }
+        headers = {"Content-Type": "application/json", "xi-api-key": self.api_key}
 
         # Use the public voice ID as the name in the registry
         payload = {"new_name": public_voice_id}
@@ -240,8 +239,7 @@ class ElevenLabsVoiceRegistryManager:
 
         # Count non-premade voices
         non_premade_count = sum(
-            1 for _, category in self.voice_registry.values()
-            if category != "premade"
+            1 for _, category in self.voice_registry.values() if category != "premade"
         )
 
         # Make room if needed

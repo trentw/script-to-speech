@@ -15,15 +15,17 @@ class PatternReplaceProcessor(TextProcessor):
     def _prepare_replacements(self):
         """Prepare and compile regex patterns for each replacement."""
         replacements = []
-        for replacement in self.config.get('replacements', []):
+        for replacement in self.config.get("replacements", []):
             try:
-                replacements.append({
-                    'match_field': replacement['match_field'],
-                    'match_pattern': re.compile(replacement['match_pattern']),
-                    'replace_field': replacement['replace_field'],
-                    'replace_pattern': replacement['replace_pattern'],
-                    'replace_string': replacement['replace_string']
-                })
+                replacements.append(
+                    {
+                        "match_field": replacement["match_field"],
+                        "match_pattern": re.compile(replacement["match_pattern"]),
+                        "replace_field": replacement["replace_field"],
+                        "replace_pattern": replacement["replace_pattern"],
+                        "replace_string": replacement["replace_string"],
+                    }
+                )
             except re.error as e:
                 raise ValueError(f"Invalid regex pattern in replacement: {e}")
         return replacements
@@ -34,38 +36,46 @@ class PatternReplaceProcessor(TextProcessor):
 
         for replacement in self.replacements:
             # Check if the match field exists and matches the pattern
-            if (replacement['match_field'] in json_chunk and
-                    replacement['match_pattern'].match(str(json_chunk[replacement['match_field']]))):
+            if replacement["match_field"] in json_chunk and replacement[
+                "match_pattern"
+            ].match(str(json_chunk[replacement["match_field"]])):
 
                 # If match is found and replace field exists, perform replacement
-                if replacement['replace_field'] in json_chunk:
-                    original_text = str(
-                        json_chunk[replacement['replace_field']])
+                if replacement["replace_field"] in json_chunk:
+                    original_text = str(json_chunk[replacement["replace_field"]])
                     modified_text = re.sub(
-                        replacement['replace_pattern'],
-                        replacement['replace_string'] if replacement['replace_string'] else '',
-                        original_text
+                        replacement["replace_pattern"],
+                        (
+                            replacement["replace_string"]
+                            if replacement["replace_string"]
+                            else ""
+                        ),
+                        original_text,
                     )
 
                     if modified_text != original_text:
-                        modified_chunk[replacement['replace_field']
-                                       ] = modified_text
+                        modified_chunk[replacement["replace_field"]] = modified_text
                         changes_made = True
 
         return modified_chunk, changes_made
 
     def get_transformed_fields(self) -> List[str]:
         """Return list of all fields that could be transformed."""
-        return list(set(r['replace_field'] for r in self.replacements))
+        return list(set(r["replace_field"] for r in self.replacements))
 
     def validate_config(self) -> bool:
-        if not isinstance(self.config.get('replacements'), list):
+        if not isinstance(self.config.get("replacements"), list):
             return False
 
-        required_keys = {'match_field', 'match_pattern',
-                         'replace_field', 'replace_pattern', 'replace_string'}
+        required_keys = {
+            "match_field",
+            "match_pattern",
+            "replace_field",
+            "replace_pattern",
+            "replace_string",
+        }
 
-        for replacement in self.config.get('replacements', []):
+        for replacement in self.config.get("replacements", []):
             # Verify all required keys are present
             if not all(key in replacement for key in required_keys):
                 return False
@@ -76,8 +86,8 @@ class PatternReplaceProcessor(TextProcessor):
 
             # Verify patterns are valid regex
             try:
-                re.compile(replacement['match_pattern'])
-                re.compile(replacement['replace_pattern'])
+                re.compile(replacement["match_pattern"])
+                re.compile(replacement["replace_pattern"])
             except re.error:
                 return False
 

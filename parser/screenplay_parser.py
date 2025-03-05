@@ -8,10 +8,10 @@ from utils.logging import get_screenplay_logger
 logger = get_screenplay_logger("parser.screenplay")
 
 # Indentation level constants
-SPEAKER_INDENT_MIN = 30     # Minimum indentation for speaker attribution
-SPEAKER_INDENT_MAX = 45     # Maximum indentation for speaker attribution
-DIALOG_INDENT_MIN = 20      # Minimum indentation for dialog blocks
-DIALOG_INDENT_MAX = 29      # Maximum indentation for dialog blocks
+SPEAKER_INDENT_MIN = 30  # Minimum indentation for speaker attribution
+SPEAKER_INDENT_MAX = 45  # Maximum indentation for speaker attribution
+DIALOG_INDENT_MIN = 20  # Minimum indentation for dialog blocks
+DIALOG_INDENT_MAX = 29  # Maximum indentation for dialog blocks
 DUAL_SPEAKER_MIN_SPEAKER_SPACING = 8  # Minimum spaces between dual speakers
 # Minimum spaces between blocks of dual dialog
 DUAL_SPEAKER_MIN_DIALOG_SPACING = 2
@@ -30,10 +30,10 @@ class State(Enum):
 
 @dataclass
 class Chunk:
-    type: str      # State name in snake_case
-    speaker: str   # Speaker name or empty string
+    type: str  # State name in snake_case
+    speaker: str  # Speaker name or empty string
     raw_text: str  # Original text with formatting
-    text: str      # Cleaned text
+    text: str  # Cleaned text
 
 
 class IndentationContext:
@@ -69,9 +69,11 @@ class ScreenplayParser:
 
     def clean_speaker_name(self, text: str) -> str:
         """Remove parentheticals and whitespace from speaker name."""
-        return re.sub(r'\([^)]*\)', '', text).strip()
+        return re.sub(r"\([^)]*\)", "", text).strip()
 
-    def calculate_probabilities(self, line: str, indentation: int) -> Dict[State, float]:
+    def calculate_probabilities(
+        self, line: str, indentation: int
+    ) -> Dict[State, float]:
         """Calculate probability scores for each possible state."""
         # Initialize all states with base probability (0.1)
         probs = {state: 0.1 for state in State}
@@ -81,15 +83,20 @@ class ScreenplayParser:
         probs[State.TITLE] = 2.0 if not self.has_left_title else 0.0
 
         stripped = line.strip()
-        logger.debug(
-            f"\nCalculating probabilities for line: {stripped[:40]}...")
+        logger.debug(f"\nCalculating probabilities for line: {stripped[:40]}...")
         logger.debug(f"Current state: {self.state}")
         logger.debug(f"Indentation: {indentation}")
 
         # Dual speaker detection
         # Very high probability (1.0) when we see two speakers with sufficient spacing
-        if (stripped.isupper() and indentation < SPEAKER_INDENT_MIN and
-                re.search(rf"([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)", stripped)):
+        if (
+            stripped.isupper()
+            and indentation < SPEAKER_INDENT_MIN
+            and re.search(
+                rf"([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)\s{{{DUAL_SPEAKER_MIN_SPEAKER_SPACING},}}([A-Z][A-Z0-9#,\.\(\)'\-]*(?:\s+[A-Z0-9#,\.\(\)'\-]+)*)",
+                stripped,
+            )
+        ):
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
             logger.debug("Detected potential dual speaker attribution")
 
@@ -100,20 +107,22 @@ class ScreenplayParser:
         if self.state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
             internal_spacing = self.get_max_internal_spacing(stripped)
             non_second_speaker_check = indentation < (len(line) / 2)
-            text_beyond_halway_of_line_check = len(
-                line.strip()) + indentation > (len(line) / 2)
+            text_beyond_halway_of_line_check = len(line.strip()) + indentation > (
+                len(line) / 2
+            )
 
+            logger.debug(f"Dual dialog max internal spacing: {internal_spacing}")
+            logger.debug(f"Non-second speaker indentation: {non_second_speaker_check}")
             logger.debug(
-                f"Dual dialog max internal spacing: {internal_spacing}")
-            logger.debug(
-                f"Non-second speaker indentation: {non_second_speaker_check}")
-            logger.debug(
-                f"Text beyond halfway in line: {text_beyond_halway_of_line_check}")
-            logger.debug(
-                f"Last line blank line: {self.saw_blank_line}")
+                f"Text beyond halfway in line: {text_beyond_halway_of_line_check}"
+            )
+            logger.debug(f"Last line blank line: {self.saw_blank_line}")
 
-            if (self.saw_blank_line or
-                    (internal_spacing < DUAL_SPEAKER_MIN_DIALOG_SPACING and non_second_speaker_check and text_beyond_halway_of_line_check)):
+            if self.saw_blank_line or (
+                internal_spacing < DUAL_SPEAKER_MIN_DIALOG_SPACING
+                and non_second_speaker_check
+                and text_beyond_halway_of_line_check
+            ):
                 # Reset dual dialog probability if:
                 # The last line was a blank line
                 # OR the line has less than the minimum spacing between speakers AND the indentation looks like a scene header (and not the 2nd speaker) AND the text extends beyond half way across the page
@@ -140,9 +149,9 @@ class ScreenplayParser:
         # Good probability (0.7) for start of multi-line parenthetical
         if self.state == State.DIALOG_MODIFIER:
             probs[State.DIALOG_MODIFIER] += 0.7
-        elif stripped.startswith('('):
+        elif stripped.startswith("("):
             if self.state in [State.DIALOG, State.SPEAKER_ATTRIBUTION]:
-                if stripped.endswith(')'):
+                if stripped.endswith(")"):
                     probs[State.DIALOG_MODIFIER] += 0.9
                 else:
                     probs[State.DIALOG_MODIFIER] += 0.7
@@ -150,8 +159,12 @@ class ScreenplayParser:
         # Speaker attribution
         # Strong base probability (0.6) for properly indented speaker names
         # Additional boost (0.2) when coming from action block
-        if (indentation >= SPEAKER_INDENT_MIN and indentation <= SPEAKER_INDENT_MAX and stripped.isupper() and
-                not any(word in stripped.lower() for word in ['int.', 'ext.'])):
+        if (
+            indentation >= SPEAKER_INDENT_MIN
+            and indentation <= SPEAKER_INDENT_MAX
+            and stripped.isupper()
+            and not any(word in stripped.lower() for word in ["int.", "ext."])
+        ):
             probs[State.SPEAKER_ATTRIBUTION] += 0.6
             if self.state == State.ACTION:
                 probs[State.SPEAKER_ATTRIBUTION] += 0.2
@@ -159,8 +172,11 @@ class ScreenplayParser:
         # Right-aligned action blocks (CUT TO:, etc.)
         # Probability boost when we have an all-caps, non-scene header block indented far more than
         # a speaker attribtuion
-        if (indentation >= SPEAKER_INDENT_MAX and stripped.isupper() and
-                not any(word in stripped.lower() for word in ['int.', 'ext.'])):
+        if (
+            indentation >= SPEAKER_INDENT_MAX
+            and stripped.isupper()
+            and not any(word in stripped.lower() for word in ["int.", "ext."])
+        ):
             probs[State.ACTION] += 0.8
 
         # Dialog indicators
@@ -180,7 +196,10 @@ class ScreenplayParser:
         # Slight dialog penalty (-0.2) when dedenting
         if indentation < DIALOG_INDENT_MIN:
             probs[State.ACTION] += 0.4
-            if self.state == State.DIALOG and self.indent_context.last_dialog_indent is not None:
+            if (
+                self.state == State.DIALOG
+                and self.indent_context.last_dialog_indent is not None
+            ):
                 if indentation < self.indent_context.last_dialog_indent:
                     probs[State.ACTION] += 0.3
                     probs[State.DIALOG] -= 0.2
@@ -188,7 +207,7 @@ class ScreenplayParser:
 
         # Scene heading detection
         # High probability (0.8) for INT./EXT. markers
-        if re.match(r'^\s*(?:[A-Z]?\d+(?:\.\d+)?[A-Z]?\s+)?(INT\.|EXT\.)', stripped):
+        if re.match(r"^\s*(?:[A-Z]?\d+(?:\.\d+)?[A-Z]?\s+)?(INT\.|EXT\.)", stripped):
             probs[State.SCENE_HEADING] += 0.8
             probs[State.DUAL_SPEAKER_ATTRIBUTION] = 0.1
             probs[State.ACTION] = 0.1
@@ -213,8 +232,7 @@ class ScreenplayParser:
 
         # Get the state with highest probability
         new_state = max(probs.items(), key=lambda x: x[1])[0]
-        logger.debug(
-            f"Determined state: {new_state} for line: {line.strip()[:40]}...")
+        logger.debug(f"Determined state: {new_state} for line: {line.strip()[:40]}...")
 
         return new_state
 
@@ -224,8 +242,10 @@ class ScreenplayParser:
         indentation = self.get_indentation(line)
 
         # Page numbers should be both numeric and highly indented
-        return (bool(re.match(r'^\s*\d+\.?\s*$', stripped)) and
-                indentation >= DIALOG_INDENT_MAX + 5)
+        return (
+            bool(re.match(r"^\s*\d+\.?\s*$", stripped))
+            and indentation >= DIALOG_INDENT_MAX + 5
+        )
 
         if is_page:
             logger.debug(f"Detected page number: {stripped}")
@@ -251,8 +271,8 @@ class ScreenplayParser:
             return 0
 
         # Find all sequences of spaces and get the length of the longest one
-        spaces = re.findall(r' +', stripped)
-        return len(max(spaces, default=''))
+        spaces = re.findall(r" +", stripped)
+        return len(max(spaces, default=""))
 
     def handle_state_transition(self, line: str, new_state: Optional[State]):
         """Handle transition between states."""
@@ -276,8 +296,7 @@ class ScreenplayParser:
 
             # Handle speaker transitions
             if new_state == State.SPEAKER_ATTRIBUTION:
-                self.current_speaker = re.sub(
-                    r'\([^)]*\)', '', line.strip()).strip()
+                self.current_speaker = re.sub(r"\([^)]*\)", "", line.strip()).strip()
                 logger.debug(f"New speaker: {self.current_speaker}")
             elif new_state == State.DIALOG:
                 speaker = self.current_speaker
@@ -287,16 +306,13 @@ class ScreenplayParser:
                 speaker = None
 
             self.current_chunk = Chunk(
-                type=chunk_type,
-                speaker=speaker,
-                raw_text=line,
-                text=line.strip()
+                type=chunk_type, speaker=speaker, raw_text=line, text=line.strip()
             )
         else:
             # Preserve exact formatting in raw_text
-            self.current_chunk.raw_text += '\n' + line
+            self.current_chunk.raw_text += "\n" + line
             # Append cleaned text with space
-            self.current_chunk.text += ' ' + line.strip()
+            self.current_chunk.text += " " + line.strip()
 
         if new_state != self.state:
             logger.debug(f"State transition: {self.state} -> {new_state}")
@@ -314,7 +330,7 @@ class ScreenplayParser:
         self.chunks = []
         self.indent_context = IndentationContext()
 
-        lines = text.split('\n')
+        lines = text.split("\n")
         i = 0
 
         while i < len(lines):
@@ -324,12 +340,11 @@ class ScreenplayParser:
                 if self.current_chunk:
                     self.chunks.append(self.current_chunk)
 
-                self.chunks.append(Chunk(
-                    type='page_number',
-                    speaker='',
-                    raw_text=line,
-                    text=line.strip()
-                ))
+                self.chunks.append(
+                    Chunk(
+                        type="page_number", speaker="", raw_text=line, text=line.strip()
+                    )
+                )
                 logger.debug("Added page number chunk")
 
                 self.current_chunk = None
@@ -348,9 +363,12 @@ class ScreenplayParser:
         logger.info(f"Parsing completed. Generated {len(self.chunks)} chunks")
 
         # Convert None speakers to empty strings in output
-        return [{
-            'type': chunk.type,
-            'speaker': '' if chunk.speaker is None else chunk.speaker,
-            'raw_text': chunk.raw_text,
-            'text': chunk.text
-        } for chunk in self.chunks]
+        return [
+            {
+                "type": chunk.type,
+                "speaker": "" if chunk.speaker is None else chunk.speaker,
+                "raw_text": chunk.raw_text,
+                "text": chunk.text,
+            }
+            for chunk in self.chunks
+        ]

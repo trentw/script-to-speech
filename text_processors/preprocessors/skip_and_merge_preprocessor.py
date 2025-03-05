@@ -7,15 +7,16 @@ logger = get_screenplay_logger("text_processors.preprocessors.skip_and_merge")
 
 class SkipAndMergePreProcessor(TextPreProcessor):
     """
-    Pre-processor that removes chunks of specified types and merges 
+    Pre-processor that removes chunks of specified types and merges
     adjacent chunks around removed chunks where appropriate.
     """
+
     # Types that can be merged if they're the same type
-    MERGEABLE_TYPES = {'scene_heading', 'action', 'dialog', 'dialog_modifier'}
+    MERGEABLE_TYPES = {"scene_heading", "action", "dialog", "dialog_modifier"}
 
     def validate_config(self) -> bool:
         """Validate that skip_types is a list."""
-        return isinstance(self.config.get('skip_types'), list)
+        return isinstance(self.config.get("skip_types"), list)
 
     def _can_merge_chunks(self, chunk1: Dict, chunk2: Dict) -> bool:
         """
@@ -26,15 +27,15 @@ class SkipAndMergePreProcessor(TextPreProcessor):
         - Type is in MERGEABLE_TYPES
         - For dialog: they have the same speaker
         """
-        if chunk1['type'] != chunk2['type']:
+        if chunk1["type"] != chunk2["type"]:
             return False
 
-        if chunk1['type'] not in self.MERGEABLE_TYPES:
+        if chunk1["type"] not in self.MERGEABLE_TYPES:
             return False
 
         # For dialog, speakers must match
-        if chunk1['type'] == 'dialog':
-            return chunk1.get('speaker') == chunk2.get('speaker')
+        if chunk1["type"] == "dialog":
+            return chunk1.get("speaker") == chunk2.get("speaker")
 
         return True
 
@@ -44,8 +45,8 @@ class SkipAndMergePreProcessor(TextPreProcessor):
         Preserves all fields, concatenating text with a space.
         """
         merged = chunk1.copy()
-        merged['text'] = f"{chunk1['text']} {chunk2['text']}"
-        merged['raw_text'] = f"{chunk1['raw_text']}\n{chunk2['raw_text']}"
+        merged["text"] = f"{chunk1['text']} {chunk2['text']}"
+        merged["raw_text"] = f"{chunk1['raw_text']}\n{chunk2['raw_text']}"
         return merged
 
     def process(self, chunks: List[Dict]) -> Tuple[List[Dict], bool]:
@@ -64,7 +65,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
         if not chunks:
             return chunks, False
 
-        skip_types = set(self.config.get('skip_types', []))
+        skip_types = set(self.config.get("skip_types", []))
         result_chunks = []
         made_changes = False
         i = 0
@@ -73,7 +74,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
             current_chunk = chunks[i]
 
             # Skip chunks of specified types
-            if current_chunk['type'] in skip_types:
+            if current_chunk["type"] in skip_types:
                 made_changes = True
 
                 # Try to merge chunks on either side of the skipped chunk
@@ -85,12 +86,12 @@ class SkipAndMergePreProcessor(TextPreProcessor):
                         # Remove the previous chunk (we'll add the merged one later)
                         result_chunks.pop()
                         # Merge chunks and add to result
-                        merged_chunk = self._merge_chunks(
-                            prev_chunk, next_chunk)
+                        merged_chunk = self._merge_chunks(prev_chunk, next_chunk)
                         result_chunks.append(merged_chunk)
                         i += 2  # Skip both current and next chunk
                         logger.info(
-                            f"Merged chunks around removed {current_chunk['type']}. Text: {current_chunk['text']}")
+                            f"Merged chunks around removed {current_chunk['type']}. Text: {current_chunk['text']}"
+                        )
                         continue
 
                 i += 1  # Skip current chunk

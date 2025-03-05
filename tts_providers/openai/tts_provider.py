@@ -9,6 +9,7 @@ from ..base.tts_provider import TTSProvider, TTSError, VoiceNotFoundError
 @dataclass
 class SpeakerConfig:
     """Configuration for a speaker using OpenAI TTS."""
+
     voice: str
 
 
@@ -18,8 +19,17 @@ class OpenAITTSProvider(TTSProvider):
     """
 
     MODEL = "tts-1-hd"
-    VALID_VOICES = {"alloy", "ash", "coral", "echo",
-                    "fable", "onyx", "nova", "sage", "shimmer"}
+    VALID_VOICES = {
+        "alloy",
+        "ash",
+        "coral",
+        "echo",
+        "fable",
+        "onyx",
+        "nova",
+        "sage",
+        "shimmer",
+    }
 
     def __init__(self):
         self.client = None
@@ -43,9 +53,7 @@ class OpenAITTSProvider(TTSProvider):
         # Validate and store voice configurations
         for speaker, config in speaker_configs.items():
             self.validate_speaker_config(config)
-            speaker_config = SpeakerConfig(
-                voice=config['voice']
-            )
+            speaker_config = SpeakerConfig(voice=config["voice"])
             self.speaker_configs[speaker] = speaker_config
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
@@ -57,9 +65,7 @@ class OpenAITTSProvider(TTSProvider):
         try:
             voice = self._get_base_voice(speaker)
             response = self.client.audio.speech.create(
-                model=self.MODEL,
-                voice=voice,
-                input=text
+                model=self.MODEL, voice=voice, input=text
             )
             # OpenAI returns a streamable response
             return response.content
@@ -81,7 +87,7 @@ class OpenAITTSProvider(TTSProvider):
     def _get_base_voice(self, speaker: Optional[str]) -> str:
         """Get the base voice name for a speaker."""
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         config = self.speaker_configs.get(speaker)
         if not config:
@@ -94,7 +100,7 @@ class OpenAITTSProvider(TTSProvider):
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """Get the configuration parameters for a given speaker."""
         if not speaker:
-            speaker = 'default'
+            speaker = "default"
 
         config = self.speaker_configs.get(speaker)
         if not config:
@@ -105,8 +111,7 @@ class OpenAITTSProvider(TTSProvider):
 
         # Convert dataclass to dict and filter out empty values
         speaker_config = {
-            k: v for k, v in asdict(config).items()
-            if not self._is_empty_value(v)
+            k: v for k, v in asdict(config).items() if not self._is_empty_value(v)
         }
 
         return speaker_config
@@ -138,7 +143,7 @@ class OpenAITTSProvider(TTSProvider):
     @classmethod
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
-        return ['voice']
+        return ["voice"]
 
     @classmethod
     def get_optional_fields(cls) -> List[str]:
@@ -152,11 +157,12 @@ class OpenAITTSProvider(TTSProvider):
 
     def validate_speaker_config(self, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
-        if 'voice' not in speaker_config:
+        if "voice" not in speaker_config:
             raise ValueError(
-                f"Missing required field 'voice' in speaker configuration: {speaker_config}")
+                f"Missing required field 'voice' in speaker configuration: {speaker_config}"
+            )
 
-        voice = speaker_config['voice']
+        voice = speaker_config["voice"]
         if not isinstance(voice, str):
             raise ValueError("Field 'voice' must be a string")
 

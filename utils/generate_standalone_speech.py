@@ -17,22 +17,23 @@ SPLIT_SENTENCE = "this is a constant sentence. ... , ..."
 
 def clean_filename(text: str) -> str:
     """Convert text to valid filename."""
-    cleaned = re.sub(r'[^\w\s-]', '', text)
-    return cleaned.replace(' ', '_')
+    cleaned = re.sub(r"[^\w\s-]", "", text)
+    return cleaned.replace(" ", "_")
 
 
 def get_provider_class(provider_name: str) -> Type[TTSProvider]:
     """Get the provider class for a given provider name."""
     try:
-        module = importlib.import_module(
-            f"tts_providers.{provider_name}.tts_provider")
+        module = importlib.import_module(f"tts_providers.{provider_name}.tts_provider")
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
-            if (isinstance(attr, type) and
-                issubclass(attr, TTSProvider) and
-                attr != TTSProvider and
-                    attr.get_provider_identifier() == provider_name):
+            if (
+                isinstance(attr, type)
+                and issubclass(attr, TTSProvider)
+                and attr != TTSProvider
+                and attr.get_provider_identifier() == provider_name
+            ):
                 return attr
 
         raise ValueError(f"No valid provider class found for {provider_name}")
@@ -48,7 +49,7 @@ def generate_standalone_speech(
     split_audio: bool = False,
     silence_threshold: int = -40,
     min_silence_len: int = 500,
-    keep_silence: int = 100
+    keep_silence: int = 100,
 ) -> None:
     """
     Generate speech using specified provider.
@@ -66,7 +67,7 @@ def generate_standalone_speech(
     try:
         # Prepend constant sentence if split mode is enabled
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
-        
+
         # Generate speech using default speaker
         audio_data = provider.generate_audio(None, generation_text)
 
@@ -89,21 +90,21 @@ def generate_standalone_speech(
                     audio_data,
                     min_silence_len=min_silence_len,
                     silence_thresh=silence_threshold,
-                    keep_silence=keep_silence
+                    keep_silence=keep_silence,
                 )
-                
+
                 if split_segment is None:
                     logger.error("Failed to detect silence for splitting audio")
                     return
-                
+
                 # Export split audio to bytes
                 output_buffer = io.BytesIO()
                 split_segment.export(output_buffer, format="mp3")
                 audio_data = output_buffer.getvalue()
-                
+
                 # Add split indicator to filename
                 text_preview = f"split_{text_preview}"
-                
+
             except Exception as e:
                 logger.error(f"Error splitting audio: {e}")
                 return
@@ -122,7 +123,9 @@ def generate_standalone_speech(
         logger.error(f"Error generating speech: {e}")
 
 
-def get_command_string(provider_manager: 'TTSProviderManager', speaker: Optional[str], texts: List[str]) -> str:
+def get_command_string(
+    provider_manager: "TTSProviderManager", speaker: Optional[str], texts: List[str]
+) -> str:
     """Generate command line string for standalone speech generation.
 
     Args:
@@ -135,12 +138,11 @@ def get_command_string(provider_manager: 'TTSProviderManager', speaker: Optional
     """
     try:
         # Reconciling how default speaker is displayed vs. used in voice configuration
-        if speaker == '(default)':
-            speaker = 'default'
+        if speaker == "(default)":
+            speaker = "default"
 
         # Get provider name and configuration for the speaker
-        provider_name = provider_manager.get_provider_for_speaker(
-            speaker or 'default')
+        provider_name = provider_manager.get_provider_for_speaker(speaker or "default")
         config = provider_manager.get_speaker_configuration(speaker)
 
         # Build command with all configuration parameters
@@ -161,7 +163,10 @@ def main():
     # Get available providers
     available_providers = []
     for item in os.listdir("tts_providers"):
-        if os.path.isdir(os.path.join("tts_providers", item)) and item not in ['base', '__pycache__']:
+        if os.path.isdir(os.path.join("tts_providers", item)) and item not in [
+            "base",
+            "__pycache__",
+        ]:
             try:
                 get_provider_class(item)
                 available_providers.append(item)
@@ -169,9 +174,11 @@ def main():
                 continue
 
     parser = argparse.ArgumentParser(
-        description='Generate speech files using TTS providers.')
-    parser.add_argument('provider', choices=available_providers,
-                        help='TTS provider to use')
+        description="Generate speech files using TTS providers."
+    )
+    parser.add_argument(
+        "provider", choices=available_providers, help="TTS provider to use"
+    )
 
     # Get provider class to determine fields
     provider_class = get_provider_class(parser.parse_known_args()[0].provider)
@@ -180,34 +187,64 @@ def main():
 
     # Add arguments for each required field
     for field in required_fields:
-        parser.add_argument(f'--{field}', required=True,
-                            help=f'Required {field} parameter for {parser.parse_known_args()[0].provider}')
+        parser.add_argument(
+            f"--{field}",
+            required=True,
+            help=f"Required {field} parameter for {parser.parse_known_args()[0].provider}",
+        )
 
     # Add arguments for each optional field
     for field in optional_fields:
-        parser.add_argument(f'--{field}', required=False,
-                            help=f'Optional {field} parameter for {parser.parse_known_args()[0].provider}')
+        parser.add_argument(
+            f"--{field}",
+            required=False,
+            help=f"Optional {field} parameter for {parser.parse_known_args()[0].provider}",
+        )
 
-    parser.add_argument('texts', nargs='+',
-                        help='Text strings to convert to speech')
-    parser.add_argument('--variants', '-v', type=int, default=1,
-                        help='Number of variants to generate for each text (default: 1)')
-    parser.add_argument('--output-dir', default='standalone_speech',
-                        help='Directory for output files (default: standalone_speech)')
-    
+    parser.add_argument("texts", nargs="+", help="Text strings to convert to speech")
+    parser.add_argument(
+        "--variants",
+        "-v",
+        type=int,
+        default=1,
+        help="Number of variants to generate for each text (default: 1)",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default="standalone_speech",
+        help="Directory for output files (default: standalone_speech)",
+    )
+
     # Add split audio arguments
-    parser.add_argument('--split-audio', action='store_true',
-                        help='Enable split audio mode - splits after constant sentence')
-    parser.add_argument('--silence-threshold', type=int, default=-40,
-                        help='Silence threshold in dBFS for splitting (default: -40)')
-    parser.add_argument('--min-silence-len', type=int, default=500,
-                        help='Minimum silence length in ms for splitting (default: 500)')
-    parser.add_argument('--keep-silence', type=int, default=100,
-                        help='Amount of silence to keep in ms after splitting (default: 100)')
-    
+    parser.add_argument(
+        "--split-audio",
+        action="store_true",
+        help="Enable split audio mode - splits after constant sentence",
+    )
+    parser.add_argument(
+        "--silence-threshold",
+        type=int,
+        default=-40,
+        help="Silence threshold in dBFS for splitting (default: -40)",
+    )
+    parser.add_argument(
+        "--min-silence-len",
+        type=int,
+        default=500,
+        help="Minimum silence length in ms for splitting (default: 500)",
+    )
+    parser.add_argument(
+        "--keep-silence",
+        type=int,
+        default=100,
+        help="Amount of silence to keep in ms after splitting (default: 100)",
+    )
+
     # Add ffmpeg configuration
-    parser.add_argument('--ffmpeg-path',
-                        help='Path to ffmpeg binary or directory containing ffmpeg binaries')
+    parser.add_argument(
+        "--ffmpeg-path",
+        help="Path to ffmpeg binary or directory containing ffmpeg binaries",
+    )
 
     args = parser.parse_args()
 
@@ -220,17 +257,17 @@ def main():
             return 1
 
     # Create provider configuration with both required and optional voice settings
-    config = {'default': {}}
+    config = {"default": {}}
 
     # Add required fields
     for field in required_fields:
-        config['default'][field] = getattr(args, field)
+        config["default"][field] = getattr(args, field)
 
     # Add optional fields if provided
     for field in optional_fields:
         value = getattr(args, field, None)
         if value is not None:
-            config['default'][field] = value
+            config["default"][field] = value
 
     try:
         # Initialize provider
@@ -248,7 +285,7 @@ def main():
                     split_audio=args.split_audio,
                     silence_threshold=args.silence_threshold,
                     min_silence_len=args.min_silence_len,
-                    keep_silence=args.keep_silence
+                    keep_silence=args.keep_silence,
                 )
 
     except Exception as e:
@@ -258,5 +295,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())

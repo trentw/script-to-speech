@@ -15,69 +15,80 @@ class TextProcessorManager:
     def __init__(self, config_paths: List[str]):
         """
         Initialize with multiple config files that will be processed in order.
-        
+
         Args:
             config_paths: List of paths to YAML config files
         """
         self.configs = []
         for path in config_paths:
-            with open(path, 'r') as config_file:
+            with open(path, "r") as config_file:
                 self.configs.append(yaml.safe_load(config_file))
-        
+
         self.preprocessors = self._initialize_preprocessors()
         self.processors = self._initialize_processors()
         self.preprocessed_chunks = None
 
-    def _filter_by_mode(self, processors: List[Union[TextProcessor, TextPreProcessor]]) -> List[Union[TextProcessor, TextPreProcessor]]:
+    def _filter_by_mode(
+        self, processors: List[Union[TextProcessor, TextPreProcessor]]
+    ) -> List[Union[TextProcessor, TextPreProcessor]]:
         """
         Filter processors based on their multi_config_mode.
-        
+
         For "override" mode, only keep the last instance of each processor class.
         For "chain" mode, keep all instances.
         """
         result = []
         seen_override_classes = set()
-        
+
         # Process in reverse to handle override mode (keep last instance)
         for processor in reversed(processors):
             processor_class = processor.__class__
-            
+
             if processor.multi_config_mode == "override":
                 if processor_class not in seen_override_classes:
                     seen_override_classes.add(processor_class)
-                    result.insert(0, processor)  # Insert at start to maintain original order
+                    result.insert(
+                        0, processor
+                    )  # Insert at start to maintain original order
             else:  # "chain" mode
-                result.insert(0, processor)  # Insert at start to maintain original order
-                
+                result.insert(
+                    0, processor
+                )  # Insert at start to maintain original order
+
         return result
 
     def _initialize_preprocessors(self) -> List[TextPreProcessor]:
         """Initialize pre-processors from all configurations."""
         all_preprocessors = []
-        
+
         # Process each config file in order
         for config in self.configs:
-            for preproc_config in config.get('preprocessors', []):
-                module_name = preproc_config['name']
-                config_params = preproc_config.get('config', {})
+            for preproc_config in config.get("preprocessors", []):
+                module_name = preproc_config["name"]
+                config_params = preproc_config.get("config", {})
 
                 try:
                     # Import from preprocessors subdirectory
                     module = importlib.import_module(
-                        f"text_processors.preprocessors.{module_name}_preprocessor")
-                    class_name = ''.join(word.capitalize()
-                                         for word in module_name.split('_')) + 'PreProcessor'
+                        f"text_processors.preprocessors.{module_name}_preprocessor"
+                    )
+                    class_name = (
+                        "".join(word.capitalize() for word in module_name.split("_"))
+                        + "PreProcessor"
+                    )
                     preprocessor_class = getattr(module, class_name)
 
                     # Create and validate pre-processor
                     preprocessor = preprocessor_class(config_params)
                     if not preprocessor.validate_config():
                         raise ValueError(
-                            f"Invalid configuration for pre-processor {module_name}")
+                            f"Invalid configuration for pre-processor {module_name}"
+                        )
 
                     all_preprocessors.append(preprocessor)
                     logger.info(
-                        f"Successfully loaded pre-processor: {module_name} from config")
+                        f"Successfully loaded pre-processor: {module_name} from config"
+                    )
                 except Exception as e:
                     error_msg = f"Error loading pre-processor {module_name}: {e}"
                     logger.error(error_msg)
@@ -89,29 +100,35 @@ class TextProcessorManager:
     def _initialize_processors(self) -> List[TextProcessor]:
         """Initialize text processors from all configurations."""
         all_processors = []
-        
+
         # Process each config file in order
         for config in self.configs:
-            for processor_config in config.get('processors', []):
-                module_name = processor_config['name']
-                config_params = processor_config.get('config', {})
+            for processor_config in config.get("processors", []):
+                module_name = processor_config["name"]
+                config_params = processor_config.get("config", {})
 
                 try:
                     # Import from processors subdirectory
                     module = importlib.import_module(
-                        f"text_processors.processors.{module_name}_processor")
+                        f"text_processors.processors.{module_name}_processor"
+                    )
                     # Convert module_name to class name (e.g., skip_empty -> SkipEmptyProcessor)
-                    class_name = ''.join(word.capitalize()
-                                         for word in module_name.split('_')) + 'Processor'
+                    class_name = (
+                        "".join(word.capitalize() for word in module_name.split("_"))
+                        + "Processor"
+                    )
                     processor_class = getattr(module, class_name)
-                    
+
                     processor = processor_class(config_params)
                     if not processor.validate_config():
                         raise ValueError(
-                            f"Invalid configuration for processor {module_name}")
-                            
+                            f"Invalid configuration for processor {module_name}"
+                        )
+
                     all_processors.append(processor)
-                    logger.info(f"Successfully loaded processor: {module_name} from config")
+                    logger.info(
+                        f"Successfully loaded processor: {module_name} from config"
+                    )
                 except Exception as e:
                     error_msg = f"Error loading processor {module_name}: {e}"
                     logger.error(error_msg)
@@ -122,7 +139,7 @@ class TextProcessorManager:
 
     def process_chunks(self, chunks: List[Dict]) -> List[Dict]:
         """
-        Convenience method to process chunks through both 
+        Convenience method to process chunks through both
         pre-processors and processors.
 
         Args:
@@ -162,12 +179,15 @@ class TextProcessorManager:
         for preprocessor in self.preprocessors:
             processed_chunks, modified = preprocessor.process(processed_chunks)
             if processed_chunks is None:
-                error_msg = f"Pre-processor {preprocessor.__class__.__name__} returned None"
+                error_msg = (
+                    f"Pre-processor {preprocessor.__class__.__name__} returned None"
+                )
                 logger.error(error_msg)
                 raise ValueError(error_msg)
             if modified:
                 logger.info(
-                    f"Pre-processor {preprocessor.__class__.__name__} modified chunks")
+                    f"Pre-processor {preprocessor.__class__.__name__} modified chunks"
+                )
 
         self.preprocessed_chunks = processed_chunks
         return processed_chunks
@@ -183,7 +203,9 @@ class TextProcessorManager:
             Tuple[Dict, bool]: Processed chunk and whether it was modified
         """
         if self.preprocessed_chunks is None:
-            error_msg = "Must call preprocess_chunks before processing individual chunks"
+            error_msg = (
+                "Must call preprocess_chunks before processing individual chunks"
+            )
             logger.error(error_msg)
             raise ValueError(error_msg)
 

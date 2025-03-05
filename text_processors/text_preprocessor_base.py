@@ -13,7 +13,7 @@ class TextPreProcessor(ABC):
     def multi_config_mode(self) -> Literal["chain", "override"]:
         """
         Determines how this preprocessor behaves when multiple configs are loaded.
-        
+
         Returns:
             "chain": Multiple instances of this preprocessor can exist and will be chained
             "override": Only one instance can exist, last config's instance is used
@@ -29,7 +29,7 @@ class TextPreProcessor(ABC):
             chunks: List of all text chunks from the screenplay
 
         Returns:
-            Tuple[List[Dict], bool]: 
+            Tuple[List[Dict], bool]:
                 - Modified list of chunks
                 - Boolean indicating whether any changes were made
 

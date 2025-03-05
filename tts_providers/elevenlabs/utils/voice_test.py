@@ -26,7 +26,7 @@ def generate_test_audio(voice_id):
     )
 
     # Save the output as an MP3 file with the voice ID as the filename
-    audio_data = b''
+    audio_data = b""
     for chunk in response:
         if chunk:
             audio_data += chunk

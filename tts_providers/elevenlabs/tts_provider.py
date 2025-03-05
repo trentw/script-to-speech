@@ -12,6 +12,7 @@ from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 @dataclass
 class SpeakerConfig:
     """Configuration for a speaker using ElevenLabs TTS."""
+
     voice_id: str
 
 
@@ -48,12 +49,9 @@ class ElevenLabsTTSProvider(TTSProvider):
             try:
                 self.validate_speaker_config(config)
             except ValueError as e:
-                raise TTSError(
-                    f"Failed validation for speaker {speaker}. Error: {e}")
+                raise TTSError(f"Failed validation for speaker {speaker}. Error: {e}")
 
-            speaker_config = SpeakerConfig(
-                voice_id=config['voice_id']
-            )
+            speaker_config = SpeakerConfig(voice_id=config["voice_id"])
 
             self.speaker_configs[speaker] = speaker_config
 
@@ -63,7 +61,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         This returns the public/config voice ID, not the registry ID.
         """
         if speaker is None:
-            speaker = 'default'
+            speaker = "default"
 
         config = self.speaker_configs.get(speaker)
         if not config:
@@ -77,7 +75,7 @@ class ElevenLabsTTSProvider(TTSProvider):
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """Get the configuration parameters for a given speaker."""
         if speaker is None:
-            speaker = 'default'
+            speaker = "default"
 
         config = self.speaker_configs.get(speaker)
         if not config:
@@ -88,8 +86,7 @@ class ElevenLabsTTSProvider(TTSProvider):
 
         # Convert dataclass to dict and filter out empty values
         speaker_config = {
-            k: v for k, v in asdict(config).items()
-            if not self._is_empty_value(v)
+            k: v for k, v in asdict(config).items() if not self._is_empty_value(v)
         }
 
         return speaker_config
@@ -105,7 +102,8 @@ class ElevenLabsTTSProvider(TTSProvider):
 
         # Then get the registry voice ID for actual generation
         registry_voice_id = self.voice_registry_manager.get_library_voice_id(
-            public_voice_id)
+            public_voice_id
+        )
 
         try:
             response = self.client.text_to_speech.convert(
@@ -119,10 +117,10 @@ class ElevenLabsTTSProvider(TTSProvider):
                     similarity_boost=0.75,
                     style=0.0,
                     use_speaker_boost=True,
-                )
+                ),
             )
 
-            audio_data = b''
+            audio_data = b""
             for chunk in response:
                 if chunk:
                     audio_data += chunk
@@ -162,7 +160,7 @@ class ElevenLabsTTSProvider(TTSProvider):
     @classmethod
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
-        return ['voice_id']
+        return ["voice_id"]
 
     @classmethod
     def get_optional_fields(cls) -> List[str]:
@@ -176,9 +174,10 @@ class ElevenLabsTTSProvider(TTSProvider):
 
     def validate_speaker_config(self, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
-        if 'voice_id' not in speaker_config:
+        if "voice_id" not in speaker_config:
             raise ValueError(
-                f"Missing required field 'voice_id' in speaker configuration: {speaker_config}")
+                f"Missing required field 'voice_id' in speaker configuration: {speaker_config}"
+            )
 
-        if not isinstance(speaker_config['voice_id'], str):
+        if not isinstance(speaker_config["voice_id"], str):
             raise ValueError("Field 'voice_id' must be a string")
