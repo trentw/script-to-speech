@@ -10,3 +10,7 @@ eyeD3
 black
 isort
 pre-commit
+pytest
+pytest-cov
+pytest-mock
+mypy
