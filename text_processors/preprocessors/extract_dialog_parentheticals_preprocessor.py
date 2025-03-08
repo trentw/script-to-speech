@@ -128,6 +128,7 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             bool: True if text matches pattern
         """
         pattern = pattern.lower().strip()
+        text = text.lower().strip()
         if pattern.endswith("*"):
             # Remove asterisk and check if text starts with pattern
             pattern = pattern[:-1]
@@ -221,48 +222,71 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
                 continue
 
             text = chunk["text"]
-            # Find first parenthetical
-            match = re.search(r"\(([^)]+)\)", text)
+            # Look for a matching parenthetical in this chunk
+            found_matching_parenthetical = False
+            search_pos = 0
 
-            if not match:
-                result_chunks.append(chunk)
-                i += 1
-                continue
+            while search_pos < len(text):
+                # Find next parenthetical starting from current position
+                match = re.search(r"\(([^)]+)\)", text[search_pos:])
 
-            parenthetical = match.group(1).strip()
-            logger.info(
-                "Found dialog parenthetical: %s (in dialog: %s)", match.group(0), text
-            )
+                if not match:
+                    break  # No more parentheticals
 
-            if not self._should_extract_parenthetical(parenthetical):
-                logger.debug(
-                    "Skipping parenthetical: %s (does not match extraction rules)",
-                    match.group(0),
+                # Adjust indices to account for the search offset
+                actual_start = search_pos + match.start()
+                actual_end = search_pos + match.end()
+                parenthetical = match.group(
+                    0
+                )  # Full parenthetical text including parentheses
+                parenthetical_content = match.group(1).strip()  # Just the content
+
+                logger.info(
+                    "Found dialog parenthetical: %s (in dialog: %s)",
+                    parenthetical,
+                    text,
                 )
+
+                if self._should_extract_parenthetical(parenthetical_content):
+                    # We found a matching parenthetical - split at this point
+                    found_matching_parenthetical = True
+
+                    # Split chunk at parenthetical
+                    new_chunks = self._split_dialog_at_parenthetical(
+                        chunk, actual_start, actual_end, parenthetical
+                    )
+
+                    made_changes = True
+                    result_chunks.extend(
+                        new_chunks[:-1]
+                        if len(new_chunks) > 1 and new_chunks[-1]["type"] == "dialog"
+                        else new_chunks
+                    )
+
+                    # Continue processing from last dialog chunk if it exists
+                    last_dialog = next(
+                        (c for c in reversed(new_chunks) if c["type"] == "dialog"), None
+                    )
+                    if last_dialog and last_dialog.get("text"):
+                        # Insert the last dialog chunk back for processing
+                        chunks.insert(i + 1, last_dialog)
+                        logger.debug(
+                            "Continuing processing with remaining dialog: %s",
+                            last_dialog["text"],
+                        )
+
+                    break  # Exit the inner while loop to process the next chunk
+                else:
+                    logger.debug(
+                        "Skipping parenthetical: %s (does not match extraction rules)",
+                        parenthetical,
+                    )
+                    # Move search position past this parenthetical and continue looking
+                    search_pos = actual_end
+
+            # If we didn't find any matching parentheticals, keep the chunk as is
+            if not found_matching_parenthetical:
                 result_chunks.append(chunk)
-                i += 1
-                continue
-
-            # Split chunk at parenthetical
-            new_chunks = self._split_dialog_at_parenthetical(
-                chunk, match.start(), match.end(), match.group(0)
-            )
-
-            made_changes = True
-            result_chunks.extend(new_chunks)
-
-            # Continue processing from last dialog chunk if it exists
-            last_dialog = next(
-                (c for c in reversed(new_chunks) if c["type"] == "dialog"), None
-            )
-            if last_dialog:
-                # Replace last chunk with the one to process next
-                result_chunks.pop()
-                chunks.insert(i + 1, last_dialog)
-                logger.debug(
-                    "Continuing processing with remaining dialog: %s",
-                    last_dialog["text"],
-                )
 
             i += 1
 
