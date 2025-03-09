@@ -163,8 +163,8 @@ class DualDialogPreProcessor(TextPreProcessor):
         """Process a buffer of lines for one column."""
         chunks = []
         current_speaker = initial_speaker
-        current_buffer = []
-        current_parenthetical = []
+        current_buffer: List[str] = []
+        current_parenthetical: List[str] = []
         in_parenthetical = False
 
         logger.debug(f"\nProcessing buffer for initial speaker: {initial_speaker}")

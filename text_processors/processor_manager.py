@@ -1,5 +1,5 @@
 import importlib
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Type, Union, cast
 
 import yaml
 
@@ -29,7 +29,7 @@ class TextProcessorManager:
 
         self.preprocessors = self._initialize_preprocessors()
         self.processors = self._initialize_processors()
-        self.preprocessed_chunks = None
+        self.preprocessed_chunks: Optional[List[Dict]] = None
 
     def _filter_by_mode(
         self, processors: List[Union[TextProcessor, TextPreProcessor]]
@@ -40,7 +40,7 @@ class TextProcessorManager:
         For "override" mode, only keep the last instance of each processor class.
         For "chain" mode, keep all instances.
         """
-        result = []
+        result: List[Union[TextProcessor, TextPreProcessor]] = []
         seen_override_classes = set()
 
         # Process in reverse to handle override mode (keep last instance)
@@ -97,8 +97,9 @@ class TextProcessorManager:
                     logger.error(error_msg)
                     raise ValueError(error_msg)
 
-        # Apply mode-based filtering
-        return self._filter_by_mode(all_preprocessors)
+        # Apply mode-based filtering and cast the result
+        filtered = self._filter_by_mode(all_preprocessors)
+        return cast(List[TextPreProcessor], filtered)
 
     def _initialize_processors(self) -> List[TextProcessor]:
         """Initialize text processors from all configurations."""
@@ -137,8 +138,9 @@ class TextProcessorManager:
                     logger.error(error_msg)
                     raise ValueError(error_msg)
 
-        # Apply mode-based filtering
-        return self._filter_by_mode(all_processors)
+        # Apply mode-based filtering and cast the result
+        filtered = self._filter_by_mode(all_processors)
+        return cast(List[TextProcessor], filtered)
 
     def process_chunks(self, chunks: List[Dict]) -> List[Dict]:
         """

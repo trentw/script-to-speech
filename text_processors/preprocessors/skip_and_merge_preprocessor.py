@@ -68,7 +68,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
             return chunks, False
 
         skip_types = set(self.config.get("skip_types", []))
-        result_chunks = []
+        result_chunks: List[Dict] = []
         made_changes = False
         i = 0
 
