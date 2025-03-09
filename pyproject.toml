@@ -29,6 +29,8 @@ check_untyped_defs = true
 disallow_untyped_decorators = false
 no_implicit_optional = true
 strict_optional = true
+namespace_packages = true
+explicit_package_bases = true
 
 # Exclude directories
 exclude = "/(ffmpeg|input|output|__pycache__|source_screenplays|standalone_speech|venv)/.*"
