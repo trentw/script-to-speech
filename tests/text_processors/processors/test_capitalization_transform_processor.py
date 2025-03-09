@@ -329,3 +329,25 @@ class TestCapitalizationTransformProcessor:
         # Assert - Should first lowercase everything, then sentence case because it contains "important"
         assert result["text"] == "This is important text"
         assert changed is True
+
+    def test_processor_state_isolation(self):
+        """Test that the processor doesn't maintain state between process calls."""
+        # Arrange
+        config = {"transformations": [{"chunk_type": "dialog", "case": "lower_case"}]}
+        processor = CapitalizationTransformProcessor(config)
+
+        # First chunk to process
+        chunk1 = {"type": "dialog", "text": "HELLO WORLD"}
+
+        # Second chunk with different content
+        chunk2 = {"type": "dialog", "text": "TESTING STATE"}
+
+        # Act
+        result1, _ = processor.process(chunk1)
+        result2, _ = processor.process(chunk2)
+        result1_repeat, _ = processor.process(chunk1)
+
+        # Assert
+        assert result1["text"] == "hello world"
+        assert result2["text"] == "testing state"
+        assert result1_repeat["text"] == "hello world"  # Should match first processing

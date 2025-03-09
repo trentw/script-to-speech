@@ -234,3 +234,27 @@ class TestTextSubstitutionProcessor:
         # Assert - Both occurrences should be replaced
         assert result["text"] == "INTERIOR BEDROOM - INTERIOR KITCHEN"
         assert changed is True
+
+    def test_processor_state_isolation(self):
+        """Test that the processor doesn't maintain state between process calls."""
+        # Arrange
+        config = {
+            "substitutions": [{"from": "INT.", "to": "INTERIOR", "fields": ["text"]}]
+        }
+        processor = TextSubstitutionProcessor(config)
+
+        # Chunks to process
+        chunk1 = {"type": "scene_heading", "text": "INT. BEDROOM - DAY"}
+        chunk2 = {"type": "scene_heading", "text": "INT. KITCHEN - NIGHT"}
+
+        # Act
+        result1, _ = processor.process(chunk1)
+        result2, _ = processor.process(chunk2)
+        result1_repeat, _ = processor.process(chunk1)
+
+        # Assert
+        assert result1["text"] == "INTERIOR BEDROOM - DAY"
+        assert result2["text"] == "INTERIOR KITCHEN - NIGHT"
+        assert (
+            result1_repeat["text"] == "INTERIOR BEDROOM - DAY"
+        )  # Should match first processing

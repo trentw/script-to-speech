@@ -401,3 +401,33 @@ class TestPatternReplaceProcessor:
         # Assert - Parentheses should be removed
         assert result["text"] == "softly"
         assert changed is True
+
+    def test_processor_state_isolation(self):
+        """Test that the processor doesn't maintain state between process calls."""
+        # Arrange
+        config = {
+            "replacements": [
+                {
+                    "match_field": "type",
+                    "match_pattern": "^dialog_modifier$",
+                    "replace_field": "text",
+                    "replace_pattern": "\\(|\\)",
+                    "replace_string": "",
+                }
+            ]
+        }
+        processor = PatternReplaceProcessor(config)
+
+        # Chunks to process
+        chunk1 = {"type": "dialog_modifier", "text": "(quietly)"}
+        chunk2 = {"type": "dialog_modifier", "text": "(loudly)"}
+
+        # Act
+        result1, _ = processor.process(chunk1)
+        result2, _ = processor.process(chunk2)
+        result1_repeat, _ = processor.process(chunk1)
+
+        # Assert
+        assert result1["text"] == "quietly"
+        assert result2["text"] == "loudly"
+        assert result1_repeat["text"] == "quietly"  # Should match first processing

@@ -153,3 +153,23 @@ class TestSkipEmptyProcessor:
         # Assert
         assert result["text"] == ""
         assert changed is False  # No change occurred since text was already empty
+
+    def test_processor_state_isolation(self):
+        """Test that the processor doesn't maintain state between process calls."""
+        # Arrange
+        config = {"skip_types": ["page_number"]}
+        processor = SkipEmptyProcessor(config)
+
+        # Chunks to process
+        chunk1 = {"type": "page_number", "text": "42"}
+        chunk2 = {"type": "scene_heading", "text": "INT. HOUSE - DAY"}
+
+        # Act
+        result1, _ = processor.process(chunk1)
+        result2, _ = processor.process(chunk2)
+        result1_repeat, _ = processor.process(chunk1)
+
+        # Assert
+        assert result1["text"] == ""  # Text should be emptied
+        assert result2["text"] == "INT. HOUSE - DAY"  # Should remain unchanged
+        assert result1_repeat["text"] == ""  # Should match first processing

@@ -1,12 +1,24 @@
+import copy
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Dict, List, Literal, Tuple
 
 
 class TextProcessor(ABC):
-    """Base class for text processors that modify screenplay text chunks."""
+    """
+    Base class for text processors that modify screenplay text chunks.
+
+    IMPORTANT: Processors must be STATELESS with respect to chunk processing.
+    The configuration is set at initialization time and should not change.
+    Processors MUST NOT maintain state between process() calls.
+    """
 
     def __init__(self, config: Dict):
-        self.config = config
+        """
+        Initialize with configuration.
+        After initialization, the config should be treated as immutable.
+        """
+        # Create a deep copy to ensure the config can't be modified externally
+        self.config = copy.deepcopy(config)
 
     @property
     def multi_config_mode(self) -> Literal["chain", "override"]:
