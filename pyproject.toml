@@ -18,3 +18,36 @@ line_length = 88
 multi_line_output = 3
 include_trailing_comma = true
 skip = ["ffmpeg", "input", "output", "__pycache__", "source_screenplays", "standalone_speech", "venv"]
+
+[tool.mypy]
+python_version = "3.8"  # Set to your project's min Python version
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Set to true later for stricter checking
+disallow_incomplete_defs = false  # Set to true later for stricter checking
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+strict_optional = true
+
+# Exclude directories
+exclude = "/(ffmpeg|input|output|__pycache__|source_screenplays|standalone_speech|venv)/.*"
+
+# Per-module options:
+[[tool.mypy.overrides]]
+module = "text_processors.*"
+disallow_untyped_defs = true  # Enforce type annotations in this module
+
+[[tool.mypy.overrides]]
+module = "tts_providers.*"
+disallow_untyped_defs = true  # Enforce type annotations in this module
+
+# Ignore errors in tests for now
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+# Third-party libraries without stubs
+[[tool.mypy.overrides]]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*"]
+ignore_missing_imports = true
