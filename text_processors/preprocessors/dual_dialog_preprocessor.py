@@ -15,8 +15,30 @@ class DualDialogPreProcessor(TextPreProcessor):
     handling mid-dialog speaker transitions.
     """
 
-    MIN_SPEAKER_SPACING = 5  # Minimum spaces between speakers
-    MIN_DIALOG_SPACING = 2  # Minimum spaces between dialog columns
+    # Default minimum spacing values
+    DEFAULT_MIN_SPEAKER_SPACING = 3  # Minimum spaces between speakers
+    DEFAULT_MIN_DIALOG_SPACING = 2  # Minimum spaces between dialog columns
+
+    def __init__(self, config: Dict):
+        """
+        Initialize the DualDialogPreProcessor with configuration.
+
+        Args:
+            config: Configuration dictionary which may contain:
+                min_speaker_spacing: Minimum number of spaces between speakers
+                min_dialog_spacing: Minimum number of spaces between dialog columns
+        """
+        super().__init__(config)
+        # Set spacing parameters from config or use defaults
+        self.min_speaker_spacing = config.get(
+            "min_speaker_spacing", self.DEFAULT_MIN_SPEAKER_SPACING
+        )
+        self.min_dialog_spacing = config.get(
+            "min_dialog_spacing", self.DEFAULT_MIN_DIALOG_SPACING
+        )
+        logger.debug(
+            f"Initialized with min_speaker_spacing={self.min_speaker_spacing}, min_dialog_spacing={self.min_dialog_spacing}"
+        )
 
     @property
     def multi_config_mode(self) -> Literal["chain", "override"]:
@@ -27,7 +49,38 @@ class DualDialogPreProcessor(TextPreProcessor):
         return "override"
 
     def validate_config(self) -> bool:
-        """No user configuration, always return true"""
+        """
+        Validate the configuration.
+
+        Returns:
+            bool: True if configuration is valid, False otherwise
+        """
+        # Check if spacing parameters are valid integers
+        if "min_speaker_spacing" in self.config and not isinstance(
+            self.config["min_speaker_spacing"], int
+        ):
+            logger.error("min_speaker_spacing must be an integer")
+            return False
+        if "min_dialog_spacing" in self.config and not isinstance(
+            self.config["min_dialog_spacing"], int
+        ):
+            logger.error("min_dialog_spacing must be an integer")
+            return False
+
+        # Check if spacing parameters are positive
+        if (
+            "min_speaker_spacing" in self.config
+            and self.config["min_speaker_spacing"] <= 0
+        ):
+            logger.error("min_speaker_spacing must be positive")
+            return False
+        if (
+            "min_dialog_spacing" in self.config
+            and self.config["min_dialog_spacing"] <= 0
+        ):
+            logger.error("min_dialog_spacing must be positive")
+            return False
+
         return True
 
     def _split_speakers_full(self, speaker_text: str) -> Tuple[str, str]:
@@ -37,7 +90,7 @@ class DualDialogPreProcessor(TextPreProcessor):
         """
         parts = [
             p
-            for p in re.split(r"\s{%d,}" % self.MIN_SPEAKER_SPACING, speaker_text)
+            for p in re.split(r"\s{%d,}" % self.min_speaker_spacing, speaker_text)
             if p
         ]
 
@@ -71,11 +124,11 @@ class DualDialogPreProcessor(TextPreProcessor):
             indent = len(line) - len(line.lstrip())
             logger.debug(f"\nProcessing line with indent {indent}: '{line}'")
 
-            if indent <= left_indent:
-                # This line starts at left column position or is slightly un-indented
+            if indent <= left_indent + 5:
+                # This line starts at left column position or is slightly un-indented / indented
                 # Split it into left and right parts
                 parts = [
-                    p for p in re.split(r"\s{%d,}" % self.MIN_DIALOG_SPACING, line) if p
+                    p for p in re.split(r"\s{%d,}" % self.min_dialog_spacing, line) if p
                 ]
                 logger.debug(f"Split into parts: {parts}")
                 if parts:
