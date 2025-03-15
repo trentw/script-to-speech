@@ -102,9 +102,12 @@ class ElevenLabsTTSProvider(TTSProvider):
         public_voice_id = self.get_speaker_identifier(speaker)
 
         # Then get the registry voice ID for actual generation
-        registry_voice_id = self.voice_registry_manager.get_library_voice_id(
-            public_voice_id
-        )
+        try:
+            registry_voice_id = self.voice_registry_manager.get_library_voice_id(
+                public_voice_id
+            )
+        except RuntimeError as e:
+            raise TTSError(f"Failed to generate audio: Voice registry error - {str(e)}")
 
         try:
             response = self.client.text_to_speech.convert(

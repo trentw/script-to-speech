@@ -60,18 +60,29 @@ class ElevenLabsVoiceRegistryManager:
                         f"Original voice ID: {getattr(voice.sharing, 'original_voice_id', None)}"
                     )
 
-            # Handle premade voices (no sharing attribute)
-            if not hasattr(voice, "sharing") or voice.sharing is None:
-                public_id = voice.voice_id
-                registry_id = voice.voice_id
-                category = getattr(voice, "category", "premade")
-            # Handle shared/cloned voices
-            else:
-                public_id = voice.sharing.original_voice_id or voice.voice_id
-                registry_id = voice.voice_id
-                category = voice.category
+            try:
+                # Handle premade voices (no sharing attribute)
+                if not hasattr(voice, "sharing") or voice.sharing is None:
+                    public_id = voice.voice_id
+                    registry_id = voice.voice_id
+                    category = getattr(voice, "category", "premade")
+                # Handle shared/cloned voices
+                else:
+                    public_id = voice.sharing.original_voice_id or voice.voice_id
+                    registry_id = voice.voice_id
+                    category = voice.category
 
-            self.voice_registry[public_id] = (registry_id, category)
+                # Store in registry - always add all voices
+                self.voice_registry[public_id] = (registry_id, category)
+
+                logger.debug(
+                    f"Added voice to registry:"
+                    f"\n  Public ID: {public_id}"
+                    f"\n  Registry ID: {registry_id}"
+                    f"\n  Category: {category}"
+                )
+            except Exception as e:
+                logger.error(f"Error processing voice: {e}")
 
             # Add to LRU if not premade
             if category != "premade":
@@ -89,6 +100,12 @@ class ElevenLabsVoiceRegistryManager:
         for voice_id in list(self.voice_usage_order.keys()):
             if voice_id in current_voice_ids:
                 valid_usage_order[voice_id] = None
+
+        # Add any new non-premade voices to LRU tracking
+        for voice_id in current_voice_ids:
+            if voice_id not in valid_usage_order:
+                valid_usage_order[voice_id] = None
+
         self.voice_usage_order = valid_usage_order
 
         logger.info(
@@ -229,6 +246,10 @@ class ElevenLabsVoiceRegistryManager:
         # Initialize if needed
         if not self.is_initialized:
             self._initialize_voice_registry()
+
+        # Verify initialization was successful
+        if not self.is_initialized:
+            raise RuntimeError("Voice registry initialization failed")
 
         # Update LRU cache if it's a non-premade voice
         if public_voice_id in self.voice_usage_order:
