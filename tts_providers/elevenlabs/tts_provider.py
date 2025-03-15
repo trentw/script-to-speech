@@ -23,13 +23,13 @@ class ElevenLabsTTSProvider(TTSProvider):
     while abstracting away the complexity of ElevenLabs' voice registry system.
     """
 
-    def __init__(self):
-        self.client = None
-        self.voice_registry_manager = None
+    def __init__(self) -> None:
+        self.client: Optional[ElevenLabs] = None
+        self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
         # Maps speaker names to their configurations
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
-    def _initialize_api_client(self):
+    def _initialize_api_client(self) -> None:
         """Initialize API client"""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
@@ -103,6 +103,9 @@ class ElevenLabsTTSProvider(TTSProvider):
 
         # Then get the registry voice ID for actual generation
         try:
+            if self.voice_registry_manager is None:
+                raise TTSError("Voice registry manager is not initialized")
+
             registry_voice_id = self.voice_registry_manager.get_library_voice_id(
                 public_voice_id
             )
@@ -110,6 +113,9 @@ class ElevenLabsTTSProvider(TTSProvider):
             raise TTSError(f"Failed to generate audio: Voice registry error - {str(e)}")
 
         try:
+            if self.client is None:
+                raise TTSError("ElevenLabs client is not initialized")
+
             response = self.client.text_to_speech.convert(
                 voice_id=registry_voice_id,
                 optimize_streaming_latency="0",

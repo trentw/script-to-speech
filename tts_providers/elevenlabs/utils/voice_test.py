@@ -3,7 +3,7 @@ import os
 from elevenlabs import ElevenLabs, VoiceSettings
 
 
-def generate_test_audio(voice_id):
+def generate_test_audio(voice_id: str) -> None:
     # Initialize ElevenLabs API
     api_key = os.environ.get("ELEVEN_API_KEY")
     if not api_key:

@@ -252,8 +252,9 @@ class TTSProviderManager:
         Returns counts with 'default' first, followed by other speakers sorted by frequency.
         """
         from collections import Counter
+        from typing import Counter as TypedCounter
 
-        counts = Counter()
+        counts: TypedCounter[str] = Counter()
         default_count = 0
 
         for dialogue in dialogues:
@@ -554,7 +555,7 @@ class TTSProviderManager:
                 speaker_chunks.append(chunk)
 
         # Group chunks by provider
-        provider_chunks = {}
+        provider_chunks: Dict[str, List[str]] = {}
         yaml = YAML()
 
         for chunk in speaker_chunks:

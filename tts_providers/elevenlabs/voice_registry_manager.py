@@ -28,7 +28,7 @@ class ElevenLabsVoiceRegistryManager:
         # Maps public_voice_id -> (registry_voice_id, category)
         self.voice_registry: Dict[str, Tuple[str, str]] = {}
         # Maintains order of voice usage for LRU management
-        self.voice_usage_order = OrderedDict()
+        self.voice_usage_order: OrderedDict[str, None] = OrderedDict()
         self.is_initialized = False
 
     def _initialize_voice_registry(self) -> None:
@@ -96,7 +96,7 @@ class ElevenLabsVoiceRegistryManager:
             )
 
         # Prune LRU of voices that no longer exist while maintaining order
-        valid_usage_order = OrderedDict()
+        valid_usage_order: OrderedDict[str, None] = OrderedDict()
         for voice_id in list(self.voice_usage_order.keys()):
             if voice_id in current_voice_ids:
                 valid_usage_order[voice_id] = None

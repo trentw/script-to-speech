@@ -42,8 +42,8 @@ def _handle_yaml_operation(
         processor = TextProcessorManager(generated_processor_configs)
         processed_chunks = processor.process_chunks(chunks)
 
-        # Initialize TTS manager
-        tts_manager = TTSProviderManager(config_path=None, overall_provider=provider)
+        # Initialize TTS manager with empty string as config_path since it expects a str
+        tts_manager = TTSProviderManager(config_path="", overall_provider=provider)
 
         # Determine output path and operation
         if existing_yaml_path:

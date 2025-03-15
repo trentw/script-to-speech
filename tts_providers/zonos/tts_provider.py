@@ -30,12 +30,12 @@ class ZonosTTSProvider(TTSProvider):
     MAX_SEED = 2147483647
     VALID_LANGUAGES = {"en-us", "fr-fr", "de", "ja", "ko", "cmn"}
 
-    def __init__(self):
-        self.client = None
+    def __init__(self) -> None:
+        self.client: Optional[ZyphraClient] = None
         # Maps speaker names to their configuration
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
 
-    def _initialize_api_client(self):
+    def _initialize_api_client(self) -> None:
         """Initialize API client"""
         api_key = os.environ.get("ZONOS_API_KEY")
         if not api_key:
@@ -89,8 +89,14 @@ class ZonosTTSProvider(TTSProvider):
             if not self._is_empty_value(config.language_iso_code):
                 params["language_iso_code"] = config.language_iso_code
 
+            if self.client is None:
+                raise TTSError("Zyphra client is not initialized")
+
             response = self.client.audio.speech.create(**params)
-            return response
+            if response is None:
+                raise TTSError("Received None response from Zyphra API")
+
+            return bytes(response)
 
         except ZyphraError as e:
             raise TTSError(f"Zyphra API error: {e}")
