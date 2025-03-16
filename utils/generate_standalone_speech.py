@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type
 
 from tts_providers.base.tts_provider import TTSProvider
+from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.audio_utils import configure_ffmpeg, split_audio_on_silence
 from utils.logging import get_screenplay_logger
 
@@ -160,7 +161,7 @@ def get_command_string(
         return ""
 
 
-def main():
+def main() -> int:
     # Get available providers
     available_providers = []
     for item in os.listdir("tts_providers"):
@@ -258,7 +259,7 @@ def main():
             return 1
 
     # Create provider configuration with both required and optional voice settings
-    config = {"default": {}}
+    config: Dict[str, Dict[str, Any]] = {"default": {}}
 
     # Add required fields
     for field in required_fields:

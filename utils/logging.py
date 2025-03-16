@@ -5,7 +5,7 @@ from typing import Optional
 class SimpleFormatter(logging.Formatter):
     """Custom formatter that only adds prefixes for warnings and errors."""
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         if record.levelno >= logging.ERROR:
             return f"[ERROR] {record.getMessage()}"
         elif record.levelno >= logging.WARNING:
@@ -78,11 +78,13 @@ def setup_screenplay_logging(
     screenplay_logger.propagate = False  # Don't propagate to root logger
 
     # Reset all existing screenplay.* loggers to use the new configuration
+    # pylint: disable=no-member
     existing_loggers = [
         name
         for name in logging.root.manager.loggerDict
         if name.startswith("screenplay.")
     ]
+    # pylint: enable=no-member
     for name in existing_loggers:
         logger = logging.getLogger(name)
         # Remove any existing handlers
