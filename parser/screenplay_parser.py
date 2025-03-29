@@ -67,9 +67,9 @@ class Chunk:
     """Represents a parsed chunk of screenplay text."""
 
     type: str  # State name in snake_case
-    speaker: str  # Speaker name or empty string
-    raw_text: str  # Original text with formatting
-    text: str  # Cleaned text
+    speaker: Optional[str] = None  # Speaker name, None, or empty string
+    raw_text: str = ""  # Original text with formatting
+    text: str = ""  # Cleaned text
 
 
 @dataclass
@@ -99,6 +99,8 @@ class IndentationContext:
 
 
 class ScreenplayParser:
+    """Parser for screenplay text using a probabilistic state machine approach."""
+
     def __init__(self, config: Optional[ParserConfig] = None):
         """
         Initialize the screenplay parser.
@@ -110,8 +112,8 @@ class ScreenplayParser:
         self.state = State.TITLE  # Start in TITLE state
         self.has_left_title = False
         self.current_speaker = ""  # Empty string instead of 'none'
-        self.current_chunk = None
-        self.chunks = []
+        self.current_chunk: Optional[Chunk] = None
+        self.chunks: List[Chunk] = []
         self.indent_context = IndentationContext()
         self.prev_line = ""
 
@@ -476,7 +478,7 @@ class ScreenplayParser:
             stripped.endswith(")") or len(stripped) > 1
         )
 
-    def handle_state_transition(self, line: str, new_state: Optional[State]):
+    def handle_state_transition(self, line: str, new_state: Optional[State]) -> None:
         """
         Handle transition between states.
 
@@ -545,7 +547,7 @@ class ScreenplayParser:
         self.indent_context = IndentationContext()
         self.prev_line = ""
 
-    def _chunk_to_dict(self, chunk: Chunk) -> Dict:
+    def _chunk_to_dict(self, chunk: Chunk) -> Dict[str, str]:
         """
         Convert a Chunk object to a dictionary.
 
@@ -562,7 +564,7 @@ class ScreenplayParser:
             "text": chunk.text,
         }
 
-    def process_line(self, line: str) -> List[Dict]:
+    def process_line(self, line: str) -> List[Dict[str, str]]:
         """
         Process a single line of text and return any completed chunks.
 
@@ -581,14 +583,14 @@ class ScreenplayParser:
         self.handle_state_transition(line, new_state)
 
         # Check if a new chunk was created (indicating previous chunk was completed)
-        completed_chunks = []
+        completed_chunks: List[Dict] = []
         if previous_chunk is not None and previous_chunk != self.current_chunk:
             # Convert to dict format
             completed_chunks.append(self._chunk_to_dict(previous_chunk))
 
         return completed_chunks
 
-    def get_final_chunk(self) -> List[Dict]:
+    def get_final_chunk(self) -> List[Dict[str, str]]:
         """
         Get the final chunk if processing is complete.
 
@@ -598,7 +600,7 @@ class ScreenplayParser:
         Returns:
             List containing the final chunk as a dictionary, or an empty list
         """
-        final_chunks = []
+        final_chunks: List[Dict] = []
 
         # If there's a current chunk, add it to final chunks
         if self.current_chunk is not None:
@@ -607,7 +609,7 @@ class ScreenplayParser:
 
         return final_chunks
 
-    def parse_screenplay(self, text: str) -> List[Dict]:
+    def parse_screenplay(self, text: str) -> List[Dict[str, str]]:
         """
         Parse screenplay using probabilistic state machine approach.
 
@@ -638,7 +640,7 @@ class ScreenplayParser:
         )
 
         # Combine all chunks
-        all_chunks = [
+        all_chunks: List[Dict[str, str]] = [
             {
                 "type": chunk.type,
                 "speaker": "" if chunk.speaker is None else chunk.speaker,

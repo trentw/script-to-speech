@@ -77,12 +77,12 @@ def apply_text_processors(
             output_dir = root / "output" / base_name
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            output_path = output_dir / f"{base_name}-modified.json"
+            output_path = str(output_dir / f"{base_name}-modified.json")
 
         # Save modified chunks
-        output_path = Path(output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, "w", encoding="utf-8") as f:
+        path_obj = Path(output_path)
+        path_obj.parent.mkdir(parents=True, exist_ok=True)
+        with open(path_obj, "w", encoding="utf-8") as f:
             json.dump(modified_chunks, f, ensure_ascii=False, indent=2)
 
         logger.info(f"Modified chunks saved to {output_path}")
@@ -95,7 +95,7 @@ def apply_text_processors(
         raise
 
 
-def main():
+def main() -> None:
     """Command-line entry point for applying text processors to JSON chunks."""
     parser = argparse.ArgumentParser(
         description="Apply text processors to screenplay JSON chunks"

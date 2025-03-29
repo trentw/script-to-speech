@@ -58,7 +58,8 @@ def load_json_chunks(file_path: str) -> List[Dict[str, Any]]:
     """
     try:
         with open(file_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            result: List[Dict[str, Any]] = json.load(f)
+            return result
     except Exception as e:
         logger.error(f"Error loading JSON file: {str(e)}")
         raise
@@ -80,8 +81,9 @@ def get_chunk_snippet(chunk: Dict[str, Any], max_length: int = 30) -> str:
 
     # Truncate if needed and add ellipsis
     if len(text) > max_length:
-        return f"{text[:max_length]}..."
-    return text
+        result: str = f"{text[:max_length]}..."
+        return result
+    return str(text)
 
 
 def get_first_line(chunk: Dict[str, Any]) -> str:
@@ -93,9 +95,10 @@ def get_first_line(chunk: Dict[str, Any]) -> str:
     Returns:
         The first line of raw_text
     """
-    raw_text = chunk.get("raw_text", "")
+    raw_text: str = chunk.get("raw_text", "")
     lines = raw_text.split("\n")
-    return lines[0] if lines else ""
+    result: str = lines[0] if lines else ""
+    return result
 
 
 def compare_chunks(chunk1: Dict[str, Any], chunk2: Dict[str, Any]) -> List[str]:
@@ -318,8 +321,8 @@ def compare_chunks_by_type(
         Dictionary with counts for each chunk type
     """
     # Count chunk types
-    original_type_counts = {}
-    parsed_type_counts = {}
+    original_type_counts: Dict[str, int] = {}
+    parsed_type_counts: Dict[str, int] = {}
 
     for chunk in original_chunks:
         chunk_type = chunk["type"]
@@ -443,7 +446,7 @@ def run_regression_check(input_file: str, debug: bool = False) -> None:
         sys.exit(1)
 
 
-def main():
+def main() -> None:
     """Command-line entry point for regression checking."""
     parser = argparse.ArgumentParser(
         description="Check for regressions in screenplay parser by comparing with existing JSON chunks"

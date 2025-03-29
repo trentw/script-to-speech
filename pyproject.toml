@@ -48,6 +48,10 @@ disallow_untyped_defs = true  # Enforce type annotations in this module
 module = "utils.*"
 disallow_untyped_defs = true  # Enforce type annotations in this module
 
+[[tool.mypy.overrides]]
+module = "parser.*"
+disallow_untyped_defs = true  # Enforce type annotations in this module
+
 # Ignore errors in tests for now
 [[tool.mypy.overrides]]
 module = "tests.*"

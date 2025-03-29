@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 from utils.logging import get_screenplay_logger
 
@@ -22,8 +22,8 @@ def analyze_chunks(chunks: list) -> None:
         chunks: List of screenplay chunks
     """
     # Count chunk types
-    chunk_type_counts = {}
-    speaker_counts = {}
+    chunk_type_counts: Dict[str, int] = {}
+    speaker_counts: Dict[str, int] = {}
     speakers = set()
 
     for chunk in chunks:
@@ -91,7 +91,7 @@ def analyze_screenplay_chunks(json_path: str) -> None:
         raise
 
 
-def main():
+def main() -> None:
     """Command-line entry point for analyzing screenplay chunks."""
     parser = argparse.ArgumentParser(description="Analyze screenplay JSON chunks file")
     parser.add_argument("json_file", help="Path to JSON chunks file")

@@ -137,7 +137,7 @@ def process_screenplay(
         raise
 
 
-def main():
+def main() -> None:
     """Command-line entry point for processing screenplay files."""
     parser = argparse.ArgumentParser(
         description="Process screenplay files (PDF or TXT) to generate JSON chunks"
