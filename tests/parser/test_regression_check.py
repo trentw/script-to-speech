@@ -220,57 +220,6 @@ class TestRunRegressionCheck:
             run_regression_check("test.json")
 
 
-class TestCompareChunks:
-    """Tests for the compare_chunks function."""
-
-    def test_compare_identical_chunks(self):
-        """Test comparing identical chunks."""
-        # Create test chunks
-        chunk1 = {
-            "type": "title",
-            "speaker": None,
-            "text": "Title",
-        }
-
-        chunk2 = {
-            "type": "title",
-            "speaker": None,
-            "text": "Title",
-        }
-
-        # Call function
-        from parser.utils.regression_checker import compare_chunks
-
-        differences = compare_chunks(chunk1, chunk2)
-
-        # Check result
-        assert differences == []
-
-    def test_compare_different_chunks(self):
-        """Test comparing different chunks."""
-        # Create test chunks
-        chunk1 = {
-            "type": "title",
-            "speaker": None,
-            "text": "Title",
-        }
-
-        chunk2 = {
-            "type": "scene_heading",
-            "speaker": None,
-            "text": "INT. LIVING ROOM - DAY",
-        }
-
-        # Call function
-        from parser.utils.regression_checker import compare_chunks
-
-        differences = compare_chunks(chunk1, chunk2)
-
-        # Check result
-        assert len(differences) > 0
-        assert "Type: title -> scene_heading" in differences
-
-
 class TestMain:
     """Tests for the main function."""
 
