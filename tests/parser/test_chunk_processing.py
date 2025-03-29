@@ -353,8 +353,8 @@ class TestChunkCompletion:
         assert len(completed_chunks) == 1
         assert completed_chunks[0]["type"] == "action"
 
-    def test_get_completed_chunks(self, mock_logger):
-        """Test getting completed chunks at the end of parsing."""
+    def test_get_final_chunk(self, mock_logger):
+        """Test getting the final chunk at the end of parsing."""
         parser = ScreenplayParser()
 
         # Process some lines
@@ -367,14 +367,14 @@ class TestChunkCompletion:
             "                         Hello, how are you?                                        "
         )
 
-        # Get completed chunks - this only returns the current chunk (dialog)
-        completed_chunks = parser.get_completed_chunks()
+        # Get final chunk - this only returns the current chunk (dialog)
+        final_chunk = parser.get_final_chunk()
 
         # Only the current chunk (dialog) should be returned
-        assert len(completed_chunks) == 1
+        assert len(final_chunk) == 1
 
         # Check the dialog chunk
-        dialog_chunk = completed_chunks[0]
+        dialog_chunk = final_chunk[0]
         assert dialog_chunk["type"] == "dialog"
         assert dialog_chunk["speaker"] == "JOHN"
         assert dialog_chunk["text"] == "Hello, how are you?"
@@ -397,19 +397,19 @@ class TestChunkCompletion:
         # Set as current chunk instead of adding to parser.chunks
         parser.current_chunk = chunk
 
-        # Get completed chunks - this converts the current chunk to a dict
-        completed_chunks = parser.get_completed_chunks()
+        # Get final chunk - this converts the current chunk to a dict
+        final_chunk = parser.get_final_chunk()
 
         # Check conversion to dict
-        assert len(completed_chunks) == 1
-        assert isinstance(completed_chunks[0], dict)
-        assert completed_chunks[0]["type"] == "dialog"
-        assert completed_chunks[0]["speaker"] == "JOHN"
+        assert len(final_chunk) == 1
+        assert isinstance(final_chunk[0], dict)
+        assert final_chunk[0]["type"] == "dialog"
+        assert final_chunk[0]["speaker"] == "JOHN"
         assert (
-            completed_chunks[0]["raw_text"]
+            final_chunk[0]["raw_text"]
             == "                         Hello, how are you?                                        "
         )
-        assert completed_chunks[0]["text"] == "Hello, how are you?"
+        assert final_chunk[0]["text"] == "Hello, how are you?"
 
 
 class TestSpeakerTracking:

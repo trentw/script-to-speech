@@ -201,9 +201,9 @@ def process_chunks(
 
                 empty_line_count += 1
 
-    # Get any final chunks
-    final_chunks = parser.get_completed_chunks()
-    parser_chunks.extend(final_chunks)
+    # Get any final chunk
+    final_chunk = parser.get_final_chunk()
+    parser_chunks.extend(final_chunk)
 
     logger.info(f"Generated {len(parser_chunks)} chunks using incremental parsing")
 

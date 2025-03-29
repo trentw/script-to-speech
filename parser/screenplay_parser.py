@@ -545,6 +545,23 @@ class ScreenplayParser:
         self.indent_context = IndentationContext()
         self.prev_line = ""
 
+    def _chunk_to_dict(self, chunk: Chunk) -> Dict:
+        """
+        Convert a Chunk object to a dictionary.
+
+        Args:
+            chunk: Chunk object to convert
+
+        Returns:
+            Dictionary representation of the chunk
+        """
+        return {
+            "type": chunk.type,
+            "speaker": "" if chunk.speaker is None else chunk.speaker,
+            "raw_text": chunk.raw_text,
+            "text": chunk.text,
+        }
+
     def process_line(self, line: str) -> List[Dict]:
         """
         Process a single line of text and return any completed chunks.
@@ -567,45 +584,28 @@ class ScreenplayParser:
         completed_chunks = []
         if previous_chunk is not None and previous_chunk != self.current_chunk:
             # Convert to dict format
-            completed_chunks.append(
-                {
-                    "type": previous_chunk.type,
-                    "speaker": (
-                        "" if previous_chunk.speaker is None else previous_chunk.speaker
-                    ),
-                    "raw_text": previous_chunk.raw_text,
-                    "text": previous_chunk.text,
-                }
-            )
+            completed_chunks.append(self._chunk_to_dict(previous_chunk))
 
         return completed_chunks
 
-    def get_completed_chunks(self) -> List[Dict]:
+    def get_final_chunk(self) -> List[Dict]:
         """
-        Get any final chunks if processing is complete.
+        Get the final chunk if processing is complete.
+
+        This method returns at most one chunk (the current one) and resets
+        the current_chunk to None.
 
         Returns:
-            List of completed chunks
+            List containing the final chunk as a dictionary, or an empty list
         """
-        completed_chunks = []
+        final_chunks = []
 
-        # If there's a current chunk, add it to completed chunks
+        # If there's a current chunk, add it to final chunks
         if self.current_chunk is not None:
-            completed_chunks.append(
-                {
-                    "type": self.current_chunk.type,
-                    "speaker": (
-                        ""
-                        if self.current_chunk.speaker is None
-                        else self.current_chunk.speaker
-                    ),
-                    "raw_text": self.current_chunk.raw_text,
-                    "text": self.current_chunk.text,
-                }
-            )
+            final_chunks.append(self._chunk_to_dict(self.current_chunk))
             self.current_chunk = None
 
-        return completed_chunks
+        return final_chunks
 
     def parse_screenplay(self, text: str) -> List[Dict]:
         """
@@ -630,8 +630,8 @@ class ScreenplayParser:
             self.process_line(line)
             i += 1
 
-        # Get any final chunks
-        final_chunks = self.get_completed_chunks()
+        # Get any final chunk
+        final_chunks = self.get_final_chunk()
 
         logger.info(
             f"Parsing completed. Generated {len(self.chunks) + len(final_chunks)} chunks"
