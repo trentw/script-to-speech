@@ -9,8 +9,8 @@ from typing import Any, Dict, List, Optional
 
 from pydub import AudioSegment
 
+from audio_generation.models import AudioGenerationTask
 from audio_generation.processing import (
-    AudioGenerationTask,
     apply_cache_overrides,
     check_for_silence,
     fetch_and_cache_audio,

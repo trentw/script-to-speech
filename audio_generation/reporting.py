@@ -1,16 +1,17 @@
 import os
 from collections import defaultdict
-from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.generate_standalone_speech import get_command_string
 
-from .models import AudioClipInfo
+from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 from .utils import check_audio_level, truncate_text
 
 
-def print_audio_task_details(task, logger, max_text_length: int = 50, log_prefix=""):
+def print_audio_task_details(
+    task: AudioGenerationTask, logger, max_text_length: int = 50, log_prefix=""
+):
     """
     Print detailed information about an audio generation task.
 
@@ -44,14 +45,6 @@ def print_audio_task_details(task, logger, max_text_length: int = 50, log_prefix
     logger.info(
         f"[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}...]"
     )
-
-
-@dataclass
-class ReportingState:
-    """State for unified reporting of silent clips and cache misses"""
-
-    silent_clips: Dict[str, AudioClipInfo] = field(default_factory=dict)
-    cache_misses: Dict[str, AudioClipInfo] = field(default_factory=dict)
 
 
 def recheck_audio_files(

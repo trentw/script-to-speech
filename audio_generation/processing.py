@@ -2,7 +2,6 @@ import hashlib
 import io
 import logging
 import os
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
@@ -11,9 +10,8 @@ from text_processors.processor_manager import TextProcessorManager
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.logging import get_screenplay_logger
 
-# Use relative imports for modules within the same package
-from .models import AudioClipInfo
-from .reporting import ReportingState, print_audio_task_details
+from .models import AudioClipInfo, AudioGenerationTask, ReportingState
+from .reporting import print_audio_task_details
 from .utils import check_audio_level, truncate_text
 
 # Use a less common delimiter (consistent with original)
@@ -21,31 +19,6 @@ DELIMITER = "~~"
 
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.processing")
-
-
-@dataclass
-class AudioGenerationTask:
-    """Represents the plan and state for generating a single audio clip."""
-
-    idx: int
-    original_dialogue: Dict[str, Any]
-    processed_dialogue: Dict[str, Any]
-    text_to_speak: str
-    speaker: Optional[str]
-    provider_id: Optional[str]
-    speaker_id: Optional[str]
-    speaker_display: str  # For reporting
-    cache_filename: str
-    cache_filepath: str
-    is_cache_hit: bool = False
-    is_override_available: bool = (
-        False  # Useful to know if override *could* have been applied
-    )
-    expected_silence: bool = False
-    # Status fields updated during planning/fetching
-    checked_override: bool = False  # Checked if override file exists during planning
-    checked_cache: bool = False  # Checked if cache file exists during planning
-    checked_silence_level: Optional[float] = None  # Store level if checked
 
 
 def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
