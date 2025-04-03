@@ -40,7 +40,7 @@ def get_screenplay_logger(name: str) -> logging.Logger:
 
 
 def setup_screenplay_logging(
-    log_file: str, file_level: int = logging.INFO, console_level: int = logging.INFO
+    log_file: str, file_level: int = logging.DEBUG, console_level: int = logging.INFO
 ) -> None:
     """
     Set up root screenplay logger with both console and file output.
