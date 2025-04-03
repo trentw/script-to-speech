@@ -13,8 +13,8 @@ from utils.logging import get_screenplay_logger
 
 # Use relative imports for modules within the same package
 from .models import AudioClipInfo
-from .reporting import ReportingState
-from .utils import check_audio_level
+from .reporting import ReportingState, print_audio_task_details
+from .utils import check_audio_level, truncate_text
 
 # Use a less common delimiter (consistent with original)
 DELIMITER = "~~"
@@ -112,7 +112,7 @@ def plan_audio_generation(
 
     # 2. Process each chunk and create a plan (task)
     for idx, original_dialogue in enumerate(preprocessed_chunks):
-        logger.debug(f"\nPlanning dialogue {idx}")
+        logger.debug(f"\nPlanning dialogue #{idx}")
 
         try:
             # Process the dialogue chunk
@@ -290,8 +290,8 @@ def check_for_silence(
             # Skip if not a cache hit or if silence is expected
             continue
 
-        logger.debug(
-            f"Checking task {task.idx} for silence (threshold: {silence_threshold} dBFS)"
+        logger.info(
+            f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)"
         )
         try:
             with open(task.cache_filepath, "rb") as f:
@@ -350,16 +350,14 @@ def fetch_and_cache_audio(
     fetch_reporting_state = ReportingState()  # To track issues during this phase
 
     for task in tasks:
-        logger.debug(f"\nFetching/Generating audio for task {task.idx}")
+        # Print detailed information about the task
+        logger.debug(f"\nFetching dialogue #{task.idx}")
+        print_audio_task_details(task, logger, log_prefix="  ")
 
         try:
             # If file is cached, go to next task
             if task.is_cache_hit:
-                logger.info("  Using cached audio file.")
                 continue
-
-            # Generate new audio (if not cache_hit)
-            logger.info(f"  Generating new audio for task {task.idx}...")
 
             try:
                 # Generate audio data
@@ -382,7 +380,7 @@ def fetch_and_cache_audio(
                     continue
 
                 logger.info(
-                    f"  Audio generated successfully (size: {len(audio_data)} bytes)."
+                    f"  Audio generated successfully for task {task.idx} (size: {len(audio_data)} bytes)."
                 )
 
                 # Check for silence
@@ -403,7 +401,6 @@ def fetch_and_cache_audio(
                     os.makedirs(os.path.dirname(task.cache_filepath), exist_ok=True)
                     with open(task.cache_filepath, "wb") as f:
                         f.write(audio_data)
-                    logger.info(f"  Audio saved to cache: {task.cache_filepath}")
                     task.is_cache_hit = True  # It's now cached
                 except Exception as e:
                     logger.error(f"  Error saving generated audio to cache: {e}")
@@ -455,6 +452,11 @@ def check_audio_silence(
     logger.debug(f"{log_prefix}Audio level (dBFS): {max_dbfs}")
 
     if max_dbfs is not None and max_dbfs < silence_threshold:
+        truncated_text = truncate_text(task.text_to_speak)
+
+        logger.warning(
+            f'{log_prefix}Silent clip detected for task #{task.idx} ("{truncated_text}")'
+        )
         logger.warning(
             f"{log_prefix}Audio level {max_dbfs:.2f} dBFS is below threshold {silence_threshold} dBFS."
         )

@@ -7,9 +7,43 @@ from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.generate_standalone_speech import get_command_string
 
 from .models import AudioClipInfo
+from .utils import check_audio_level, truncate_text
 
-# Assuming check_audio_level will be moved to audio_generation.utils
-from .utils import check_audio_level
+
+def print_audio_task_details(task, logger, max_text_length: int = 50, log_prefix=""):
+    """
+    Print detailed information about an audio generation task.
+
+    Args:
+        task: The AudioGenerationTask object containing task details
+        logger: Logger to use for output
+        max_text_length: Maximum length of text to display before truncating
+    """
+    # Extract dialogue type from processed dialogue
+    dialogue_type = task.processed_dialogue.get("type", "unknown")
+    speaker_info = task.speaker_display if task.speaker else "(default)"
+
+    # Truncate text if needed
+    truncated_text = truncate_text(task.text_to_speak, max_text_length)
+
+    # Print detailed information
+    logger.debug(f"{log_prefix}Dialogue #: {task.idx}")
+    logger.debug(f"{log_prefix}Speaker: {speaker_info}, Type: {dialogue_type}")
+    logger.debug(f"{log_prefix}Text: {truncated_text}")
+    logger.debug(f"{log_prefix}Provider ID: {task.provider_id}")
+    logger.debug(f"{log_prefix}Speaker ID: {task.speaker_id}")
+    logger.debug(f"{log_prefix}Cache filepath: {task.cache_filepath}")
+    logger.debug(f"{log_prefix}Cache hit: {task.is_cache_hit}")
+
+    # Print audio level if available
+    if task.checked_silence_level is not None:
+        logger.debug(f"{log_prefix}Audio level (dBFS): {task.checked_silence_level}")
+
+    # Print compact summary line
+    cache_status = "cache hit" if task.is_cache_hit else "cache miss"
+    logger.info(
+        f"[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}...]"
+    )
 
 
 @dataclass

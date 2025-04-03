@@ -170,3 +170,13 @@ def create_output_folders(
         raise  # Propagate the error
 
     return main_output_folder, cache_folder, output_file, log_file
+
+
+def truncate_text(text, max_length=40):
+    """Truncate text if needed"""
+    truncated_text = text
+
+    if len(text) > max_length:
+        truncated_text = text[:max_length] + "..."
+
+    return truncated_text

@@ -225,7 +225,7 @@ def main():
 
     try:
         # 1. Plan Generation (Common to all modes)
-        logger.info("--- Planning Audio Generation ---")
+        logger.info("\n--- Planning Audio Generation ---")
         all_tasks, plan_reporting_state = plan_audio_generation(
             dialogues=dialogues,
             tts_provider_manager=tts_manager,
@@ -243,7 +243,7 @@ def main():
 
         # 2. Apply Cache Overrides (not for dry-run, modifies tasks in-place)
         if not args.dry_run and args.cache_overrides:
-            logger.info("--- Applying Cache Overrides ---")
+            logger.info("\n--- Applying Cache Overrides ---")
             apply_cache_overrides(
                 tasks=all_tasks,
                 cache_overrides_dir=args.cache_overrides,
@@ -252,9 +252,9 @@ def main():
             # Note: Reporting state might need updating here if an override fixed a silent clip,
             # but recheck_audio_files later should handle consistency.
 
-        # 3. Check for Silence (not for dry-run)
-        if not args.dry_run:
-            logger.info("--- Checking for Silent Audio Files ---")
+        # 3. Check for Silence
+        if args.check_silence:
+            logger.info("\n--- Checking for Silent Audio Files ---")
             silence_reporting_state = check_for_silence(
                 tasks=all_tasks,
                 silence_threshold=args.check_silence,
@@ -266,6 +266,7 @@ def main():
 
         # 4. Fetch/Generate Audio (Not for dry-run)
         if not args.dry_run:
+            logger.info("\n--- Fetching any Non-Cached Aduio Files ---")
             # Fetch and cache the audio files
             fetch_reporting_state = fetch_and_cache_audio(
                 tasks=all_tasks,
@@ -279,7 +280,7 @@ def main():
             )
 
             # Recheck file status after potential generation/overrides
-            logger.info("--- Rechecking Cache Status ---")
+            logger.info("\n--- Rechecking Cache Status ---")
             recheck_audio_files(
                 combined_reporting_state, cache_folder, args.check_silence, logger
             )
@@ -287,7 +288,7 @@ def main():
 
         # 5. Concatenate Audio (Only for full run mode)
         if not args.dry_run and not args.populate_cache:
-            logger.info("--- Concatenating Audio ---")
+            logger.info("\n--- Concatenating Audio ---")
             audio_segments = []
             gap_segment = (
                 AudioSegment.silent(duration=args.gap) if args.gap > 0 else None
@@ -358,7 +359,7 @@ def main():
         sys.exit(1)
 
     # --- Final Reporting ---
-    logger.info("--- Final Report ---")
+    logger.info("\n--- Final Report ---")
     print_unified_report(
         reporting_state=combined_reporting_state,
         logger=logger,
@@ -378,7 +379,7 @@ def main():
     if not args.dry_run and not args.populate_cache:
         logger.info(f"Output file: {output_file}")
 
-    logger.info("Script finished.")
+    logger.info("Script finished.\n")
 
 
 if __name__ == "__main__":
