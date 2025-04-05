@@ -184,7 +184,7 @@ class DualDialogPreProcessor(TextPreProcessor):
             )
             logger.debug(f"Added initial speaker attribution for: {current_speaker}")
 
-        def flush_dialog_buffer():
+        def flush_dialog_buffer() -> None:
             if current_buffer:
                 logger.debug(f"Flushing dialog buffer for {current_speaker}:")
                 for buf_line in current_buffer:
@@ -200,7 +200,7 @@ class DualDialogPreProcessor(TextPreProcessor):
                 current_buffer.clear()
                 logger.debug("Added dialog chunk")
 
-        def flush_parenthetical():
+        def flush_parenthetical() -> None:
             if current_parenthetical:
                 logger.debug("Flushing parenthetical:")
                 for p_line in current_parenthetical:
