@@ -37,7 +37,7 @@ from utils.logging import get_screenplay_logger, setup_screenplay_logging
 logger = get_screenplay_logger("script_to_speech")
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """Parses command-line arguments."""
     parser = argparse.ArgumentParser(
         description="Generate an audio file from dialogues using screen.",
@@ -125,7 +125,7 @@ def parse_arguments():
 
 def save_modified_json(
     modified_dialogues: List[Dict[str, Any]], output_folder: str, input_file: str
-):
+) -> None:
     """Saves the processed dialogue chunks to a JSON file."""
     try:
         base_name = os.path.splitext(os.path.basename(input_file))[0]
@@ -161,7 +161,7 @@ def find_optional_config(
     return None
 
 
-def main():
+def main() -> None:
     """Main execution function."""
     args = parse_arguments()
 
