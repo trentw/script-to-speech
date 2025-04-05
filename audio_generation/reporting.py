@@ -61,21 +61,20 @@ def recheck_audio_files(
 
     # First recheck silent clips
     still_silent = {}
-    for cache_filename, clip_info in reporting_state.silent_clips.items():
+    original_silent = reporting_state.silent_clips.items()
+    for cache_filename, clip_info in original_silent:
         cache_filepath = os.path.join(cache_folder, cache_filename)
-        if cache_filename not in existing_files:
-            # If the file doesn't exist anymore, it's not silent, it's missing
-            continue
-        try:
-            with open(cache_filepath, "rb") as f:
-                audio_data = f.read()
-            current_dbfs = check_audio_level(audio_data)
-            if current_dbfs is not None and current_dbfs < silence_threshold:
-                clip_info.dbfs_level = current_dbfs  # Update with current level
-                still_silent[cache_filename] = clip_info
-            # else: File exists but is no longer silent, remove from silent list (or in this case, don't add it to the still_silent list)
-        except Exception as e:
-            logger.error(f"Error rechecking audio file {cache_filepath}: {e}")
+        if cache_filename in existing_files:
+            try:
+                with open(cache_filepath, "rb") as f:
+                    audio_data = f.read()
+                current_dbfs = check_audio_level(audio_data)
+                if current_dbfs is not None and current_dbfs < silence_threshold:
+                    clip_info.dbfs_level = current_dbfs  # Update with current level
+                    still_silent[cache_filename] = clip_info
+                # else: File exists but is no longer silent, remove from silent list (or in this case, don't add it to the still_silent list)
+            except Exception as e:
+                logger.error(f"Error rechecking audio file {cache_filepath}: {e}")
     reporting_state.silent_clips = still_silent
 
     # Then recheck cache misses (ensure files previously marked as misses still don't exist)
@@ -86,12 +85,13 @@ def recheck_audio_files(
     reporting_state.cache_misses = actual_misses
 
     # Add any previously silent files that are now missing to the cache_misses
-    for cache_filename, clip_info in list(reporting_state.silent_clips.items()):
+    for cache_filename, clip_info in list(original_silent):
         if cache_filename not in existing_files:
             if cache_filename not in reporting_state.cache_misses:
                 reporting_state.cache_misses[cache_filename] = clip_info
             # Remove from silent list as it's now a miss
-            del reporting_state.silent_clips[cache_filename]
+            if cache_filename in reporting_state.silent_clips:
+                del reporting_state.silent_clips[cache_filename]
 
 
 def print_unified_report(
