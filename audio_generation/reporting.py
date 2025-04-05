@@ -1,6 +1,7 @@
+import logging
 import os
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.generate_standalone_speech import get_command_string
@@ -10,8 +11,11 @@ from .utils import check_audio_level, truncate_text
 
 
 def print_audio_task_details(
-    task: AudioGenerationTask, logger, max_text_length: int = 50, log_prefix=""
-):
+    task: AudioGenerationTask,
+    logger: logging.Logger,
+    max_text_length: int = 50,
+    log_prefix: str = "",
+) -> None:
     """
     Print detailed information about an audio generation task.
 
@@ -48,7 +52,10 @@ def print_audio_task_details(
 
 
 def recheck_audio_files(
-    reporting_state: ReportingState, cache_folder: str, silence_threshold: float, logger
+    reporting_state: ReportingState,
+    cache_folder: str,
+    silence_threshold: float,
+    logger: logging.Logger,
 ) -> None:
     """Recheck all tracked audio files for current status."""
 
@@ -96,7 +103,7 @@ def recheck_audio_files(
 
 def print_unified_report(
     reporting_state: ReportingState,
-    logger,
+    logger: logging.Logger,
     tts_provider_manager: TTSProviderManager,
     silence_checking_enabled: bool = False,
     max_misses_to_report: int = 20,
@@ -186,12 +193,16 @@ def print_unified_report(
                 ].append(clip_info.text)
 
         # Filter out texts over max length
-        commands_to_show = []
+        commands_to_show: List[Dict[str, Any]] = []
         for (
             provider_id,
             speaker_id,
-            speaker_display,
+            speaker_display_opt,  # This could be None
         ), texts in provider_groups.items():
+            # Ensure speaker_display is a string
+            speaker_display = (
+                speaker_display_opt if speaker_display_opt is not None else ""
+            )
             # Apply text length filter
             filtered_texts = [t for t in texts if len(t) <= max_text_length]
 
@@ -219,7 +230,9 @@ def print_unified_report(
             else:
                 for cmd in commands_to_show:
                     command = get_command_string(
-                        tts_provider_manager, cmd["speaker"], cmd["texts"]
+                        tts_provider_manager,
+                        str(cmd["speaker"]) if cmd["speaker"] is not None else None,
+                        list(cmd["texts"]),
                     )
                     if command:
                         logger.info(

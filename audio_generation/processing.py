@@ -116,7 +116,9 @@ def plan_audio_generation(
             logger.debug(f"  Processed hash: {processed_hash}")
 
             # Determine provider and speaker ID
-            provider_id = tts_provider_manager.get_provider_for_speaker(speaker)
+            provider_id = tts_provider_manager.get_provider_for_speaker(
+                speaker if speaker is not None else "default"
+            )
             speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
             logger.debug(f"  Provider ID: {provider_id}, Speaker ID: {speaker_id}")
 

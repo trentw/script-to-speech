@@ -4,7 +4,7 @@ import logging
 import os
 import traceback
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
 
@@ -21,7 +21,7 @@ def check_audio_level(audio_data: bytes) -> Optional[float]:
             return None
 
         audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
-        return audio_segment.max_dBFS
+        return float(audio_segment.max_dBFS)
     except Exception as e:
         # Log the error but don't raise, allow calling function to decide how to handle None
         logger.error(f"Error analyzing audio level: {e}")
@@ -113,11 +113,13 @@ def concatenate_audio_clips(
         raise
 
 
-def load_json_chunks(input_file: str) -> List[Dict]:
+def load_json_chunks(input_file: str) -> List[Dict[str, Any]]:
     """Load and parse JSON chunks from input file."""
     try:
         with open(input_file, "r", encoding="utf-8") as f:
-            return json.load(f)
+            # Load the JSON data and return it
+            result: List[Dict[str, Any]] = json.load(f)
+            return result
     except FileNotFoundError:
         logger.error(f"Input JSON file not found: {input_file}")
         raise
@@ -172,7 +174,7 @@ def create_output_folders(
     return main_output_folder, cache_folder, output_file, log_file
 
 
-def truncate_text(text, max_length=40):
+def truncate_text(text: str, max_length: int = 40) -> str:
     """Truncate text if needed"""
     truncated_text = text
 
