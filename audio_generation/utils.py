@@ -177,6 +177,6 @@ def truncate_text(text, max_length=40):
     truncated_text = text
 
     if len(text) > max_length:
-        truncated_text = text[:max_length] + "..."
+        truncated_text = text[: max_length - 3] + "..."
 
     return truncated_text

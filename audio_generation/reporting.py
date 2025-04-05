@@ -43,7 +43,7 @@ def print_audio_task_details(
     # Print compact summary line
     cache_status = "cache hit" if task.is_cache_hit else "cache miss"
     logger.info(
-        f"[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}...]"
+        f"[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}]"
     )
 
 
