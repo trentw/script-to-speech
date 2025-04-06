@@ -1,3 +1,19 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = [
+    "unit: marks a test as a unit test",
+    "integration: marks tests that require integration with other modules",
+    "slow: marks tests that run slowly",
+]
+addopts = "--verbosity=2 --showlocals"
+filterwarnings = [
+    # Ignore the ffmpeg/avconv warning from pydub
+    "ignore::RuntimeWarning:pydub.utils:",
+]
+
 [tool.black]
 line-length = 88
 exclude = '''
