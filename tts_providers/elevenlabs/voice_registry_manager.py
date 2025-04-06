@@ -132,7 +132,11 @@ class ElevenLabsVoiceRegistryManager:
                 logger.debug(
                     f"Found owner {voice.public_owner_id} for voice {public_voice_id}"
                 )
-                return voice.public_owner_id
+                return (
+                    str(voice.public_owner_id)
+                    if voice.public_owner_id is not None
+                    else None
+                )
 
         return None
 
