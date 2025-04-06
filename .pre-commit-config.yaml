@@ -19,3 +19,15 @@ repos:
           - "types-pyYAML"
           - "types-requests"
         args: ["--config-file=pyproject.toml"]
+
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest-fast-checks
+        # Run only unit tests, skip slow and integration tests
+        entry: pytest tests/ -v -m "unit and not slow and not integration" --maxfail=2
+        language: system
+        pass_filenames: false
+        # Consider setting this to false and using types instead for large repos
+        always_run: false
+        types: [python]
