@@ -12,7 +12,10 @@ import pytest
 from pydub import AudioSegment
 
 from audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
-from audio_generation.processing import fetch_and_cache_audio
+from audio_generation.processing import (
+    fetch_and_cache_audio,
+    update_cache_duplicate_state,
+)
 
 
 @pytest.fixture
@@ -107,6 +110,110 @@ def fetch_tasks():
     ]
 
 
+@pytest.fixture
+def fetch_tasks_with_duplicates():
+    """Fixture providing sample tasks with duplicate cache filepaths."""
+    return [
+        # Cache hit that should be skipped
+        AudioGenerationTask(
+            idx=0,
+            original_dialogue={
+                "type": "dialog",
+                "speaker": "JOHN",
+                "text": "Already cached",
+            },
+            processed_dialogue={
+                "type": "dialog",
+                "speaker": "JOHN",
+                "text": "Already cached!",
+            },
+            text_to_speak="Already cached!",
+            speaker="JOHN",
+            provider_id="elevenlabs",
+            speaker_id="voice_id_123",
+            speaker_display="JOHN",
+            cache_filename="cached~~cached~~elevenlabs~~voice_id_123.mp3",
+            cache_filepath="/path/to/cache/cached~~cached~~elevenlabs~~voice_id_123.mp3",
+            is_cache_hit=True,
+            expected_silence=False,
+            expected_cache_duplicate=False,
+        ),
+        # Two tasks with the same cache filepath
+        AudioGenerationTask(
+            idx=1,
+            original_dialogue={
+                "type": "dialog",
+                "speaker": "MARY",
+                "text": "Duplicate path 1",
+            },
+            processed_dialogue={
+                "type": "dialog",
+                "speaker": "MARY",
+                "text": "Duplicate path 1!",
+            },
+            text_to_speak="Duplicate path 1!",
+            speaker="MARY",
+            provider_id="openai",
+            speaker_id="voice_id_456",
+            speaker_display="MARY",
+            cache_filename="dupe~~dupe~~openai~~voice_id_456.mp3",
+            cache_filepath="/path/to/cache/dupe~~dupe~~openai~~voice_id_456.mp3",
+            is_cache_hit=False,
+            expected_silence=False,
+            expected_cache_duplicate=False,  # Will be updated by the function
+        ),
+        AudioGenerationTask(
+            idx=2,
+            original_dialogue={
+                "type": "dialog",
+                "speaker": "BOB",
+                "text": "Duplicate path 2",
+            },
+            processed_dialogue={
+                "type": "dialog",
+                "speaker": "BOB",
+                "text": "Duplicate path 2!",
+            },
+            text_to_speak="Duplicate path 2!",
+            speaker="BOB",
+            provider_id="openai",
+            speaker_id="voice_id_456",
+            speaker_display="BOB",
+            cache_filename="dupe~~dupe~~openai~~voice_id_456.mp3",  # Same as task 1
+            cache_filepath="/path/to/cache/dupe~~dupe~~openai~~voice_id_456.mp3",  # Same as task 1
+            is_cache_hit=False,
+            expected_silence=False,
+            expected_cache_duplicate=False,  # Will be updated by the function
+        ),
+    ]
+
+
+@patch("audio_generation.processing.update_cache_duplicate_state")
+@patch("os.makedirs")
+@patch("builtins.open")
+def test_fetch_calls_update_duplicate_state(
+    mock_open,
+    mock_makedirs,
+    mock_update_duplicate_state,
+    fetch_tasks,
+    mock_tts_provider_manager,
+    mock_logger,
+):
+    """Test that fetch_and_cache_audio calls update_cache_duplicate_state."""
+    # Arrange
+    mock_update_duplicate_state.return_value = 0  # No duplicates for this test
+
+    # Act
+    fetch_and_cache_audio(
+        tasks=fetch_tasks,
+        tts_provider_manager=mock_tts_provider_manager,
+        silence_threshold=None,
+    )
+
+    # Assert
+    mock_update_duplicate_state.assert_called_once_with(fetch_tasks)
+
+
 @patch("os.makedirs")
 @patch("builtins.open")
 def test_fetch_skip_cache_hits(
@@ -131,10 +238,58 @@ def test_fetch_skip_cache_hits(
     )
 
 
+@patch("audio_generation.processing.update_cache_duplicate_state")
+@patch("os.makedirs")
+@patch("builtins.open")
+def test_fetch_skip_duplicate_tasks(
+    mock_open,
+    mock_makedirs,
+    mock_update_duplicate_state,
+    fetch_tasks_with_duplicates,
+    mock_tts_provider_manager,
+    mock_logger,
+):
+    """Test that duplicate tasks are skipped during fetching."""
+
+    # Arrange
+    # Set up the mock to modify tasks (mark second task as duplicate)
+    def side_effect(tasks):
+        tasks[2].expected_cache_duplicate = True  # Mark task 2 as duplicate
+        return 1  # Return count of duplicates
+
+    mock_update_duplicate_state.side_effect = side_effect
+
+    # Act
+    reporting_state = fetch_and_cache_audio(
+        tasks=fetch_tasks_with_duplicates,
+        tts_provider_manager=mock_tts_provider_manager,
+        silence_threshold=None,
+    )
+
+    # Assert
+    # First task is skipped because it's a cache hit
+    # Second task is processed normally
+    # Third task is skipped because it's marked as a duplicate
+    assert (
+        mock_tts_provider_manager.generate_audio.call_count == 1
+    )  # Only one task should generate audio
+
+    # Check the specific call to generate_audio
+    mock_tts_provider_manager.generate_audio.assert_called_once_with(
+        "MARY", "Duplicate path 1!"
+    )
+
+
+@patch("audio_generation.processing.update_cache_duplicate_state")
 @patch("os.makedirs")
 @patch("builtins.open")
 def test_fetch_generate_audio(
-    mock_open, mock_makedirs, fetch_tasks, mock_tts_provider_manager, mock_logger
+    mock_open,
+    mock_makedirs,
+    mock_update_duplicate_state,
+    fetch_tasks,
+    mock_tts_provider_manager,
+    mock_logger,
 ):
     """Test generating audio for a cache miss."""
     # Arrange
@@ -225,6 +380,43 @@ def test_fetch_with_silence_checking(
     # The expected_silence=True task is skipped in the check_audio_silence function
     assert mock_check_silence.call_count == 1
     assert len(reporting_state.silent_clips) == 0
+
+
+@patch("os.makedirs")
+@patch("builtins.open")
+def test_fetch_with_real_duplicate_detection(
+    mock_open,
+    mock_makedirs,
+    fetch_tasks_with_duplicates,
+    mock_tts_provider_manager,
+    mock_logger,
+):
+    """Test fetch_and_cache_audio with real duplicate detection logic."""
+    # Arrange
+    mock_file = MagicMock()
+    mock_open.return_value.__enter__.return_value = mock_file
+
+    # Act - using the real update_cache_duplicate_state function
+    reporting_state = fetch_and_cache_audio(
+        tasks=fetch_tasks_with_duplicates,
+        tts_provider_manager=mock_tts_provider_manager,
+        silence_threshold=None,
+    )
+
+    # Assert
+    # First task is skipped (cache hit)
+    # Second task is processed
+    # Third task is skipped (duplicate)
+    assert mock_tts_provider_manager.generate_audio.call_count == 1
+    assert (
+        fetch_tasks_with_duplicates[1].expected_cache_duplicate is False
+    )  # First occurrence not marked
+    assert (
+        fetch_tasks_with_duplicates[2].expected_cache_duplicate is True
+    )  # Duplicate marked
+    mock_tts_provider_manager.generate_audio.assert_called_once_with(
+        "MARY", "Duplicate path 1!"
+    )
 
 
 @patch("audio_generation.processing.check_audio_silence")

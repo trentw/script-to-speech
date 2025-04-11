@@ -19,6 +19,7 @@ from audio_generation.processing import (
     determine_speaker,
     generate_chunk_hash,
     plan_audio_generation,
+    update_cache_duplicate_state,
 )
 
 
@@ -718,6 +719,174 @@ class TestCheckForSilence:
 
         # Verify open was called for the right file
         mock_open.assert_called_once_with(sample_silence_tasks[1].cache_filepath, "rb")
+
+
+class TestUpdateCacheDuplicateState:
+    """Tests for update_cache_duplicate_state function."""
+
+    @pytest.fixture
+    def duplicate_tasks(self):
+        """Fixture providing tasks with duplicate cache filepaths."""
+        return [
+            AudioGenerationTask(
+                idx=0,
+                original_dialogue={
+                    "type": "dialog",
+                    "speaker": "JOHN",
+                    "text": "Hello",
+                },
+                processed_dialogue={
+                    "type": "dialog",
+                    "speaker": "JOHN",
+                    "text": "Hello!",
+                },
+                text_to_speak="Hello!",
+                speaker="JOHN",
+                provider_id="elevenlabs",
+                speaker_id="voice_id_123",
+                speaker_display="JOHN",
+                cache_filename="duplicate.mp3",
+                cache_filepath="/path/to/cache/duplicate.mp3",
+                is_cache_hit=False,
+                expected_cache_duplicate=False,  # Initial state
+            ),
+            AudioGenerationTask(
+                idx=1,
+                original_dialogue={
+                    "type": "dialog",
+                    "speaker": "MARY",
+                    "text": "Different",
+                },
+                processed_dialogue={
+                    "type": "dialog",
+                    "speaker": "MARY",
+                    "text": "Different!",
+                },
+                text_to_speak="Different!",
+                speaker="MARY",
+                provider_id="openai",
+                speaker_id="voice_id_456",
+                speaker_display="MARY",
+                cache_filename="unique.mp3",
+                cache_filepath="/path/to/cache/unique.mp3",
+                is_cache_hit=False,
+                expected_cache_duplicate=False,
+            ),
+            AudioGenerationTask(
+                idx=2,
+                original_dialogue={
+                    "type": "dialog",
+                    "speaker": "BOB",
+                    "text": "Duplicate",
+                },
+                processed_dialogue={
+                    "type": "dialog",
+                    "speaker": "BOB",
+                    "text": "Duplicate!",
+                },
+                text_to_speak="Duplicate!",
+                speaker="BOB",
+                provider_id="openai",
+                speaker_id="voice_id_789",
+                speaker_display="BOB",
+                cache_filename="duplicate.mp3",  # Same filename as task 0
+                cache_filepath="/path/to/cache/duplicate.mp3",  # Same filepath as task 0
+                is_cache_hit=False,
+                expected_cache_duplicate=False,  # Initial state
+            ),
+        ]
+
+    def test_update_duplicate_state(self, duplicate_tasks, mock_logger):
+        """Test updating cache duplicate state for tasks."""
+        # Act
+        duplicate_count = update_cache_duplicate_state(duplicate_tasks)
+
+        # Assert
+        assert duplicate_count == 1  # One duplicate should be detected
+        assert (
+            duplicate_tasks[0].expected_cache_duplicate is False
+        )  # First occurrence not marked
+        assert (
+            duplicate_tasks[1].expected_cache_duplicate is False
+        )  # Unique filepath not marked
+        assert duplicate_tasks[2].expected_cache_duplicate is True  # Duplicate marked
+
+    def test_update_duplicate_state_multiple_dupes(self, duplicate_tasks, mock_logger):
+        """Test with multiple duplicate tasks."""
+        # Arrange - add another duplicate
+        duplicate_tasks.append(
+            AudioGenerationTask(
+                idx=3,
+                original_dialogue={
+                    "type": "dialog",
+                    "speaker": "ALICE",
+                    "text": "Another dupe",
+                },
+                processed_dialogue={
+                    "type": "dialog",
+                    "speaker": "ALICE",
+                    "text": "Another dupe!",
+                },
+                text_to_speak="Another dupe!",
+                speaker="ALICE",
+                provider_id="elevenlabs",
+                speaker_id="voice_id_101",
+                speaker_display="ALICE",
+                cache_filename="duplicate.mp3",  # Same filename as tasks 0 and 2
+                cache_filepath="/path/to/cache/duplicate.mp3",  # Same filepath as tasks 0 and 2
+                is_cache_hit=False,
+                expected_cache_duplicate=False,
+            )
+        )
+
+        # Act
+        duplicate_count = update_cache_duplicate_state(duplicate_tasks)
+
+        # Assert
+        assert duplicate_count == 2  # Two duplicates should be detected
+        assert (
+            duplicate_tasks[0].expected_cache_duplicate is False
+        )  # First occurrence not marked
+        assert (
+            duplicate_tasks[1].expected_cache_duplicate is False
+        )  # Unique filepath not marked
+        assert (
+            duplicate_tasks[2].expected_cache_duplicate is True
+        )  # First duplicate marked
+        assert (
+            duplicate_tasks[3].expected_cache_duplicate is True
+        )  # Second duplicate marked
+
+    def test_update_duplicate_state_empty_list(self, mock_logger):
+        """Test with empty task list."""
+        # Arrange
+        empty_tasks = []
+
+        # Act
+        duplicate_count = update_cache_duplicate_state(empty_tasks)
+
+        # Assert
+        assert duplicate_count == 0  # No duplicates in empty list
+
+    def test_update_duplicate_state_resets_flags(self, duplicate_tasks, mock_logger):
+        """Test that the function resets existing flags."""
+        # Arrange - pre-set some flags incorrectly
+        duplicate_tasks[0].expected_cache_duplicate = True  # Should be reset to False
+        duplicate_tasks[1].expected_cache_duplicate = True  # Should be reset to False
+
+        # Act
+        update_cache_duplicate_state(duplicate_tasks)
+
+        # Assert
+        assert (
+            duplicate_tasks[0].expected_cache_duplicate is False
+        )  # Reset and not a duplicate
+        assert (
+            duplicate_tasks[1].expected_cache_duplicate is False
+        )  # Reset and not a duplicate
+        assert (
+            duplicate_tasks[2].expected_cache_duplicate is True
+        )  # Correctly marked as duplicate
 
 
 class TestCheckAudioSilence:
