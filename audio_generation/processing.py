@@ -50,7 +50,7 @@ def plan_audio_generation(
     Plans the audio generation process by analyzing dialogues, checking cache,
     and preparing tasks for fetching/generation.
 
-    This function no longer performs silence checking, which is now handled separately.
+    It additionally tracks cache filepaths to identify duplicates and mark tasks accordingly.
 
     Returns:
         A tuple containing:
@@ -61,6 +61,7 @@ def plan_audio_generation(
     tasks: List[AudioGenerationTask] = []
     reporting_state = ReportingState()
     modified_dialogues: List[Dict[str, Any]] = []  # Track processed dialogues
+    cache_filepath_tracking = set()  # Track cache filepaths to detect duplicates
 
     try:
         existing_cache_files = set(os.listdir(cache_folder))
@@ -127,6 +128,14 @@ def plan_audio_generation(
             cache_filepath = os.path.join(cache_folder, cache_filename)
             logger.debug(f"  Cache filepath: {cache_filepath}")
 
+            # Check if this is a duplicate cache filepath
+            expected_cache_duplicate = cache_filepath in cache_filepath_tracking
+            if expected_cache_duplicate:
+                logger.debug(f"  Cache filepath duplicate detected: {cache_filepath}")
+
+            # Track this filepath for future duplicate detection
+            cache_filepath_tracking.add(cache_filepath)
+
             # Initialize task
             task = AudioGenerationTask(
                 idx=idx,
@@ -140,6 +149,7 @@ def plan_audio_generation(
                 cache_filename=cache_filename,
                 cache_filepath=cache_filepath,
                 expected_silence=not text.strip(),  # Mark if text is empty/whitespace
+                expected_cache_duplicate=expected_cache_duplicate,  # Set duplicate flag
             )
 
             # Check if cache override *exists*
@@ -183,6 +193,9 @@ def plan_audio_generation(
 
     logger.info(f"Audio generation planning complete. {len(tasks)} tasks created.")
     logger.info(f"Initial report state: {len(reporting_state.cache_misses)} misses.")
+    # Log info about duplicates
+    duplicate_count = sum(1 for task in tasks if task.expected_cache_duplicate)
+    logger.info(f"Detected {duplicate_count} tasks with duplicate cache filepaths.")
     return tasks, reporting_state
 
 
@@ -309,6 +322,7 @@ def fetch_and_cache_audio(
 
     This function only handles fetching and caching, not reading the audio data.
     Silence checking for existing cache files is handled by the check_for_silence function.
+    Tasks marked as expected_cache_duplicate will be skipped as another task will cache the same file.
 
     Args:
         tasks: List of AudioGenerationTask objects from plan_audio_generation
@@ -323,6 +337,7 @@ def fetch_and_cache_audio(
         "Starting audio fetching and caching (post-override and silence check)..."
     )
     fetch_reporting_state = ReportingState()  # To track issues during this phase
+    skipped_duplicates = 0  # Count skipped duplicates
 
     for task in tasks:
         # Print detailed information about the task
@@ -332,6 +347,14 @@ def fetch_and_cache_audio(
         try:
             # If file is cached, go to next task
             if task.is_cache_hit:
+                continue
+
+            # Skip tasks marked as expected_cache_duplicate since another task will cache this path
+            if task.expected_cache_duplicate:
+                logger.debug(
+                    f"  Skipping duplicate task #{task.idx} - another task will cache {task.cache_filepath}"
+                )
+                skipped_duplicates += 1
                 continue
 
             try:
@@ -394,6 +417,7 @@ def fetch_and_cache_audio(
     logger.info(
         f"Fetch report state: {len(fetch_reporting_state.silent_clips)} newly generated silent clips."
     )
+    logger.info(f"Skipped {skipped_duplicates} duplicate tasks.")
     return fetch_reporting_state
 
 

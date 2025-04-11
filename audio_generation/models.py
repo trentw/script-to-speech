@@ -33,6 +33,9 @@ class AudioGenerationTask:
         False  # Useful to know if override *could* have been applied
     )
     expected_silence: bool = False
+    expected_cache_duplicate: bool = (
+        False  # Flag to indicate if another task will likely cache the same path
+    )
     # Status fields updated during planning/fetching
     checked_override: bool = False  # Checked if override file exists during planning
     checked_cache: bool = False  # Checked if cache file exists during planning
