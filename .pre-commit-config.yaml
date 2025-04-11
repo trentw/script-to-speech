@@ -25,9 +25,21 @@ repos:
       - id: pytest-check
         name: pytest-fast-checks
         # Run only unit tests, skip slow and integration tests
-        entry: pytest tests/ -v -m "unit and not slow and not integration" --maxfail=2
-        language: system
+        entry: python -m pytest tests/ -v -m "unit and not slow and not integration" --maxfail=2
+        language: python
+        additional_dependencies:
+          - "pytest>=7.0.0"
+          - "pytest-mock"
+          - "pytest-cov"
+          - "pydub>=0.25.1"
+          - "elevenlabs>=0.3.0"
+          - "pdfplumber>=0.10.3"
+          - "PyYAML>=6.0.1"
+          - "ruamel.yaml>=0.17.21"
+          - "unidecode"
+          - "openai"
+          - "zyphra"
+          - "eyeD3"
         pass_filenames: false
-        # Consider setting this to false and using types instead for large repos
         always_run: false
         types: [python]
