@@ -337,7 +337,11 @@ def fetch_and_cache_audio(
         "Starting audio fetching and caching (post-override and silence check)..."
     )
     fetch_reporting_state = ReportingState()  # To track issues during this phase
-    skipped_duplicates = 0  # Count skipped duplicates
+
+    # Update the expected_cache_duplicate state to ensure latest state
+    # (cache overrides / silence checking could lead to discrepancies)
+    update_cache_duplicate_state(tasks)
+    skipped_duplicates = 0  # Count skipped duplicates during processing
 
     for task in tasks:
         # Print detailed information about the task
@@ -419,6 +423,42 @@ def fetch_and_cache_audio(
     )
     logger.info(f"Skipped {skipped_duplicates} duplicate tasks.")
     return fetch_reporting_state
+
+
+def update_cache_duplicate_state(tasks: List[AudioGenerationTask]) -> int:
+    """
+    Updates the expected_cache_duplicate flag for each task based on cache filepath.
+    This ensures we have the most up-to-date state of which tasks will create duplicate cache files.
+
+    Args:
+        tasks: List of AudioGenerationTask objects to update
+
+    Returns:
+        The number of tasks marked as duplicates
+    """
+    logger.info("Updating cache duplicate state for tasks...")
+    cache_filepath_tracking = set()
+    duplicate_count = 0
+
+    for task in tasks:
+        # Reset the flag
+        task.expected_cache_duplicate = False
+
+        # Check if this filepath has already been seen
+        if task.cache_filepath in cache_filepath_tracking:
+            task.expected_cache_duplicate = True
+            duplicate_count += 1
+            logger.debug(
+                f"  Task #{task.idx} marked as duplicate for filepath: {task.cache_filepath}"
+            )
+
+        # Add to tracking set
+        cache_filepath_tracking.add(task.cache_filepath)
+
+    logger.info(
+        f"Cache duplicate update complete. {duplicate_count} tasks marked as duplicates."
+    )
+    return duplicate_count
 
 
 def check_audio_silence(
