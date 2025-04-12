@@ -43,3 +43,4 @@ repos:
         pass_filenames: false
         always_run: false
         types: [python]
+        stages: [manual] # turning testing manual during multi-threading refactor

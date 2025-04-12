@@ -32,6 +32,7 @@ def print_audio_task_details(
     truncated_text = truncate_text(task.text_to_speak, max_text_length)
 
     # Print detailed information
+    logger.debug("")
     logger.debug(f"{log_prefix}Dialogue #: {task.idx}")
     logger.debug(f"{log_prefix}Speaker: {speaker_info}, Type: {dialogue_type}")
     logger.debug(f"{log_prefix}Text: {truncated_text}")
@@ -47,7 +48,7 @@ def print_audio_task_details(
     # Print compact summary line
     cache_status = "cache hit" if task.is_cache_hit else "cache miss"
     logger.info(
-        f"[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}]"
+        f"{log_prefix}[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}]"
     )
 
 

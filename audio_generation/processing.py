@@ -1,7 +1,9 @@
+import concurrent.futures
 import hashlib
 import io
 import logging
 import os
+import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
@@ -19,6 +21,9 @@ DELIMITER = "~~"
 
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.processing")
+
+# --- Constants ---
+MAX_WORKERS = 5  # Max concurrent TTS downloads/generations
 
 
 def generate_chunk_hash(text: str, speaker: Optional[str]) -> str:
@@ -311,18 +316,104 @@ def check_for_silence(
     return reporting_state
 
 
+# Helper function to process a single audio generation task
+def _process_single_task(
+    task: AudioGenerationTask,
+    tts_provider_manager: TTSProviderManager,
+    silence_threshold: Optional[float],
+) -> Optional[ReportingState]:
+    """
+    Processes a single audio generation task: generates audio if needed,
+    checks for silence, and saves to cache.
+
+    Returns a ReportingState object if audio was generated and checked for silence,
+    otherwise returns None. Exceptions are propagated.
+    """
+    task_reporting_state = ReportingState()
+
+    # Print detailed information about the task
+    logger.debug(f"\nProcessing dialogue #{task.idx} in thread")
+
+    # If file is cached or a duplicate that will be handled by another task, skip
+    # (in case list of tasks wasn't filtered previously)
+    if task.is_cache_hit or task.expected_cache_duplicate:
+        return None  # Nothing to report for this task
+
+    # --- Generate Audio ---
+    audio_data = None
+    try:
+        if task.expected_silence:
+            logger.info(f"  Task {task.idx}: Creating intentional silent audio.")
+            silent_segment = AudioSegment.silent(duration=10)  # Short silent clip
+            with io.BytesIO() as buf:
+                silent_segment.export(buf, format="mp3")
+                audio_data = buf.getvalue()
+        else:
+            logger.info(f"  Task {task.idx}: Requesting audio generation...")
+            audio_data = tts_provider_manager.generate_audio(
+                task.speaker, task.text_to_speak
+            )
+
+        if not audio_data:
+            # Log error but let exception handling catch actual failures
+            logger.error(f"  TTS provider returned no audio data for task {task.idx}.")
+            # Raise an exception to signal failure in the main loop
+            raise ValueError(f"TTS provider returned no audio data for task {task.idx}")
+
+        print_audio_task_details(task, logger, log_prefix="  ")
+        logger.info(
+            f"  Audio generated successfully for task {task.idx} (size: {len(audio_data)} bytes)."
+        )
+
+        # --- Check for Silence ---
+        if silence_threshold is not None and not task.expected_silence:
+            is_silent = check_audio_silence(
+                task=task,
+                audio_data=audio_data,
+                silence_threshold=silence_threshold,
+                reporting_state=task_reporting_state,  # Use local state for this task
+                log_prefix=f"  Task {task.idx}: ",
+            )
+            if is_silent:
+                logger.warning(f"  Task {task.idx}: Newly generated audio is silent.")
+
+        # --- Save to Cache ---
+        try:
+            os.makedirs(os.path.dirname(task.cache_filepath), exist_ok=True)
+            with open(task.cache_filepath, "wb") as f:
+                f.write(audio_data)
+            task.is_cache_hit = True  # Mark as cached *after* successful save
+            logger.info(
+                f"  Task {task.idx}: Saved generated audio to {task.cache_filepath}"
+            )
+        except Exception as e:
+            logger.error(
+                f"  Task {task.idx}: Error saving generated audio to cache: {e}"
+            )
+            raise  # Propagate save error
+
+    except Exception as e:
+        # Log generation error and re-raise to be caught by the main loop
+        logger.error(
+            f"  Task {task.idx}: Error generating/processing audio: {e}", exc_info=False
+        )  # Keep log concise
+        raise  # Propagate generation error
+
+    return task_reporting_state  # Return reporting state for this task on success
+
+
 def fetch_and_cache_audio(
     tasks: List[AudioGenerationTask],
     tts_provider_manager: TTSProviderManager,
     silence_threshold: Optional[float],
 ) -> ReportingState:
     """
-    Fetches non-cached audio using TTS provider.
+    Fetches non-cached audio using a thread pool and the TTS provider.
     Saves generated audio to the cache folder. Cache override logic is handled separately.
 
-    This function only handles fetching and caching, not reading the audio data.
+    This function uses a ThreadPoolExecutor to parallelize audio generation.
     Silence checking for existing cache files is handled by the check_for_silence function.
-    Tasks marked as expected_cache_duplicate will be skipped as another task will cache the same file.
+    Tasks marked as expected_cache_duplicate will be skipped.
 
     Args:
         tasks: List of AudioGenerationTask objects from plan_audio_generation
@@ -336,93 +427,75 @@ def fetch_and_cache_audio(
     logger.info(
         "Starting audio fetching and caching (post-override and silence check)..."
     )
-    fetch_reporting_state = ReportingState()  # To track issues during this phase
+    aggregated_reporting_state = ReportingState()  # Collect results from all threads
 
-    # Update the expected_cache_duplicate state to ensure latest state
-    # (cache overrides / silence checking could lead to discrepancies)
+    # Update the expected_cache_duplicate state based on current cache hits
+    # This ensures we don't try to generate the same file in multiple threads
+    # if overrides or silence checks changed the cache status.
     update_cache_duplicate_state(tasks)
-    skipped_duplicates = 0  # Count skipped duplicates during processing
+    tasks_to_process = [
+        task
+        for task in tasks
+        if not task.is_cache_hit and not task.expected_cache_duplicate
+    ]
+    skipped_duplicates = sum(
+        1 for task in tasks if task.expected_cache_duplicate and not task.is_cache_hit
+    )
+    cached_count = sum(1 for task in tasks if task.is_cache_hit)
+    total_tasks = len(tasks)
+    logger.info(
+        f"Total tasks: {total_tasks}, Cached: {cached_count}, Skipped Duplicates: {skipped_duplicates}, To Process: {len(tasks_to_process)}"
+    )
 
-    for task in tasks:
-        # Print detailed information about the task
-        logger.debug(f"\nFetching dialogue #{task.idx}")
-        print_audio_task_details(task, logger, log_prefix="  ")
+    futures_map: Dict[concurrent.futures.Future, AudioGenerationTask] = {}
+    processed_count = 0
+    error_count = 0
 
-        try:
-            # If file is cached, go to next task
-            if task.is_cache_hit:
-                continue
+    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        logger.info(
+            f"Submitting {len(tasks_to_process)} tasks to thread pool (max_workers={MAX_WORKERS})..."
+        )
+        # Submit tasks
+        for task in tasks_to_process:
+            future = executor.submit(
+                _process_single_task,
+                task,
+                tts_provider_manager,
+                silence_threshold,
+            )
+            futures_map[future] = task
 
-            # Skip tasks marked as expected_cache_duplicate since another task will cache this path
-            if task.expected_cache_duplicate:
-                logger.debug(
-                    f"  Skipping duplicate task #{task.idx} - another task will cache {task.cache_filepath}"
-                )
-                skipped_duplicates += 1
-                continue
-
+        logger.info("Waiting for audio generation tasks to complete...")
+        # Process completed tasks
+        for future in concurrent.futures.as_completed(futures_map):
+            task = futures_map[future]
             try:
-                # Generate audio data
-                audio_data = None
-                if task.expected_silence:
-                    logger.info("  Creating intentional silent audio for empty text.")
-                    silent_segment = AudioSegment.silent(duration=10)
-                    with io.BytesIO() as buf:
-                        silent_segment.export(buf, format="mp3")
-                        audio_data = buf.getvalue()
-                else:
-                    audio_data = tts_provider_manager.generate_audio(
-                        task.speaker, task.text_to_speak
+                task_reporting_state = future.result()
+                if task_reporting_state:
+                    # Merge results from this task into the main report
+                    aggregated_reporting_state.silent_clips.update(
+                        task_reporting_state.silent_clips
                     )
-
-                if not audio_data:
-                    logger.error(
-                        f"  TTS provider returned no audio data for task {task.idx}."
-                    )
-                    continue
-
-                logger.info(
-                    f"  Audio generated successfully for task {task.idx} (size: {len(audio_data)} bytes)."
-                )
-
-                # Check for silence
-                if silence_threshold is not None:
-                    is_silent = check_audio_silence(
-                        task=task,
-                        audio_data=audio_data,
-                        silence_threshold=silence_threshold,
-                        reporting_state=fetch_reporting_state,
-                        log_prefix="  ",
-                    )
-
-                    if is_silent:
-                        logger.warning(f"  Newly generated audio is silent.")
-
-                # Save to cache
-                try:
-                    os.makedirs(os.path.dirname(task.cache_filepath), exist_ok=True)
-                    with open(task.cache_filepath, "wb") as f:
-                        f.write(audio_data)
-                    task.is_cache_hit = True  # It's now cached
-                except Exception as e:
-                    logger.error(f"  Error saving generated audio to cache: {e}")
+                    # Add other reporting fields if necessary in the future
+                processed_count += 1
+                logger.debug(f"Task {task.idx} completed successfully.")
 
             except Exception as e:
-                logger.error(f"  Error generating audio: {e}", exc_info=True)
-
-        except Exception as e:
-            # Catch unexpected errors during the processing of a single task
-            logger.error(
-                f"Unexpected error processing task {task.idx}: {e}", exc_info=True
-            )
-            # Continue to the next task
+                # Error logged within _process_single_task, just count here
+                error_count += 1
+                logger.error(f"Task {task.idx} failed in thread pool.")
 
     logger.info("Audio fetching and caching complete.")
+    logger.info(f"  Total tasks: {total_tasks}")
+    logger.info(f"  Already cached: {cached_count}")
+    logger.info(f"  Skipped duplicates: {skipped_duplicates}")
+    logger.info(f"  Successfully processed: {processed_count}")
+    logger.info(f"  Errors during processing: {error_count}")
     logger.info(
-        f"Fetch report state: {len(fetch_reporting_state.silent_clips)} newly generated silent clips."
+        f"  Newly generated silent clips detected: {len(aggregated_reporting_state.silent_clips)}"
     )
-    logger.info(f"Skipped {skipped_duplicates} duplicate tasks.")
-    return fetch_reporting_state
+
+    return aggregated_reporting_state
 
 
 def update_cache_duplicate_state(tasks: List[AudioGenerationTask]) -> int:

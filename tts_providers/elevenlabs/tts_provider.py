@@ -1,4 +1,5 @@
 import os
+import threading
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
@@ -28,6 +29,7 @@ class ElevenLabsTTSProvider(TTSProvider):
         self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
         # Maps speaker names to their configurations
         self.speaker_configs: Dict[str, SpeakerConfig] = {}
+        self._init_lock = threading.Lock()  # Lock for thread-safe initialization
 
     def _initialize_api_client(self) -> None:
         """Initialize API client"""
@@ -94,9 +96,13 @@ class ElevenLabsTTSProvider(TTSProvider):
 
     def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
         """Generate audio for the given speaker and text."""
+        # Thread-safe initialization check
         if not self.client:
-            # Wait to initialize client for API calls until it is necessary for audio generation
-            self._initialize_api_client()
+            with self._init_lock:
+                # Double-check after acquiring the lock
+                if not self.client:
+                    # Wait to initialize client for API calls until it is necessary for audio generation
+                    self._initialize_api_client()
 
         # Get the public voice ID first
         public_voice_id = self.get_speaker_identifier(speaker)
