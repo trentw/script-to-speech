@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from tts_providers.base.tts_provider import TTSError, VoiceNotFoundError
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
 from tts_providers.elevenlabs.tts_provider import ElevenLabsTTSProvider
 from tts_providers.elevenlabs.voice_registry_manager import (
     ElevenLabsVoiceRegistryManager,
@@ -22,65 +22,55 @@ class TestElevenLabsIntegration:
         # Create provider
         provider = ElevenLabsTTSProvider()
 
-        # Configure with multiple speakers
-        provider.initialize(
-            {
-                "default": {"voice_id": "default_voice_id"},
-                "BOB": {"voice_id": "bob_voice_id"},
-                "ALICE": {"voice_id": "alice_voice_id"},
-            }
-        )
-
-        # Verify provider is correctly configured but API clients not initialized yet
-        assert provider.client is None
-        assert provider.voice_registry_manager is None
-        assert len(provider.speaker_configs) == 3
-        assert provider.speaker_configs["default"].voice_id == "default_voice_id"
-        assert provider.speaker_configs["BOB"].voice_id == "bob_voice_id"
-        assert provider.speaker_configs["ALICE"].voice_id == "alice_voice_id"
-
         # Set up mocks for clients
         mock_tts_client_instance = MagicMock()
         mock_registry_client_instance = MagicMock()
 
-        # Need to mock the voice registry manager's methods
-        mock_registry_manager = MagicMock()
-        mock_registry_manager.get_library_voice_id.return_value = "registry_id"
-
+        # Set mock return values
         mock_tts_client.return_value = mock_tts_client_instance
         mock_registry_client.return_value = mock_registry_client_instance
+
+        # Initialize provider (no longer takes speaker configs)
+        # This should now use the mocked ElevenLabs constructor from patch
+        provider.initialize()
+
+        # Verify provider is correctly configured
+        # In the refactored version, voice_registry_manager should NOT be None after initialize() is called
+        assert provider.voice_registry_manager is not None
+
+        # Verify ElevenLabs was called for the registry client
+        mock_registry_client.assert_called_once_with(api_key="fake_api_key")
 
         # Mock the response for text_to_speech.convert
         mock_response = MagicMock()
         mock_response.__iter__.return_value = [b"audio_data"]
         mock_tts_client_instance.text_to_speech.convert.return_value = mock_response
 
-        # Skip actual voice registry initialization by patching
-        with patch.object(
-            ElevenLabsVoiceRegistryManager,
-            "get_library_voice_id",
-            return_value="registry_id",
+        # Get client from the instantiate_client class method
+        with patch(
+            "tts_providers.elevenlabs.tts_provider.ElevenLabsTTSProvider.instantiate_client",
+            return_value=mock_tts_client_instance,
         ):
-            # Call a method that requires API client initialization
-            provider.generate_audio("default", "Test")
+            # We also need to patch the voice registry manager's get_library_voice_id method
+            with patch.object(
+                provider.voice_registry_manager,
+                "get_library_voice_id",
+                return_value="registry_id",
+            ):
+                # Call generate_audio with the mocked client
+                provider.generate_audio(
+                    mock_tts_client_instance, {"voice_id": "default_voice_id"}, "Test"
+                )
 
-        # Verify clients were initialized
-        mock_tts_client.assert_called_once_with(api_key="fake_api_key")
-        # Different client initialization in provider and registry
-        assert provider.client is not None
-        assert provider.voice_registry_manager is not None
+        # Verify text_to_speech.convert was called with the right parameters
+        mock_tts_client_instance.text_to_speech.convert.assert_called_once()
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
     def test_voice_translation_flow(self):
         """Test integration of voice ID translation through registry manager."""
         # Create provider with manually mocked components
         provider = ElevenLabsTTSProvider()
-        provider.initialize(
-            {
-                "default": {"voice_id": "public_voice_id1"},
-                "BOB": {"voice_id": "public_voice_id2"},
-            }
-        )
+        provider.initialize()
 
         # Create mock client and registry manager
         mock_client = MagicMock()
@@ -99,7 +89,9 @@ class TestElevenLabsIntegration:
         mock_client.text_to_speech.convert.return_value = mock_response
 
         # Generate audio for BOB
-        result = provider.generate_audio("BOB", "Hello")
+        result = provider.generate_audio(
+            mock_client, {"voice_id": "public_voice_id2"}, "Hello"
+        )
 
         # Verify registry manager translated the public ID correctly
         mock_registry_manager.get_library_voice_id.assert_called_once_with(
@@ -118,13 +110,7 @@ class TestElevenLabsIntegration:
         """Test integration of LRU management during audio generation."""
         # Create provider
         provider = ElevenLabsTTSProvider()
-        provider.initialize(
-            {
-                "default": {"voice_id": "voice1"},
-                "BOB": {"voice_id": "voice2"},
-                "ALICE": {"voice_id": "voice3"},
-            }
-        )
+        provider.initialize()
 
         # Create mock client that returns audio data
         mock_client = MagicMock()
@@ -144,9 +130,11 @@ class TestElevenLabsIntegration:
         provider.voice_registry_manager = registry_manager
 
         # Generate audio for each speaker in order: BOB, ALICE, default
-        provider.generate_audio("BOB", "Hello from Bob")
-        provider.generate_audio("ALICE", "Hello from Alice")
-        provider.generate_audio(None, "Hello from default")
+        provider.generate_audio(mock_client, {"voice_id": "voice2"}, "Hello from Bob")
+        provider.generate_audio(mock_client, {"voice_id": "voice3"}, "Hello from Alice")
+        provider.generate_audio(
+            mock_client, {"voice_id": "voice1"}, "Hello from default"
+        )
 
         # Verify the registry manager was called with the correct IDs
         expected_calls = [call("voice2"), call("voice3"), call("voice1")]
@@ -159,7 +147,7 @@ class TestElevenLabsIntegration:
         """Test integration of voice not found error handling."""
         # Create provider
         provider = ElevenLabsTTSProvider()
-        provider.initialize({"default": {"voice_id": "default_voice_id"}})
+        provider.initialize()
 
         # Create mock client and registry manager
         mock_client = MagicMock()
@@ -173,7 +161,9 @@ class TestElevenLabsIntegration:
 
         # Generate audio should raise TTSError
         with pytest.raises(TTSError, match="Failed to generate audio"):
-            provider.generate_audio(None, "Hello")
+            provider.generate_audio(
+                mock_client, {"voice_id": "default_voice_id"}, "Hello"
+            )
 
         # Verify registry manager was called
         mock_registry_manager.get_library_voice_id.assert_called_once_with(
@@ -188,12 +178,7 @@ class TestElevenLabsIntegration:
         """Test handling a full registry when adding a new voice."""
         # Create provider
         provider = ElevenLabsTTSProvider()
-        provider.initialize(
-            {
-                "default": {"voice_id": "default_voice_id"},
-                "NEW_SPEAKER": {"voice_id": "new_voice_id"},
-            }
-        )
+        provider.initialize()
 
         # Mock client to return audio data
         mock_client = MagicMock()
@@ -237,7 +222,7 @@ class TestElevenLabsIntegration:
         provider.voice_registry_manager = registry_manager
 
         # Generate audio for new speaker
-        provider.generate_audio("NEW_SPEAKER", "Hello")
+        provider.generate_audio(mock_client, {"voice_id": "new_voice_id"}, "Hello")
 
         # Verify room was made in registry
         registry_manager._make_room_in_registry.assert_called_once()
