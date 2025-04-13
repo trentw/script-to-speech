@@ -9,7 +9,7 @@ import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
-from .base.tts_provider import TTSProvider
+from .base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
 
 
 class TTSProviderManager:
@@ -27,6 +27,8 @@ class TTSProviderManager:
         self._overall_provider = overall_provider
         self._providers: Dict[str, TTSProvider] = {}
         self._speaker_providers: Dict[str, str] = {}
+        self._speaker_configs_map: Dict[str, Dict[str, Any]] = {}
+        self._provider_clients: Dict[str, Any] = {}
         self._is_initialized = False
 
     def _ensure_initialized(self) -> None:
@@ -91,30 +93,59 @@ class TTSProviderManager:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
-        # Group speakers by provider
-        provider_configs: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
+        if not isinstance(config, dict):
+            raise ValueError(
+                f"Invalid YAML format in {config_path}: root must be a mapping"
+            )
+
+        # Store speaker configs and determine required providers
+        required_providers = set()
+        self._speaker_configs_map.clear()
+        self._speaker_providers.clear()
+
+        if not config:
+            raise ValueError(f"Voice configuration file '{config_path}' is empty.")
 
         for speaker, speaker_config in config.items():
+            if not isinstance(speaker_config, dict):
+                raise ValueError(
+                    f"Configuration for speaker '{speaker}' in {config_path} must be a mapping, not {type(speaker_config)}"
+                )
+
             # Get provider from config or use overall provider
             provider_name = speaker_config.get("provider")
             if not provider_name and self._overall_provider is not None:
                 provider_name = self._overall_provider
+                # Add overall provider to speaker config if missing
+                speaker_config["provider"] = provider_name
             elif not provider_name:
                 raise ValueError(
                     f"No provider specified for speaker '{speaker}' and no overall provider set"
                 )
 
-            # Store speaker config for this provider
-            provider_configs[provider_name][speaker] = speaker_config
-            self._speaker_providers[speaker] = provider_name
-
-        # Initialize providers with their configs
-        for provider_name, speaker_configs in provider_configs.items():
-            if provider_name not in self._providers:
+            # Validate speaker config using the provider's static method
+            try:
                 provider_class = self._get_provider_class(provider_name)
-                provider = provider_class()
-                provider.initialize(speaker_configs)
-                self._providers[provider_name] = provider
+                provider_class.validate_speaker_config(speaker_config)
+            except (ValueError, TypeError) as e:
+                raise ValueError(
+                    f"Invalid configuration for speaker '{speaker}' using provider '{provider_name}': {e}"
+                )
+
+            # Store validated config and provider mapping
+            self._speaker_configs_map[speaker] = speaker_config
+            self._speaker_providers[speaker] = provider_name
+            required_providers.add(provider_name)
+
+        # Instantiate clients and provider instances
+        for provider_name in required_providers:
+            provider_class = self._get_provider_class(provider_name)
+            self._provider_clients[provider_name] = provider_class.instantiate_client()
+            provider = provider_class()
+            # Call initialize only if the provider is stateful
+            if provider.IS_STATEFUL:
+                provider.initialize()
+            self._providers[provider_name] = provider
 
     def get_provider_for_speaker(self, speaker: str) -> str:
         """
@@ -182,7 +213,11 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].generate_audio(speaker, text)
+        provider_instance = self._providers[provider_name]
+        client = self._provider_clients[provider_name]
+        speaker_config = self._speaker_configs_map[speaker]
+
+        return provider_instance.generate_audio(client, speaker_config, text)
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -201,7 +236,10 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_speaker_identifier(speaker)
+        provider_instance = self._providers[provider_name]
+        speaker_config = self._speaker_configs_map[speaker]
+
+        return provider_instance.get_speaker_identifier(speaker_config)
 
     def get_provider_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -238,8 +276,11 @@ class TTSProviderManager:
         if not speaker:
             speaker = "default"
 
-        provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_speaker_configuration(speaker)
+        if speaker not in self._speaker_configs_map:
+            raise VoiceNotFoundError(
+                f"No configuration found for speaker '{speaker}'"
+            )  # Use specific error
+        return self._speaker_configs_map[speaker]
 
     ####
     # Voice Configuration YAML generation

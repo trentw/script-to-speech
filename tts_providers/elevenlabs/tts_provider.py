@@ -11,106 +11,77 @@ from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 
 
-@dataclass
-class SpeakerConfig:
-    """Configuration for a speaker using ElevenLabs TTS."""
-
-    voice_id: str
-
-
 class ElevenLabsTTSProvider(TTSProvider):
     """
     TTS Provider implementation for ElevenLabs API. Handles voice mapping and audio generation
     while abstracting away the complexity of ElevenLabs' voice registry system.
     """
 
-    def __init__(self) -> None:
-        self.client: Optional[ElevenLabs] = None
-        self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
-        # Maps speaker names to their configurations
-        self.speaker_configs: Dict[str, SpeakerConfig] = {}
-        self._init_lock = threading.Lock()  # Lock for thread-safe initialization
+    IS_STATEFUL = True
 
-    def _initialize_api_client(self) -> None:
-        """Initialize API client"""
+    @classmethod
+    def instantiate_client(cls) -> ElevenLabs:
+        """Instantiate and return the ElevenLabs API client."""
+        api_key = os.environ.get("ELEVEN_API_KEY")
+        if not api_key:
+            raise TTSError("ELEVEN_API_KEY environment variable is not set")
+        try:
+            return ElevenLabs(api_key=api_key)
+        except Exception as e:
+            raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
+        self._init_lock = (
+            threading.Lock()
+        )  # Lock for thread-safe initialization of registry manager
+
+    def initialize(self) -> None:
+        """Initialize the stateful part of the provider (Voice Registry Manager)."""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
-        try:
-            self.client = ElevenLabs(api_key=api_key)
-        except Exception as e:
-            raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
+        # Use lock to ensure registry manager is initialized only once if initialize
+        # were ever called concurrently
+        with self._init_lock:
+            if self.voice_registry_manager is None:
+                try:
+                    self.voice_registry_manager = ElevenLabsVoiceRegistryManager(
+                        api_key
+                    )
+                except Exception as e:
+                    raise TTSError(
+                        f"Failed to initialize ElevenLabsVoiceRegistryManager: {e}"
+                    )
 
-        self.voice_registry_manager = ElevenLabsVoiceRegistryManager(api_key)
-
-    def initialize(self, speaker_configs: Dict[str, Dict[str, Any]]) -> None:
-        """Initialize the ElevenLabs TTS provider with speaker configurations."""
-
-        # Extract voice IDs from speaker configs
-        for speaker, config in speaker_configs.items():
-            try:
-                self.validate_speaker_config(config)
-            except ValueError as e:
-                raise TTSError(f"Failed validation for speaker {speaker}. Error: {e}")
-
-            speaker_config = SpeakerConfig(voice_id=config["voice_id"])
-
-            self.speaker_configs[speaker] = speaker_config
-
-    def get_speaker_identifier(self, speaker: Optional[str]) -> str:
+    def get_speaker_identifier(self, speaker_config: Dict[str, Any]) -> str:
         """
         Get the voice ID from configuration for a given speaker.
         This returns the public/config voice ID, not the registry ID.
         """
-        if speaker is None:
-            speaker = "default"
-
-        config = self.speaker_configs.get(speaker)
-        if not config:
-            raise VoiceNotFoundError(
-                f"No voice assigned for speaker '{speaker}'. "
-                "Please update the voice configuration file."
+        voice_id = speaker_config.get("voice_id")
+        if not voice_id or not isinstance(voice_id, str):
+            raise TTSError(
+                f"Missing or invalid 'voice_id' in speaker config: {speaker_config}"
             )
+        return str(voice_id)
 
-        return config.voice_id
-
-    def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
-        """Get the configuration parameters for a given speaker."""
-        if speaker is None:
-            speaker = "default"
-
-        config = self.speaker_configs.get(speaker)
-        if not config:
-            raise VoiceNotFoundError(
-                f"No voice assigned for speaker '{speaker}'. "
-                "Please update the voice configuration file."
-            )
-
-        # Convert dataclass to dict and filter out empty values
-        speaker_config = {
-            k: v for k, v in asdict(config).items() if not self._is_empty_value(v)
-        }
-
-        return speaker_config
-
-    def generate_audio(self, speaker: Optional[str], text: str) -> bytes:
+    def generate_audio(
+        self, client: ElevenLabs, speaker_config: Dict[str, Any], text: str
+    ) -> bytes:
         """Generate audio for the given speaker and text."""
-        # Thread-safe initialization check
-        if not self.client:
-            with self._init_lock:
-                # Double-check after acquiring the lock
-                if not self.client:
-                    # Wait to initialize client for API calls until it is necessary for audio generation
-                    self._initialize_api_client()
-
         # Get the public voice ID first
-        public_voice_id = self.get_speaker_identifier(speaker)
+        public_voice_id = self.get_speaker_identifier(speaker_config)
 
         # Then get the registry voice ID for actual generation
         try:
             if self.voice_registry_manager is None:
-                raise TTSError("Voice registry manager is not initialized")
+                # Attempt to initialize lazily if not done already
+                self.initialize()
+                if self.voice_registry_manager is None:  # Check again after trying init
+                    raise TTSError("Voice registry manager could not be initialized")
 
             registry_voice_id = self.voice_registry_manager.get_library_voice_id(
                 public_voice_id
@@ -119,10 +90,10 @@ class ElevenLabsTTSProvider(TTSProvider):
             raise TTSError(f"Failed to generate audio: Voice registry error - {str(e)}")
 
         try:
-            if self.client is None:
+            if client is None:
                 raise TTSError("ElevenLabs client is not initialized")
 
-            response = self.client.text_to_speech.convert(
+            response = client.text_to_speech.convert(
                 voice_id=registry_voice_id,
                 optimize_streaming_latency="0",
                 output_format="mp3_44100_192",
@@ -188,7 +159,8 @@ class ElevenLabsTTSProvider(TTSProvider):
         """Get metadata fields."""
         return []
 
-    def validate_speaker_config(self, speaker_config: Dict[str, Any]) -> None:
+    @classmethod
+    def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
         if "voice_id" not in speaker_config:
             raise ValueError(
