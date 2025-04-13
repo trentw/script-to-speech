@@ -6,10 +6,11 @@ from typing import Any, Dict, List, Optional, Union
 
 from zyphra import ZyphraClient, ZyphraError
 
-from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
 
-class ZonosTTSProvider(TTSProvider):
+class ZonosTTSProvider(StatelessTTSProviderBase):
     """
     TTS Provider implementation for Zonos's Text-to-Speech API using Zyphra client.
     """
@@ -20,11 +21,6 @@ class ZonosTTSProvider(TTSProvider):
     MIN_SEED = -1
     MAX_SEED = 2147483647
     VALID_LANGUAGES = {"en-us", "fr-fr", "de", "ja", "ko", "cmn"}
-
-    def __init__(self) -> None:
-        super().__init__()  # Important for the __setattr__ check
-
-    IS_STATEFUL = False
 
     @classmethod
     def instantiate_client(cls) -> ZyphraClient:
@@ -38,12 +34,9 @@ class ZonosTTSProvider(TTSProvider):
         except Exception as e:
             raise TTSError(f"Failed to initialize Zyphra client: {e}")
 
-    def initialize(self) -> None:
-        """Stateless provider, no initialization needed."""
-        pass
-
+    @classmethod
     def generate_audio(
-        self, client: ZyphraClient, speaker_config: Dict[str, Any], text: str
+        cls, client: ZyphraClient, speaker_config: Dict[str, Any], text: str
     ) -> bytes:
         """Generate audio for the given speaker and text."""
 
@@ -60,7 +53,7 @@ class ZonosTTSProvider(TTSProvider):
             params = {
                 "text": text,
                 "seed": int(voice_seed),
-                "mime_type": self.MIME_TYPE,
+                "mime_type": cls.MIME_TYPE,
             }
 
             # Add optional parameters only if they have non-empty values
@@ -83,7 +76,8 @@ class ZonosTTSProvider(TTSProvider):
         except Exception as e:
             raise TTSError(f"Failed to generate audio: {e}")
 
-    def get_speaker_identifier(self, speaker_config: Dict[str, Any]) -> str:
+    @classmethod
+    def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
         """Get the voice identifier that changes if any generation parameter changes."""
         # Create a dictionary of all non-empty parameters that affect voice generation
         voice_seed = speaker_config.get("voice_seed")
@@ -93,7 +87,7 @@ class ZonosTTSProvider(TTSProvider):
         if voice_seed is None:  # Should be caught by validation
             raise TTSError(f"Missing 'voice_seed' in speaker config: {speaker_config}")
 
-        params = {"seed": voice_seed, "mime_type": self.MIME_TYPE}
+        params = {"seed": voice_seed, "mime_type": cls.MIME_TYPE}
 
         # Only include optional parameters if they have non-empty values
         if speaking_rate:
@@ -148,11 +142,6 @@ class ZonosTTSProvider(TTSProvider):
     def get_optional_fields(cls) -> List[str]:
         """Get optional configuration fields."""
         return ["speaking_rate", "language_iso_code"]
-
-    @classmethod
-    def get_metadata_fields(cls) -> List[str]:
-        """Get metadata fields."""
-        return []
 
     @classmethod
     def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:

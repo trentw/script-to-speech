@@ -3,13 +3,15 @@ import json
 import os
 from collections import defaultdict
 from io import StringIO
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
-from .base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
 
 class TTSProviderManager:
@@ -25,7 +27,9 @@ class TTSProviderManager:
         """
         self._config_path = config_path
         self._overall_provider = overall_provider
-        self._providers: Dict[str, TTSProvider] = {}
+        self._provider_refs: Dict[
+            str, Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase]
+        ] = {}
         self._speaker_providers: Dict[str, str] = {}
         self._speaker_configs_map: Dict[str, Dict[str, Any]] = {}
         self._provider_clients: Dict[str, Any] = {}
@@ -38,7 +42,9 @@ class TTSProviderManager:
             self._is_initialized = True
 
     @classmethod
-    def _get_provider_class(cls, provider_name: str) -> Type[TTSProvider]:
+    def _get_provider_class(
+        cls, provider_name: str
+    ) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
         """
         Dynamically import and return the provider class based on provider name.
 
@@ -62,8 +68,10 @@ class TTSProviderManager:
                 attr = getattr(module, attr_name)
                 if (
                     isinstance(attr, type)
-                    and issubclass(attr, TTSProvider)
-                    and attr != TTSProvider
+                    and issubclass(
+                        attr, (StatelessTTSProviderBase, StatefulTTSProviderBase)
+                    )
+                    and attr not in (StatelessTTSProviderBase, StatefulTTSProviderBase)
                     and attr.get_provider_identifier() == provider_name
                 ):
                     return attr
@@ -141,11 +149,13 @@ class TTSProviderManager:
         for provider_name in required_providers:
             provider_class = self._get_provider_class(provider_name)
             self._provider_clients[provider_name] = provider_class.instantiate_client()
-            provider = provider_class()
-            # Call initialize only if the provider is stateful
-            if provider.IS_STATEFUL:
-                provider.initialize()
-            self._providers[provider_name] = provider
+
+            if issubclass(provider_class, StatefulTTSProviderBase):
+                provider_instance = provider_class()
+                provider_instance.initialize()
+                self._provider_refs[provider_name] = provider_instance
+            else:  # It must be StatelessTTSProviderBase
+                self._provider_refs[provider_name] = provider_class
 
     def get_provider_for_speaker(self, speaker: str) -> str:
         """
@@ -213,11 +223,16 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        provider_instance = self._providers[provider_name]
+        provider_ref = self._provider_refs[provider_name]
         client = self._provider_clients[provider_name]
         speaker_config = self._speaker_configs_map[speaker]
 
-        return provider_instance.generate_audio(client, speaker_config, text)
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            # Call instance method
+            return provider_ref.generate_audio(client, speaker_config, text)
+        else:  # It's the StatelessTTSProviderBase class
+            # Call class method
+            return provider_ref.generate_audio(client, speaker_config, text)
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -236,10 +251,16 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        provider_instance = self._providers[provider_name]
+        provider_ref = self._provider_refs[provider_name]
         speaker_config = self._speaker_configs_map[speaker]
 
-        return provider_instance.get_speaker_identifier(speaker_config)
+        # get_speaker_identifier is always a @classmethod now
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            # Call class method via the instance's type
+            return type(provider_ref).get_speaker_identifier(speaker_config)
+        else:  # It's the StatelessTTSProviderBase class
+            # Call class method directly
+            return provider_ref.get_speaker_identifier(speaker_config)
 
     def get_provider_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -258,7 +279,12 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_provider_identifier()
+        provider_ref = self._provider_refs[provider_name]
+
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            return type(provider_ref).get_provider_identifier()
+        else:  # It's the StatelessTTSProviderBase class
+            return provider_ref.get_provider_identifier()
 
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """

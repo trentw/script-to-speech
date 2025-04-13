@@ -7,17 +7,17 @@ import yaml
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
-from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 
 
-class ElevenLabsTTSProvider(TTSProvider):
+class ElevenLabsTTSProvider(StatefulTTSProviderBase):
     """
     TTS Provider implementation for ElevenLabs API. Handles voice mapping and audio generation
     while abstracting away the complexity of ElevenLabs' voice registry system.
     """
-
-    IS_STATEFUL = True
 
     @classmethod
     def instantiate_client(cls) -> ElevenLabs:
@@ -31,7 +31,6 @@ class ElevenLabsTTSProvider(TTSProvider):
             raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
 
     def __init__(self) -> None:
-        super().__init__()
         self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
         self._init_lock = (
             threading.Lock()
@@ -56,7 +55,8 @@ class ElevenLabsTTSProvider(TTSProvider):
                         f"Failed to initialize ElevenLabsVoiceRegistryManager: {e}"
                     )
 
-    def get_speaker_identifier(self, speaker_config: Dict[str, Any]) -> str:
+    @classmethod
+    def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
         """
         Get the voice ID from configuration for a given speaker.
         This returns the public/config voice ID, not the registry ID.
@@ -148,16 +148,6 @@ class ElevenLabsTTSProvider(TTSProvider):
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
         return ["voice_id"]
-
-    @classmethod
-    def get_optional_fields(cls) -> List[str]:
-        """Get optional configuration fields."""
-        return []
-
-    @classmethod
-    def get_metadata_fields(cls) -> List[str]:
-        """Get metadata fields."""
-        return []
 
     @classmethod
     def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:

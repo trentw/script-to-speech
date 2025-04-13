@@ -4,9 +4,11 @@ import io
 import os
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from tts_providers.base.tts_provider import TTSProvider
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.audio_utils import configure_ffmpeg, split_audio_on_silence
 from utils.logging import get_screenplay_logger
@@ -23,7 +25,9 @@ def clean_filename(text: str) -> str:
     return cleaned.replace(" ", "_")
 
 
-def get_provider_class(provider_name: str) -> Type[TTSProvider]:
+def get_provider_class(
+    provider_name: str,
+) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
     """Get the provider class for a given provider name."""
     try:
         module = importlib.import_module(f"tts_providers.{provider_name}.tts_provider")
@@ -32,8 +36,10 @@ def get_provider_class(provider_name: str) -> Type[TTSProvider]:
             attr = getattr(module, attr_name)
             if (
                 isinstance(attr, type)
-                and issubclass(attr, TTSProvider)
-                and attr != TTSProvider
+                and issubclass(
+                    attr, (StatelessTTSProviderBase, StatefulTTSProviderBase)
+                )
+                and attr not in (StatelessTTSProviderBase, StatefulTTSProviderBase)
                 and attr.get_provider_identifier() == provider_name
             ):
                 return attr
@@ -44,7 +50,7 @@ def get_provider_class(provider_name: str) -> Type[TTSProvider]:
 
 
 def generate_standalone_speech(
-    provider: TTSProvider,
+    provider_ref: Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase],
     client: Any,
     speaker_config: Dict[str, Any],
     text: str,
@@ -75,7 +81,18 @@ def generate_standalone_speech(
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
 
         # Generate speech using default speaker
-        audio_data = provider.generate_audio(client, speaker_config, generation_text)
+        # Note: generate_audio is an instance method for StatefulTTSProviderBase
+        # but a class method for StatelessTTSProviderBase
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            # Call instance method directly
+            audio_data = provider_ref.generate_audio(
+                client, speaker_config, generation_text
+            )
+        else:  # Stateless class
+            # Call class method
+            audio_data = provider_ref.generate_audio(
+                client, speaker_config, generation_text
+            )
 
         # Create timestamp for unique filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -86,8 +103,19 @@ def generate_standalone_speech(
         # Create base filename components
         text_preview = clean_filename(text[:30])
         variant_suffix = f"_variant{variant_num}" if variant_num > 1 else ""
-        provider_id = provider.get_provider_identifier()
-        voice_id = provider.get_speaker_identifier(speaker_config)
+        # Get provider identifier - this is always a @classmethod in both base classes
+        # For stateful providers, we need to get the class via type(provider_ref)
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            provider_id = type(provider_ref).get_provider_identifier()
+        else:  # Stateless class - we already have the class
+            provider_id = provider_ref.get_provider_identifier()
+
+        # Get speaker identifier - this is always a @classmethod in both base classes
+        # For stateful providers, we need to get the class via type(provider_ref)
+        if isinstance(provider_ref, StatefulTTSProviderBase):
+            voice_id = type(provider_ref).get_speaker_identifier(speaker_config)
+        else:  # Stateless class - we already have the class
+            voice_id = provider_ref.get_speaker_identifier(speaker_config)
 
         if split_audio:
             # Process audio through splitter
@@ -283,17 +311,19 @@ def main() -> int:
 
         # Instantiate client and provider
         client = provider_class.instantiate_client()
-        provider = provider_class()
-
-        # Initialize provider only if stateful
-        if provider.IS_STATEFUL:
-            provider.initialize()
+        provider_ref: Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase]
+        if issubclass(provider_class, StatefulTTSProviderBase):
+            provider_instance = provider_class()
+            provider_instance.initialize()
+            provider_ref = provider_instance
+        else:  # Stateless
+            provider_ref = provider_class
 
         # Generate speech for each text string
         for text in args.texts:
             for variant in range(1, args.variants + 1):
                 generate_standalone_speech(
-                    provider=provider,
+                    provider_ref=provider_ref,
                     client=client,
                     speaker_config=speaker_config,
                     text=text,

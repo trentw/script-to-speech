@@ -5,7 +5,8 @@ from typing import Any, Dict, List, Literal, Optional, Set
 
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 
-from ..base.tts_provider import TTSError, TTSProvider, VoiceNotFoundError
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
 # Define valid voice literals - these are the voices supported by the OpenAI API
 VoiceType = Literal[
@@ -13,12 +14,11 @@ VoiceType = Literal[
 ]
 
 
-class OpenAITTSProvider(TTSProvider):
+class OpenAITTSProvider(StatelessTTSProviderBase):
     """
     TTS Provider implementation for OpenAI's Text-to-Speech API.
     """
 
-    IS_STATEFUL = False
     MODEL = "tts-1-hd"
 
     @classmethod
@@ -42,15 +42,9 @@ class OpenAITTSProvider(TTSProvider):
         except Exception as e:
             raise TTSError(f"Failed to initialize OpenAI client: {e}")
 
-    def __init__(self) -> None:
-        super().__init__()  # Important for the __setattr__ check
-
-    def initialize(self) -> None:
-        """Stateless provider, no initialization needed."""
-        pass
-
+    @classmethod
     def generate_audio(
-        self, client: OpenAI, speaker_config: Dict[str, Any], text: str
+        cls, client: OpenAI, speaker_config: Dict[str, Any], text: str
     ) -> bytes:
         """Generate audio for the given speaker and text."""
 
@@ -58,10 +52,10 @@ class OpenAITTSProvider(TTSProvider):
             if client is None:
                 raise TTSError("OpenAI client is not initialized")
 
-            voice = self._get_voice_from_config(speaker_config)
+            voice = cls._get_voice_from_config(speaker_config)
             # Type ignore: The API actually accepts all voices in VoiceType, despite what the type hints suggest
             response = client.audio.speech.create(
-                model=self.MODEL, voice=voice, input=text  # type: ignore
+                model=cls.MODEL, voice=voice, input=text  # type: ignore
             )
             # OpenAI returns a streamable response
             if response is None:
@@ -78,12 +72,14 @@ class OpenAITTSProvider(TTSProvider):
         except Exception as e:
             raise TTSError(f"Failed to generate audio: {e}")
 
-    def get_speaker_identifier(self, speaker_config: Dict[str, Any]) -> str:
+    @classmethod
+    def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
         """Get the voice identifier with model information."""
-        voice = self._get_voice_from_config(speaker_config)
-        return f"{voice}_{self.MODEL}"
+        voice = cls._get_voice_from_config(speaker_config)
+        return f"{voice}_{cls.MODEL}"
 
-    def _get_voice_from_config(self, speaker_config: Dict[str, Any]) -> VoiceType:
+    @classmethod
+    def _get_voice_from_config(cls, speaker_config: Dict[str, Any]) -> VoiceType:
         """Extract and validate the voice from the speaker config."""
         voice = speaker_config.get("voice")
         if not voice or not isinstance(voice, str):
@@ -92,7 +88,7 @@ class OpenAITTSProvider(TTSProvider):
             )
 
         # Ensure we return a valid VoiceType
-        valid_voices = self.get_valid_voices()
+        valid_voices = cls.get_valid_voices()
         if voice not in valid_voices:
             raise VoiceNotFoundError(
                 f"Invalid voice '{voice}'. Must be one of: {', '.join(sorted(valid_voices))}"
@@ -130,16 +126,6 @@ class OpenAITTSProvider(TTSProvider):
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
         return ["voice"]
-
-    @classmethod
-    def get_optional_fields(cls) -> List[str]:
-        """Get optional configuration fields."""
-        return []
-
-    @classmethod
-    def get_metadata_fields(cls) -> List[str]:
-        """Get metadata fields."""
-        return []
 
     @classmethod
     def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:
