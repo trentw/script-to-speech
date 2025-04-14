@@ -31,29 +31,15 @@ class ElevenLabsTTSProvider(StatefulTTSProviderBase):
             raise TTSError(f"Failed to initialize ElevenLabs client: {e}")
 
     def __init__(self) -> None:
-        self.voice_registry_manager: Optional[ElevenLabsVoiceRegistryManager] = None
-        self._init_lock = (
-            threading.Lock()
-        )  # Lock for thread-safe initialization of registry manager
-
-    def initialize(self) -> None:
-        """Initialize the stateful part of the provider (Voice Registry Manager)."""
+        """Initialize the provider with voice registry manager."""
         api_key = os.environ.get("ELEVEN_API_KEY")
         if not api_key:
             raise TTSError("ELEVEN_API_KEY environment variable is not set")
 
-        # Use lock to ensure registry manager is initialized only once if initialize
-        # were ever called concurrently
-        with self._init_lock:
-            if self.voice_registry_manager is None:
-                try:
-                    self.voice_registry_manager = ElevenLabsVoiceRegistryManager(
-                        api_key
-                    )
-                except Exception as e:
-                    raise TTSError(
-                        f"Failed to initialize ElevenLabsVoiceRegistryManager: {e}"
-                    )
+        try:
+            self.voice_registry_manager = ElevenLabsVoiceRegistryManager(api_key)
+        except Exception as e:
+            raise TTSError(f"Failed to initialize ElevenLabsVoiceRegistryManager: {e}")
 
     @classmethod
     def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
@@ -77,12 +63,6 @@ class ElevenLabsTTSProvider(StatefulTTSProviderBase):
 
         # Then get the registry voice ID for actual generation
         try:
-            if self.voice_registry_manager is None:
-                # Attempt to initialize lazily if not done already
-                self.initialize()
-                if self.voice_registry_manager is None:  # Check again after trying init
-                    raise TTSError("Voice registry manager could not be initialized")
-
             registry_voice_id = self.voice_registry_manager.get_library_voice_id(
                 public_voice_id
             )

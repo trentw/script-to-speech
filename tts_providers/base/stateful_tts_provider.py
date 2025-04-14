@@ -11,15 +11,11 @@ class StatefulTTSProviderBase(TTSProviderCommonMixin, abc.ABC):
         """
         Initialize stateful provider instance.
 
-        This is a default implementation that does nothing.
-        Subclasses should override this method to initialize their state.
+        Subclasses must perform all necessary state setup in this method,
+        including complex operations like initializing voice registries.
+        The provider instance should be fully ready to use after __init__ completes.
         """
         pass
-
-    @abc.abstractmethod
-    def initialize(self) -> None:
-        """Perform complex state setup (e.g., voice registries). Can be empty."""
-        raise NotImplementedError
 
     @abc.abstractmethod
     def generate_audio(

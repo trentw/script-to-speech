@@ -50,8 +50,7 @@ def get_provider_class(
 
 
 def generate_standalone_speech(
-    provider_ref: Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase],
-    client: Any,
+    provider_class: Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]],
     speaker_config: Dict[str, Any],
     text: str,
     variant_num: int = 1,
@@ -65,8 +64,7 @@ def generate_standalone_speech(
     Generate speech using specified provider.
 
     Args:
-        provider: TTS provider instance (stateful or stateless)
-        client: Initialized API client for the provider
+        provider_class: TTS provider class (stateful or stateless)
         speaker_config: Configuration dictionary for the specific voice/speaker
         text: Text to convert to speech
         variant_num: Variant number when generating multiple versions
@@ -80,17 +78,19 @@ def generate_standalone_speech(
         # Prepend constant sentence if split mode is enabled
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
 
-        # Generate speech using default speaker
-        # Note: generate_audio is an instance method for StatefulTTSProviderBase
-        # but a class method for StatelessTTSProviderBase
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            # Call instance method directly
-            audio_data = provider_ref.generate_audio(
+        # Instantiate the client
+        client = provider_class.instantiate_client()
+
+        # Generate speech based on provider type
+        if issubclass(provider_class, StatefulTTSProviderBase):
+            # Create and use stateful provider instance
+            provider_instance = provider_class()
+            audio_data = provider_instance.generate_audio(
                 client, speaker_config, generation_text
             )
         else:  # Stateless class
-            # Call class method
-            audio_data = provider_ref.generate_audio(
+            # Call class method directly
+            audio_data = provider_class.generate_audio(
                 client, speaker_config, generation_text
             )
 
@@ -103,19 +103,9 @@ def generate_standalone_speech(
         # Create base filename components
         text_preview = clean_filename(text[:30])
         variant_suffix = f"_variant{variant_num}" if variant_num > 1 else ""
-        # Get provider identifier - this is always a @classmethod in both base classes
-        # For stateful providers, we need to get the class via type(provider_ref)
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            provider_id = type(provider_ref).get_provider_identifier()
-        else:  # Stateless class - we already have the class
-            provider_id = provider_ref.get_provider_identifier()
-
-        # Get speaker identifier - this is always a @classmethod in both base classes
-        # For stateful providers, we need to get the class via type(provider_ref)
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            voice_id = type(provider_ref).get_speaker_identifier(speaker_config)
-        else:  # Stateless class - we already have the class
-            voice_id = provider_ref.get_speaker_identifier(speaker_config)
+        # Get provider and speaker identifiers (directly from class methods)
+        provider_id = provider_class.get_provider_identifier()
+        voice_id = provider_class.get_speaker_identifier(speaker_config)
 
         if split_audio:
             # Process audio through splitter
@@ -309,22 +299,14 @@ def main() -> int:
         # Validate the constructed speaker config using the provider class
         provider_class.validate_speaker_config(speaker_config)
 
-        # Instantiate client and provider
-        client = provider_class.instantiate_client()
-        provider_ref: Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase]
-        if issubclass(provider_class, StatefulTTSProviderBase):
-            provider_instance = provider_class()
-            provider_instance.initialize()
-            provider_ref = provider_instance
-        else:  # Stateless
-            provider_ref = provider_class
+        # Store the provider class reference directly (no instantiation at this point)
+        provider_ref = provider_class
 
         # Generate speech for each text string
         for text in args.texts:
             for variant in range(1, args.variants + 1):
                 generate_standalone_speech(
-                    provider_ref=provider_ref,
-                    client=client,
+                    provider_class=provider_ref,
                     speaker_config=speaker_config,
                     text=text,
                     variant_num=variant if args.variants > 1 else 1,

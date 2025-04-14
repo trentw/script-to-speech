@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+import threading
 from collections import defaultdict
 from io import StringIO
 from typing import Any, Dict, List, Optional, Type, Union
@@ -28,12 +29,17 @@ class TTSProviderManager:
         self._config_path = config_path
         self._overall_provider = overall_provider
         self._provider_refs: Dict[
-            str, Union[Type[StatelessTTSProviderBase], StatefulTTSProviderBase]
+            str, Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]
         ] = {}
         self._speaker_providers: Dict[str, str] = {}
         self._speaker_configs_map: Dict[str, Dict[str, Any]] = {}
         self._provider_clients: Dict[str, Any] = {}
         self._is_initialized = False
+
+        # Dictionaries for thread-safe lazy loading
+        self._stateful_instances: Dict[str, StatefulTTSProviderBase] = {}
+        self._client_locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
+        self._instance_locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
 
     def _ensure_initialized(self) -> None:
         """Ensure config is loaded and providers are initialized."""
@@ -145,17 +151,10 @@ class TTSProviderManager:
             self._speaker_providers[speaker] = provider_name
             required_providers.add(provider_name)
 
-        # Instantiate clients and provider instances
+        # Store provider classes for lazy instantiation
         for provider_name in required_providers:
             provider_class = self._get_provider_class(provider_name)
-            self._provider_clients[provider_name] = provider_class.instantiate_client()
-
-            if issubclass(provider_class, StatefulTTSProviderBase):
-                provider_instance = provider_class()
-                provider_instance.initialize()
-                self._provider_refs[provider_name] = provider_instance
-            else:  # It must be StatelessTTSProviderBase
-                self._provider_refs[provider_name] = provider_class
+            self._provider_refs[provider_name] = provider_class
 
     def get_provider_for_speaker(self, speaker: str) -> str:
         """
@@ -223,16 +222,36 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        provider_ref = self._provider_refs[provider_name]
-        client = self._provider_clients[provider_name]
+        provider_class = self._provider_refs[provider_name]
         speaker_config = self._speaker_configs_map[speaker]
 
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            # Call instance method
-            return provider_ref.generate_audio(client, speaker_config, text)
-        else:  # It's the StatelessTTSProviderBase class
-            # Call class method
-            return provider_ref.generate_audio(client, speaker_config, text)
+        # Lazy instantiation of client with thread safety
+        client = self._provider_clients.get(provider_name)
+        if not client:
+            with self._client_locks[provider_name]:
+                # Double-check after acquiring lock
+                client = self._provider_clients.get(provider_name)
+                if not client:
+                    client = provider_class.instantiate_client()
+                    self._provider_clients[provider_name] = client
+
+        # Handling based on provider type (stateful vs stateless)
+        if issubclass(provider_class, StatefulTTSProviderBase):
+            # Lazy instantiation of stateful provider with thread safety
+            instance = self._stateful_instances.get(provider_name)
+            if not instance:
+                with self._instance_locks[provider_name]:
+                    # Double-check after acquiring lock
+                    instance = self._stateful_instances.get(provider_name)
+                    if not instance:
+                        instance = provider_class()
+                        self._stateful_instances[provider_name] = instance
+
+            # Use the instance to generate audio
+            return instance.generate_audio(client, speaker_config, text)
+        else:
+            # For stateless providers, call the class method directly
+            return provider_class.generate_audio(client, speaker_config, text)
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -251,16 +270,10 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        provider_ref = self._provider_refs[provider_name]
+        provider_class = self._provider_refs[provider_name]
         speaker_config = self._speaker_configs_map[speaker]
 
-        # get_speaker_identifier is always a @classmethod now
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            # Call class method via the instance's type
-            return type(provider_ref).get_speaker_identifier(speaker_config)
-        else:  # It's the StatelessTTSProviderBase class
-            # Call class method directly
-            return provider_ref.get_speaker_identifier(speaker_config)
+        return provider_class.get_speaker_identifier(speaker_config)
 
     def get_provider_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -279,12 +292,9 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        provider_ref = self._provider_refs[provider_name]
+        provider_class = self._provider_refs[provider_name]
 
-        if isinstance(provider_ref, StatefulTTSProviderBase):
-            return type(provider_ref).get_provider_identifier()
-        else:  # It's the StatelessTTSProviderBase class
-            return provider_ref.get_provider_identifier()
+        return provider_class.get_provider_identifier()
 
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """
