@@ -110,8 +110,11 @@ class TestElevenLabsTTSProvider:
         ):
             ElevenLabsTTSProvider.instantiate_client()
 
-    def test_get_speaker_identifier(self):
+    @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
+    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
+    def test_get_speaker_identifier(self, mock_registry_manager):
         """Test get_speaker_identifier method."""
+        # Initialize provider with mocked dependencies
         provider = ElevenLabsTTSProvider()
 
         # Test with direct config dictionary
