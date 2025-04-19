@@ -187,7 +187,11 @@ class TTSProviderManager:
 
         for item in os.listdir(provider_dir):
             dir_path = os.path.join(provider_dir, item)
-            if os.path.isdir(dir_path) and item not in ["base", "__pycache__"]:
+            if os.path.isdir(dir_path) and item not in [
+                "base",
+                "__pycache__",
+                "dummy_common",
+            ]:
                 try:
                     # Try to load the provider to verify it's valid
                     cls._get_provider_class(item)
