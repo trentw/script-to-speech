@@ -14,13 +14,13 @@ import pytest
 from audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
 from audio_generation.processing import (
     apply_cache_overrides,
-    check_audio_silence,
     check_for_silence,
     determine_speaker,
     generate_chunk_hash,
     plan_audio_generation,
     update_cache_duplicate_state,
 )
+from audio_generation.utils import check_audio_silence
 
 
 @pytest.fixture
@@ -596,7 +596,7 @@ class TestCheckForSilence:
 
         mock_logger.info.assert_called_with("Silence checking disabled. Skipping.")
 
-    @patch("audio_generation.processing.check_audio_silence")
+    @patch("audio_generation.utils.check_audio_silence")
     @patch("builtins.open")
     def test_check_silent_clip(
         self, mock_open, mock_check_silence, sample_silence_tasks, mock_logger
@@ -640,7 +640,7 @@ class TestCheckForSilence:
             mock_check_silence.call_count == 1
         )  # Only one task should be checked (non-silent cache hit)
 
-    @patch("audio_generation.processing.check_audio_silence")
+    @patch("audio_generation.utils.check_audio_silence")
     @patch("builtins.open")
     def test_check_non_silent_clip(
         self, mock_open, mock_check_silence, sample_silence_tasks, mock_logger
@@ -695,7 +695,7 @@ class TestCheckForSilence:
 
         # Act
         with patch("builtins.open") as mock_open, patch(
-            "audio_generation.processing.check_audio_silence"
+            "audio_generation.utils.check_audio_silence"
         ) as mock_check_silence:
             # Setup our side effect
             mock_check_silence.side_effect = capture_task_side_effect

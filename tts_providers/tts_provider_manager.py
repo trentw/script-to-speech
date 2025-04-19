@@ -296,6 +296,27 @@ class TTSProviderManager:
 
         return provider_class.get_provider_identifier()
 
+    def get_max_provider_download_threads(self, provider_name: str) -> int:
+        """
+        Get the max number of concurrent download threads for a provider.
+
+        Args:
+            provider_name: The name of the provider to get concurrency limit for
+
+        Returns:
+            int: The recommended number of concurrent threads for this provider
+
+        Raises:
+            ValueError: If the provider is not found
+        """
+        self._ensure_initialized()
+
+        if provider_name not in self._provider_refs:
+            raise ValueError(f"Provider '{provider_name}' not found")
+
+        provider_class = self._provider_refs[provider_name]
+        return provider_class.get_max_download_threads()
+
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """
         Get speaker configuration from appropriate provider.

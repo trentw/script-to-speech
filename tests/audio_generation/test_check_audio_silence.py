@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from audio_generation.models import AudioGenerationTask, ReportingState
-from audio_generation.processing import check_audio_silence
+from audio_generation.utils import check_audio_silence
 
 
 @pytest.fixture

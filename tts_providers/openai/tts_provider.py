@@ -5,7 +5,11 @@ from typing import Any, Dict, List, Literal, Optional, Set
 
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.exceptions import (
+    TTSError,
+    TTSRateLimitError,
+    VoiceNotFoundError,
+)
 from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
 # Define valid voice literals - these are the voices supported by the OpenAI API
@@ -43,6 +47,16 @@ class OpenAITTSProvider(StatelessTTSProviderBase):
             raise TTSError(f"Failed to initialize OpenAI client: {e}")
 
     @classmethod
+    def get_max_download_threads(cls) -> int:
+        """
+        Get the max number of concurrent download threads for OpenAI provider.
+
+        Returns:
+            int: Returns 7 concurrent threads
+        """
+        return 7
+
+    @classmethod
     def generate_audio(
         cls, client: OpenAI, speaker_config: Dict[str, Any], text: str
     ) -> bytes:
@@ -66,7 +80,8 @@ class OpenAITTSProvider(StatelessTTSProviderBase):
         except AuthenticationError as e:
             raise TTSError(f"Authentication failed: {e}")
         except RateLimitError as e:
-            raise TTSError(f"Rate limit exceeded: {e}")
+            # Convert OpenAI rate limit errors to our common exception type
+            raise TTSRateLimitError(f"OpenAI rate limit exceeded: {e}")
         except APIError as e:
             raise TTSError(f"OpenAI API error: {e}")
         except Exception as e:

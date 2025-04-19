@@ -48,3 +48,18 @@ class TTSProviderCommonMixin(abc.ABC):
     def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
         """Get unique voice identifier from config (e.g., voice ID + model)."""
         raise NotImplementedError
+
+    @classmethod
+    def get_max_download_threads(cls) -> int:
+        """
+        Get the max number of concurrent download threads for this provider.
+
+        Each TTS provider has different rate limits and concurrency capabilities.
+        This method allows each provider to specify how many concurrent API calls
+        it can efficiently handle without triggering rate limits.
+
+        Returns:
+            int: The max number of concurrent threads for this provider.
+                Default is 1
+        """
+        return 1

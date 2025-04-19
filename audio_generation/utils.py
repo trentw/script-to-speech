@@ -10,22 +10,10 @@ from pydub import AudioSegment
 
 from utils.logging import get_screenplay_logger
 
+from .models import AudioClipInfo, AudioGenerationTask, ReportingState
+
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.utils")
-
-
-def check_audio_level(audio_data: bytes) -> Optional[float]:
-    """Check audio data for silence level."""
-    try:
-        if not audio_data:
-            return None
-
-        audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
-        return float(audio_segment.max_dBFS)
-    except Exception as e:
-        # Log the error but don't raise, allow calling function to decide how to handle None
-        logger.error(f"Error analyzing audio level: {e}")
-        return None
 
 
 def concatenate_audio_clips(
@@ -182,3 +170,69 @@ def truncate_text(text: str, max_length: int = 40) -> str:
         truncated_text = text[: max_length - 3] + "..."
 
     return truncated_text
+
+
+def check_audio_level(audio_data: bytes) -> Optional[float]:
+    """Check audio data for silence level."""
+    try:
+        if not audio_data:
+            return None
+
+        audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_data))
+        return float(audio_segment.max_dBFS)
+    except Exception as e:
+        # Log the error but don't raise, allow calling function to decide how to handle None
+        logger.error(f"Error analyzing audio level: {e}")
+        return None
+
+
+def check_audio_silence(
+    task: AudioGenerationTask,
+    audio_data: bytes,
+    silence_threshold: float,
+    reporting_state: ReportingState,
+    log_prefix: str = "",
+) -> bool:
+    """
+    Checks if audio data is silent based on the given threshold.
+    Updates the task's checked_silence_level and adds to reporting state if silent.
+
+    Args:
+        task: The AudioGenerationTask to check
+        audio_data: The audio data bytes to check
+        silence_threshold: The dBFS threshold for silence detection
+        reporting_state: The ReportingState to update if silent
+        log_prefix: Optional prefix for log messages
+
+    Returns:
+        True if the audio is silent (below threshold), False otherwise
+    """
+    if task.expected_silence:
+        # Skip silence check for intentionally silent audio
+        return False
+
+    max_dbfs = check_audio_level(audio_data)
+    task.checked_silence_level = max_dbfs
+    logger.debug(f"{log_prefix}Audio level (dBFS): {max_dbfs}")
+
+    if max_dbfs is not None and max_dbfs < silence_threshold:
+        truncated_text = truncate_text(task.text_to_speak)
+
+        logger.warning(
+            f'{log_prefix}Silent clip detected for task #{task.idx} ("{truncated_text}")'
+        )
+        logger.warning(
+            f"{log_prefix}Audio level {max_dbfs:.2f} dBFS is below threshold {silence_threshold} dBFS."
+        )
+        # Add to silent clips if not already there
+        if task.cache_filename not in reporting_state.silent_clips:
+            reporting_state.silent_clips[task.cache_filename] = AudioClipInfo(
+                text=task.text_to_speak,
+                cache_path=task.cache_filename,
+                dbfs_level=max_dbfs,
+                speaker_display=task.speaker_display,
+                speaker_id=task.speaker_id,
+                provider_id=task.provider_id,
+            )
+        return True
+    return False

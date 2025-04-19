@@ -3,11 +3,16 @@ import threading
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
+import requests
 import yaml
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.exceptions import (
+    TTSError,
+    TTSRateLimitError,
+    VoiceNotFoundError,
+)
 from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
 
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
@@ -54,6 +59,16 @@ class ElevenLabsTTSProvider(StatefulTTSProviderBase):
             )
         return str(voice_id)
 
+    @classmethod
+    def get_max_download_threads(cls) -> int:
+        """
+        Get the max number of concurrent download threads for ElevenLabs.
+
+        Returns:
+            int: Returns 5 concurrent threads
+        """
+        return 5
+
     def generate_audio(
         self, client: ElevenLabs, speaker_config: Dict[str, Any], text: str
     ) -> bytes:
@@ -94,7 +109,19 @@ class ElevenLabsTTSProvider(StatefulTTSProviderBase):
 
             return audio_data
 
+        except requests.HTTPError as e:
+            # Handle HTTP errors directly from requests
+            if e.response is not None and e.response.status_code == 429:
+                raise TTSRateLimitError(f"ElevenLabs rate limit exceeded: {e}")
+            raise TTSError(f"HTTP error when calling ElevenLabs: {e}")
         except Exception as e:
+            # Check for HTTP 429 in string representation as a last resort
+            if (
+                "429" in str(e)
+                or "too many concurrent requests" in str(e).lower()
+                or "system busy" in str(e).lower()
+            ):
+                raise TTSRateLimitError(f"ElevenLabs rate limit exceeded: {e}")
             raise TTSError(f"Failed to generate audio: {e}")
 
     @classmethod

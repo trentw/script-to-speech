@@ -349,7 +349,7 @@ def test_fetch_generate_silent_audio(
     assert fetch_tasks[2].is_cache_hit is True  # Now a cache hit
 
 
-@patch("audio_generation.processing.check_audio_silence")
+@patch("audio_generation.utils.check_audio_silence")
 @patch("builtins.open")
 @patch("os.makedirs")
 def test_fetch_with_silence_checking(
@@ -419,7 +419,7 @@ def test_fetch_with_real_duplicate_detection(
     )
 
 
-@patch("audio_generation.processing.check_audio_silence")
+@patch("audio_generation.utils.check_audio_silence")
 @patch("builtins.open")
 @patch("os.makedirs")
 def test_fetch_with_silence_detection(
