@@ -11,7 +11,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
+from audio_generation.models import (
+    AudioClipInfo,
+    AudioGenerationTask,
+    ReportingState,
+    TaskStatus,
+)
 from audio_generation.processing import (
     apply_cache_overrides,
     check_for_silence,
@@ -419,6 +424,8 @@ class TestApplyCacheOverrides:
                 cache_filepath="/path/to/cache/hash1~~hash2~~elevenlabs~~voice_id_123.mp3",
                 is_cache_hit=False,
                 is_override_available=True,  # Has an override available
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
             AudioGenerationTask(
                 idx=1,
@@ -441,6 +448,8 @@ class TestApplyCacheOverrides:
                 cache_filepath="/path/to/cache/hash3~~hash4~~openai~~voice_id_456.mp3",
                 is_cache_hit=False,
                 is_override_available=False,  # No override available
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
         ]
 
@@ -531,6 +540,8 @@ class TestCheckForSilence:
                 cache_filepath="/path/to/cache/empty~~empty~~elevenlabs~~none.mp3",
                 is_cache_hit=True,
                 expected_silence=True,
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
             # Cache hit that should be checked for silence
             AudioGenerationTask(
@@ -554,6 +565,8 @@ class TestCheckForSilence:
                 cache_filepath="/path/to/cache/hash1~~hash2~~elevenlabs~~voice_id_123.mp3",
                 is_cache_hit=True,
                 expected_silence=False,
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
             # Cache miss that doesn't need silence checking
             AudioGenerationTask(
@@ -577,6 +590,8 @@ class TestCheckForSilence:
                 cache_filepath="/path/to/cache/hash3~~hash4~~openai~~voice_id_456.mp3",
                 is_cache_hit=False,
                 expected_silence=False,
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
         ]
 
@@ -596,7 +611,7 @@ class TestCheckForSilence:
 
         mock_logger.info.assert_called_with("Silence checking disabled. Skipping.")
 
-    @patch("audio_generation.utils.check_audio_silence")
+    @patch("audio_generation.processing.check_audio_silence")
     @patch("builtins.open")
     def test_check_silent_clip(
         self, mock_open, mock_check_silence, sample_silence_tasks, mock_logger
@@ -607,7 +622,10 @@ class TestCheckForSilence:
         mock_file.__enter__.return_value.read.return_value = b"audio_data"
         mock_open.return_value = mock_file
 
-        # Setup mock to actually update the reporting state
+        # Explicitly ensure the task is marked as a cache hit before the test
+        sample_silence_tasks[1].is_cache_hit = True
+
+        # Setup mock to actually update the reporting state and return True (silent)
         def mock_check_silence_fn(
             task, audio_data, silence_threshold, reporting_state, log_prefix
         ):
@@ -630,10 +648,10 @@ class TestCheckForSilence:
             silence_threshold=-40.0,
         )
 
-        # Assert
+        # Assert - explicitly check that is_cache_hit is now False after the check
         assert (
             sample_silence_tasks[1].is_cache_hit is False
-        )  # Now marked as a miss because it's silent
+        ), "Task should no longer be a cache hit after being marked as silent"
         assert len(reporting_state.silent_clips) == 1
         assert sample_silence_tasks[1].cache_filename in reporting_state.silent_clips
         assert (
@@ -695,7 +713,7 @@ class TestCheckForSilence:
 
         # Act
         with patch("builtins.open") as mock_open, patch(
-            "audio_generation.utils.check_audio_silence"
+            "audio_generation.processing.check_audio_silence"
         ) as mock_check_silence:
             # Setup our side effect
             mock_check_silence.side_effect = capture_task_side_effect
@@ -705,6 +723,20 @@ class TestCheckForSilence:
             mock_file.__enter__.return_value.read.return_value = b"audio_data"
             mock_open.return_value = mock_file
 
+            # Ensure task states are correctly set
+            # Task 0 is a silent cache hit that should be skipped due to expected_silence=True
+            sample_silence_tasks[0].is_cache_hit = True
+            sample_silence_tasks[0].expected_silence = True
+
+            # Task 1 is a non-silent cache hit that should be checked
+            sample_silence_tasks[1].is_cache_hit = True
+            sample_silence_tasks[1].expected_silence = False
+
+            # Task 2 is a cache miss that should be skipped
+            sample_silence_tasks[2].is_cache_hit = False
+            sample_silence_tasks[2].expected_silence = False
+
+            # Run the test
             check_for_silence(
                 tasks=sample_silence_tasks,
                 silence_threshold=-40.0,
@@ -712,10 +744,12 @@ class TestCheckForSilence:
 
         # Assert
         # Verify exactly one task was checked
-        assert len(captured_tasks) == 1
+        assert (
+            len(captured_tasks) == 1
+        ), "Expected exactly 1 task to be checked, got {}".format(len(captured_tasks))
 
         # Verify it was the right task (index 1 - the non-silent cache hit)
-        assert captured_tasks[0] is sample_silence_tasks[1]
+        assert captured_tasks[0] is sample_silence_tasks[1], "Wrong task was captured"
 
         # Verify open was called for the right file
         mock_open.assert_called_once_with(sample_silence_tasks[1].cache_filepath, "rb")
@@ -749,6 +783,8 @@ class TestUpdateCacheDuplicateState:
                 cache_filepath="/path/to/cache/duplicate.mp3",
                 is_cache_hit=False,
                 expected_cache_duplicate=False,  # Initial state
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
             AudioGenerationTask(
                 idx=1,
@@ -771,6 +807,8 @@ class TestUpdateCacheDuplicateState:
                 cache_filepath="/path/to/cache/unique.mp3",
                 is_cache_hit=False,
                 expected_cache_duplicate=False,
+                status=TaskStatus.PENDING,
+                retry_count=0,
             ),
             AudioGenerationTask(
                 idx=2,
@@ -908,6 +946,8 @@ class TestCheckAudioSilence:
             cache_filepath="/path/to/cache/hash1~~hash2~~elevenlabs~~voice_id_123.mp3",
             is_cache_hit=True,
             expected_silence=False,
+            status=TaskStatus.PENDING,
+            retry_count=0,
         )
 
     @pytest.fixture
@@ -926,9 +966,17 @@ class TestCheckAudioSilence:
             cache_filepath="/path/to/cache/empty~~empty~~elevenlabs~~none.mp3",
             is_cache_hit=True,
             expected_silence=True,
+            status=TaskStatus.PENDING,
+            retry_count=0,
         )
 
-    @patch("audio_generation.processing.check_audio_level")
+    @pytest.fixture
+    def mock_logger(self):
+        """Fixture providing a mock logger."""
+        with patch("audio_generation.utils.logger") as mock:
+            yield mock
+
+    @patch("audio_generation.utils.check_audio_level")
     def test_silent_clip(self, mock_check_level, silence_task, mock_logger):
         """Test checking a clip that is silent."""
         # Arrange
@@ -950,7 +998,7 @@ class TestCheckAudioSilence:
         assert len(reporting_state.silent_clips) == 1
         assert silence_task.cache_filename in reporting_state.silent_clips
 
-    @patch("audio_generation.processing.check_audio_level")
+    @patch("audio_generation.utils.check_audio_level")
     def test_non_silent_clip(self, mock_check_level, silence_task, mock_logger):
         """Test checking a clip that is not silent."""
         # Arrange
@@ -971,7 +1019,7 @@ class TestCheckAudioSilence:
         assert silence_task.checked_silence_level == -20.0
         assert len(reporting_state.silent_clips) == 0
 
-    @patch("audio_generation.processing.check_audio_level")
+    @patch("audio_generation.utils.check_audio_level")
     def test_expected_silence_skipped(
         self, mock_check_level, expected_silence_task, mock_logger
     ):
@@ -993,8 +1041,8 @@ class TestCheckAudioSilence:
         mock_check_level.assert_not_called()
         assert len(reporting_state.silent_clips) == 0
 
-    @patch("audio_generation.processing.check_audio_level")
-    @patch("audio_generation.processing.truncate_text")
+    @patch("audio_generation.utils.check_audio_level")
+    @patch("audio_generation.utils.truncate_text")
     def test_with_log_prefix(
         self, mock_truncate, mock_check_level, silence_task, mock_logger
     ):
@@ -1024,7 +1072,58 @@ class TestCheckAudioSilence:
 
         assert prefix_used, "Log prefix not used in any warning messages"
 
-    @patch("audio_generation.processing.check_audio_level")
+    @patch("audio_generation.utils.check_audio_level")
+    def test_none_level_handled(self, mock_check_level, silence_task, mock_logger):
+        """Test handling of None returned from check_audio_level."""
+        # Arrange
+        mock_check_level.return_value = None
+        reporting_state = ReportingState()
+
+        # Act
+        result = check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="",
+        )
+
+        # Assert
+        assert result is False  # Not silent (can't determine)
+        assert len(reporting_state.silent_clips) == 0
+
+    @patch("audio_generation.utils.check_audio_level")
+    @patch("audio_generation.utils.truncate_text")
+    def test_with_log_prefix(
+        self, mock_truncate, mock_check_level, silence_task, mock_logger
+    ):
+        """Test logging with a prefix."""
+        # Arrange
+        mock_check_level.return_value = -60.0
+        mock_truncate.return_value = "Hello..."
+        reporting_state = ReportingState()
+
+        # Act
+        check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="PREFIX: ",
+        )
+
+        # Assert
+        # Check that at least one warning log message uses the prefix
+        prefix_used = False
+        for call in mock_logger.warning.call_args_list:
+            args, kwargs = call
+            if args and isinstance(args[0], str) and args[0].startswith("PREFIX:"):
+                prefix_used = True
+                break
+
+        assert prefix_used, "Log prefix not used in any warning messages"
+
+    @patch("audio_generation.utils.check_audio_level")
     def test_none_level_handled(self, mock_check_level, silence_task, mock_logger):
         """Test handling of None returned from check_audio_level."""
         # Arrange
