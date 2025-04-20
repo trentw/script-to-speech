@@ -1,33 +1,52 @@
 import importlib
 import json
 import os
+import threading
 from collections import defaultdict
 from io import StringIO
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
-from .base.tts_provider import TTSProvider
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
 
 class TTSProviderManager:
     """Manages TTS providers and handles audio generation delegation."""
 
-    def __init__(self, config_path: str, overall_provider: Optional[str] = None):
+    def __init__(
+        self,
+        config_path: str,
+        overall_provider: Optional[str] = None,
+        dummy_provider_override: bool = False,
+    ):
         """
         Initialize the TTS Manager.
 
         Args:
             config_path: Path to YAML configuration file
             overall_provider: Optional provider to use when provider isn't specified in config
+            dummy_provider_override: If True, override all providers with dummy providers
         """
         self._config_path = config_path
         self._overall_provider = overall_provider
-        self._providers: Dict[str, TTSProvider] = {}
+        self._dummy_provider_override = dummy_provider_override
+        self._provider_refs: Dict[
+            str, Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]
+        ] = {}
         self._speaker_providers: Dict[str, str] = {}
+        self._speaker_configs_map: Dict[str, Dict[str, Any]] = {}
+        self._provider_clients: Dict[str, Any] = {}
         self._is_initialized = False
+
+        # Dictionaries for thread-safe lazy loading
+        self._stateful_instances: Dict[str, StatefulTTSProviderBase] = {}
+        self._client_locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
+        self._instance_locks: Dict[str, threading.Lock] = defaultdict(threading.Lock)
 
     def _ensure_initialized(self) -> None:
         """Ensure config is loaded and providers are initialized."""
@@ -36,7 +55,9 @@ class TTSProviderManager:
             self._is_initialized = True
 
     @classmethod
-    def _get_provider_class(cls, provider_name: str) -> Type[TTSProvider]:
+    def _get_provider_class(
+        cls, provider_name: str
+    ) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
         """
         Dynamically import and return the provider class based on provider name.
 
@@ -60,8 +81,10 @@ class TTSProviderManager:
                 attr = getattr(module, attr_name)
                 if (
                     isinstance(attr, type)
-                    and issubclass(attr, TTSProvider)
-                    and attr != TTSProvider
+                    and issubclass(
+                        attr, (StatelessTTSProviderBase, StatefulTTSProviderBase)
+                    )
+                    and attr not in (StatelessTTSProviderBase, StatefulTTSProviderBase)
                     and attr.get_provider_identifier() == provider_name
                 ):
                     return attr
@@ -91,30 +114,104 @@ class TTSProviderManager:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
 
-        # Group speakers by provider
-        provider_configs: Dict[str, Dict[str, Dict[str, Any]]] = defaultdict(dict)
+        if not isinstance(config, dict):
+            raise ValueError(
+                f"Invalid YAML format in {config_path}: root must be a mapping"
+            )
+
+        # Store speaker configs and determine required providers
+        required_providers = set()
+        self._speaker_configs_map.clear()
+        self._speaker_providers.clear()
+
+        if not config:
+            raise ValueError(f"Voice configuration file '{config_path}' is empty.")
 
         for speaker, speaker_config in config.items():
+            if not isinstance(speaker_config, dict):
+                raise ValueError(
+                    f"Configuration for speaker '{speaker}' in {config_path} must be a mapping, not {type(speaker_config)}"
+                )
+
             # Get provider from config or use overall provider
             provider_name = speaker_config.get("provider")
             if not provider_name and self._overall_provider is not None:
                 provider_name = self._overall_provider
+                # Add overall provider to speaker config if missing
+                speaker_config["provider"] = provider_name
             elif not provider_name:
                 raise ValueError(
                     f"No provider specified for speaker '{speaker}' and no overall provider set"
                 )
 
-            # Store speaker config for this provider
-            provider_configs[provider_name][speaker] = speaker_config
-            self._speaker_providers[speaker] = provider_name
-
-        # Initialize providers with their configs
-        for provider_name, speaker_configs in provider_configs.items():
-            if provider_name not in self._providers:
+            # Validate speaker config using the provider's static method
+            try:
                 provider_class = self._get_provider_class(provider_name)
-                provider = provider_class()
-                provider.initialize(speaker_configs)
-                self._providers[provider_name] = provider
+                provider_class.validate_speaker_config(speaker_config)
+            except (ValueError, TypeError) as e:
+                raise ValueError(
+                    f"Invalid configuration for speaker '{speaker}' using provider '{provider_name}': {e}"
+                )
+
+            # If dummy provider override is enabled, prepare to swap providers
+            original_provider_name = provider_name
+            if self._dummy_provider_override:
+                # Determine if the original provider is stateful or stateless
+                provider_class = self._get_provider_class(original_provider_name)
+                if issubclass(provider_class, StatefulTTSProviderBase):
+                    provider_name = "dummy_stateful"
+                else:
+                    provider_name = "dummy_stateless"
+
+                # Add dummy_id if it doesn't exist
+                self._add_dummy_id_to_config(speaker_config, provider_class)
+
+                # Update the provider in the speaker config
+                speaker_config["provider"] = provider_name
+
+                # Re-validate with the new dummy provider
+                dummy_provider_class = self._get_provider_class(provider_name)
+                dummy_provider_class.validate_speaker_config(speaker_config)
+
+            # Store validated config and provider mapping
+            self._speaker_configs_map[speaker] = speaker_config
+            self._speaker_providers[speaker] = provider_name
+            required_providers.add(provider_name)
+
+        # Store provider classes for lazy instantiation
+        for provider_name in required_providers:
+            provider_class = self._get_provider_class(provider_name)
+            self._provider_refs[provider_name] = provider_class
+
+    def _add_dummy_id_to_config(
+        self, speaker_config: Dict[str, Any], original_provider_class: Type
+    ) -> None:
+        """
+        Add a dummy_id to the speaker config if it doesn't exist.
+
+        Uses the first required field from the original provider as the dummy_id value.
+
+        Args:
+            speaker_config: The speaker configuration to modify
+            original_provider_class: The original provider class
+        """
+        # Skip if dummy_id already exists
+        if "dummy_id" in speaker_config:
+            return
+
+        # Get the required fields from the original provider
+        required_fields = original_provider_class.get_required_fields()
+
+        # Find the first required field that's not 'provider'
+        dummy_id_value = None
+        for field in required_fields:
+            if field != "provider" and field in speaker_config:
+                dummy_id_value = speaker_config[field]
+                break
+
+        # If we found a value, add it as dummy_id
+        if dummy_id_value is not None:
+            speaker_config["dummy_id"] = str(dummy_id_value)
 
     def get_provider_for_speaker(self, speaker: str) -> str:
         """
@@ -147,7 +244,11 @@ class TTSProviderManager:
 
         for item in os.listdir(provider_dir):
             dir_path = os.path.join(provider_dir, item)
-            if os.path.isdir(dir_path) and item not in ["base", "__pycache__"]:
+            if os.path.isdir(dir_path) and item not in [
+                "base",
+                "__pycache__",
+                "dummy_common",
+            ]:
                 try:
                     # Try to load the provider to verify it's valid
                     cls._get_provider_class(item)
@@ -182,7 +283,36 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].generate_audio(speaker, text)
+        provider_class = self._provider_refs[provider_name]
+        speaker_config = self._speaker_configs_map[speaker]
+
+        # Lazy instantiation of client with thread safety
+        client = self._provider_clients.get(provider_name)
+        if not client:
+            with self._client_locks[provider_name]:
+                # Double-check after acquiring lock
+                client = self._provider_clients.get(provider_name)
+                if not client:
+                    client = provider_class.instantiate_client()
+                    self._provider_clients[provider_name] = client
+
+        # Handling based on provider type (stateful vs stateless)
+        if issubclass(provider_class, StatefulTTSProviderBase):
+            # Lazy instantiation of stateful provider with thread safety
+            instance = self._stateful_instances.get(provider_name)
+            if not instance:
+                with self._instance_locks[provider_name]:
+                    # Double-check after acquiring lock
+                    instance = self._stateful_instances.get(provider_name)
+                    if not instance:
+                        instance = provider_class()
+                        self._stateful_instances[provider_name] = instance
+
+            # Use the instance to generate audio
+            return instance.generate_audio(client, speaker_config, text)
+        else:
+            # For stateless providers, call the class method directly
+            return provider_class.generate_audio(client, speaker_config, text)
 
     def get_speaker_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -201,7 +331,10 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_speaker_identifier(speaker)
+        provider_class = self._provider_refs[provider_name]
+        speaker_config = self._speaker_configs_map[speaker]
+
+        return provider_class.get_speaker_identifier(speaker_config)
 
     def get_provider_identifier(self, speaker: Optional[str]) -> str:
         """
@@ -220,7 +353,30 @@ class TTSProviderManager:
             speaker = "default"
 
         provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_provider_identifier()
+        provider_class = self._provider_refs[provider_name]
+
+        return provider_class.get_provider_identifier()
+
+    def get_max_provider_download_threads(self, provider_name: str) -> int:
+        """
+        Get the max number of concurrent download threads for a provider.
+
+        Args:
+            provider_name: The name of the provider to get concurrency limit for
+
+        Returns:
+            int: The recommended number of concurrent threads for this provider
+
+        Raises:
+            ValueError: If the provider is not found
+        """
+        self._ensure_initialized()
+
+        if provider_name not in self._provider_refs:
+            raise ValueError(f"Provider '{provider_name}' not found")
+
+        provider_class = self._provider_refs[provider_name]
+        return provider_class.get_max_download_threads()
 
     def get_speaker_configuration(self, speaker: Optional[str]) -> Dict[str, Any]:
         """
@@ -238,8 +394,11 @@ class TTSProviderManager:
         if not speaker:
             speaker = "default"
 
-        provider_name = self.get_provider_for_speaker(speaker)
-        return self._providers[provider_name].get_speaker_configuration(speaker)
+        if speaker not in self._speaker_configs_map:
+            raise VoiceNotFoundError(
+                f"No configuration found for speaker '{speaker}'"
+            )  # Use specific error
+        return self._speaker_configs_map[speaker]
 
     ####
     # Voice Configuration YAML generation

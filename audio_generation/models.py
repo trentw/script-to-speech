@@ -1,5 +1,18 @@
 from dataclasses import dataclass, field
+from enum import Enum, auto
 from typing import Any, Dict, Optional
+
+
+class TaskStatus(Enum):
+    """Status of an audio generation task"""
+
+    PENDING = auto()  # Task is waiting to be processed
+    PROCESSING = auto()  # Task is currently being processed
+    CACHED = auto()  # Audio was already in cache or override was applied
+    GENERATED = auto()  # Audio was successfully generated and cached
+    FAILED_RATE_LIMIT = auto()  # Task failed due to rate limit (will be retried)
+    FAILED_OTHER = auto()  # Task failed due to other error (will not be retried)
+    SKIPPED_DUPLICATE = auto()  # Task was skipped because a duplicate task handled it
 
 
 @dataclass
@@ -40,6 +53,8 @@ class AudioGenerationTask:
     checked_override: bool = False  # Checked if override file exists during planning
     checked_cache: bool = False  # Checked if cache file exists during planning
     checked_silence_level: Optional[float] = None  # Store level if checked
+    status: TaskStatus = TaskStatus.PENDING  # Current status of the task
+    retry_count: int = 0  # Number of times this task has been retried
 
 
 @dataclass

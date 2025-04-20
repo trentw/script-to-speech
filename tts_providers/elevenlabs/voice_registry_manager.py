@@ -1,3 +1,4 @@
+import threading
 from collections import OrderedDict
 from typing import Dict, Optional, Tuple
 
@@ -30,13 +31,14 @@ class ElevenLabsVoiceRegistryManager:
         # Maintains order of voice usage for LRU management
         self.voice_usage_order: OrderedDict[str, None] = OrderedDict()
         self.is_initialized = False
+        self._lock = threading.Lock()  # Added lock for thread safety
 
     def _initialize_voice_registry(self) -> None:
         """
         Initialize the voice registry by querying current voices.
         Maps public voice IDs to registry-specific IDs while maintaining LRU order.
         """
-        logger.info("Initializing voice registry mapping")
+        logger.debug("Initializing voice registry mapping")
         response = self.client.voices.get_all()
 
         # Clear existing registry
@@ -108,7 +110,7 @@ class ElevenLabsVoiceRegistryManager:
 
         self.voice_usage_order = valid_usage_order
 
-        logger.info(
+        logger.debug(
             f"Initialized voice registry with {len(self.voice_registry)} voices "
             f"({len(self.voice_usage_order)} non-premade)"
         )
@@ -247,41 +249,44 @@ class ElevenLabsVoiceRegistryManager:
         Raises:
             RuntimeError: If the voice cannot be added to the registry
         """
-        # Initialize if needed
-        if not self.is_initialized:
-            self._initialize_voice_registry()
+        with self._lock:
+            # Initialize if needed
+            if not self.is_initialized:
+                self._initialize_voice_registry()
 
-        # Verify initialization was successful
-        if not self.is_initialized:
-            raise RuntimeError("Voice registry initialization failed")
+            # Verify initialization was successful
+            if not self.is_initialized:
+                raise RuntimeError("Voice registry initialization failed")
 
-        # Update LRU cache if it's a non-premade voice
-        if public_voice_id in self.voice_usage_order:
-            self.voice_usage_order.move_to_end(public_voice_id)
+            # Update LRU cache if it's a non-premade voice
+            if public_voice_id in self.voice_usage_order:
+                self.voice_usage_order.move_to_end(public_voice_id)
 
-        # Check if voice is already in registry
-        if public_voice_id in self.voice_registry:
-            registry_id, _ = self.voice_registry[public_voice_id]
-            return registry_id
+            # Check if voice is already in registry
+            if public_voice_id in self.voice_registry:
+                registry_id, _ = self.voice_registry[public_voice_id]
+                return registry_id
 
-        # Count non-premade voices
-        non_premade_count = sum(
-            1 for _, category in self.voice_registry.values() if category != "premade"
-        )
+            # Count non-premade voices
+            non_premade_count = sum(
+                1
+                for _, category in self.voice_registry.values()
+                if category != "premade"
+            )
 
-        # Make room if needed
-        if non_premade_count >= 30:
-            self._make_room_in_registry()
+            # Make room if needed
+            if non_premade_count >= 30:
+                self._make_room_in_registry()
 
-        # Find voice owner
-        public_owner_id = self._find_voice_owner(public_voice_id)
-        if not public_owner_id:
-            error_msg = f"Could not find owner for voice {public_voice_id}"
-            logger.error(error_msg)
-            raise RuntimeError(error_msg)
+            # Find voice owner
+            public_owner_id = self._find_voice_owner(public_voice_id)
+            if not public_owner_id:
+                error_msg = f"Could not find owner for voice {public_voice_id}"
+                logger.error(error_msg)
+                raise RuntimeError(error_msg)
 
-        # Add voice to registry
-        self._add_voice_to_registry(public_voice_id, public_owner_id)
+            # Add voice to registry
+            self._add_voice_to_registry(public_voice_id, public_owner_id)
 
-        # Return the new registry ID (voice registry was refreshed in _add_voice_to_registry)
-        return self.voice_registry[public_voice_id][0]
+            # Return the new registry ID (voice registry was refreshed in _add_voice_to_registry)
+            return self.voice_registry[public_voice_id][0]

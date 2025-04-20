@@ -1,0 +1,1 @@
+# Dummy Stateless Provider package

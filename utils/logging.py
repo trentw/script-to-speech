@@ -1,5 +1,8 @@
 import logging
+import sys
 from typing import Optional
+
+from tqdm import tqdm
 
 
 class SimpleFormatter(logging.Formatter):
@@ -11,6 +14,27 @@ class SimpleFormatter(logging.Formatter):
         elif record.levelno >= logging.WARNING:
             return f"[WARN] {record.getMessage()}"
         return record.getMessage()
+
+
+class TqdmLoggingHandler(logging.StreamHandler):
+    """
+    Custom logging handler that writes to tqdm.write() instead of directly to stderr.
+    This prevents log messages from breaking tqdm progress bars.
+    """
+
+    def __init__(self, level: int = logging.NOTSET) -> None:
+        # Don't initialize with a stream since tqdm.write will handle it
+        super().__init__()
+        self.setLevel(level)
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            msg = self.format(record)
+            # Use tqdm.write which is designed to work with progress bars
+            tqdm.write(msg, file=sys.stderr)
+            self.flush()
+        except Exception:
+            self.handleError(record)
 
 
 def get_screenplay_logger(name: str) -> logging.Logger:
@@ -31,7 +55,7 @@ def get_screenplay_logger(name: str) -> logging.Logger:
     if not screenplay_logger.handlers:
         # Set up console logging if no handlers configured
         formatter = SimpleFormatter()
-        console_handler = logging.StreamHandler()
+        console_handler = TqdmLoggingHandler(level=logging.INFO)
         console_handler.setFormatter(formatter)
         screenplay_logger.addHandler(console_handler)
         screenplay_logger.setLevel(logging.INFO)
@@ -61,10 +85,9 @@ def setup_screenplay_logging(
     # Create formatter and handlers
     formatter = SimpleFormatter()
 
-    # Console handler
-    console_handler = logging.StreamHandler()
+    # Console handler using TqdmLoggingHandler to preserve progress bars
+    console_handler = TqdmLoggingHandler(level=console_level)
     console_handler.setFormatter(formatter)
-    console_handler.setLevel(console_level)
 
     # File handler
     file_handler = logging.FileHandler(log_file)

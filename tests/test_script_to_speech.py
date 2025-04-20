@@ -115,6 +115,18 @@ class TestParseArguments:
         # Assert
         assert args.check_silence == -40.0  # Default value
 
+    def test_dummy_provider_override_flag(self):
+        """Test the dummy-provider-override flag."""
+        # Arrange
+        test_args = ["input_file.json", "--dummy-provider-override"]
+
+        # Act
+        with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
+            args = script_to_speech.parse_arguments()
+
+        # Assert
+        assert args.dummy_provider_override is True
+
 
 class TestSaveModifiedJson:
     """Tests for the save_modified_json function."""
@@ -276,6 +288,7 @@ class TestMain:
             args.ffmpeg_path = None
             args.max_report_misses = 20
             args.max_report_text = 30
+            args.dummy_provider_override = False
             mock_parse_args.return_value = args
 
             # Configure folders mock
@@ -337,6 +350,13 @@ class TestMain:
             f"Loading dialogues from: {mocks['args'].input_file}"
         )
         mocks["logger"].info.assert_any_call("Loaded 2 dialogue chunks.")
+
+        # Verify TTSProviderManager was initialized with the correct parameters
+        mocks["tts_manager"].assert_called_once_with(
+            mocks["args"].tts_config,
+            mocks["args"].provider,
+            mocks["args"].dummy_provider_override,
+        )
 
     def test_main_normal_run(self, mock_setup):
         """Test a normal run of the main function."""
@@ -565,6 +585,27 @@ class TestMain:
                 import script_to_speech
 
                 script_to_speech.main()
+
+    def test_dummy_provider_override(self, mock_setup):
+        """Test that dummy provider override mode works correctly."""
+        # Arrange
+        mocks = mock_setup
+        mocks["args"].dummy_provider_override = True
+
+        # Act - Just call the TTSProviderManager initialization directly
+        with patch("os.makedirs") as mock_makedirs:
+            # Call the function that initializes the TTSProviderManager
+            script_to_speech.TTSProviderManager(
+                mocks["args"].tts_config,
+                mocks["args"].provider,
+                mocks["args"].dummy_provider_override,
+            )
+
+            # Assert
+            # Verify TTSProviderManager was initialized with dummy_provider_override=True
+            mocks["tts_manager"].assert_called_once_with(
+                mocks["args"].tts_config, mocks["args"].provider, True
+            )
 
     def test_modified_json_error_handling(self):
         """Test error handling when saving modified JSON."""

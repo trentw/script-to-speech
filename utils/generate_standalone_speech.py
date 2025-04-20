@@ -4,9 +4,11 @@ import io
 import os
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from tts_providers.base.tts_provider import TTSProvider
+from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 from tts_providers.tts_provider_manager import TTSProviderManager
 from utils.audio_utils import configure_ffmpeg, split_audio_on_silence
 from utils.logging import get_screenplay_logger
@@ -23,7 +25,9 @@ def clean_filename(text: str) -> str:
     return cleaned.replace(" ", "_")
 
 
-def get_provider_class(provider_name: str) -> Type[TTSProvider]:
+def get_provider_class(
+    provider_name: str,
+) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
     """Get the provider class for a given provider name."""
     try:
         module = importlib.import_module(f"tts_providers.{provider_name}.tts_provider")
@@ -32,8 +36,10 @@ def get_provider_class(provider_name: str) -> Type[TTSProvider]:
             attr = getattr(module, attr_name)
             if (
                 isinstance(attr, type)
-                and issubclass(attr, TTSProvider)
-                and attr != TTSProvider
+                and issubclass(
+                    attr, (StatelessTTSProviderBase, StatefulTTSProviderBase)
+                )
+                and attr not in (StatelessTTSProviderBase, StatefulTTSProviderBase)
                 and attr.get_provider_identifier() == provider_name
             ):
                 return attr
@@ -44,7 +50,8 @@ def get_provider_class(provider_name: str) -> Type[TTSProvider]:
 
 
 def generate_standalone_speech(
-    provider: TTSProvider,
+    provider_class: Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]],
+    speaker_config: Dict[str, Any],
     text: str,
     variant_num: int = 1,
     output_dir: str = "standalone_speech",
@@ -57,7 +64,8 @@ def generate_standalone_speech(
     Generate speech using specified provider.
 
     Args:
-        provider: Initialized TTS provider
+        provider_class: TTS provider class (stateful or stateless)
+        speaker_config: Configuration dictionary for the specific voice/speaker
         text: Text to convert to speech
         variant_num: Variant number when generating multiple versions
         output_dir: Directory for output files
@@ -70,20 +78,34 @@ def generate_standalone_speech(
         # Prepend constant sentence if split mode is enabled
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
 
-        # Generate speech using default speaker
-        audio_data = provider.generate_audio(None, generation_text)
+        # Instantiate the client
+        client = provider_class.instantiate_client()
+
+        # Generate speech based on provider type
+        if issubclass(provider_class, StatefulTTSProviderBase):
+            # Create and use stateful provider instance
+            provider_instance = provider_class()
+            audio_data = provider_instance.generate_audio(
+                client, speaker_config, generation_text
+            )
+        else:  # Stateless class
+            # Call class method directly
+            audio_data = provider_class.generate_audio(
+                client, speaker_config, generation_text
+            )
 
         # Create timestamp for unique filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        # Create output directory
+        # Create output directory if it doesn't exist
         os.makedirs(output_dir, exist_ok=True)
 
         # Create base filename components
         text_preview = clean_filename(text[:30])
         variant_suffix = f"_variant{variant_num}" if variant_num > 1 else ""
-        provider_id = provider.get_provider_identifier()
-        voice_id = provider.get_speaker_identifier(None)  # Get default voice ID
+        # Get provider and speaker identifiers (directly from class methods)
+        provider_id = provider_class.get_provider_identifier()
+        voice_id = provider_class.get_speaker_identifier(speaker_config)
 
         if split_audio:
             # Process audio through splitter
@@ -150,7 +172,9 @@ def get_command_string(
         # Build command with all configuration parameters
         config_params = []
         for param_name, param_value in config.items():
-            if param_value is not None:  # Only include non-None values
+            if (
+                param_name != "provider" and param_value is not None
+            ):  # Filter out 'provider' key
                 config_params.append(f"--{param_name} {param_value}")
 
         texts_quoted = [f'"{t}"' for t in texts]
@@ -258,29 +282,32 @@ def main() -> int:
             logger.error(f"Error configuring ffmpeg: {e}")
             return 1
 
-    # Create provider configuration with both required and optional voice settings
-    config: Dict[str, Dict[str, Any]] = {"default": {}}
+    # Build the speaker configuration dictionary from arguments
+    speaker_config: Dict[str, Any] = {}
 
     # Add required fields
     for field in required_fields:
-        config["default"][field] = getattr(args, field)
+        speaker_config[field] = getattr(args, field)
 
     # Add optional fields if provided
     for field in optional_fields:
         value = getattr(args, field, None)
         if value is not None:
-            config["default"][field] = value
+            speaker_config[field] = value
 
     try:
-        # Initialize provider
-        provider = provider_class()
-        provider.initialize(config)
+        # Validate the constructed speaker config using the provider class
+        provider_class.validate_speaker_config(speaker_config)
+
+        # Store the provider class reference directly (no instantiation at this point)
+        provider_ref = provider_class
 
         # Generate speech for each text string
         for text in args.texts:
             for variant in range(1, args.variants + 1):
                 generate_standalone_speech(
-                    provider=provider,
+                    provider_class=provider_ref,
+                    speaker_config=speaker_config,
                     text=text,
                     variant_num=variant if args.variants > 1 else 1,
                     output_dir=args.output_dir,

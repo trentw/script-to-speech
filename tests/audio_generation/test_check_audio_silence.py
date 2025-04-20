@@ -9,8 +9,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from audio_generation.models import AudioGenerationTask, ReportingState
-from audio_generation.processing import check_audio_silence
+from audio_generation.models import (
+    AudioClipInfo,
+    AudioGenerationTask,
+    ReportingState,
+    TaskStatus,
+)
+from audio_generation.utils import check_audio_silence
 
 
 @pytest.fixture
@@ -29,6 +34,8 @@ def silence_task():
         cache_filepath="/path/to/cache/hash1~~hash2~~elevenlabs~~voice_id_123.mp3",
         is_cache_hit=True,
         expected_silence=False,
+        status=TaskStatus.PENDING,
+        retry_count=0,
     )
 
 
@@ -48,33 +55,33 @@ def expected_silence_task():
         cache_filepath="/path/to/cache/empty~~empty~~elevenlabs~~none.mp3",
         is_cache_hit=True,
         expected_silence=True,
+        status=TaskStatus.PENDING,
+        retry_count=0,
     )
 
 
 @pytest.fixture
 def mock_logger():
     """Fixture providing a mock logger."""
-    with patch("audio_generation.processing.logger") as mock:
+    with patch("audio_generation.utils.logger") as mock:
         yield mock
 
 
-@patch("audio_generation.processing.check_audio_level")
-def test_silent_clip(mock_check_level, silence_task, mock_logger):
+def test_silent_clip(silence_task, mock_logger):
     """Test checking a clip that is silent."""
-    # Setup mock to indicate audio is silent
-    mock_check_level.return_value = -60.0  # Very low level
-
     # Initialize reporting state
     reporting_state = ReportingState()
 
-    # Call function
-    result = check_audio_silence(
-        task=silence_task,
-        audio_data=b"audio_data",
-        silence_threshold=-40.0,
-        reporting_state=reporting_state,
-        log_prefix="",
-    )
+    # Mock the check_audio_level function
+    with patch("audio_generation.utils.check_audio_level", return_value=-60.0):
+        # Call function
+        result = check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="",
+        )
 
     # Verify result indicates silence
     assert result is True
@@ -88,23 +95,21 @@ def test_silent_clip(mock_check_level, silence_task, mock_logger):
     assert reporting_state.silent_clips[silence_task.cache_filename].dbfs_level == -60.0
 
 
-@patch("audio_generation.processing.check_audio_level")
-def test_non_silent_clip(mock_check_level, silence_task, mock_logger):
+def test_non_silent_clip(silence_task, mock_logger):
     """Test checking a clip that is not silent."""
-    # Setup mock to indicate audio is not silent
-    mock_check_level.return_value = -20.0  # Higher level
-
     # Initialize reporting state
     reporting_state = ReportingState()
 
-    # Call function
-    result = check_audio_silence(
-        task=silence_task,
-        audio_data=b"audio_data",
-        silence_threshold=-40.0,
-        reporting_state=reporting_state,
-        log_prefix="",
-    )
+    # Mock the check_audio_level function
+    with patch("audio_generation.utils.check_audio_level", return_value=-20.0):
+        # Call function
+        result = check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="",
+        )
 
     # Verify result indicates not silent
     assert result is False
@@ -116,47 +121,49 @@ def test_non_silent_clip(mock_check_level, silence_task, mock_logger):
     assert len(reporting_state.silent_clips) == 0
 
 
-@patch("audio_generation.processing.check_audio_level")
-def test_expected_silence_skipped(mock_check_level, expected_silence_task, mock_logger):
+def test_expected_silence_skipped(expected_silence_task, mock_logger):
     """Test that expected silence tasks are skipped."""
     # Call function
     reporting_state = ReportingState()
-    result = check_audio_silence(
-        task=expected_silence_task,
-        audio_data=b"audio_data",
-        silence_threshold=-40.0,
-        reporting_state=reporting_state,
-        log_prefix="",
-    )
 
-    # Verify result indicates not silent (because we skip the check)
-    assert result is False
+    # This shouldn't call check_audio_level at all
+    with patch("audio_generation.utils.check_audio_level") as mock_check_level:
+        result = check_audio_silence(
+            task=expected_silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="",
+        )
 
-    # Verify mock was not called
-    mock_check_level.assert_not_called()
+        # Verify result indicates not silent (because we skip the check)
+        assert result is False
+
+        # Verify mock was not called
+        mock_check_level.assert_not_called()
 
     # Verify no clips were added to reporting state
     assert len(reporting_state.silent_clips) == 0
 
 
-@patch("audio_generation.processing.check_audio_level")
-def test_with_log_prefix(mock_check_level, silence_task, mock_logger):
+def test_with_log_prefix(silence_task, mock_logger):
     """Test logging with a prefix."""
-    # Setup mock
-    mock_check_level.return_value = -60.0
-
-    # Call with log prefix
+    # Initialize reporting state
     reporting_state = ReportingState()
-    check_audio_silence(
-        task=silence_task,
-        audio_data=b"audio_data",
-        silence_threshold=-40.0,
-        reporting_state=reporting_state,
-        log_prefix="PREFIX: ",
-    )
 
-    # Verify prefix was used in logging
-    for call_args in mock_logger.debug.call_args_list:
+    # Mock check_audio_level to return silent level
+    with patch("audio_generation.utils.check_audio_level", return_value=-60.0):
+        # Call with log prefix
+        check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="PREFIX: ",
+        )
+
+    # Verify prefix was used in logging warn messages
+    for call_args in mock_logger.warning.call_args_list:
         args, kwargs = call_args
         if args and isinstance(args[0], str) and args[0].startswith("PREFIX:"):
             assert True
@@ -166,23 +173,21 @@ def test_with_log_prefix(mock_check_level, silence_task, mock_logger):
     assert False, "No log messages with the specified prefix were found"
 
 
-@patch("audio_generation.processing.check_audio_level")
-def test_none_level_handled(mock_check_level, silence_task, mock_logger):
+def test_none_level_handled(silence_task, mock_logger):
     """Test handling of None returned from check_audio_level."""
-    # Setup mock to return None (indicating error checking level)
-    mock_check_level.return_value = None
-
     # Initialize reporting state
     reporting_state = ReportingState()
 
-    # Call function
-    result = check_audio_silence(
-        task=silence_task,
-        audio_data=b"audio_data",
-        silence_threshold=-40.0,
-        reporting_state=reporting_state,
-        log_prefix="",
-    )
+    # Mock check_audio_level to return None
+    with patch("audio_generation.utils.check_audio_level", return_value=None):
+        # Call function
+        result = check_audio_silence(
+            task=silence_task,
+            audio_data=b"audio_data",
+            silence_threshold=-40.0,
+            reporting_state=reporting_state,
+            log_prefix="",
+        )
 
     # Verify result indicates not silent (since we can't determine)
     assert result is False
