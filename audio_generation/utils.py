@@ -121,7 +121,7 @@ def load_json_chunks(input_file: str) -> List[Dict[str, Any]]:
 
 
 def create_output_folders(
-    input_file: str, run_mode: str = ""
+    input_file: str, run_mode: str = "", dummy_provider_override: bool = False
 ) -> Tuple[str, str, str, str]:
     """
     Create and return paths for output folders (main, cache, logs, output file).
@@ -129,6 +129,7 @@ def create_output_folders(
     Args:
         input_file: Path to the input JSON file
         run_mode: String indicating run mode for log file name prefix
+        dummy_provider_override: If True, prepend "dummy_" to cache folder and output file names
 
     Returns:
         Tuple of (main_output_folder, cache_folder, output_file, log_file)
@@ -144,9 +145,23 @@ def create_output_folders(
     logs_folder = os.path.join(main_output_folder, "logs")
     output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
 
+    # If dummy provider override is enabled, modify paths
+    if dummy_provider_override:
+        # Prepend "dummy_" to cache folder and output file
+        cache_folder = os.path.join(
+            os.path.dirname(cache_folder), f"dummy_{os.path.basename(cache_folder)}"
+        )
+        if output_file:
+            output_dir = os.path.dirname(output_file)
+            output_filename = f"dummy_{os.path.basename(output_file)}"
+            output_file = os.path.join(output_dir, output_filename)
+
     # Create log filename with run mode prefix
+    dummy_prefix = "[dummy]" if run_mode else ""
     mode_prefix = f"[{run_mode}]_" if run_mode else ""
-    log_file = os.path.join(logs_folder, f"{mode_prefix}log_{timestamp}.txt")
+    log_file = os.path.join(
+        logs_folder, f"{dummy_prefix}{mode_prefix}log_{timestamp}.txt"
+    )
 
     # Create directories
     try:

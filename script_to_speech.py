@@ -106,6 +106,12 @@ def parse_arguments() -> argparse.Namespace:
         default=30,
         help="Maximum text length for clips included in generation commands.",
     )
+    parser.add_argument(
+        "--dummy-provider-override",
+        action="store_true",
+        help="Override configured providers with dummy providers for testing purposes. "
+        "This will replace configured providers with dummy_stateful/dummy_stateless providers.",
+    )
 
     # Mutually exclusive group for run modes
     run_mode_group = parser.add_mutually_exclusive_group()
@@ -176,7 +182,7 @@ def main() -> None:
     try:
         # Create output folders
         output_folder, cache_folder, output_file, log_file = create_output_folders(
-            args.input_file, run_mode
+            args.input_file, run_mode, args.dummy_provider_override
         )
 
         # Setup logging (must happen after log_file path is determined)
@@ -189,6 +195,15 @@ def main() -> None:
             )
         if args.cache_overrides:
             logger.info(f"Cache overrides enabled. Directory: {args.cache_overrides}")
+        if args.dummy_provider_override:
+            logger.info("DUMMY PROVIDER OVERRIDE MODE ENABLED")
+            logger.info(
+                "All configured providers will be replaced with dummy providers and produce dummy audio"
+            )
+            logger.info(f"Using dummy cache folder: {cache_folder}")
+            if output_file:
+                logger.info(f"Using dummy output file: {output_file}")
+            logger.info("Note: This mode is intended for testing purposes only")
 
         # Configure ffmpeg
         configure_ffmpeg(args.ffmpeg_path)
@@ -199,7 +214,9 @@ def main() -> None:
             raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
         # Initialize Managers
-        tts_manager = TTSProviderManager(args.tts_config, args.provider)
+        tts_manager = TTSProviderManager(
+            args.tts_config, args.provider, args.dummy_provider_override
+        )
         logger.info("TTS provider manager initialized.")
 
         generated_processor_configs = get_processor_configs(

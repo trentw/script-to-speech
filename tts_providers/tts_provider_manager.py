@@ -18,16 +18,23 @@ from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 class TTSProviderManager:
     """Manages TTS providers and handles audio generation delegation."""
 
-    def __init__(self, config_path: str, overall_provider: Optional[str] = None):
+    def __init__(
+        self,
+        config_path: str,
+        overall_provider: Optional[str] = None,
+        dummy_provider_override: bool = False,
+    ):
         """
         Initialize the TTS Manager.
 
         Args:
             config_path: Path to YAML configuration file
             overall_provider: Optional provider to use when provider isn't specified in config
+            dummy_provider_override: If True, override all providers with dummy providers
         """
         self._config_path = config_path
         self._overall_provider = overall_provider
+        self._dummy_provider_override = dummy_provider_override
         self._provider_refs: Dict[
             str, Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]
         ] = {}
@@ -146,6 +153,26 @@ class TTSProviderManager:
                     f"Invalid configuration for speaker '{speaker}' using provider '{provider_name}': {e}"
                 )
 
+            # If dummy provider override is enabled, prepare to swap providers
+            original_provider_name = provider_name
+            if self._dummy_provider_override:
+                # Determine if the original provider is stateful or stateless
+                provider_class = self._get_provider_class(original_provider_name)
+                if issubclass(provider_class, StatefulTTSProviderBase):
+                    provider_name = "dummy_stateful"
+                else:
+                    provider_name = "dummy_stateless"
+
+                # Add dummy_id if it doesn't exist
+                self._add_dummy_id_to_config(speaker_config, provider_class)
+
+                # Update the provider in the speaker config
+                speaker_config["provider"] = provider_name
+
+                # Re-validate with the new dummy provider
+                dummy_provider_class = self._get_provider_class(provider_name)
+                dummy_provider_class.validate_speaker_config(speaker_config)
+
             # Store validated config and provider mapping
             self._speaker_configs_map[speaker] = speaker_config
             self._speaker_providers[speaker] = provider_name
@@ -155,6 +182,36 @@ class TTSProviderManager:
         for provider_name in required_providers:
             provider_class = self._get_provider_class(provider_name)
             self._provider_refs[provider_name] = provider_class
+
+    def _add_dummy_id_to_config(
+        self, speaker_config: Dict[str, Any], original_provider_class: Type
+    ) -> None:
+        """
+        Add a dummy_id to the speaker config if it doesn't exist.
+
+        Uses the first required field from the original provider as the dummy_id value.
+
+        Args:
+            speaker_config: The speaker configuration to modify
+            original_provider_class: The original provider class
+        """
+        # Skip if dummy_id already exists
+        if "dummy_id" in speaker_config:
+            return
+
+        # Get the required fields from the original provider
+        required_fields = original_provider_class.get_required_fields()
+
+        # Find the first required field that's not 'provider'
+        dummy_id_value = None
+        for field in required_fields:
+            if field != "provider" and field in speaker_config:
+                dummy_id_value = speaker_config[field]
+                break
+
+        # If we found a value, add it as dummy_id
+        if dummy_id_value is not None:
+            speaker_config["dummy_id"] = str(dummy_id_value)
 
     def get_provider_for_speaker(self, speaker: str) -> str:
         """

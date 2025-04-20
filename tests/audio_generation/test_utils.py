@@ -292,6 +292,35 @@ class TestCreateOutputFolders:
         mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
 
     @patch("os.makedirs")
+    @patch("audio_generation.utils.datetime")
+    def test_create_output_folders_with_dummy_override(
+        self, mock_datetime, mock_makedirs
+    ):
+        """Test creating output folders with dummy provider override."""
+        # Arrange
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+        input_file = "input/screenplay.json"
+        run_mode = "dry-run"
+        dummy_provider_override = True
+
+        # Act
+        main_folder, cache_folder, output_file, log_file = create_output_folders(
+            input_file, run_mode, dummy_provider_override
+        )
+
+        # Assert
+        assert main_folder == "output/screenplay"
+        assert cache_folder == "output/screenplay/dummy_cache"
+        assert output_file == "output/screenplay/dummy_screenplay.mp3"
+        assert (
+            log_file
+            == "output/screenplay/logs/[dummy][dry-run]_log_20230101_120000.txt"
+        )
+
+        mock_makedirs.assert_any_call("output/screenplay/dummy_cache", exist_ok=True)
+        mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
+
+    @patch("os.makedirs")
     def test_create_output_folders_handles_errors(self, mock_makedirs):
         """Test error handling when creating output folders."""
         # Arrange
