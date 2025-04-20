@@ -46,7 +46,7 @@ class DummyStatefulTTSProvider(DummyProviderMixin, StatefulTTSProviderBase):
         3. Generates the audio using the common dummy provider logic
         """
         # Get the speaker ID from the config
-        speaker_id = speaker_config.get("id", "")
+        speaker_id = speaker_config.get("dummy_id", "")
 
         # Determine the ID to use for registry lookup
         id_for_registry = speaker_id if isinstance(speaker_id, str) else ""

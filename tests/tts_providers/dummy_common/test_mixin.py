@@ -21,7 +21,7 @@ class TestDummyProviderMixin(unittest.TestCase):
     def test_get_optional_fields(self):
         """Test that optional fields are returned."""
         fields = DummyProviderMixin.get_optional_fields()
-        self.assertIn("id", fields)
+        self.assertIn("dummy_id", fields)
         self.assertIn("dummy_request_time", fields)
         self.assertIn("dummy_request_additional_delay", fields)
         self.assertIn("dummy_generate_silent", fields)
@@ -33,7 +33,7 @@ class TestDummyProviderMixin(unittest.TestCase):
 
         # Config with all optional fields
         config = {
-            "id": "test_id",
+            "dummy_id": "test_id",
             "dummy_request_time": 0.5,
             "dummy_request_additional_delay": 0.3,
             "dummy_generate_silent": True,
@@ -44,7 +44,7 @@ class TestDummyProviderMixin(unittest.TestCase):
         """Test validation with invalid configurations."""
         # Invalid id type
         with self.assertRaises(ValueError):
-            DummyProviderMixin.validate_speaker_config({"id": 123})
+            DummyProviderMixin.validate_speaker_config({"dummy_id": 123})
 
         # Invalid dummy_request_time type
         with self.assertRaises(ValueError):
@@ -65,12 +65,12 @@ class TestDummyProviderMixin(unittest.TestCase):
     def test_get_speaker_identifier(self):
         """Test that speaker identifiers are generated correctly."""
         # With custom ID
-        config = {"id": "test_id"}
+        config = {"dummy_id": "test_id"}
         identifier = DummyProviderMixin.get_speaker_identifier(config)
         self.assertEqual(identifier, "dummy_id_test_id")
 
         # With empty ID
-        config = {"id": ""}
+        config = {"dummy_id": ""}
         identifier = DummyProviderMixin.get_speaker_identifier(config)
         self.assertEqual(identifier, "dummy_standard_voice")
 
@@ -85,7 +85,7 @@ class TestDummyProviderMixin(unittest.TestCase):
         self.assertEqual(identifier, "dummy_silent_voice")
 
         # With both ID and silent flag (ID takes precedence)
-        config = {"id": "test_id", "dummy_generate_silent": True}
+        config = {"dummy_id": "test_id", "dummy_generate_silent": True}
         identifier = DummyProviderMixin.get_speaker_identifier(config)
         self.assertEqual(identifier, "dummy_id_test_id")
 

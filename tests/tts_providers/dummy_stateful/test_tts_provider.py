@@ -42,7 +42,7 @@ class TestDummyStatefulTTSProvider(unittest.TestCase):
         mock_client = MagicMock()
 
         # Create mock config with ID
-        config = {"id": "test_id"}
+        config = {"dummy_id": "test_id"}
 
         # Create mock registry manager
         mock_registry = MagicMock()

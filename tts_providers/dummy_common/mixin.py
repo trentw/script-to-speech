@@ -22,7 +22,7 @@ class DummyProviderMixin:
 # This provider is for testing purposes only and does not require any API keys.
 #
 # Optional fields:
-#   id: A custom identifier for the voice
+#   dummy_id: A custom identifier for the voice
 #   dummy_request_time: Override the base request time (seconds)
 #   dummy_request_additional_delay: Add extra delay to requests (seconds)
 #   dummy_generate_silent: Generate silent audio instead of dummy sound
@@ -48,7 +48,7 @@ class DummyProviderMixin:
     def get_optional_fields(cls) -> List[str]:
         """Get list of optional config fields."""
         return [
-            "id",
+            "dummy_id",
             "dummy_request_time",
             "dummy_request_additional_delay",
             "dummy_generate_silent",
@@ -58,8 +58,10 @@ class DummyProviderMixin:
     def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
         # Check id type if present
-        if "id" in speaker_config and not isinstance(speaker_config["id"], str):
-            raise ValueError("Field 'id' must be a string")
+        if "dummy_id" in speaker_config and not isinstance(
+            speaker_config["dummy_id"], str
+        ):
+            raise ValueError("Field 'dummy_id' must be a string")
 
         # Check dummy_request_time type if present
         if "dummy_request_time" in speaker_config and not isinstance(
@@ -84,10 +86,10 @@ class DummyProviderMixin:
         """
         Get unique voice identifier from config.
 
-        If an ID is provided in the config, use it to create a unique identifier.
+        If a dummy_id is provided in the config, use it to create a unique identifier.
         Otherwise, use a default identifier based on whether silent audio is requested.
         """
-        speaker_id = speaker_config.get("id")
+        speaker_id = speaker_config.get("dummy_id")
 
         if speaker_id and isinstance(speaker_id, str) and speaker_id.strip():
             return f"dummy_id_{speaker_id.strip()}"
