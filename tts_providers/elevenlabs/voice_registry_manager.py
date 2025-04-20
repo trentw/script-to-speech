@@ -38,7 +38,7 @@ class ElevenLabsVoiceRegistryManager:
         Initialize the voice registry by querying current voices.
         Maps public voice IDs to registry-specific IDs while maintaining LRU order.
         """
-        logger.info("Initializing voice registry mapping")
+        logger.debug("Initializing voice registry mapping")
         response = self.client.voices.get_all()
 
         # Clear existing registry
@@ -110,7 +110,7 @@ class ElevenLabsVoiceRegistryManager:
 
         self.voice_usage_order = valid_usage_order
 
-        logger.info(
+        logger.debug(
             f"Initialized voice registry with {len(self.voice_registry)} voices "
             f"({len(self.voice_usage_order)} non-premade)"
         )

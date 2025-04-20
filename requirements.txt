@@ -16,3 +16,5 @@ pytest-mock
 mypy
 types-pyYAML
 types-requests
+tqdm
+types-tqdm

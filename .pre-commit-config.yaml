@@ -18,6 +18,7 @@ repos:
         additional_dependencies:
           - "types-pyYAML"
           - "types-requests"
+          - "types-tqdm"
         args: ["--config-file=pyproject.toml"]
 
   - repo: local
@@ -40,6 +41,7 @@ repos:
           - "openai"
           - "zyphra"
           - "eyeD3"
+          - "tqdm"
         pass_filenames: false
         always_run: false
         types: [python]

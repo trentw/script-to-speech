@@ -1,12 +1,14 @@
 import concurrent.futures
 import io
 import logging
+import sys
 import threading
 import time
 from collections import defaultdict
 from typing import Dict, List, Optional, Set, Tuple
 
 from pydub import AudioSegment
+from tqdm import tqdm
 
 from tts_providers.base.exceptions import TTSError, TTSRateLimitError
 from tts_providers.tts_provider_manager import TTSProviderManager
@@ -222,13 +224,13 @@ class AudioDownloadManager:
         audio_data = None
         try:
             if task.expected_silence:
-                logger.info(f"  Task {task.idx}: Creating intentional silent audio.")
+                logger.debug(f"  Task {task.idx}: Creating intentional silent audio.")
                 silent_segment = AudioSegment.silent(duration=10)  # Short silent clip
                 with io.BytesIO() as buf:
                     silent_segment.export(buf, format="mp3")
                     audio_data = buf.getvalue()
             else:
-                logger.info(f"  Task {task.idx}: Requesting audio generation...")
+                logger.debug(f"  Task {task.idx}: Requesting audio generation...")
                 audio_data = self.tts_provider_manager.generate_audio(
                     task.speaker, task.text_to_speak
                 )
@@ -244,7 +246,7 @@ class AudioDownloadManager:
                 )
 
             print_audio_task_details(task, logger, log_prefix="  ")
-            logger.info(
+            logger.debug(
                 f"  Audio generated successfully for task {task.idx} (size: {len(audio_data)} bytes)."
             )
 
@@ -271,7 +273,7 @@ class AudioDownloadManager:
                     f.write(audio_data)
                 task.is_cache_hit = True  # Mark as cached *after* successful save
                 task.status = TaskStatus.GENERATED
-                logger.info(
+                logger.debug(
                     f"  Task {task.idx}: Saved generated audio to {task.cache_filepath}"
                 )
             except Exception as e:
@@ -439,56 +441,52 @@ class AudioDownloadManager:
 
                 logger.info(f"Submitted {len(futures_map)} tasks to thread pool")
 
-                # Process completed tasks
-                for future in concurrent.futures.as_completed(futures_map):
-                    task = futures_map[future]
-                    try:
-                        # Get the result (may raise an exception)
-                        task_reporting_state = future.result()
+                # Process completed tasks with a progress bar
+                with tqdm(
+                    total=len(futures_map),
+                    desc="Fetching Audio",
+                    unit="clip",
+                    file=sys.stderr,
+                    leave=False,
+                    mininterval=0.1,  # Update more frequently
+                    dynamic_ncols=True,  # Adapt to terminal resizing
+                ) as progress_bar:
+                    for future in concurrent.futures.as_completed(futures_map):
+                        task = futures_map[future]
+                        try:
+                            # Get the result (may raise an exception)
+                            task_reporting_state = future.result()
 
-                        # If successful, merge reporting state
-                        if task_reporting_state:
+                            # Update progress bar
+                            progress_bar.update(1)
+
+                            # If successful, merge reporting state
+                            if task_reporting_state:
+                                with self.state_lock:
+                                    self.reporting_state.silent_clips.update(
+                                        task_reporting_state.silent_clips
+                                    )
+                                    # Add other reporting fields if necessary in the future
+
+                            # Mark as completed
                             with self.state_lock:
-                                self.reporting_state.silent_clips.update(
-                                    task_reporting_state.silent_clips
-                                )
-                                # Add other reporting fields if necessary in the future
+                                self.completed_tasks.append(task)
 
-                        # Mark as completed
-                        with self.state_lock:
-                            self.completed_tasks.append(task)
+                            logger.debug(f"Task {task.idx} completed successfully")
 
-                        logger.debug(f"Task {task.idx} completed successfully")
+                        except TTSRateLimitError:
+                            # Handle rate limit with exponential backoff
+                            self._handle_rate_limit(task)
+                            # Update progress bar even for failed tasks
+                            progress_bar.update(1)
 
-                    except TTSRateLimitError:
-                        # Handle rate limit with exponential backoff
-                        self._handle_rate_limit(task)
-
-                    except Exception as e:
-                        # Handle other errors
-                        task.status = TaskStatus.FAILED_OTHER
-                        logger.error(f"Task {task.idx} failed with error: {e}")
-                        with self.state_lock:
-                            self.completed_tasks.append(task)
-
-        # Log final summary
-        successful_count = sum(
-            1
-            for task in self.completed_tasks
-            if task.status in (TaskStatus.GENERATED, TaskStatus.CACHED)
-        )
-        failed_count = sum(
-            1
-            for task in self.completed_tasks
-            if task.status in (TaskStatus.FAILED_OTHER, TaskStatus.FAILED_RATE_LIMIT)
-        )
-
-        logger.info("Audio download manager completed")
-        logger.info(f"Total tasks: {len(self.tasks)}")
-        logger.info(f"Already cached: {cached_count}")
-        logger.info(f"Skipped duplicates: {skipped_count}")
-        logger.info(f"Successfully processed: {successful_count}")
-        logger.info(f"Failed: {failed_count}")
-        logger.info(f"Silent clips detected: {len(self.reporting_state.silent_clips)}")
+                        except Exception as e:
+                            # Handle other errors
+                            task.status = TaskStatus.FAILED_OTHER
+                            logger.error(f"Task {task.idx} failed with error: {e}")
+                            with self.state_lock:
+                                self.completed_tasks.append(task)
+                            # Update progress bar even for failed tasks
+                            progress_bar.update(1)
 
         return self.reporting_state

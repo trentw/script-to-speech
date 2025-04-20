@@ -47,7 +47,7 @@ def print_audio_task_details(
 
     # Print compact summary line
     cache_status = "cache hit" if task.is_cache_hit else "cache miss"
-    logger.info(
+    logger.debug(
         f"{log_prefix}[{task.idx:04d}][{cache_status}][{speaker_info}][{truncated_text[:max_text_length]}]"
     )
 
@@ -128,9 +128,9 @@ def print_unified_report(
     # Print silent clips section if silence checking was enabled
     if silence_checking_enabled:
         if reporting_state.silent_clips:
-            logger.info("\nSilent clips detected:")
+            logger.info("Silent clips detected:")
         else:
-            logger.info("\nNo silent clips detected.")
+            logger.info("No silent clips detected.")
         grouped_silent = group_by_speaker(reporting_state.silent_clips)
 
         for (speaker_display, speaker_id), clips in sorted(grouped_silent.items()):

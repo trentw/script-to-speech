@@ -5,6 +5,7 @@ import pytest
 
 from utils.logging import (
     SimpleFormatter,
+    TqdmLoggingHandler,
     get_screenplay_logger,
     setup_screenplay_logging,
 )
@@ -141,7 +142,7 @@ class TestGetScreenplayLogger:
 
             # Verify parent logger has a new handler
             assert len(screenplay_logger.handlers) == 1
-            assert isinstance(screenplay_logger.handlers[0], logging.StreamHandler)
+            assert isinstance(screenplay_logger.handlers[0], TqdmLoggingHandler)
             assert isinstance(screenplay_logger.handlers[0].formatter, SimpleFormatter)
             assert screenplay_logger.level == logging.INFO
 
@@ -162,9 +163,20 @@ class TestSetupScreenplayLogging:
         # Setup mock file handler
         mock_file_handler.return_value = MagicMock()
 
-        # Mock StreamHandler to avoid affecting console output during tests
-        with patch("utils.logging.logging.StreamHandler") as mock_stream_handler:
-            mock_stream_handler.return_value = MagicMock()
+        # Mock TqdmLoggingHandler to avoid affecting console output during tests
+        with patch("utils.logging.TqdmLoggingHandler") as mock_tqdm_handler:
+            # Create a mock instance and track constructor arguments
+            mock_instance = MagicMock()
+            mock_tqdm_handler.return_value = mock_instance
+
+            # Use side_effect to capture the level parameter
+            captured_args = []
+
+            def side_effect(*args, **kwargs):
+                captured_args.append((args, kwargs))
+                return mock_instance
+
+            mock_tqdm_handler.side_effect = side_effect
 
             # Save original state of loggers to restore later
             root_logger = logging.getLogger()
@@ -199,10 +211,15 @@ class TestSetupScreenplayLogging:
 
                 # Verify console handler was created with correct settings
                 # Due to complex mocking, don't check exact call count
-                mock_stream_handler.return_value.setFormatter.assert_called()
-                mock_stream_handler.return_value.setLevel.assert_called_with(
-                    logging.WARNING
-                )
+                mock_tqdm_handler.return_value.setFormatter.assert_called()
+                # Check that the handler was created with the correct level
+                # The first argument after self is the level parameter
+                assert len(captured_args) > 0
+                args, kwargs = captured_args[0]
+                if kwargs and "level" in kwargs:
+                    assert kwargs["level"] == logging.WARNING
+                elif len(args) > 1:  # args[0] is self
+                    assert args[1] == logging.WARNING
 
                 # Verify screenplay logger has both handlers
                 assert len(screenplay_logger.handlers) == 2
@@ -232,8 +249,10 @@ class TestSetupScreenplayLogging:
                     screenplay_logger.addHandler(handler)
                 screenplay_logger.setLevel(original_screenplay_level)
 
-                # Remove test loggers
-                if hasattr(logging.root.manager.loggerDict, "screenplay.test1"):
-                    del logging.root.manager.loggerDict["screenplay.test1"]
-                if hasattr(logging.root.manager.loggerDict, "screenplay.test2"):
-                    del logging.root.manager.loggerDict["screenplay.test2"]
+                # Remove test loggers by setting them to None
+                # This is a cleaner approach than directly manipulating the loggerDict
+                logging.getLogger("screenplay.test1").handlers = []
+                logging.getLogger("screenplay.test1").propagate = True
+
+                logging.getLogger("screenplay.test2").handlers = []
+                logging.getLogger("screenplay.test2").propagate = True

@@ -3,10 +3,12 @@ import hashlib
 import io
 import logging
 import os
+import sys
 import threading
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
+from tqdm import tqdm
 
 from text_processors.processor_manager import TextProcessorManager
 from tts_providers.tts_provider_manager import TTSProviderManager
@@ -93,111 +95,126 @@ def plan_audio_generation(
     )
 
     # 2. Process each chunk and create a plan (task)
-    for idx, original_dialogue in enumerate(preprocessed_chunks):
-        logger.debug(f"\nPlanning dialogue #{idx}")
+    # Use tqdm with context manager for better progress bar display
+    with tqdm(
+        total=len(preprocessed_chunks),
+        desc="Planning Audio Generation",
+        unit="chunk",
+        file=sys.stderr,
+        leave=False,
+        mininterval=0.1,  # Update more frequently
+        dynamic_ncols=True,  # Adapt to terminal resizing
+    ) as progress_bar:
+        for idx, original_dialogue in enumerate(preprocessed_chunks):
+            logger.debug(f"\nPlanning dialogue #{idx}")
 
-        try:
-            # Process the dialogue chunk
-            processed_dialogue, _ = processor.process_chunk(original_dialogue)
-            modified_dialogues.append(
-                processed_dialogue
-            )  # Store for potential later use
+            try:
+                # Process the dialogue chunk
+                processed_dialogue, _ = processor.process_chunk(original_dialogue)
+                modified_dialogues.append(
+                    processed_dialogue
+                )  # Store for potential later use
 
-            speaker = determine_speaker(processed_dialogue)
-            text = processed_dialogue.get("text", "")
-            dialogue_type = processed_dialogue.get(
-                "type", ""
-            )  # Keep track of type if needed
-            speaker_display = speaker if speaker is not None else "(default)"
+                speaker = determine_speaker(processed_dialogue)
+                text = processed_dialogue.get("text", "")
+                dialogue_type = processed_dialogue.get(
+                    "type", ""
+                )  # Keep track of type if needed
+                speaker_display = speaker if speaker is not None else "(default)"
 
-            logger.debug(f"  Speaker: {speaker}, Type: {dialogue_type}")
-            logger.debug(f"  Text: {text[:50]}...")
+                logger.debug(f"  Speaker: {speaker}, Type: {dialogue_type}")
+                logger.debug(f"  Text: {text[:50]}...")
 
-            # Generate hashes based on original and processed states
-            original_speaker = determine_speaker(
-                original_dialogue
-            )  # Use original speaker for original hash
-            original_hash = generate_chunk_hash(
-                original_dialogue.get("text", ""), original_speaker
-            )
-            processed_hash = generate_chunk_hash(text, speaker)
-            logger.debug(f"  Original hash: {original_hash}")
-            logger.debug(f"  Processed hash: {processed_hash}")
-
-            # Determine provider and speaker ID
-            provider_id = tts_provider_manager.get_provider_for_speaker(
-                speaker if speaker is not None else "default"
-            )
-            speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
-            logger.debug(f"  Provider ID: {provider_id}, Speaker ID: {speaker_id}")
-
-            # Define filenames and paths
-            cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
-            cache_filepath = os.path.join(cache_folder, cache_filename)
-            logger.debug(f"  Cache filepath: {cache_filepath}")
-
-            # Check if this is a duplicate cache filepath
-            expected_cache_duplicate = cache_filepath in cache_filepath_tracking
-            if expected_cache_duplicate:
-                logger.debug(f"  Cache filepath duplicate detected: {cache_filepath}")
-
-            # Track this filepath for future duplicate detection
-            cache_filepath_tracking.add(cache_filepath)
-
-            # Initialize task
-            task = AudioGenerationTask(
-                idx=idx,
-                original_dialogue=original_dialogue,
-                processed_dialogue=processed_dialogue,
-                text_to_speak=text,
-                speaker=speaker,
-                provider_id=provider_id,
-                speaker_id=speaker_id,
-                speaker_display=speaker_display,
-                cache_filename=cache_filename,
-                cache_filepath=cache_filepath,
-                expected_silence=not text.strip(),  # Mark if text is empty/whitespace
-                expected_cache_duplicate=expected_cache_duplicate,  # Set duplicate flag
-            )
-
-            # Check if cache override *exists*
-            task.is_override_available = False
-            if cache_overrides_dir:
-                override_path = os.path.join(cache_overrides_dir, cache_filename)
-                if os.path.exists(override_path):
-                    logger.debug(f"  Cache override available: {override_path}")
-                    task.is_override_available = True
-            task.checked_override = True  # Mark that we checked
-
-            # Check if cache file *exists* (independent of override check)
-            task.is_cache_hit = False
-            if cache_filename in existing_cache_files:
-                logger.debug(f"  Cache file exists: {cache_filename}")
-                task.is_cache_hit = (
-                    True  # Assume hit initially, silence check might change this later
+                # Generate hashes based on original and processed states
+                original_speaker = determine_speaker(
+                    original_dialogue
+                )  # Use original speaker for original hash
+                original_hash = generate_chunk_hash(
+                    original_dialogue.get("text", ""), original_speaker
                 )
-            task.checked_cache = True
+                processed_hash = generate_chunk_hash(text, speaker)
+                logger.debug(f"  Original hash: {original_hash}")
+                logger.debug(f"  Processed hash: {processed_hash}")
 
-            # Record initial cache miss state (based only on file existence for now)
-            # Override application and silence check results will refine this later.
-            if not task.is_cache_hit:
-                logger.debug("  Cache file initially missing.")
-                if not task.expected_silence:
-                    reporting_state.cache_misses[task.cache_filename] = AudioClipInfo(
-                        text=task.text_to_speak,
-                        cache_path=task.cache_filename,
-                        speaker_display=task.speaker_display,
-                        speaker_id=task.speaker_id,
-                        provider_id=task.provider_id,
+                # Determine provider and speaker ID
+                provider_id = tts_provider_manager.get_provider_for_speaker(
+                    speaker if speaker is not None else "default"
+                )
+                speaker_id = tts_provider_manager.get_speaker_identifier(speaker)
+                logger.debug(f"  Provider ID: {provider_id}, Speaker ID: {speaker_id}")
+
+                # Define filenames and paths
+                cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
+                cache_filepath = os.path.join(cache_folder, cache_filename)
+                logger.debug(f"  Cache filepath: {cache_filepath}")
+
+                # Check if this is a duplicate cache filepath
+                expected_cache_duplicate = cache_filepath in cache_filepath_tracking
+                if expected_cache_duplicate:
+                    logger.debug(
+                        f"  Cache filepath duplicate detected: {cache_filepath}"
                     )
 
-            tasks.append(task)
+                # Track this filepath for future duplicate detection
+                cache_filepath_tracking.add(cache_filepath)
 
-        except Exception as e:
-            logger.error(f"Failed to plan dialogue chunk {idx}: {e}", exc_info=True)
-            # Decide whether to skip this chunk or halt entirely.
-            # For now, let's log and continue planning other chunks.
-            # We might need a way to report planning failures.
+                # Initialize task
+                task = AudioGenerationTask(
+                    idx=idx,
+                    original_dialogue=original_dialogue,
+                    processed_dialogue=processed_dialogue,
+                    text_to_speak=text,
+                    speaker=speaker,
+                    provider_id=provider_id,
+                    speaker_id=speaker_id,
+                    speaker_display=speaker_display,
+                    cache_filename=cache_filename,
+                    cache_filepath=cache_filepath,
+                    expected_silence=not text.strip(),  # Mark if text is empty/whitespace
+                    expected_cache_duplicate=expected_cache_duplicate,  # Set duplicate flag
+                )
+
+                # Check if cache override *exists*
+                task.is_override_available = False
+                if cache_overrides_dir:
+                    override_path = os.path.join(cache_overrides_dir, cache_filename)
+                    if os.path.exists(override_path):
+                        logger.debug(f"  Cache override available: {override_path}")
+                        task.is_override_available = True
+                task.checked_override = True  # Mark that we checked
+
+                # Check if cache file *exists* (independent of override check)
+                task.is_cache_hit = False
+                if cache_filename in existing_cache_files:
+                    logger.debug(f"  Cache file exists: {cache_filename}")
+                    task.is_cache_hit = True  # Assume hit initially, silence check might change this later
+                task.checked_cache = True
+
+                # Record initial cache miss state (based only on file existence for now)
+                # Override application and silence check results will refine this later.
+                if not task.is_cache_hit:
+                    logger.debug("  Cache file initially missing.")
+                    if not task.expected_silence:
+                        reporting_state.cache_misses[task.cache_filename] = (
+                            AudioClipInfo(
+                                text=task.text_to_speak,
+                                cache_path=task.cache_filename,
+                                speaker_display=task.speaker_display,
+                                speaker_id=task.speaker_id,
+                                provider_id=task.provider_id,
+                            )
+                        )
+
+                tasks.append(task)
+
+            except Exception as e:
+                logger.error(f"Failed to plan dialogue chunk {idx}: {e}", exc_info=True)
+                # Decide whether to skip this chunk or halt entirely.
+                # For now, let's log and continue planning other chunks.
+                # We might need a way to report planning failures.
+
+            # Update progress bar after each iteration
+            progress_bar.update(1)
 
     logger.info(f"Audio generation planning complete. {len(tasks)} tasks created.")
     logger.info(f"Initial report state: {len(reporting_state.cache_misses)} misses.")
@@ -281,37 +298,57 @@ def check_for_silence(
         logger.info("Silence checking disabled. Skipping.")
         return reporting_state
 
-    for task in tasks:
-        if not task.is_cache_hit or task.expected_silence:
-            # Skip if not a cache hit or if silence is expected
-            continue
+    # Filter tasks that need silence checking
+    tasks_to_check = [
+        task for task in tasks if task.is_cache_hit and not task.expected_silence
+    ]
 
-        logger.info(
-            f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)"
-        )
-        try:
-            with open(task.cache_filepath, "rb") as f:
-                audio_data = f.read()
+    if not tasks_to_check:
+        logger.info("No tasks need silence checking.")
+        return reporting_state
 
-            is_silent = check_audio_silence(
-                task=task,
-                audio_data=audio_data,
-                silence_threshold=silence_threshold,
-                reporting_state=reporting_state,
-                log_prefix="  ",
+    # Use tqdm with context manager for better progress bar display
+    with tqdm(
+        total=len(tasks_to_check),
+        desc="Checking for Silence",
+        unit="file",
+        file=sys.stderr,
+        leave=False,
+        mininterval=0.1,  # Update more frequently
+        dynamic_ncols=True,  # Adapt to terminal resizing
+    ) as progress_bar:
+        for task in tasks_to_check:
+            # Remove the per-task logging that would clutter the console
+            # logger.info(f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)")
+            logger.debug(
+                f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)"
             )
+            try:
+                with open(task.cache_filepath, "rb") as f:
+                    audio_data = f.read()
 
-            if is_silent:
-                logger.warning(
-                    f"  Existing cache file is silent: {task.cache_filepath}. Will be treated as miss unless overridden."
+                is_silent = check_audio_silence(
+                    task=task,
+                    audio_data=audio_data,
+                    silence_threshold=silence_threshold,
+                    reporting_state=reporting_state,
+                    log_prefix="  ",
                 )
-                # Mark as cache miss so it will be regenerated
-                task.is_cache_hit = False
-        except Exception as e:
-            logger.error(
-                f"  Error checking audio file {task.cache_filepath}: {e}. Cannot confirm silence level."
-            )
-            # Don't assume miss, maybe file is just corrupted? Let fetch handle it.
+
+                if is_silent:
+                    logger.warning(
+                        f"  Existing cache file is silent: {task.cache_filepath}. Will be treated as miss unless overridden."
+                    )
+                    # Mark as cache miss so it will be regenerated
+                    task.is_cache_hit = False
+            except Exception as e:
+                logger.error(
+                    f"  Error checking audio file {task.cache_filepath}: {e}. Cannot confirm silence level."
+                )
+                # Don't assume miss, maybe file is just corrupted? Let fetch handle it.
+
+            # Update progress bar after each iteration
+            progress_bar.update(1)
 
     logger.info(
         f"Silence check complete. Found {len(reporting_state.silent_clips)} silent clips."

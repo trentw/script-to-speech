@@ -2,11 +2,13 @@ import io
 import json
 import logging
 import os
+import sys
 import traceback
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
+from tqdm import tqdm
 
 from utils.logging import get_screenplay_logger
 
@@ -27,7 +29,9 @@ def concatenate_audio_clips(
         output_file: Path for the output audio file
         gap_duration_ms: Duration of silence (in ms) to add between clips
     """
-    logger.info(f"\nStarting audio concatenation of {len(audio_clips)} clips")
+    logger.info(
+        f"\nStarting audio concatenation of {len(audio_clips)} clips (includes silent segments between clips)"
+    )
     if gap_duration_ms > 0:
         logger.info(f"Adding {gap_duration_ms}ms gap between clips.")
 
@@ -35,7 +39,7 @@ def concatenate_audio_clips(
     for i, clip in enumerate(audio_clips):
         duration_ms = len(clip)
         total_duration += duration_ms
-        logger.info(f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
+        logger.debug(f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
 
     # Add duration for gaps
     total_gap_duration = (
@@ -44,11 +48,10 @@ def concatenate_audio_clips(
     total_duration += total_gap_duration
 
     logger.info(
-        f"\nTotal estimated duration (including gaps): {total_duration}ms ({total_duration/1000:.2f}s)"
+        f"  Total estimated duration (including gaps): {total_duration}ms ({total_duration/1000:.2f}s)"
     )
 
     try:
-        logger.info("\nStarting clip concatenation...")
         final_audio = AudioSegment.empty()
         gap_segment = (
             AudioSegment.silent(duration=gap_duration_ms)
@@ -56,43 +59,52 @@ def concatenate_audio_clips(
             else None
         )
 
-        for i, clip in enumerate(audio_clips, 1):
-            logger.info(f"Adding clip {i}/{len(audio_clips)} (duration: {len(clip)}ms)")
+        for i, clip in tqdm(
+            enumerate(audio_clips, 1),
+            desc="Concatenating Audio",
+            unit="clip",
+            file=sys.stderr,
+            leave=False,
+            total=len(audio_clips),
+        ):
+            logger.debug(
+                f"Adding clip {i}/{len(audio_clips)} (duration: {len(clip)}ms)"
+            )
             final_audio += clip
             if gap_segment and i < len(
                 audio_clips
             ):  # Add gap after clip, except for the last one
                 final_audio += gap_segment
             logger.debug(f"Current total duration: {len(final_audio)}ms")
-
+        logger.info(f"  Complete: {len(audio_clips)} clips concatenated")
         logger.info(
             f"\nExporting final audio (duration: {len(final_audio)}ms) to: {output_file}"
         )
         final_audio.export(output_file, format="mp3")
-        logger.info("Audio export completed")
+        logger.info("  Complete: audio exported")
 
         # Verify the output file
         if os.path.exists(output_file):
             file_size = os.path.getsize(output_file)
-            logger.info(f"Output file size: {file_size / 1024 / 1024:.2f}MB")
+            logger.info(f"  Output file size: {file_size / 1024 / 1024:.2f}MB")
 
             # Try to load the output file as a sanity check
             try:
                 verify_audio = AudioSegment.from_mp3(output_file)
                 logger.info(
-                    f"Output file verification successful. Duration: {len(verify_audio)}ms"
+                    f"  Output file verification successful. Duration: {len(verify_audio)}ms"
                 )
                 # Compare duration as a basic check
                 if (
                     abs(len(final_audio) - len(verify_audio)) > 50
                 ):  # Allow small tolerance
                     logger.warning(
-                        f"Verified duration ({len(verify_audio)}ms) differs significantly from expected ({len(final_audio)}ms)"
+                        f"  Verified duration ({len(verify_audio)}ms) differs significantly from expected ({len(final_audio)}ms)"
                     )
             except Exception as e:
-                logger.error(f"Output file verification failed: {e}")
+                logger.error(f"  Output file verification failed: {e}")
         else:
-            logger.warning("Output file was not created")
+            logger.warning("  Output file was not created")
 
     except Exception as e:
         logger.error(f"\nError during audio concatenation: {str(e)}")
@@ -233,6 +245,7 @@ def check_audio_silence(
     if max_dbfs is not None and max_dbfs < silence_threshold:
         truncated_text = truncate_text(task.text_to_speak)
 
+        logger.warning("")
         logger.warning(
             f'{log_prefix}Silent clip detected for task #{task.idx} ("{truncated_text}")'
         )
