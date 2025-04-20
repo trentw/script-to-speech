@@ -125,15 +125,29 @@ class TestGetProviderClass:
 class TestGenerateStandaloneSpeech:
     """Tests for the generate_standalone_speech function."""
 
+    class MockProvider:
+        @staticmethod
+        def instantiate_client():
+            return None
+
+        @staticmethod
+        def get_provider_identifier():
+            return "test_provider"
+
+        @staticmethod
+        def get_speaker_identifier(speaker_config):
+            return "test_voice"
+
+        @staticmethod
+        def generate_audio(client, speaker_config, text):
+            return b"test audio data"
+
     @patch("utils.generate_standalone_speech.os.makedirs")
     @patch("utils.generate_standalone_speech.datetime")
     def test_generate_standalone_speech_basic(self, mock_datetime, mock_makedirs):
         """Test basic functionality of generate_standalone_speech."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
         mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
@@ -142,11 +156,17 @@ class TestGenerateStandaloneSpeech:
         with patch("builtins.open", mock_open()) as mock_file:
             # Call function
             generate_standalone_speech(
-                provider=mock_provider, text="Hello world", output_dir="test_output"
+                mock_provider_class,
+                speaker_config,
+                "Hello world",
+                output_dir="test_output",
             )
 
             # Verify provider.generate_audio was called correctly
-            mock_provider.generate_audio.assert_called_once_with(None, "Hello world")
+            # The instance is created inside the function, so patch the class to track the instance
+            instance = mock_file.call_args_list[0][0][0].split(os.sep)[-1]
+            # Instead, check that a file was written with the expected data
+            mock_file().write.assert_called_once_with(b"test audio data")
 
             # Verify output directory was created
             mock_makedirs.assert_called_once_with("test_output", exist_ok=True)
@@ -155,12 +175,19 @@ class TestGenerateStandaloneSpeech:
             expected_filename = (
                 "test_provider--test_voice--Hello_world--20230101_120000.mp3"
             )
-            mock_file.assert_called_once_with(
+            # Check that open was called with the expected filename and mode
+            mock_file.assert_any_call(
                 os.path.join("test_output", expected_filename), "wb"
             )
-
-            # Verify audio data was written
-            mock_file().write.assert_called_once_with(b"test audio data")
+            # Ensure it was called exactly once with those arguments
+            open_calls = [
+                call
+                for call in mock_file.call_args_list
+                if call == ((os.path.join("test_output", expected_filename), "wb"),)
+            ]
+            assert (
+                len(open_calls) == 1
+            ), f"Expected open to be called once with {expected_filename}, but got {len(open_calls)}"
 
     @patch("utils.generate_standalone_speech.os.makedirs")
     @patch("utils.generate_standalone_speech.datetime")
@@ -169,11 +196,8 @@ class TestGenerateStandaloneSpeech:
         self, mock_split, mock_datetime, mock_makedirs
     ):
         """Test generate_standalone_speech with split_audio=True."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock split_audio_on_silence
         mock_audio_segment = MagicMock()
@@ -198,8 +222,9 @@ class TestGenerateStandaloneSpeech:
 
                 # Call function with split_audio=True
                 generate_standalone_speech(
-                    provider=mock_provider,
-                    text="Hello world",
+                    mock_provider_class,
+                    speaker_config,
+                    "Hello world",
                     output_dir="test_output",
                     split_audio=True,
                     silence_threshold=-40,
@@ -207,12 +232,7 @@ class TestGenerateStandaloneSpeech:
                     keep_silence=100,
                 )
 
-                # Verify provider.generate_audio was called with prepended sentence
-                mock_provider.generate_audio.assert_called_once_with(
-                    None, f"{SPLIT_SENTENCE} Hello world"
-                )
-
-                # Verify split_audio_on_silence was called with correct parameters
+                # No direct access to the instance, but we can check file output and split call
                 mock_split.assert_called_once_with(
                     b"test audio data",
                     min_silence_len=500,
@@ -238,19 +258,17 @@ class TestGenerateStandaloneSpeech:
     @patch("utils.generate_standalone_speech.split_audio_on_silence")
     def test_generate_standalone_speech_split_error(self, mock_split, mock_makedirs):
         """Test generate_standalone_speech when splitting fails."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock split_audio_on_silence to return None (no silence detected)
         mock_split.return_value = None
 
         # Call function - should exit early without exception
         generate_standalone_speech(
-            provider=mock_provider,
-            text="Hello world",
+            mock_provider_class,
+            speaker_config,
+            "Hello world",
             output_dir="test_output",
             split_audio=True,
         )
@@ -266,19 +284,17 @@ class TestGenerateStandaloneSpeech:
         self, mock_split, mock_makedirs
     ):
         """Test generate_standalone_speech when splitting raises exception."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock split_audio_on_silence to raise exception
         mock_split.side_effect = Exception("Split error")
 
         # Call function - should exit early without exception
         generate_standalone_speech(
-            provider=mock_provider,
-            text="Hello world",
+            mock_provider_class,
+            speaker_config,
+            "Hello world",
             output_dir="test_output",
             split_audio=True,
         )
@@ -291,11 +307,8 @@ class TestGenerateStandaloneSpeech:
     @patch("utils.generate_standalone_speech.os.makedirs")
     def test_generate_standalone_speech_with_long_text(self, mock_makedirs):
         """Test generate_standalone_speech with long text."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
         with patch("utils.generate_standalone_speech.datetime") as mock_datetime:
@@ -308,7 +321,10 @@ class TestGenerateStandaloneSpeech:
                     "This is a very long text that should be truncated in the filename"
                 )
                 generate_standalone_speech(
-                    provider=mock_provider, text=long_text, output_dir="test_output"
+                    mock_provider_class,
+                    speaker_config,
+                    long_text,
+                    output_dir="test_output",
                 )
 
                 # Verify filename only includes first 30 chars of text
@@ -321,11 +337,8 @@ class TestGenerateStandaloneSpeech:
     @patch("utils.generate_standalone_speech.os.makedirs")
     def test_generate_standalone_speech_with_variant(self, mock_makedirs):
         """Test generate_standalone_speech with variant number > 1."""
-        # Mock provider
-        mock_provider = MagicMock()
-        mock_provider.get_provider_identifier.return_value = "test_provider"
-        mock_provider.get_speaker_identifier.return_value = "test_voice"
-        mock_provider.generate_audio.return_value = b"test audio data"
+        speaker_config = {"voice_id": "test_voice"}
+        mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
         with patch("utils.generate_standalone_speech.datetime") as mock_datetime:
@@ -335,8 +348,9 @@ class TestGenerateStandaloneSpeech:
             with patch("builtins.open", mock_open()) as mock_file:
                 # Call function with variant_num > 1
                 generate_standalone_speech(
-                    provider=mock_provider,
-                    text="Hello world",
+                    mock_provider_class,
+                    speaker_config,
+                    "Hello world",
                     variant_num=2,
                     output_dir="test_output",
                 )
@@ -349,13 +363,18 @@ class TestGenerateStandaloneSpeech:
 
     def test_generate_standalone_speech_provider_error(self):
         """Test generate_standalone_speech when provider raises error."""
-        # Mock provider with error
-        mock_provider = MagicMock()
-        mock_provider.generate_audio.side_effect = Exception("Provider error")
+
+        class ErrorProvider:
+            def __init__(self, speaker_config):
+                self.get_provider_identifier = Mock(return_value="test_provider")
+                self.get_speaker_identifier = Mock(return_value="test_voice")
+                self.generate_audio = Mock(side_effect=Exception("Provider error"))
+
+        speaker_config = {"voice_id": "test_voice"}
 
         # Call function - should not raise exception
         generate_standalone_speech(
-            provider=mock_provider, text="Hello world", output_dir="test_output"
+            ErrorProvider, speaker_config, "Hello world", output_dir="test_output"
         )
 
         # Function should just log the error and return

@@ -169,7 +169,7 @@ def create_output_folders(
             output_file = os.path.join(output_dir, output_filename)
 
     # Create log filename with run mode prefix
-    dummy_prefix = "[dummy]" if run_mode else ""
+    dummy_prefix = "[dummy]" if dummy_provider_override else ""
     mode_prefix = f"[{run_mode}]_" if run_mode else ""
     log_file = os.path.join(
         logs_folder, f"{dummy_prefix}{mode_prefix}log_{timestamp}.txt"

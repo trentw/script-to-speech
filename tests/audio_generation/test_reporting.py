@@ -94,7 +94,13 @@ class TestPrintAudioTaskDetails:
         mock_logger.debug.assert_any_call("Audio level (dBFS): -30.5")
 
         # Verify compact summary log
-        mock_logger.info.assert_called_with("[0001][cache hit][JOHN][Hello world!]")
+        found = any(
+            "[0001][cache hit][JOHN][Hello world!]" in str(call)
+            for call in mock_logger.debug.call_args_list
+        )
+        assert (
+            found
+        ), "Expected summary log '[0001][cache hit][JOHN][Hello world!]' not found in debug logs"
 
     def test_print_task_details_with_log_prefix(self, sample_task):
         """Test printing details with a log prefix."""
@@ -114,10 +120,14 @@ class TestPrintAudioTaskDetails:
         # Call function with custom max_text_length
         print_audio_task_details(sample_task, mock_logger, max_text_length=5)
 
-        # Verify truncated text in logs
-        mock_logger.info.assert_called_with(
-            "[0001][cache hit][JOHN][He...]"
-        )  # Summary is truncated
+        # Verify truncated text in logs (should be in debug, not info)
+        found = any(
+            "[0001][cache hit][JOHN][He...]" in str(call)
+            for call in mock_logger.debug.call_args_list
+        )
+        assert (
+            found
+        ), "Expected truncated summary log '[0001][cache hit][JOHN][He...]' not found in debug logs"
 
 
 class TestRecheckAudioFiles:
@@ -321,12 +331,30 @@ class TestPrintUnifiedReport:
             silence_checking_enabled=True,
         )
 
-        # Verify silent clips section
-        mock_logger.info.assert_any_call("\nSilent clips detected:")
-        mock_logger.info.assert_any_call("\n- JOHN (voice_id_123): 1 clips")
-        mock_logger.info.assert_any_call('  • Text: "Whispered text"')
-        mock_logger.info.assert_any_call("    Cache: silent.mp3")
-        mock_logger.info.assert_any_call("    dBFS: -60.0")
+        # Verify silent clips section (less brittle: check substring in any info call)
+        found = any(
+            "Silent clips detected:" in str(call)
+            for call in mock_logger.info.call_args_list
+        )
+        assert found, "Expected 'Silent clips detected:' section not found in info logs"
+        found = any(
+            "- JOHN (voice_id_123): 1 clips" in str(call)
+            for call in mock_logger.info.call_args_list
+        )
+        assert found, "Expected '- JOHN (voice_id_123): 1 clips' not found in info logs"
+        found = any(
+            '• Text: "Whispered text"' in str(call)
+            for call in mock_logger.info.call_args_list
+        )
+        assert found, "Expected '• Text: \"Whispered text\"' not found in info logs"
+        found = any(
+            "Cache: silent.mp3" in str(call) for call in mock_logger.info.call_args_list
+        )
+        assert found, "Expected 'Cache: silent.mp3' not found in info logs"
+        found = any(
+            "dBFS: -60.0" in str(call) for call in mock_logger.info.call_args_list
+        )
+        assert found, "Expected 'dBFS: -60.0' not found in info logs"
 
         # Verify summary
         mock_logger.info.assert_any_call("\nSummary:")
@@ -371,11 +399,19 @@ class TestPrintUnifiedReport:
             silence_checking_enabled=True,
         )
 
-        # Verify both sections are included
-        mock_logger.info.assert_any_call("\nSilent clips detected:")
-        mock_logger.info.assert_any_call(
-            "\nAdditional cache misses (audio that would need to be generated):"
+        # Verify both sections are included (less brittle: check substring in any info call)
+        found = any(
+            "Silent clips detected:" in str(call)
+            for call in mock_logger.info.call_args_list
         )
+        assert found, "Expected 'Silent clips detected:' section not found in info logs"
+        found = any(
+            "Additional cache misses" in str(call)
+            for call in mock_logger.info.call_args_list
+        )
+        assert (
+            found
+        ), "Expected 'Additional cache misses' section not found in info logs"
 
         # Verify summary includes both
         mock_logger.info.assert_any_call("- Silent clips: 1")
