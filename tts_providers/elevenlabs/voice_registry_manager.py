@@ -155,7 +155,7 @@ class ElevenLabsVoiceRegistryManager:
         Raises:
             RuntimeError: If the voice cannot be added to the registry
         """
-        logger.info(f"Adding voice {public_voice_id} to registry")
+        logger.debug(f"Adding voice {public_voice_id} to registry")
         url = f"https://api.elevenlabs.io/v1/voices/add/{public_owner_id}/{public_voice_id}"
 
         headers = {"Content-Type": "application/json", "xi-api-key": self.api_key}
@@ -169,7 +169,7 @@ class ElevenLabsVoiceRegistryManager:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-        logger.info(f"Successfully added voice {public_voice_id} to registry")
+        logger.debug(f"Successfully added voice {public_voice_id} to registry")
         # Refresh voice registry and LRU state
         self._initialize_voice_registry()
 
@@ -183,7 +183,7 @@ class ElevenLabsVoiceRegistryManager:
         Raises:
             RuntimeError: If the voice cannot be removed from the registry
         """
-        logger.info(f"Removing voice {registry_voice_id} from registry")
+        logger.debug(f"Removing voice {registry_voice_id} from registry")
         url = f"https://api.elevenlabs.io/v1/voices/{registry_voice_id}"
 
         headers = {"xi-api-key": self.api_key}
@@ -194,7 +194,7 @@ class ElevenLabsVoiceRegistryManager:
             logger.error(error_msg)
             raise RuntimeError(error_msg)
 
-        logger.info(f"Successfully removed voice {registry_voice_id}")
+        logger.debug(f"Successfully removed voice {registry_voice_id}")
         # Refresh voice registry and LRU state
         self._initialize_voice_registry()
 
@@ -209,7 +209,7 @@ class ElevenLabsVoiceRegistryManager:
         if self.voice_usage_order:
             lru_public_id = next(iter(self.voice_usage_order))
             lru_registry_id = self.voice_registry[lru_public_id][0]
-            logger.info(
+            logger.debug(
                 f"Removing least recently used voice {lru_public_id} "
                 f"(registry ID: {lru_registry_id})"
             )
@@ -219,7 +219,7 @@ class ElevenLabsVoiceRegistryManager:
         # If no LRU history, remove a random non-premade voice
         for public_id, (registry_id, category) in self.voice_registry.items():
             if category != "premade":
-                logger.info(
+                logger.debug(
                     f"Removing random non-premade voice {public_id} "
                     f"(registry ID: {registry_id})"
                 )
