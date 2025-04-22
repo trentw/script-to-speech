@@ -253,16 +253,24 @@ def apply_cache_overrides(
             try:
                 # Ensure cache directory exists before moving
                 os.makedirs(os.path.dirname(task.cache_filepath), exist_ok=True)
-                # Move the file (atomic replace if possible)
-                os.replace(override_path, task.cache_filepath)
-                logger.info(
-                    f"  Successfully applied override for task {task.idx}: {task.cache_filename}"
-                )
+
+                if os.path.exists(override_path):
+                    # Move the file (atomic replace if possible)
+                    os.replace(override_path, task.cache_filepath)
+                    logger.info(
+                        f"  Successfully applied override for task {task.idx}: {task.cache_filename}"
+                    )
+                    applied_count += 1
+                else:
+                    # If override path no longer exists, assume that previous task with same cache path
+                    # already moved override to cache dir
+                    logger.info(
+                        f"  Override already applied for task {task.idx}: {task.cache_filename}"
+                    )
                 # Update task status: it's now definitely a cache hit
                 task.is_cache_hit = True
-                applied_count += 1
                 # If it was previously marked as silent, the override fixed it (we assume overrides are good)
-                # We might could update reporting state here if we want to remove it from silent list now, but
+                # We could update reporting state here if we want to remove it from silent list now, but
                 # this should be caught and updated when we re-check silence before final reporting
             except Exception as e:
                 logger.error(

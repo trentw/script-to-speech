@@ -456,7 +456,12 @@ class TestApplyCacheOverrides:
     def test_apply_overrides_when_available(self, sample_tasks, mock_logger):
         """Test applying cache overrides when they are available."""
         # Arrange
-        with patch("os.makedirs") as mock_makedirs, patch("os.replace") as mock_replace:
+        override_path = "/path/to/overrides/hash1~~hash2~~elevenlabs~~voice_id_123.mp3"
+        with patch("os.makedirs") as mock_makedirs, patch(
+            "os.replace"
+        ) as mock_replace, patch("os.path.exists") as mock_exists:
+
+            mock_exists.side_effect = lambda path: path == override_path
 
             # Act
             apply_cache_overrides(
@@ -500,7 +505,12 @@ class TestApplyCacheOverrides:
     def test_exception_during_override(self, sample_tasks, mock_logger):
         """Test handling of exceptions during override application."""
         # Arrange
-        with patch("os.makedirs") as mock_makedirs, patch("os.replace") as mock_replace:
+        override_path = "/path/to/overrides/hash1~~hash2~~elevenlabs~~voice_id_123.mp3"
+        with patch("os.makedirs") as mock_makedirs, patch(
+            "os.replace"
+        ) as mock_replace, patch("os.path.exists") as mock_exists:
+
+            mock_exists.side_effect = lambda path: path == override_path
 
             # Setup replace to raise exception
             mock_replace.side_effect = Exception("File not found")
