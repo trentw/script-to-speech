@@ -18,65 +18,131 @@ from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 logger = get_screenplay_logger("audio_generation.utils")
 
 
-def concatenate_audio_clips(
-    audio_clips: List[AudioSegment], output_file: str, gap_duration_ms: int = 0
+def concatenate_tasks_batched(
+    tasks: List[AudioGenerationTask],
+    output_file: str,
+    batch_size: int = 250,
+    gap_duration_ms: int = 500,
 ) -> None:
     """
-    Concatenate audio clips using pydub with detailed progress tracking and optional gap.
+    Concatenate audio from tasks using pydub with batch processing for improved performance.
+    This function loads audio files directly from task cache paths, one batch at a time.
 
     Args:
-        audio_clips: List of AudioSegment objects
+        tasks: List of AudioGenerationTask objects
         output_file: Path for the output audio file
+        batch_size: Number of clips to process in each batch
         gap_duration_ms: Duration of silence (in ms) to add between clips
     """
-    logger.info(
-        f"\nStarting audio concatenation of {len(audio_clips)} clips (includes silent segments between clips)"
-    )
+    logger.info(f"\nStarting batched audio concatenation of {len(tasks)} tasks")
+    logger.info(f"Using batch size: {batch_size} clips per batch")
+
     if gap_duration_ms > 0:
         logger.info(f"Adding {gap_duration_ms}ms gap between clips.")
 
-    total_duration = 0
-    for i, clip in enumerate(audio_clips):
-        duration_ms = len(clip)
-        total_duration += duration_ms
-        logger.debug(f"Clip {i}: Duration = {duration_ms}ms ({duration_ms/1000:.2f}s)")
-
-    # Add duration for gaps
-    total_gap_duration = (
-        gap_duration_ms * (len(audio_clips) - 1) if len(audio_clips) > 1 else 0
-    )
-    total_duration += total_gap_duration
-
-    logger.info(
-        f"  Total estimated duration (including gaps): {total_duration}ms ({total_duration/1000:.2f}s)"
+    # Create gap segment if needed
+    gap_segment = (
+        AudioSegment.silent(duration=gap_duration_ms) if gap_duration_ms > 0 else None
     )
 
-    try:
-        final_audio = AudioSegment.empty()
-        gap_segment = (
-            AudioSegment.silent(duration=gap_duration_ms)
-            if gap_duration_ms > 0
-            else None
+    # Count valid tasks (those with existing cache files)
+    valid_tasks = [task for task in tasks if os.path.exists(task.cache_filepath)]
+    if len(valid_tasks) < len(tasks):
+        logger.warning(
+            f"Skipping {len(tasks) - len(valid_tasks)} tasks with missing cache files"
         )
 
-        for i, clip in tqdm(
-            enumerate(audio_clips, 1),
-            desc="Concatenating Audio",
+    if not valid_tasks:
+        logger.error("No valid audio files found for concatenation")
+        return
+
+    # Divide tasks into batches
+    batches = [
+        valid_tasks[i : i + batch_size] for i in range(0, len(valid_tasks), batch_size)
+    ]
+    logger.debug(f"Divided into {len(batches)} batches")
+
+    try:
+        # Create temporary directory for batch files
+        temp_dir = os.path.join(os.path.dirname(output_file), "temp_batches")
+        os.makedirs(temp_dir, exist_ok=True)
+
+        batch_files = []
+        total_clips_processed = 0
+
+        # Setup a single progress bar for all clips
+        with tqdm(
+            total=len(valid_tasks),
+            desc="Processing Audio Clips",
             unit="clip",
             file=sys.stderr,
             leave=False,
-            total=len(audio_clips),
+        ) as progress_bar:
+            # Process each batch
+            for batch_idx, batch_tasks in enumerate(batches):
+                batch_file = os.path.join(temp_dir, f"batch_{batch_idx}.mp3")
+                logger.debug(
+                    f"Processing batch {batch_idx+1}/{len(batches)} ({len(batch_tasks)} clips)"
+                )
+
+                # Concatenate clips within the batch
+                batch_audio = AudioSegment.empty()
+
+                for task_idx, task in enumerate(batch_tasks):
+                    try:
+                        # Load segment directly from cache file path
+                        segment = AudioSegment.from_mp3(task.cache_filepath)
+                        batch_audio += segment
+
+                        # Add gap if needed (not after last clip, not if next clip is expected silence)
+                        next_task_idx = total_clips_processed + 1
+                        if (
+                            gap_segment
+                            and next_task_idx < len(valid_tasks)
+                            and not task.expected_silence
+                        ):
+                            batch_audio += gap_segment
+
+                        total_clips_processed += 1
+                        progress_bar.update(1)
+
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to load audio segment for task {task.idx} from file {task.cache_filepath}: {e}"
+                        )
+                        progress_bar.update(
+                            1
+                        )  # Still update progress bar for skipped files
+
+                # Export batch to file
+                if len(batch_audio) > 0:
+                    logger.debug(
+                        f"Exporting batch {batch_idx+1} (duration: {len(batch_audio)}ms)"
+                    )
+                    batch_audio.export(batch_file, format="mp3")
+                    batch_files.append(batch_file)
+                else:
+                    logger.warning(f"Batch {batch_idx+1} is empty, skipping export")
+
+        if not batch_files:
+            logger.error("No batch files were created, cannot generate output")
+            return
+
+        # Concatenate batch files
+        logger.info(f"Concatenating {len(batch_files)} batch files into final output")
+        final_audio = AudioSegment.empty()
+
+        for batch_file in tqdm(
+            batch_files,
+            desc="Concatenating Batches",
+            unit="batch",
+            file=sys.stderr,
+            leave=False,
         ):
-            logger.debug(
-                f"Adding clip {i}/{len(audio_clips)} (duration: {len(clip)}ms)"
-            )
-            final_audio += clip
-            if gap_segment and i < len(
-                audio_clips
-            ):  # Add gap after clip, except for the last one
-                final_audio += gap_segment
-            logger.debug(f"Current total duration: {len(final_audio)}ms")
-        logger.info(f"  Complete: {len(audio_clips)} clips concatenated")
+            batch_segment = AudioSegment.from_mp3(batch_file)
+            final_audio += batch_segment
+
+        # Export final audio
         logger.info(
             f"\nExporting final audio (duration: {len(final_audio)}ms) to: {output_file}"
         )
@@ -107,10 +173,26 @@ def concatenate_audio_clips(
             logger.warning("  Output file was not created")
 
     except Exception as e:
-        logger.error(f"\nError during audio concatenation: {str(e)}")
+        logger.error(f"\nError during batched audio concatenation: {str(e)}")
         logger.error(traceback.format_exc())  # Log full traceback for debugging
         # Re-raise the exception so the caller knows concatenation failed
         raise
+
+    finally:
+        # Clean up temporary files
+        try:
+            if "temp_dir" in locals() and os.path.exists(temp_dir):
+                for batch_file in os.listdir(temp_dir):
+                    try:
+                        os.remove(os.path.join(temp_dir, batch_file))
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to remove temporary file {batch_file}: {e}"
+                        )
+                os.rmdir(temp_dir)
+                logger.info("Temporary batch files cleaned up")
+        except Exception as e:
+            logger.warning(f"Failed to clean up some temporary files: {e}")
 
 
 def load_json_chunks(input_file: str) -> List[Dict[str, Any]]:

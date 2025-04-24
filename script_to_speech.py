@@ -23,7 +23,7 @@ from audio_generation.reporting import (
     recheck_audio_files,
 )
 from audio_generation.utils import (
-    concatenate_audio_clips,
+    concatenate_tasks_batched,
     create_output_folders,
     load_json_chunks,
 )
@@ -106,6 +106,12 @@ def parse_arguments() -> argparse.Namespace:
         type=int,
         default=30,
         help="Maximum text length for clips included in generation commands.",
+    )
+    parser.add_argument(
+        "--concat-batch-size",
+        type=int,
+        default=250,
+        help="Batch size for audio concatenation (number of clips per batch).",
     )
     parser.add_argument(
         "--dummy-provider-override",
@@ -308,77 +314,31 @@ def main() -> None:
         # 5. Concatenate Audio (Only for full run mode)
         if not args.dry_run and not args.populate_cache:
             logger.info("\n--- Concatenating Audio ---")
-            audio_segments = []
-            gap_segment = (
-                AudioSegment.silent(duration=args.gap) if args.gap > 0 else None
+
+            # Use task-based concatenation function
+            concatenate_tasks_batched(
+                tasks=all_tasks,
+                output_file=output_file,
+                batch_size=args.concat_batch_size,
+                gap_duration_ms=args.gap,
             )
 
-            logger.info(f"Loading audio segments for {len(all_tasks)} tasks")
-            # Use tqdm with context manager for better progress bar display
-            with tqdm(
-                total=len(all_tasks),
-                desc="Loading Audio Clips",
-                unit="clip",
-                file=sys.stderr,
-                leave=False,
-                mininterval=0.1,  # Update more frequently
-                dynamic_ncols=True,  # Adapt to terminal resizing
-            ) as progress_bar:
-                for i, task in enumerate(all_tasks):
-                    # Load segment directly from cache file path
-                    if os.path.exists(task.cache_filepath):
-                        try:
-                            segment = AudioSegment.from_mp3(task.cache_filepath)
-                            audio_segments.append(segment)
-                            # Update progress bar
-                            progress_bar.update(1)
-                            # Add gap if needed (not after last clip, not if clip was silent)
-                            if (
-                                gap_segment
-                                and i < len(all_tasks) - 1
-                                and not task.expected_silence
-                            ):
-                                audio_segments.append(gap_segment)
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to load audio segment for task {task.idx} from file {task.cache_filepath}: {e}",
-                                exc_info=True,
-                            )
-                    else:
-                        # This case should ideally not happen if planning/fetching worked, but good to log.
-                        logger.warning(
-                            f"Cache file missing for task {task.idx} ({task.cache_filepath}), skipping concatenation."
-                        )
-                        # Still update progress bar even for skipped files
-                        progress_bar.update(1)
+            logger.info(f"\nFinal audio file generated: {output_file}")
 
-            logger.info(f"  Complete: {len(all_tasks)} audio segments loaded")
-            if audio_segments:
-                # Concatenate with 0 gap, as gaps were added manually in the loop
-                concatenate_audio_clips(audio_segments, output_file, 0)
-                logger.info(f"\nFinal audio file generated: {output_file}")
-
-                # Set ID3 tags
-                optional_config_path = find_optional_config(
-                    args.optional_config, args.input_file
-                )
-                if optional_config_path:
-                    logger.info(f"Setting ID3 tags from config: {optional_config_path}")
-                    if set_id3_tags_from_config(output_file, optional_config_path):
-                        logger.info("  ID3 tags set successfully.")
-                    else:
-                        logger.warning(
-                            "  Failed to set ID3 tags or no tags specified in config."
-                        )
+            # Set ID3 tags
+            optional_config_path = find_optional_config(
+                args.optional_config, args.input_file
+            )
+            if optional_config_path:
+                logger.info(f"Setting ID3 tags from config: {optional_config_path}")
+                if set_id3_tags_from_config(output_file, optional_config_path):
+                    logger.info("  ID3 tags set successfully.")
                 else:
-                    logger.info(
-                        "No optional config file found or specified for ID3 tags."
+                    logger.warning(
+                        "  Failed to set ID3 tags or no tags specified in config."
                     )
-
             else:
-                logger.warning(
-                    "No audio segments available for concatenation. Output file not created."
-                )
+                logger.info("No optional config file found or specified for ID3 tags.")
 
     except Exception as e:
         logger.error(f"An error occurred during processing: {e}", exc_info=True)

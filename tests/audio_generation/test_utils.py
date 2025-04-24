@@ -8,14 +8,14 @@ audio level checking, concatenation, file loading, and text truncation.
 import io
 import json
 from datetime import datetime
-from unittest.mock import MagicMock, call, mock_open, patch
+from unittest.mock import ANY, MagicMock, call, mock_open, patch
 
 import pytest
 from pydub import AudioSegment
 
 from audio_generation.utils import (
     check_audio_level,
-    concatenate_audio_clips,
+    concatenate_tasks_batched,
     create_output_folders,
     load_json_chunks,
     truncate_text,
@@ -67,8 +67,8 @@ class TestAudioLevelChecking:
             assert result is None
 
 
-class TestConcatenateAudioClips:
-    """Tests for audio clip concatenation function."""
+class TestConcatenateTasksBatched:
+    """Tests for the batched audio concatenation function."""
 
     @pytest.fixture
     def mock_logger(self):
@@ -76,142 +76,343 @@ class TestConcatenateAudioClips:
         with patch("audio_generation.utils.logger") as mock:
             yield mock
 
-    def test_concatenate_single_clip(self, mock_logger):
-        """Test concatenating a single audio clip."""
+    @pytest.fixture
+    def mock_audio_generation_task(self):
+        """Helper to create a mock AudioGenerationTask with a cache_filepath."""
+
+        def _make(idx, cache_filepath, expected_silence=False):
+            task = MagicMock()
+            task.cache_filepath = cache_filepath
+            task.idx = idx
+            task.expected_silence = expected_silence
+            return task
+
+        return _make
+
+    def test_concatenate_single_task(self, mock_logger, mock_audio_generation_task):
+        """Test concatenating a single audio task."""
         # Arrange
-        audio_clip = MagicMock(spec=AudioSegment)
-        audio_clip.__len__.return_value = 1000  # 1 second duration
         output_path = "/path/to/output.mp3"
+        cache_path = "/tmp/audio1.mp3"
+        task = mock_audio_generation_task(1, cache_path)
+        mock_segment = MagicMock(spec=AudioSegment)
+        mock_segment.__len__.return_value = 1000
 
         with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch("os.path.exists") as mock_exists, patch(
+            "os.path.exists"
+        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
+            "os.listdir"
+        ) as mock_listdir, patch(
+            "os.remove"
+        ) as mock_remove, patch(
+            "os.rmdir"
+        ) as mock_rmdir, patch(
             "os.path.getsize"
         ) as mock_getsize:
 
-            # Setup mocks
-            mock_empty = MagicMock()
-            mock_audio_segment.empty.return_value = mock_empty
-            mock_empty.__iadd__ = lambda self, other: audio_clip
-            audio_clip.export = MagicMock()  # Explicitly define export method
-            mock_audio_segment.from_mp3.return_value = audio_clip
-            mock_exists.return_value = True
-            mock_getsize.return_value = 1024  # 1KB
+            # Track all empty() mocks
+            empty_mocks = []
+            created_batch_files = set()
+
+            def empty_side_effect():
+                m = MagicMock()
+                empty_mocks.append(m)
+                # Simulate accumulation of audio data
+                m._length = 0
+
+                def iadd_side_effect(other):
+                    m._length += 1000  # Simulate adding a segment of 1000ms
+                    return m
+
+                m.__iadd__.side_effect = iadd_side_effect
+                m.__len__.side_effect = lambda: m._length if m._length > 0 else 1000
+
+                # Patch export to record batch file creation
+                def export_side_effect(path, format=None):
+                    created_batch_files.add(path)
+
+                m.export.side_effect = export_side_effect
+                return m
+
+            mock_audio_segment.empty.side_effect = empty_side_effect
+
+            # Track all from_mp3 calls (for both cache and batch files)
+            from_mp3_mocks = []
+
+            def from_mp3_side_effect(path):
+                m = MagicMock()
+                m.__len__.return_value = 1000
+                m.export = MagicMock()
+                from_mp3_mocks.append((path, m))
+                return m
+
+            mock_audio_segment.from_mp3.side_effect = from_mp3_side_effect
+
+            # Simulate temp_batches directory and batch file
+            temp_batches_dir = "/path/to/temp_batches"
+            batch_file = "/path/to/temp_batches/batch_0.mp3"
+
+            def exists_side_effect(path):
+                return (
+                    path == cache_path
+                    or path == temp_batches_dir
+                    or path in created_batch_files
+                )
+
+            mock_exists.side_effect = exists_side_effect
+            mock_listdir.side_effect = lambda path: (
+                ["batch_0.mp3"] if path == temp_batches_dir else []
+            )
+
+            # Patch getsize to avoid FileNotFoundError
+            mock_getsize.side_effect = lambda path: (
+                1234 if path == output_path else 5678
+            )
 
             # Act
-            concatenate_audio_clips([audio_clip], output_path)
+            concatenate_tasks_batched(
+                [task], output_path, batch_size=1, gap_duration_ms=0
+            )
 
             # Assert
-            # Accept either the old or new completion message for robustness
-            found = any(
-                "Audio export completed" in str(call)
-                or "verification successful" in str(call)
-                for call in mock_logger.info.call_args_list
-            )
-            assert (
-                found
-            ), "Expected completion or verification log not found in info logs"
-            mock_audio_segment.empty.assert_called_once()
-            audio_clip.export.assert_called_once_with(output_path, format="mp3")
+            # Should call from_mp3 for the cache file and for the batch file (if batch file was created)
+            assert any(call[0] == cache_path for call in from_mp3_mocks)
+            if batch_file in created_batch_files:
+                assert any(call[0] == batch_file for call in from_mp3_mocks)
+            # The export should be called on the last empty() mock (final_audio)
+            assert empty_mocks, "No AudioSegment.empty() calls captured"
+            empty_mocks[-1].export.assert_called_once_with(output_path, format="mp3")
+            mock_makedirs.assert_called()
+            mock_rmdir.assert_called()
 
-    def test_concatenate_multiple_clips(self, mock_logger):
-        """Test concatenating multiple audio clips."""
-        # Arrange
-        audio_clip1 = MagicMock(spec=AudioSegment)
-        audio_clip1.__len__.return_value = 1000  # 1 second duration
-        audio_clip2 = MagicMock(spec=AudioSegment)
-        audio_clip2.__len__.return_value = 500  # 0.5 seconds duration
+    def test_concatenate_multiple_tasks_with_gap_and_batch(
+        self, mock_logger, mock_audio_generation_task
+    ):
+        """Test concatenating multiple audio tasks with a gap and batching."""
         output_path = "/path/to/output.mp3"
+        cache_paths = [f"/tmp/audio{i}.mp3" for i in range(3)]
+        tasks = [mock_audio_generation_task(i, cache_paths[i]) for i in range(3)]
+        mock_segments = [MagicMock(spec=AudioSegment) for _ in range(3)]
+        for seg in mock_segments:
+            seg.__len__.return_value = 1000
+            seg.export = MagicMock()
 
+        # Patch AudioSegment and os functions
         with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch("os.path.exists") as mock_exists, patch(
+            "os.path.exists"
+        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
+            "os.listdir"
+        ) as mock_listdir, patch(
+            "os.remove"
+        ) as mock_remove, patch(
+            "os.rmdir"
+        ) as mock_rmdir, patch(
             "os.path.getsize"
         ) as mock_getsize:
 
-            # Setup mocks
-            mock_empty = MagicMock()
-            mock_audio_segment.empty.return_value = mock_empty
-            mock_empty.__iadd__ = lambda self, other: mock_empty
-            mock_empty.export = MagicMock()  # Explicitly define export method
-            mock_audio_segment.from_mp3.return_value = audio_clip1
-            mock_exists.return_value = True
-            mock_getsize.return_value = 1024  # 1KB
+            # Track all empty() mocks
+            empty_mocks = []
+            created_batch_files = set()
+
+            def empty_side_effect():
+                m = MagicMock()
+                empty_mocks.append(m)
+                m._length = 0
+
+                def iadd_side_effect(other):
+                    m._length += 1000
+                    return m
+
+                m.__iadd__.side_effect = iadd_side_effect
+                m.__len__.side_effect = lambda: m._length if m._length > 0 else 1000
+
+                def export_side_effect(path, format=None):
+                    created_batch_files.add(path)
+
+                m.export.side_effect = export_side_effect
+                return m
+
+            mock_audio_segment.empty.side_effect = empty_side_effect
+            mock_audio_segment.silent.return_value = MagicMock()
+
+            # Track all from_mp3 calls (for both cache and batch files)
+            from_mp3_mocks = []
+
+            def from_mp3_side_effect(path):
+                m = MagicMock()
+                m.__len__.return_value = 1000
+                m.export = MagicMock()
+                from_mp3_mocks.append((path, m))
+                return m
+
+            mock_audio_segment.from_mp3.side_effect = from_mp3_side_effect
+
+            # Simulate temp_batches directory and batch files
+            temp_batches_dir = "/path/to/temp_batches"
+            batch_files = [f"/path/to/temp_batches/batch_{i}.mp3" for i in range(2)]
+
+            def exists_side_effect(path):
+                return (
+                    path in cache_paths
+                    or path == temp_batches_dir
+                    or path in created_batch_files
+                )
+
+            mock_exists.side_effect = exists_side_effect
+            mock_listdir.side_effect = lambda path: (
+                [f"batch_{i}.mp3" for i in range(2)] if path == temp_batches_dir else []
+            )
+
+            # Patch getsize to avoid FileNotFoundError
+            mock_getsize.side_effect = lambda path: (
+                1234 if path == output_path else 5678
+            )
 
             # Act
-            concatenate_audio_clips([audio_clip1, audio_clip2], output_path)
+            concatenate_tasks_batched(
+                tasks, output_path, batch_size=2, gap_duration_ms=200
+            )
 
             # Assert
-            # Accept either the old or new completion message for robustness
-            found = any(
-                "Audio export completed" in str(call)
-                or "verification successful" in str(call)
-                for call in mock_logger.info.call_args_list
-            )
-            assert (
-                found
-            ), "Expected completion or verification log not found in info logs"
-            mock_audio_segment.empty.assert_called_once()
-            mock_empty.export.assert_called_once_with(output_path, format="mp3")
+            # Should call from_mp3 for each cache file and for each batch file
+            for cp in cache_paths:
+                assert any(call[0] == cp for call in from_mp3_mocks)
+            for bf in batch_files:
+                if bf in created_batch_files:
+                    assert any(call[0] == bf for call in from_mp3_mocks)
+            # The export should be called on the last empty() mock (final_audio)
+            assert empty_mocks, "No AudioSegment.empty() calls captured"
+            empty_mocks[-1].export.assert_called_once_with(output_path, format="mp3")
+            mock_makedirs.assert_called()
+            mock_audio_segment.silent.assert_called_with(duration=200)
+            mock_rmdir.assert_called()
 
-    def test_concatenate_with_gap(self, mock_logger):
-        """Test concatenating audio clips with a gap."""
-        # Arrange
-        audio_clip1 = MagicMock(spec=AudioSegment)
-        audio_clip1.__len__.return_value = 1000  # 1 second duration
-        audio_clip2 = MagicMock(spec=AudioSegment)
-        audio_clip2.__len__.return_value = 500  # 0.5 seconds duration
-        gap_duration_ms = 200
+    def test_skips_tasks_with_missing_cache(
+        self, mock_logger, mock_audio_generation_task
+    ):
+        """Test that tasks with missing cache files are skipped."""
         output_path = "/path/to/output.mp3"
+        cache_path_valid = "/tmp/audio_valid.mp3"
+        cache_path_missing = "/tmp/audio_missing.mp3"
+        task_valid = mock_audio_generation_task(1, cache_path_valid)
+        task_missing = mock_audio_generation_task(2, cache_path_missing)
+        mock_segment = MagicMock(spec=AudioSegment)
+        mock_segment.__len__.return_value = 1000
+        mock_segment.export = MagicMock()
 
         with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "builtins.open", mock_open()
-        ) as mock_file, patch("os.path.exists") as mock_exists, patch(
+            "os.path.exists"
+        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
+            "os.listdir"
+        ) as mock_listdir, patch(
+            "os.remove"
+        ) as mock_remove, patch(
+            "os.rmdir"
+        ) as mock_rmdir, patch(
             "os.path.getsize"
         ) as mock_getsize:
 
-            # Setup mocks
-            mock_empty = MagicMock()
-            mock_audio_segment.empty.return_value = mock_empty
-            mock_empty.__iadd__ = lambda self, other: mock_empty
-            mock_empty.export = MagicMock()  # Explicitly define export method
+            # Track all empty() mocks
+            empty_mocks = []
+            created_batch_files = set()
 
-            mock_gap = MagicMock()
-            mock_audio_segment.silent.return_value = mock_gap
+            def empty_side_effect():
+                m = MagicMock()
+                empty_mocks.append(m)
+                m._length = 0
 
-            mock_audio_segment.from_mp3.return_value = audio_clip1
-            mock_exists.return_value = True
-            mock_getsize.return_value = 1024  # 1KB
+                def iadd_side_effect(other):
+                    m._length += 1000
+                    return m
+
+                m.__iadd__.side_effect = iadd_side_effect
+                m.__len__.side_effect = lambda: m._length if m._length > 0 else 1000
+
+                def export_side_effect(path, format=None):
+                    created_batch_files.add(path)
+
+                m.export.side_effect = export_side_effect
+                return m
+
+            mock_audio_segment.empty.side_effect = empty_side_effect
+
+            # Track all from_mp3 calls (for both cache and batch files)
+            from_mp3_mocks = []
+
+            def from_mp3_side_effect(path):
+                m = MagicMock()
+                m.__len__.return_value = 1000
+                m.export = MagicMock()
+                from_mp3_mocks.append((path, m))
+                return m
+
+            mock_audio_segment.from_mp3.side_effect = from_mp3_side_effect
+
+            # Simulate temp_batches directory and batch file
+            temp_batches_dir = "/path/to/temp_batches"
+            batch_file = "/path/to/temp_batches/batch_0.mp3"
+
+            def exists_side_effect(path):
+                return (
+                    path == cache_path_valid
+                    or path == temp_batches_dir
+                    or path in created_batch_files
+                )
+
+            mock_exists.side_effect = exists_side_effect
+            mock_listdir.side_effect = lambda path: (
+                ["batch_0.mp3"] if path == temp_batches_dir else []
+            )
+
+            # Patch getsize to avoid FileNotFoundError
+            mock_getsize.side_effect = lambda path: (
+                1234 if path == output_path else 5678
+            )
 
             # Act
-            concatenate_audio_clips(
-                [audio_clip1, audio_clip2], output_path, gap_duration_ms=gap_duration_ms
+            concatenate_tasks_batched(
+                [task_valid, task_missing], output_path, batch_size=1, gap_duration_ms=0
             )
 
             # Assert
-            mock_logger.info.assert_any_call(
-                f"Adding {gap_duration_ms}ms gap between clips."
-            )
-            mock_audio_segment.silent.assert_called_once_with(duration=gap_duration_ms)
-            mock_empty.export.assert_called_once_with(output_path, format="mp3")
+            assert any(call[0] == cache_path_valid for call in from_mp3_mocks)
+            if batch_file in created_batch_files:
+                assert any(call[0] == batch_file for call in from_mp3_mocks)
+            # The export should be called on the last empty() mock (final_audio)
+            assert empty_mocks, "No AudioSegment.empty() calls captured"
+            empty_mocks[-1].export.assert_called_once_with(output_path, format="mp3")
+            mock_makedirs.assert_called()
+            mock_rmdir.assert_called()
 
-    def test_concatenate_handles_errors(self, mock_logger):
-        """Test error handling during concatenation."""
-        # Arrange
-        audio_clip = MagicMock(spec=AudioSegment)
+    def test_handles_no_valid_tasks(self, mock_logger, mock_audio_generation_task):
+        """Test that no output is produced if all tasks are missing cache files."""
         output_path = "/path/to/output.mp3"
+        cache_path_missing = "/tmp/audio_missing.mp3"
+        task_missing = mock_audio_generation_task(1, cache_path_missing)
 
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment:
-            mock_empty = MagicMock()
-            mock_audio_segment.empty.return_value = mock_empty
-            mock_empty.__iadd__ = lambda self, other: mock_empty
-            mock_empty.export.side_effect = Exception("Export failed")
+        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
+            "os.path.exists"
+        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
+            "os.listdir"
+        ) as mock_listdir, patch(
+            "os.remove"
+        ) as mock_remove, patch(
+            "os.rmdir"
+        ) as mock_rmdir:
 
-            # Act and Assert
-            with pytest.raises(Exception, match="Export failed"):
-                concatenate_audio_clips([audio_clip], output_path)
+            mock_audio_segment.empty.return_value = MagicMock()
+            mock_exists.return_value = False
+            mock_listdir.return_value = []
 
-            mock_logger.error.assert_called()
+            # Act
+            concatenate_tasks_batched(
+                [task_missing], output_path, batch_size=1, gap_duration_ms=0
+            )
+
+            # Assert
+            mock_audio_segment.from_mp3.assert_not_called()
+            mock_makedirs.assert_not_called()
+            mock_rmdir.assert_not_called()
 
 
 class TestLoadJsonChunks:

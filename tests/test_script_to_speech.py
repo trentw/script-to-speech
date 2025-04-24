@@ -400,7 +400,7 @@ class TestMain:
         ) as mock_find_config, patch(
             "script_to_speech.set_id3_tags_from_config"
         ) as mock_set_id3, patch(
-            "script_to_speech.concatenate_audio_clips"
+            "script_to_speech.concatenate_tasks_batched"
         ) as mock_concatenate, patch(
             "script_to_speech.print_unified_report"
         ) as mock_report, patch(
@@ -459,7 +459,7 @@ class TestMain:
         ) as mock_fetch, patch(
             "script_to_speech.apply_cache_overrides"
         ) as mock_apply_overrides, patch(
-            "script_to_speech.concatenate_audio_clips"
+            "script_to_speech.concatenate_tasks_batched"
         ) as mock_concatenate:
 
             # Configure mocks
@@ -510,7 +510,7 @@ class TestMain:
         ) as mock_save_json, patch(
             "script_to_speech.apply_cache_overrides"
         ) as mock_apply_overrides, patch(
-            "script_to_speech.concatenate_audio_clips"
+            "script_to_speech.concatenate_tasks_batched"
         ) as mock_concatenate:
 
             # Configure mocks
