@@ -31,6 +31,9 @@ dev = [
     "types-tqdm>=4.67.0",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
