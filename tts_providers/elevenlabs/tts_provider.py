@@ -90,7 +90,7 @@ class ElevenLabsTTSProvider(StatefulTTSProviderBase):
 
             response = client.text_to_speech.convert(
                 voice_id=registry_voice_id,
-                optimize_streaming_latency="0",
+                optimize_streaming_latency=0,
                 output_format="mp3_44100_192",
                 text=text,
                 model_id="eleven_multilingual_v2",
