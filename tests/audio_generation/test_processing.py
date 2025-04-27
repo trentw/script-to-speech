@@ -457,9 +457,11 @@ class TestApplyCacheOverrides:
         """Test applying cache overrides when they are available."""
         # Arrange
         override_path = "/path/to/overrides/hash1~~hash2~~elevenlabs~~voice_id_123.mp3"
-        with patch("os.makedirs") as mock_makedirs, patch(
-            "os.replace"
-        ) as mock_replace, patch("os.path.exists") as mock_exists:
+        with (
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.replace") as mock_replace,
+            patch("os.path.exists") as mock_exists,
+        ):
 
             mock_exists.side_effect = lambda path: path == override_path
 
@@ -506,9 +508,11 @@ class TestApplyCacheOverrides:
         """Test handling of exceptions during override application."""
         # Arrange
         override_path = "/path/to/overrides/hash1~~hash2~~elevenlabs~~voice_id_123.mp3"
-        with patch("os.makedirs") as mock_makedirs, patch(
-            "os.replace"
-        ) as mock_replace, patch("os.path.exists") as mock_exists:
+        with (
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.replace") as mock_replace,
+            patch("os.path.exists") as mock_exists,
+        ):
 
             mock_exists.side_effect = lambda path: path == override_path
 
@@ -722,9 +726,12 @@ class TestCheckForSilence:
             return False  # Not silent
 
         # Act
-        with patch("builtins.open") as mock_open, patch(
-            "audio_generation.processing.check_audio_silence"
-        ) as mock_check_silence:
+        with (
+            patch("builtins.open") as mock_open,
+            patch(
+                "audio_generation.processing.check_audio_silence"
+            ) as mock_check_silence,
+        ):
             # Setup our side effect
             mock_check_silence.side_effect = capture_task_side_effect
 

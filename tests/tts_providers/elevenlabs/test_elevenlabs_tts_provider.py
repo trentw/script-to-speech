@@ -13,8 +13,11 @@ class TestElevenLabsTTSProvider:
     def test_init(self):
         """Test initialization of the provider."""
         # Patch environment and registry manager to prevent actual initialization
-        with patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"}), patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+        with (
+            patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"}),
+            patch(
+                "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+            ),
         ):
             provider = ElevenLabsTTSProvider()
 
@@ -198,7 +201,7 @@ class TestElevenLabsTTSProvider:
         call_args = mock_client.text_to_speech.convert.call_args[1]
         assert call_args["voice_id"] == "registry_voice_id"
         assert call_args["text"] == "Test text"
-        assert call_args["optimize_streaming_latency"] == "0"
+        assert call_args["optimize_streaming_latency"] == 0
         assert call_args["output_format"] == "mp3_44100_192"
         assert call_args["model_id"] == "eleven_multilingual_v2"
 

@@ -142,9 +142,11 @@ class TestSaveModifiedJson:
         input_file = "/input/file.json"
 
         # Act
-        with patch("builtins.open", mock_open()) as mock_file, patch(
-            "json.dump"
-        ) as mock_json_dump, patch("script_to_speech.logger") as mock_logger:
+        with (
+            patch("builtins.open", mock_open()) as mock_file,
+            patch("json.dump") as mock_json_dump,
+            patch("script_to_speech.logger") as mock_logger,
+        ):
             script_to_speech.save_modified_json(
                 modified_dialogues, output_folder, input_file
             )
@@ -166,9 +168,10 @@ class TestSaveModifiedJson:
         input_file = "/input/file.json"
 
         # Act
-        with patch(
-            "builtins.open", side_effect=PermissionError("Permission denied")
-        ), patch("script_to_speech.logger") as mock_logger:
+        with (
+            patch("builtins.open", side_effect=PermissionError("Permission denied")),
+            patch("script_to_speech.logger") as mock_logger,
+        ):
             script_to_speech.save_modified_json(
                 modified_dialogues, output_folder, input_file
             )
@@ -202,9 +205,10 @@ class TestFindOptionalConfig:
         input_file_path = "/path/to/input.json"
 
         # Act
-        with patch("os.path.exists", return_value=False), patch(
-            "script_to_speech.logger"
-        ) as mock_logger:
+        with (
+            patch("os.path.exists", return_value=False),
+            patch("script_to_speech.logger") as mock_logger,
+        ):
             result = script_to_speech.find_optional_config(
                 args_config_path, input_file_path
             )
@@ -220,9 +224,10 @@ class TestFindOptionalConfig:
         input_file_path = "/path/to/input.json"
 
         # Act
-        with patch("pathlib.Path.exists", return_value=True), patch(
-            "script_to_speech.logger"
-        ) as mock_logger:
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("script_to_speech.logger") as mock_logger,
+        ):
             result = script_to_speech.find_optional_config(
                 args_config_path, input_file_path
             )
@@ -253,25 +258,18 @@ class TestMain:
     @pytest.fixture
     def mock_setup(self):
         """Set up common mocks for main function tests."""
-        with patch("script_to_speech.parse_arguments") as mock_parse_args, patch(
-            "script_to_speech.create_output_folders"
-        ) as mock_create_folders, patch(
-            "script_to_speech.setup_screenplay_logging"
-        ) as mock_setup_logging, patch(
-            "script_to_speech.configure_ffmpeg"
-        ) as mock_configure_ffmpeg, patch(
-            "os.path.exists", return_value=True
-        ), patch(
-            "script_to_speech.TTSProviderManager"
-        ) as mock_tts_manager, patch(
-            "script_to_speech.get_processor_configs"
-        ) as mock_get_configs, patch(
-            "script_to_speech.TextProcessorManager"
-        ) as mock_processor, patch(
-            "script_to_speech.load_json_chunks"
-        ) as mock_load_chunks, patch(
-            "script_to_speech.logger"
-        ) as mock_logger:
+        with (
+            patch("script_to_speech.parse_arguments") as mock_parse_args,
+            patch("script_to_speech.create_output_folders") as mock_create_folders,
+            patch("script_to_speech.setup_screenplay_logging") as mock_setup_logging,
+            patch("script_to_speech.configure_ffmpeg") as mock_configure_ffmpeg,
+            patch("os.path.exists", return_value=True),
+            patch("script_to_speech.TTSProviderManager") as mock_tts_manager,
+            patch("script_to_speech.get_processor_configs") as mock_get_configs,
+            patch("script_to_speech.TextProcessorManager") as mock_processor,
+            patch("script_to_speech.load_json_chunks") as mock_load_chunks,
+            patch("script_to_speech.logger") as mock_logger,
+        ):
 
             # Configure parse_arguments mock
             args = MagicMock()
@@ -319,9 +317,10 @@ class TestMain:
         mocks = mock_setup
 
         # Act
-        with patch("script_to_speech.plan_audio_generation") as mock_plan, patch(
-            "sys.exit"
-        ) as mock_exit:
+        with (
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch("sys.exit") as mock_exit,
+        ):
             # Configure plan_audio_generation to return a valid response before raising exception
             mock_tasks = [
                 MagicMock(
@@ -385,28 +384,19 @@ class TestMain:
         ]
 
         # Setup additional mocks for the processing phase
-        with patch("script_to_speech.plan_audio_generation") as mock_plan, patch(
-            "script_to_speech.apply_cache_overrides"
-        ) as mock_apply_overrides, patch(
-            "script_to_speech.check_for_silence"
-        ) as mock_check_silence, patch(
-            "script_to_speech.fetch_and_cache_audio"
-        ) as mock_fetch, patch(
-            "script_to_speech.recheck_audio_files"
-        ) as mock_recheck, patch(
-            "script_to_speech.AudioSegment"
-        ) as mock_audio_segment, patch(
-            "script_to_speech.find_optional_config"
-        ) as mock_find_config, patch(
-            "script_to_speech.set_id3_tags_from_config"
-        ) as mock_set_id3, patch(
-            "script_to_speech.concatenate_tasks_batched"
-        ) as mock_concatenate, patch(
-            "script_to_speech.print_unified_report"
-        ) as mock_report, patch(
-            "script_to_speech.save_modified_json"
-        ) as mock_save_json, patch(
-            "os.path.exists", return_value=True
+        with (
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch("script_to_speech.apply_cache_overrides") as mock_apply_overrides,
+            patch("script_to_speech.check_for_silence") as mock_check_silence,
+            patch("script_to_speech.fetch_and_cache_audio") as mock_fetch,
+            patch("script_to_speech.recheck_audio_files") as mock_recheck,
+            patch("script_to_speech.AudioSegment") as mock_audio_segment,
+            patch("script_to_speech.find_optional_config") as mock_find_config,
+            patch("script_to_speech.set_id3_tags_from_config") as mock_set_id3,
+            patch("script_to_speech.concatenate_tasks_batched") as mock_concatenate,
+            patch("script_to_speech.print_unified_report") as mock_report,
+            patch("script_to_speech.save_modified_json") as mock_save_json,
+            patch("os.path.exists", return_value=True),
         ):
 
             # Configure mocks
@@ -448,19 +438,15 @@ class TestMain:
         ]
 
         # Setup additional mocks for the processing phase
-        with patch("script_to_speech.plan_audio_generation") as mock_plan, patch(
-            "script_to_speech.check_for_silence"
-        ) as mock_check_silence, patch(
-            "script_to_speech.print_unified_report"
-        ) as mock_report, patch(
-            "script_to_speech.save_modified_json"
-        ) as mock_save_json, patch(
-            "script_to_speech.fetch_and_cache_audio"
-        ) as mock_fetch, patch(
-            "script_to_speech.apply_cache_overrides"
-        ) as mock_apply_overrides, patch(
-            "script_to_speech.concatenate_tasks_batched"
-        ) as mock_concatenate:
+        with (
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch("script_to_speech.check_for_silence") as mock_check_silence,
+            patch("script_to_speech.print_unified_report") as mock_report,
+            patch("script_to_speech.save_modified_json") as mock_save_json,
+            patch("script_to_speech.fetch_and_cache_audio") as mock_fetch,
+            patch("script_to_speech.apply_cache_overrides") as mock_apply_overrides,
+            patch("script_to_speech.concatenate_tasks_batched") as mock_concatenate,
+        ):
 
             # Configure mocks
             mock_plan.return_value = (mock_tasks, ReportingState())
@@ -497,21 +483,16 @@ class TestMain:
         ]
 
         # Setup additional mocks for the processing phase
-        with patch("script_to_speech.plan_audio_generation") as mock_plan, patch(
-            "script_to_speech.check_for_silence"
-        ) as mock_check_silence, patch(
-            "script_to_speech.fetch_and_cache_audio"
-        ) as mock_fetch, patch(
-            "script_to_speech.recheck_audio_files"
-        ) as mock_recheck, patch(
-            "script_to_speech.print_unified_report"
-        ) as mock_report, patch(
-            "script_to_speech.save_modified_json"
-        ) as mock_save_json, patch(
-            "script_to_speech.apply_cache_overrides"
-        ) as mock_apply_overrides, patch(
-            "script_to_speech.concatenate_tasks_batched"
-        ) as mock_concatenate:
+        with (
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch("script_to_speech.check_for_silence") as mock_check_silence,
+            patch("script_to_speech.fetch_and_cache_audio") as mock_fetch,
+            patch("script_to_speech.recheck_audio_files") as mock_recheck,
+            patch("script_to_speech.print_unified_report") as mock_report,
+            patch("script_to_speech.save_modified_json") as mock_save_json,
+            patch("script_to_speech.apply_cache_overrides") as mock_apply_overrides,
+            patch("script_to_speech.concatenate_tasks_batched") as mock_concatenate,
+        ):
 
             # Configure mocks
             mock_plan.return_value = (mock_tasks, ReportingState())
@@ -550,14 +531,16 @@ class TestMain:
         ]
 
         # Setup additional mocks for the processing phase
-        with patch("script_to_speech.plan_audio_generation") as mock_plan, patch(
-            "script_to_speech.check_for_silence",
-            side_effect=ValueError("Processing error"),
-        ), patch("script_to_speech.print_unified_report") as mock_report, patch(
-            "script_to_speech.save_modified_json"
-        ) as mock_save, patch(
-            "sys.exit"
-        ) as mock_exit:
+        with (
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch(
+                "script_to_speech.check_for_silence",
+                side_effect=ValueError("Processing error"),
+            ),
+            patch("script_to_speech.print_unified_report") as mock_report,
+            patch("script_to_speech.save_modified_json") as mock_save,
+            patch("sys.exit") as mock_exit,
+        ):
 
             # Configure mocks - plan works but check_for_silence fails
             mock_plan.return_value = (mock_tasks, ReportingState())
@@ -615,9 +598,10 @@ class TestMain:
         test_input = "/input/test.json"
 
         # Act
-        with patch("builtins.open", side_effect=IOError("Test IO error")), patch(
-            "script_to_speech.logger"
-        ) as mock_logger:
+        with (
+            patch("builtins.open", side_effect=IOError("Test IO error")),
+            patch("script_to_speech.logger") as mock_logger,
+        ):
 
             # Call the function
             script_to_speech.save_modified_json(test_dialogues, test_folder, test_input)

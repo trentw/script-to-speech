@@ -82,31 +82,21 @@ class TestDummyProviderOverride:
         import script_to_speech
 
         # Mock the parse_arguments function to return args with dummy_provider_override=True
-        with patch("script_to_speech.parse_arguments") as mock_parse_args, patch(
-            "script_to_speech.create_output_folders"
-        ) as mock_create_folders, patch(
-            "script_to_speech.setup_screenplay_logging"
-        ) as mock_setup_logging, patch(
-            "script_to_speech.configure_ffmpeg"
-        ) as mock_configure_ffmpeg, patch(
-            "os.path.exists", return_value=True
-        ), patch(
-            "script_to_speech.TTSProviderManager"
-        ) as mock_tts_manager, patch(
-            "script_to_speech.get_processor_configs"
-        ) as mock_get_configs, patch(
-            "script_to_speech.TextProcessorManager"
-        ) as mock_processor, patch(
-            "script_to_speech.load_json_chunks"
-        ) as mock_load_chunks, patch(
-            "script_to_speech.plan_audio_generation"
-        ) as mock_plan, patch(
-            "script_to_speech.print_unified_report"
-        ) as mock_report, patch(
-            "script_to_speech.save_modified_json"
-        ) as mock_save_json, patch(
-            "os.makedirs"
-        ) as mock_makedirs:
+        with (
+            patch("script_to_speech.parse_arguments") as mock_parse_args,
+            patch("script_to_speech.create_output_folders") as mock_create_folders,
+            patch("script_to_speech.setup_screenplay_logging") as mock_setup_logging,
+            patch("script_to_speech.configure_ffmpeg") as mock_configure_ffmpeg,
+            patch("os.path.exists", return_value=True),
+            patch("script_to_speech.TTSProviderManager") as mock_tts_manager,
+            patch("script_to_speech.get_processor_configs") as mock_get_configs,
+            patch("script_to_speech.TextProcessorManager") as mock_processor,
+            patch("script_to_speech.load_json_chunks") as mock_load_chunks,
+            patch("script_to_speech.plan_audio_generation") as mock_plan,
+            patch("script_to_speech.print_unified_report") as mock_report,
+            patch("script_to_speech.save_modified_json") as mock_save_json,
+            patch("os.makedirs") as mock_makedirs,
+        ):
 
             # Configure parse_arguments mock
             args = type("Args", (), {})

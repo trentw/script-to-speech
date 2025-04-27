@@ -98,17 +98,15 @@ class TestConcatenateTasksBatched:
         mock_segment = MagicMock(spec=AudioSegment)
         mock_segment.__len__.return_value = 1000
 
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "os.path.exists"
-        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
-            "os.listdir"
-        ) as mock_listdir, patch(
-            "os.remove"
-        ) as mock_remove, patch(
-            "os.rmdir"
-        ) as mock_rmdir, patch(
-            "os.path.getsize"
-        ) as mock_getsize:
+        with (
+            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch("os.path.exists") as mock_exists,
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.listdir") as mock_listdir,
+            patch("os.remove") as mock_remove,
+            patch("os.rmdir") as mock_rmdir,
+            patch("os.path.getsize") as mock_getsize,
+        ):
 
             # Track all empty() mocks
             empty_mocks = []
@@ -198,17 +196,15 @@ class TestConcatenateTasksBatched:
             seg.export = MagicMock()
 
         # Patch AudioSegment and os functions
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "os.path.exists"
-        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
-            "os.listdir"
-        ) as mock_listdir, patch(
-            "os.remove"
-        ) as mock_remove, patch(
-            "os.rmdir"
-        ) as mock_rmdir, patch(
-            "os.path.getsize"
-        ) as mock_getsize:
+        with (
+            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch("os.path.exists") as mock_exists,
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.listdir") as mock_listdir,
+            patch("os.remove") as mock_remove,
+            patch("os.rmdir") as mock_rmdir,
+            patch("os.path.getsize") as mock_getsize,
+        ):
 
             # Track all empty() mocks
             empty_mocks = []
@@ -300,17 +296,15 @@ class TestConcatenateTasksBatched:
         mock_segment.__len__.return_value = 1000
         mock_segment.export = MagicMock()
 
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "os.path.exists"
-        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
-            "os.listdir"
-        ) as mock_listdir, patch(
-            "os.remove"
-        ) as mock_remove, patch(
-            "os.rmdir"
-        ) as mock_rmdir, patch(
-            "os.path.getsize"
-        ) as mock_getsize:
+        with (
+            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch("os.path.exists") as mock_exists,
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.listdir") as mock_listdir,
+            patch("os.remove") as mock_remove,
+            patch("os.rmdir") as mock_rmdir,
+            patch("os.path.getsize") as mock_getsize,
+        ):
 
             # Track all empty() mocks
             empty_mocks = []
@@ -390,15 +384,14 @@ class TestConcatenateTasksBatched:
         cache_path_missing = "/tmp/audio_missing.mp3"
         task_missing = mock_audio_generation_task(1, cache_path_missing)
 
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment, patch(
-            "os.path.exists"
-        ) as mock_exists, patch("os.makedirs") as mock_makedirs, patch(
-            "os.listdir"
-        ) as mock_listdir, patch(
-            "os.remove"
-        ) as mock_remove, patch(
-            "os.rmdir"
-        ) as mock_rmdir:
+        with (
+            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch("os.path.exists") as mock_exists,
+            patch("os.makedirs") as mock_makedirs,
+            patch("os.listdir") as mock_listdir,
+            patch("os.remove") as mock_remove,
+            patch("os.rmdir") as mock_rmdir,
+        ):
 
             mock_audio_segment.empty.return_value = MagicMock()
             mock_exists.return_value = False
