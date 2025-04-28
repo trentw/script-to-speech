@@ -13,7 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from utils.logging import get_screenplay_logger
+from ..utils.logging import get_screenplay_logger
 
 from .screenplay_parser import ScreenplayParser
 from .utils.file_utils import get_project_root, sanitize_name

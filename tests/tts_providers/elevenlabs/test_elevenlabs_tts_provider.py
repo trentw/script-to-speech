@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.elevenlabs.tts_provider import ElevenLabsTTSProvider
+from script_to_speech.tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from script_to_speech.tts_providers.elevenlabs.tts_provider import ElevenLabsTTSProvider
 
 
 class TestElevenLabsTTSProvider:
@@ -16,13 +16,13 @@ class TestElevenLabsTTSProvider:
         with (
             patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"}),
             patch(
-                "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+                "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
             ),
         ):
             provider = ElevenLabsTTSProvider()
 
             # Verify it's a subclass of StatefulTTSProviderBase
-            from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+            from script_to_speech.tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
 
             assert isinstance(provider, StatefulTTSProviderBase)
 
@@ -50,7 +50,7 @@ class TestElevenLabsTTSProvider:
             ElevenLabsTTSProvider.validate_speaker_config(invalid_config)
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
+    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
     def test_initialization_in_constructor(self, mock_registry_manager):
         """Test registry manager is initialized in constructor."""
         # Initialize provider
@@ -62,7 +62,7 @@ class TestElevenLabsTTSProvider:
 
     @patch.dict(os.environ, {})
     @patch(
-        "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
+        "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
         side_effect=TTSError("ELEVEN_API_KEY environment variable is not set"),
     )
     def test_constructor_missing_key(self, mock_registry_manager):
@@ -75,7 +75,7 @@ class TestElevenLabsTTSProvider:
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
     @patch(
-        "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
+        "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
         side_effect=Exception("Registry initialization failed"),
     )
     def test_constructor_error(self, mock_registry_manager):
@@ -88,7 +88,7 @@ class TestElevenLabsTTSProvider:
             provider = ElevenLabsTTSProvider()
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabs")
+    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabs")
     def test_instantiate_client(self, mock_elevenlabs):
         """Test instantiate_client class method."""
         # Call the class method
@@ -99,7 +99,7 @@ class TestElevenLabsTTSProvider:
         assert client is not None
 
     @patch.dict(os.environ, {})
-    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabs")
+    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabs")
     def test_instantiate_client_missing_key(self, mock_elevenlabs):
         """Test instantiate_client with missing API key."""
         # Mock the elevenlabs client to raise proper error
@@ -114,7 +114,7 @@ class TestElevenLabsTTSProvider:
             ElevenLabsTTSProvider.instantiate_client()
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
+    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
     def test_get_speaker_identifier(self, mock_registry_manager):
         """Test get_speaker_identifier method."""
         # Initialize provider with mocked dependencies

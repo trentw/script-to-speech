@@ -3,7 +3,7 @@
 import logging
 from pathlib import Path
 
-from utils.logging import get_screenplay_logger, setup_screenplay_logging
+from ...utils.logging import get_screenplay_logger, setup_screenplay_logging
 
 logger = get_screenplay_logger("parser.utils.logging")
 

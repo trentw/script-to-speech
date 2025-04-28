@@ -5,12 +5,12 @@ from typing import Any, Dict, List, Literal, Optional, Set
 
 from openai import APIError, AuthenticationError, OpenAI, RateLimitError
 
-from tts_providers.base.exceptions import (
+from ..base.exceptions import (
     TTSError,
     TTSRateLimitError,
     VoiceNotFoundError,
 )
-from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+from ..base.stateless_tts_provider import StatelessTTSProviderBase
 
 # Define valid voice literals - these are the voices supported by the OpenAI API
 VoiceType = Literal[

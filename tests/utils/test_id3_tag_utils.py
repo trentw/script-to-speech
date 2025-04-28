@@ -4,13 +4,13 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 import pytest
 import yaml
 
-from utils.id3_tag_utils import set_id3_tags, set_id3_tags_from_config
+from script_to_speech.utils.id3_tag_utils import set_id3_tags, set_id3_tags_from_config
 
 
 class TestSetId3Tags:
     """Tests for the set_id3_tags function."""
 
-    @patch("utils.id3_tag_utils.eyed3.load")
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
     def test_set_id3_tags_success(self, mock_load):
         """Test set_id3_tags with valid inputs."""
         # Mock eyed3 audio file and tag
@@ -39,7 +39,7 @@ class TestSetId3Tags:
         # Verify tag was saved
         mock_tag.save.assert_called_once()
 
-    @patch("utils.id3_tag_utils.eyed3.load")
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
     def test_set_id3_tags_with_no_tag(self, mock_load):
         """Test set_id3_tags when the audio file has no tag."""
         # Create a mock audio file
@@ -78,7 +78,7 @@ class TestSetId3Tags:
         # Verify tag was saved
         mock_tag.save.assert_called_once()
 
-    @patch("utils.id3_tag_utils.eyed3.load")
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
     def test_set_id3_tags_could_not_load_file(self, mock_load):
         """Test set_id3_tags when the audio file cannot be loaded."""
         # Both load attempts return None
@@ -97,7 +97,7 @@ class TestSetId3Tags:
         assert mock_load.call_count == 2
         mock_load.assert_called_with("/test/path.mp3")
 
-    @patch("utils.id3_tag_utils.eyed3.load")
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
     def test_set_id3_tags_with_empty_date(self, mock_load):
         """Test set_id3_tags with empty date value."""
         # Mock eyed3 audio file and tag
@@ -122,7 +122,7 @@ class TestSetId3Tags:
         # Verify tag was saved
         mock_tag.save.assert_called_once()
 
-    @patch("utils.id3_tag_utils.eyed3.load")
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
     def test_set_id3_tags_error_handling(self, mock_load):
         """Test set_id3_tags when an error occurs during tag setting."""
         # Mock eyed3 load to raise exception
@@ -141,7 +141,7 @@ class TestSetId3Tags:
 class TestSetId3TagsFromConfig:
     """Tests for the set_id3_tags_from_config function."""
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_success(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config with valid configuration."""
         # Mock yaml.safe_load to return valid config
@@ -174,7 +174,7 @@ class TestSetId3TagsFromConfig:
                 # Verify result is True
                 assert result is True
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_no_id3_section(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config when config has no id3_tag_config section."""
         # Mock yaml.safe_load to return config without id3_tag_config
@@ -199,7 +199,7 @@ class TestSetId3TagsFromConfig:
                 # Verify result is False
                 assert result is False
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_no_title(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config when config has no title."""
         # Mock yaml.safe_load to return config without title
@@ -226,7 +226,7 @@ class TestSetId3TagsFromConfig:
                 # Verify result is False
                 assert result is False
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_empty_title(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config when config has empty title."""
         # Mock yaml.safe_load to return config with empty title
@@ -257,7 +257,7 @@ class TestSetId3TagsFromConfig:
                 # Verify result is False
                 assert result is False
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_missing_fields(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config with missing optional fields."""
         # Mock yaml.safe_load to return config with just title
@@ -299,7 +299,7 @@ class TestSetId3TagsFromConfig:
             # Verify result is False
             assert result is False
 
-    @patch("utils.id3_tag_utils.set_id3_tags")
+    @patch("script_to_speech.utils.id3_tag_utils.set_id3_tags")
     def test_set_id3_tags_from_config_id3_error(self, mock_set_id3_tags):
         """Test set_id3_tags_from_config when setting ID3 tags fails."""
         # Mock yaml.safe_load to return valid config

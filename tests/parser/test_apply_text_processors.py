@@ -6,7 +6,7 @@ to screenplay JSON chunks.
 """
 
 import json
-from parser.apply_text_processors import apply_text_processors, main
+from script_to_speech.parser.apply_text_processors import apply_text_processors, main
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -16,10 +16,10 @@ import pytest
 class TestApplyTextProcessors:
     """Tests for the apply_text_processors function."""
 
-    @patch("parser.apply_text_processors.TextProcessorManager")
-    @patch("parser.apply_text_processors.setup_parser_logging")
-    @patch("parser.apply_text_processors.get_processor_configs")
-    @patch("parser.apply_text_processors.sanitize_name")
+    @patch("script_to_speech.parser.apply_text_processors.TextProcessorManager")
+    @patch("script_to_speech.parser.apply_text_processors.setup_parser_logging")
+    @patch("script_to_speech.parser.apply_text_processors.get_processor_configs")
+    @patch("script_to_speech.parser.apply_text_processors.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_basic(
         self,
@@ -73,10 +73,10 @@ class TestApplyTextProcessors:
         mock_file_open.assert_any_call("test_screenplay.json", "r", encoding="utf-8")
         assert any("w" in call.args for call in mock_file_open.call_args_list)
 
-    @patch("parser.apply_text_processors.TextProcessorManager")
-    @patch("parser.apply_text_processors.setup_parser_logging")
-    @patch("parser.apply_text_processors.get_processor_configs")
-    @patch("parser.apply_text_processors.sanitize_name")
+    @patch("script_to_speech.parser.apply_text_processors.TextProcessorManager")
+    @patch("script_to_speech.parser.apply_text_processors.setup_parser_logging")
+    @patch("script_to_speech.parser.apply_text_processors.get_processor_configs")
+    @patch("script_to_speech.parser.apply_text_processors.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_with_dialog(
         self,
@@ -157,7 +157,7 @@ class TestApplyTextProcessors:
 
         assert output_file_written, "Output file was not written to"
 
-    @patch("parser.apply_text_processors.apply_text_processors")
+    @patch("script_to_speech.parser.apply_text_processors.apply_text_processors")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function(self, mock_parse_args, mock_apply):
         """Test the main function."""
@@ -176,7 +176,7 @@ class TestApplyTextProcessors:
             "test_screenplay.json", ["config.yaml"], "output.json"
         )
 
-    @patch("parser.apply_text_processors.apply_text_processors")
+    @patch("script_to_speech.parser.apply_text_processors.apply_text_processors")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function_with_error(self, mock_parse_args, mock_apply):
         """Test the main function with an error."""

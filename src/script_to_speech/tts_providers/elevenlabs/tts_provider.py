@@ -8,12 +8,12 @@ import yaml
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 
-from tts_providers.base.exceptions import (
+from ..base.exceptions import (
     TTSError,
     TTSRateLimitError,
     VoiceNotFoundError,
 )
-from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from ..base.stateful_tts_provider import StatefulTTSProviderBase
 
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 

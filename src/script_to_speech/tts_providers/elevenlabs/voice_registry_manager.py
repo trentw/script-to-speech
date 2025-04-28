@@ -5,7 +5,7 @@ from typing import Dict, Optional, Tuple
 import requests
 from elevenlabs.client import ElevenLabs
 
-from utils.logging import get_screenplay_logger
+from ...utils.logging import get_screenplay_logger
 
 # Get logger for this module
 logger = get_screenplay_logger("tts_providers.elevenlabs.registry")

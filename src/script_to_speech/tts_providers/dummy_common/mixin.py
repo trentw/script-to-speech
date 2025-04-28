@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, cast
 
-from dummy_tts_backend.backend import DummyTTSBackend
+from ...dummy_tts_backend.backend import DummyTTSBackend
 
 
 class DummyProviderMixin:

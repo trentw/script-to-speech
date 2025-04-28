@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from tts_providers.dummy_stateless.tts_provider import DummyStatelessTTSProvider
+from script_to_speech.tts_providers.dummy_stateless.tts_provider import DummyStatelessTTSProvider
 
 
 class TestDummyStatelessProvider(unittest.TestCase):

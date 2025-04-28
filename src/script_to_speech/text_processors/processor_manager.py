@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Set, Tuple, Type, Union, cast
 
 import yaml
 
-from utils.logging import get_screenplay_logger
+from ..utils.logging import get_screenplay_logger
 
 from .text_preprocessor_base import TextPreProcessor
 from .text_processor_base import TextProcessor
@@ -73,7 +73,7 @@ class TextProcessorManager:
                 try:
                     # Import from preprocessors subdirectory
                     module = importlib.import_module(
-                        f"text_processors.preprocessors.{module_name}_preprocessor"
+                        f"script_to_speech.text_processors.preprocessors.{module_name}_preprocessor"
                     )
                     class_name = (
                         "".join(word.capitalize() for word in module_name.split("_"))
@@ -114,7 +114,7 @@ class TextProcessorManager:
                 try:
                     # Import from processors subdirectory
                     module = importlib.import_module(
-                        f"text_processors.processors.{module_name}_processor"
+                        f"script_to_speech.text_processors.processors.{module_name}_processor"
                     )
                     # Convert module_name to class name (e.g., skip_empty -> SkipEmptyProcessor)
                     class_name = (

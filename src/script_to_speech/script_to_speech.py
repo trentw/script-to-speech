@@ -10,29 +10,29 @@ from typing import Any, Dict, List, Optional
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from audio_generation.models import AudioGenerationTask
-from audio_generation.processing import (
+from .audio_generation.models import AudioGenerationTask
+from .audio_generation.processing import (
     apply_cache_overrides,
     check_for_silence,
     fetch_and_cache_audio,
     plan_audio_generation,
 )
-from audio_generation.reporting import (
+from .audio_generation.reporting import (
     ReportingState,
     print_unified_report,
     recheck_audio_files,
 )
-from audio_generation.utils import (
+from .audio_generation.utils import (
     concatenate_tasks_batched,
     create_output_folders,
     load_json_chunks,
 )
-from text_processors.processor_manager import TextProcessorManager
-from text_processors.utils import get_processor_configs
-from tts_providers.tts_provider_manager import TTSProviderManager
-from utils.audio_utils import configure_ffmpeg
-from utils.id3_tag_utils import set_id3_tags_from_config
-from utils.logging import get_screenplay_logger, setup_screenplay_logging
+from .text_processors.processor_manager import TextProcessorManager
+from .text_processors.utils import get_processor_configs
+from .tts_providers.tts_provider_manager import TTSProviderManager
+from .utils.audio_utils import configure_ffmpeg
+from .utils.id3_tag_utils import set_id3_tags_from_config
+from .utils.logging import get_screenplay_logger, setup_screenplay_logging
 
 # Define logger for this script
 logger = get_screenplay_logger("script_to_speech")

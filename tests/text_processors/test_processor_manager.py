@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 import pytest
 import yaml
 
-from text_processors.processor_manager import TextProcessorManager
-from text_processors.text_preprocessor_base import TextPreProcessor
-from text_processors.text_processor_base import TextProcessor
+from script_to_speech.text_processors.processor_manager import TextProcessorManager
+from script_to_speech.text_processors.text_preprocessor_base import TextPreProcessor
+from script_to_speech.text_processors.text_processor_base import TextProcessor
 
 
 class TestTextProcessorManager:
@@ -45,10 +45,10 @@ class TestTextProcessorManager:
 
                 # Verify the correct modules were imported
                 mock_import.assert_any_call(
-                    "text_processors.preprocessors.skip_and_merge_preprocessor"
+                    "script_to_speech.text_processors.preprocessors.skip_and_merge_preprocessor"
                 )
                 mock_import.assert_any_call(
-                    "text_processors.processors.skip_empty_processor"
+                    "script_to_speech.text_processors.processors.skip_empty_processor"
                 )
 
                 # Verify preprocessors and processors were initialized

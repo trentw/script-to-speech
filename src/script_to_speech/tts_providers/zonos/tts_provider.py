@@ -6,8 +6,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from zyphra import ZyphraClient, ZyphraError
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+from ..base.exceptions import TTSError, VoiceNotFoundError
+from ..base.stateless_tts_provider import StatelessTTSProviderBase
 
 
 class ZonosTTSProvider(StatelessTTSProviderBase):

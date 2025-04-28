@@ -7,9 +7,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from text_processors.processor_manager import TextProcessorManager
-from text_processors.utils import get_processor_configs
-from utils.logging import get_screenplay_logger
+from ..text_processors.processor_manager import TextProcessorManager
+from ..text_processors.utils import get_processor_configs
+from ..utils.logging import get_screenplay_logger
 
 from .analyze import analyze_chunks
 from .utils.file_utils import get_project_root, sanitize_name

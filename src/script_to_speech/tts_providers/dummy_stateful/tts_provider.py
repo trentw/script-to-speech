@@ -1,8 +1,8 @@
 from typing import Any, Dict
 
-from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
-from tts_providers.dummy_common.mixin import DummyProviderMixin
-from tts_providers.dummy_stateful.dummy_voice_registry_manager import (
+from ..base.stateful_tts_provider import StatefulTTSProviderBase
+from ..dummy_common.mixin import DummyProviderMixin
+from .dummy_voice_registry_manager import (
     DummyVoiceRegistryManager,
 )
 

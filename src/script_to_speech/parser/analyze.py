@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 
-from utils.logging import get_screenplay_logger
+from ..utils.logging import get_screenplay_logger
 
 from .utils.file_utils import sanitize_name
 from .utils.logging_utils import setup_parser_logging

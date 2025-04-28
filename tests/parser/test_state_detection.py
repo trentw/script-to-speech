@@ -5,7 +5,7 @@ This module focuses on testing the state detection methods and probability calcu
 that determine the type of each line in a screenplay.
 """
 
-from parser.screenplay_parser import (
+from script_to_speech.parser.screenplay_parser import (
     IndentationContext,
     ParserConfig,
     ScreenplayParser,
@@ -160,7 +160,7 @@ class TestStateTransitions:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_title_to_scene_heading_transition(self, mock_logger):
@@ -326,7 +326,7 @@ class TestEdgeCases:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_empty_line_handling(self, mock_logger):

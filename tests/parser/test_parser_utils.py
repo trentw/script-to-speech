@@ -7,14 +7,14 @@ including file handling, text processing, and logging utilities.
 
 import os
 import tempfile
-from parser.utils.file_utils import (
+from script_to_speech.parser.utils.file_utils import (
     create_directory_structure,
     create_output_folders,
     get_project_root,
     sanitize_name,
 )
-from parser.utils.logging_utils import setup_parser_logging
-from parser.utils.text_utils import extract_text_preserving_whitespace
+from script_to_speech.parser.utils.logging_utils import setup_parser_logging
+from script_to_speech.parser.utils.text_utils import extract_text_preserving_whitespace
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -68,7 +68,7 @@ class TestFileUtils:
     def test_create_output_folders(self):
         """Test creating output folders."""
         # Use a simpler approach with a direct mock of the function
-        with patch("parser.utils.file_utils.get_project_root") as mock_get_root:
+        with patch("script_to_speech.parser.utils.file_utils.get_project_root") as mock_get_root:
             # Create mock paths
             mock_root = MagicMock()
             mock_get_root.return_value = mock_root
@@ -159,7 +159,7 @@ class TestTextUtils:
 class TestLoggingUtils:
     """Tests for logging utility functions."""
 
-    @patch("parser.utils.logging_utils.setup_screenplay_logging")
+    @patch("script_to_speech.parser.utils.logging_utils.setup_screenplay_logging")
     @patch("pathlib.Path.mkdir")
     def test_setup_parser_logging(self, mock_mkdir, mock_setup_logging):
         """Test setting up parser logging."""

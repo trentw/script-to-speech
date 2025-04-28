@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from utils.logging import get_screenplay_logger
+from ..utils.logging import get_screenplay_logger
 
 from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 

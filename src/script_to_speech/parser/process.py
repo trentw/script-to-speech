@@ -8,8 +8,8 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from utils.logging import get_screenplay_logger
-from utils.optional_config_generation import generate_optional_config
+from ..utils.logging import get_screenplay_logger
+from ..utils.optional_config_generation import generate_optional_config
 
 from .screenplay_parser import ScreenplayParser
 from .utils.file_utils import (

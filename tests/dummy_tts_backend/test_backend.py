@@ -2,7 +2,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-from dummy_tts_backend.backend import DummyTTSBackend
+from script_to_speech.dummy_tts_backend.backend import DummyTTSBackend
 
 
 class TestDummyTTSBackend(unittest.TestCase):

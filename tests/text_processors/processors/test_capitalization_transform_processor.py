@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from text_processors.processors.capitalization_transform_processor import (
+from script_to_speech.text_processors.processors.capitalization_transform_processor import (
     CapitalizationTransformProcessor,
 )
 

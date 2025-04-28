@@ -10,9 +10,9 @@ from typing import Any, Dict, List, Optional, Tuple
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from text_processors.processor_manager import TextProcessorManager
-from tts_providers.tts_provider_manager import TTSProviderManager
-from utils.logging import get_screenplay_logger
+from ..text_processors.processor_manager import TextProcessorManager
+from ..tts_providers.tts_provider_manager import TTSProviderManager
+from ..utils.logging import get_screenplay_logger
 
 from .models import AudioClipInfo, AudioGenerationTask, ReportingState, TaskStatus
 from .reporting import print_audio_task_details

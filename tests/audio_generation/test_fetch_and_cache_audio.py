@@ -11,13 +11,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from pydub import AudioSegment
 
-from audio_generation.models import (
+from script_to_speech.audio_generation.models import (
     AudioClipInfo,
     AudioGenerationTask,
     ReportingState,
     TaskStatus,
 )
-from audio_generation.processing import (
+from script_to_speech.audio_generation.processing import (
     fetch_and_cache_audio,
     update_cache_duplicate_state,
 )
@@ -46,7 +46,7 @@ def mock_tts_provider_manager():
 @pytest.fixture
 def mock_logger():
     """Fixture providing a mock logger."""
-    with patch("audio_generation.processing.logger") as mock:
+    with patch("script_to_speech.audio_generation.processing.logger") as mock:
         yield mock
 
 
@@ -208,7 +208,7 @@ def fetch_tasks_with_duplicates():
     ]
 
 
-@patch("audio_generation.processing.update_cache_duplicate_state")
+@patch("script_to_speech.audio_generation.processing.update_cache_duplicate_state")
 @patch("os.makedirs")
 @patch("builtins.open")
 def test_fetch_calls_update_duplicate_state(
@@ -228,7 +228,7 @@ def test_fetch_calls_update_duplicate_state(
     mock_download_manager = MagicMock()
     mock_download_manager.return_value.run.return_value = ReportingState()
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -260,7 +260,7 @@ def test_fetch_skip_cache_hits(
     mock_download_manager = MagicMock()
     mock_download_manager.return_value.run.return_value = ReportingState()
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -275,7 +275,7 @@ def test_fetch_skip_cache_hits(
     assert fetch_tasks[0].status == TaskStatus.CACHED
 
 
-@patch("audio_generation.processing.update_cache_duplicate_state")
+@patch("script_to_speech.audio_generation.processing.update_cache_duplicate_state")
 @patch("os.makedirs")
 @patch("builtins.open")
 def test_fetch_skip_duplicate_tasks(
@@ -309,7 +309,7 @@ def test_fetch_skip_duplicate_tasks(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -330,7 +330,7 @@ def test_fetch_skip_duplicate_tasks(
     mock_download_manager.assert_called_once()
 
 
-@patch("audio_generation.processing.update_cache_duplicate_state")
+@patch("script_to_speech.audio_generation.processing.update_cache_duplicate_state")
 @patch("os.makedirs")
 @patch("builtins.open")
 def test_fetch_generate_audio(
@@ -363,7 +363,7 @@ def test_fetch_generate_audio(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -378,7 +378,7 @@ def test_fetch_generate_audio(
     assert fetch_tasks[1].is_cache_hit is True  # Now a cache hit
 
 
-@patch("audio_generation.processing.AudioSegment")
+@patch("script_to_speech.audio_generation.processing.AudioSegment")
 @patch("builtins.open")
 @patch("os.makedirs")
 def test_fetch_generate_silent_audio(
@@ -414,7 +414,7 @@ def test_fetch_generate_silent_audio(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Set up mock for silent audio
@@ -433,7 +433,7 @@ def test_fetch_generate_silent_audio(
     assert fetch_tasks[2].is_cache_hit is True  # Now a cache hit
 
 
-@patch("audio_generation.utils.check_audio_silence")
+@patch("script_to_speech.audio_generation.utils.check_audio_silence")
 @patch("builtins.open")
 @patch("os.makedirs")
 def test_fetch_with_silence_checking(
@@ -474,7 +474,7 @@ def test_fetch_with_silence_checking(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -490,7 +490,7 @@ def test_fetch_with_silence_checking(
     assert mock_check_silence.call_count >= 0  # At minimum, should be registered
 
 
-@patch("audio_generation.utils.check_audio_silence")
+@patch("script_to_speech.audio_generation.utils.check_audio_silence")
 @patch("builtins.open")
 @patch("os.makedirs")
 def test_fetch_with_silence_detection(
@@ -545,7 +545,7 @@ def test_fetch_with_silence_detection(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -600,7 +600,7 @@ def test_fetch_tts_provider_error(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -652,7 +652,7 @@ def test_fetch_file_write_error(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act
@@ -697,7 +697,7 @@ def test_fetch_with_real_duplicate_detection(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
     )
 
     # Act - using the real update_cache_duplicate_state function

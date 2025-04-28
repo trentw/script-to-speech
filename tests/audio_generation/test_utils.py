@@ -13,7 +13,7 @@ from unittest.mock import ANY, MagicMock, call, mock_open, patch
 import pytest
 from pydub import AudioSegment
 
-from audio_generation.utils import (
+from script_to_speech.audio_generation.utils import (
     check_audio_level,
     concatenate_tasks_batched,
     create_output_folders,
@@ -28,7 +28,9 @@ class TestAudioLevelChecking:
     def test_check_audio_level_with_valid_audio(self):
         """Test checking audio level with valid audio data."""
         # Arrange
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment:
+        with patch(
+            "script_to_speech.audio_generation.utils.AudioSegment"
+        ) as mock_audio_segment:
             # Set up mock to return our audio with a known dBFS value
             mock_segment = MagicMock()
             mock_segment.max_dBFS = -60.0
@@ -56,7 +58,9 @@ class TestAudioLevelChecking:
     def test_check_audio_level_with_invalid_audio(self):
         """Test checking audio level with invalid audio data."""
         # Arrange
-        with patch("audio_generation.utils.AudioSegment") as mock_audio_segment:
+        with patch(
+            "script_to_speech.audio_generation.utils.AudioSegment"
+        ) as mock_audio_segment:
             mock_audio_segment.from_mp3.side_effect = Exception("Invalid audio")
             audio_bytes = b"invalid_audio_data"
 
@@ -73,7 +77,7 @@ class TestConcatenateTasksBatched:
     @pytest.fixture
     def mock_logger(self):
         """Fixture providing a mock logger."""
-        with patch("audio_generation.utils.logger") as mock:
+        with patch("script_to_speech.audio_generation.utils.logger") as mock:
             yield mock
 
     @pytest.fixture
@@ -99,7 +103,9 @@ class TestConcatenateTasksBatched:
         mock_segment.__len__.return_value = 1000
 
         with (
-            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch(
+                "script_to_speech.audio_generation.utils.AudioSegment"
+            ) as mock_audio_segment,
             patch("os.path.exists") as mock_exists,
             patch("os.makedirs") as mock_makedirs,
             patch("os.listdir") as mock_listdir,
@@ -197,7 +203,9 @@ class TestConcatenateTasksBatched:
 
         # Patch AudioSegment and os functions
         with (
-            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch(
+                "script_to_speech.audio_generation.utils.AudioSegment"
+            ) as mock_audio_segment,
             patch("os.path.exists") as mock_exists,
             patch("os.makedirs") as mock_makedirs,
             patch("os.listdir") as mock_listdir,
@@ -297,7 +305,9 @@ class TestConcatenateTasksBatched:
         mock_segment.export = MagicMock()
 
         with (
-            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch(
+                "script_to_speech.audio_generation.utils.AudioSegment"
+            ) as mock_audio_segment,
             patch("os.path.exists") as mock_exists,
             patch("os.makedirs") as mock_makedirs,
             patch("os.listdir") as mock_listdir,
@@ -385,7 +395,9 @@ class TestConcatenateTasksBatched:
         task_missing = mock_audio_generation_task(1, cache_path_missing)
 
         with (
-            patch("audio_generation.utils.AudioSegment") as mock_audio_segment,
+            patch(
+                "script_to_speech.audio_generation.utils.AudioSegment"
+            ) as mock_audio_segment,
             patch("os.path.exists") as mock_exists,
             patch("os.makedirs") as mock_makedirs,
             patch("os.listdir") as mock_listdir,
@@ -457,7 +469,7 @@ class TestCreateOutputFolders:
     """Tests for output folders creation function."""
 
     @patch("os.makedirs")
-    @patch("audio_generation.utils.datetime")
+    @patch("script_to_speech.audio_generation.utils.datetime")
     def test_create_output_folders(self, mock_datetime, mock_makedirs):
         """Test creating output folders."""
         # Arrange
@@ -479,7 +491,7 @@ class TestCreateOutputFolders:
         mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
 
     @patch("os.makedirs")
-    @patch("audio_generation.utils.datetime")
+    @patch("script_to_speech.audio_generation.utils.datetime")
     def test_create_output_folders_with_run_mode(self, mock_datetime, mock_makedirs):
         """Test creating output folders with run mode specified."""
         # Arrange
@@ -502,7 +514,7 @@ class TestCreateOutputFolders:
         mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
 
     @patch("os.makedirs")
-    @patch("audio_generation.utils.datetime")
+    @patch("script_to_speech.audio_generation.utils.datetime")
     def test_create_output_folders_with_dummy_override(
         self, mock_datetime, mock_makedirs
     ):

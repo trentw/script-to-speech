@@ -13,8 +13,8 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
-from audio_generation.reporting import (
+from script_to_speech.audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
+from script_to_speech.audio_generation.reporting import (
     print_audio_task_details,
     print_unified_report,
     recheck_audio_files,
@@ -140,7 +140,7 @@ class TestRecheckAudioFiles:
 
     @patch("os.listdir")
     @patch("os.path.exists")
-    @patch("audio_generation.reporting.check_audio_level")
+    @patch("script_to_speech.audio_generation.reporting.check_audio_level")
     def test_recheck_existing_silent_clip_still_silent(
         self,
         mock_check_level,
@@ -171,7 +171,7 @@ class TestRecheckAudioFiles:
 
     @patch("os.listdir")
     @patch("os.path.exists")
-    @patch("audio_generation.reporting.check_audio_level")
+    @patch("script_to_speech.audio_generation.reporting.check_audio_level")
     def test_recheck_existing_silent_clip_no_longer_silent(
         self,
         mock_check_level,
@@ -417,7 +417,7 @@ class TestPrintUnifiedReport:
         mock_logger.info.assert_any_call("- Silent clips: 1")
         mock_logger.info.assert_any_call("- Cache misses: 1")
 
-    @patch("audio_generation.reporting.get_command_string")
+    @patch("script_to_speech.audio_generation.reporting.get_command_string")
     def test_print_report_with_command_generation(
         self, mock_get_command, mock_logger, mock_tts_manager, sample_reporting_state
     ):
@@ -497,7 +497,7 @@ class TestPrintUnifiedReport:
         )
 
         # Call function with mock command generation
-        with patch("audio_generation.reporting.get_command_string") as mock_get_command:
+        with patch("script_to_speech.audio_generation.reporting.get_command_string") as mock_get_command:
             mock_get_command.return_value = (
                 "python generate_speech.py --voice=voice_id_123 --text='Short'"
             )

@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 import eyed3
 import yaml
 
-from utils.logging import get_screenplay_logger
+from .logging import get_screenplay_logger
 
 logger = get_screenplay_logger("id3_tag_utils")
 

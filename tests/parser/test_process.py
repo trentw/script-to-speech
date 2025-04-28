@@ -7,7 +7,7 @@ This module focuses on testing the functionality for processing screenplay files
 
 import json
 import os
-from parser.process import main, process_screenplay
+from script_to_speech.parser.process import main, process_screenplay
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -17,12 +17,12 @@ import pytest
 class TestProcessScreenplay:
     """Tests for the process_screenplay function."""
 
-    @patch("parser.process.extract_text_preserving_whitespace")
-    @patch("parser.process.ScreenplayParser")
-    @patch("parser.process.create_directory_structure")
-    @patch("parser.process.create_output_folders")
-    @patch("parser.process.setup_parser_logging")
-    @patch("parser.process.generate_optional_config")
+    @patch("script_to_speech.parser.process.extract_text_preserving_whitespace")
+    @patch("script_to_speech.parser.process.ScreenplayParser")
+    @patch("script_to_speech.parser.process.create_directory_structure")
+    @patch("script_to_speech.parser.process.create_output_folders")
+    @patch("script_to_speech.parser.process.setup_parser_logging")
+    @patch("script_to_speech.parser.process.generate_optional_config")
     @patch("shutil.copy2")
     @patch("os.path.exists")
     @patch("os.path.samefile")
@@ -82,11 +82,11 @@ class TestProcessScreenplay:
         # Check that config was generated
         mock_generate_config.assert_called_once()
 
-    @patch("parser.process.ScreenplayParser")
-    @patch("parser.process.create_directory_structure")
-    @patch("parser.process.create_output_folders")
-    @patch("parser.process.setup_parser_logging")
-    @patch("parser.process.generate_optional_config")
+    @patch("script_to_speech.parser.process.ScreenplayParser")
+    @patch("script_to_speech.parser.process.create_directory_structure")
+    @patch("script_to_speech.parser.process.create_output_folders")
+    @patch("script_to_speech.parser.process.setup_parser_logging")
+    @patch("script_to_speech.parser.process.generate_optional_config")
     @patch("shutil.copy2")
     @patch("os.path.exists")
     @patch("os.path.samefile")
@@ -166,7 +166,7 @@ class TestProcessScreenplay:
         with pytest.raises(ValueError):
             process_screenplay("test.doc")
 
-    @patch("parser.process.process_screenplay")
+    @patch("script_to_speech.parser.process.process_screenplay")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function(self, mock_parse_args, mock_process):
         """Test the main function."""
@@ -183,7 +183,7 @@ class TestProcessScreenplay:
         # Check that process_screenplay was called with correct arguments
         mock_process.assert_called_once_with("test.pdf", None, False)
 
-    @patch("parser.process.process_screenplay")
+    @patch("script_to_speech.parser.process.process_screenplay")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function_with_error(self, mock_parse_args, mock_process):
         """Test the main function with an error."""

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 import pytest
 import yaml
 
-from utils.optional_config_generation import (
+from script_to_speech.utils.optional_config_generation import (
     create_default_config,
     generate_optional_config,
     get_optional_config_path,
@@ -92,8 +92,8 @@ class TestGetOptionalConfigPath:
 class TestGenerateOptionalConfig:
     """Tests for the generate_optional_config function."""
 
-    @patch("utils.optional_config_generation.os.path.exists")
-    @patch("utils.optional_config_generation.write_config_file")
+    @patch("script_to_speech.utils.optional_config_generation.os.path.exists")
+    @patch("script_to_speech.utils.optional_config_generation.write_config_file")
     def test_generate_optional_config_new_file(self, mock_write_config, mock_exists):
         """Test generate_optional_config when config file doesn't exist."""
         # Mock os.path.exists to return False (file doesn't exist)
@@ -116,8 +116,8 @@ class TestGenerateOptionalConfig:
         assert isinstance(mock_write_config.call_args[0][1], dict)
         assert "id3_tag_config" in mock_write_config.call_args[0][1]
 
-    @patch("utils.optional_config_generation.os.path.exists")
-    @patch("utils.optional_config_generation.write_config_file")
+    @patch("script_to_speech.utils.optional_config_generation.os.path.exists")
+    @patch("script_to_speech.utils.optional_config_generation.write_config_file")
     def test_generate_optional_config_existing_file(
         self, mock_write_config, mock_exists
     ):
@@ -138,9 +138,9 @@ class TestGenerateOptionalConfig:
         # Verify write_config_file was not called
         mock_write_config.assert_not_called()
 
-    @patch("utils.optional_config_generation.os.path.exists")
-    @patch("utils.optional_config_generation.create_default_config")
-    @patch("utils.optional_config_generation.write_config_file")
+    @patch("script_to_speech.utils.optional_config_generation.os.path.exists")
+    @patch("script_to_speech.utils.optional_config_generation.create_default_config")
+    @patch("script_to_speech.utils.optional_config_generation.write_config_file")
     def test_generate_optional_config_integration(
         self, mock_write_config, mock_create_default, mock_exists
     ):

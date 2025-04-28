@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
-from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
-from tts_providers.dummy_common.mixin import DummyProviderMixin
+from ..base.stateless_tts_provider import StatelessTTSProviderBase
+from ..dummy_common.mixin import DummyProviderMixin
 
 
 class DummyStatelessTTSProvider(DummyProviderMixin, StatelessTTSProviderBase):

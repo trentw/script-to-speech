@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from openai import APIError, AuthenticationError, RateLimitError
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.openai.tts_provider import OpenAITTSProvider
+from script_to_speech.tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from script_to_speech.tts_providers.openai.tts_provider import OpenAITTSProvider
 
 
 class TestOpenAITTSProvider:
@@ -16,7 +16,7 @@ class TestOpenAITTSProvider:
         """Test initialization of the provider."""
         # No need to instantiate stateless providers
         # Just verify it's a subclass of StatelessTTSProviderBase
-        from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+        from script_to_speech.tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
         assert issubclass(OpenAITTSProvider, StatelessTTSProviderBase)
 
@@ -153,7 +153,7 @@ class TestOpenAITTSProvider:
         assert isinstance(metadata_fields, list)
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_api_key"})
-    @patch("tts_providers.openai.tts_provider.OpenAI")
+    @patch("script_to_speech.tts_providers.openai.tts_provider.OpenAI")
     def test_instantiate_client(self, mock_openai):
         """Test instantiate_client class method."""
         # Call instantiate_client
@@ -175,7 +175,7 @@ class TestOpenAITTSProvider:
             OpenAITTSProvider.instantiate_client()
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "fake_api_key"})
-    @patch("tts_providers.openai.tts_provider.OpenAI")
+    @patch("script_to_speech.tts_providers.openai.tts_provider.OpenAI")
     def test_instantiate_client_error(self, mock_openai):
         """Test instantiate_client with initialization error."""
         # Make OpenAI constructor raise exception

@@ -10,9 +10,9 @@ import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
-from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+from .base.exceptions import TTSError, VoiceNotFoundError
+from .base.stateful_tts_provider import StatefulTTSProviderBase
+from .base.stateless_tts_provider import StatelessTTSProviderBase
 
 
 class TTSProviderManager:
@@ -73,7 +73,7 @@ class TTSProviderManager:
         try:
             # Import the provider module based on directory name
             module = importlib.import_module(
-                f"tts_providers.{provider_name}.tts_provider"
+                f"script_to_speech.tts_providers.{provider_name}.tts_provider"
             )
 
             # Get the provider class

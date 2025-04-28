@@ -1,6 +1,6 @@
 import pytest
 
-from text_processors.preprocessors.dual_dialog_preprocessor import (
+from script_to_speech.text_processors.preprocessors.dual_dialog_preprocessor import (
     DualDialogPreProcessor,
 )
 

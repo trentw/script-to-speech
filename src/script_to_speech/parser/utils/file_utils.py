@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Tuple
 
-from utils.logging import get_screenplay_logger
+from ...utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("parser.utils.file")
 

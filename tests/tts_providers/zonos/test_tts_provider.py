@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 from zyphra import ZyphraError
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.zonos.tts_provider import ZonosTTSProvider
+from script_to_speech.tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from script_to_speech.tts_providers.zonos.tts_provider import ZonosTTSProvider
 
 
 class TestZonosTTSProvider:
@@ -17,7 +17,7 @@ class TestZonosTTSProvider:
         """Test initialization of the provider."""
         # No need to instantiate stateless providers
         # Just verify it's a subclass of StatelessTTSProviderBase
-        from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+        from script_to_speech.tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 
         assert issubclass(ZonosTTSProvider, StatelessTTSProviderBase)
 
@@ -113,7 +113,7 @@ class TestZonosTTSProvider:
         """Test instantiate_client class method."""
         with patch.dict(os.environ, {"ZONOS_API_KEY": "fake_api_key"}):
             with patch(
-                "tts_providers.zonos.tts_provider.ZyphraClient"
+                "script_to_speech.tts_providers.zonos.tts_provider.ZyphraClient"
             ) as mock_zyphra_client:
                 # Call the class method
                 client = ZonosTTSProvider.instantiate_client()
@@ -201,7 +201,7 @@ class TestZonosTTSProvider:
             ZonosTTSProvider.instantiate_client()
 
     @patch.dict(os.environ, {"ZONOS_API_KEY": "fake_api_key"})
-    @patch("tts_providers.zonos.tts_provider.ZyphraClient")
+    @patch("script_to_speech.tts_providers.zonos.tts_provider.ZyphraClient")
     def test_instantiate_client_error(self, mock_zyphra_client):
         """Test instantiate_client with initialization error."""
         # Make ZyphraClient constructor raise exception

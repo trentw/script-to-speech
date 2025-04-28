@@ -3,10 +3,10 @@ import logging
 import os
 from typing import List, Optional, Tuple
 
-from text_processors.processor_manager import TextProcessorManager
-from text_processors.utils import get_processor_configs
-from tts_providers.tts_provider_manager import TTSProviderManager
-from utils.logging import get_screenplay_logger
+from ..text_processors.processor_manager import TextProcessorManager
+from ..text_processors.utils import get_processor_configs
+from .tts_provider_manager import TTSProviderManager
+from ..utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("utils.processor")
 

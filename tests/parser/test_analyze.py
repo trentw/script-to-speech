@@ -6,7 +6,7 @@ and generating statistics.
 """
 
 import json
-from parser.analyze import analyze_chunks, analyze_screenplay_chunks, main
+from script_to_speech.parser.analyze import analyze_chunks, analyze_screenplay_chunks, main
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -16,7 +16,7 @@ import pytest
 class TestAnalyzeChunks:
     """Tests for the analyze_chunks function."""
 
-    @patch("parser.analyze.logger")
+    @patch("script_to_speech.parser.analyze.logger")
     def test_analyze_empty_chunks(self, mock_logger):
         """Test analyzing empty chunks list."""
         # Call function
@@ -27,7 +27,7 @@ class TestAnalyzeChunks:
         mock_logger.info.assert_any_call(f"\nTotal Distinct Speakers:\n  {0}")
         mock_logger.info.assert_any_call("\nSpeaker Line Counts:")
 
-    @patch("parser.analyze.logger")
+    @patch("script_to_speech.parser.analyze.logger")
     def test_analyze_basic_chunks(self, mock_logger):
         """Test analyzing basic chunks."""
         # Create test chunks
@@ -51,7 +51,7 @@ class TestAnalyzeChunks:
         mock_logger.info.assert_any_call("\nSpeaker Line Counts:")
         mock_logger.info.assert_any_call("  (default): 3")
 
-    @patch("parser.analyze.logger")
+    @patch("script_to_speech.parser.analyze.logger")
     def test_analyze_chunks_with_dialog(self, mock_logger):
         """Test analyzing chunks with dialog."""
         # Create test chunks
@@ -92,9 +92,9 @@ class TestAnalyzeChunks:
 class TestAnalyzeScreenplayChunks:
     """Tests for the analyze_screenplay_chunks function."""
 
-    @patch("parser.analyze.analyze_chunks")
-    @patch("parser.analyze.setup_parser_logging")
-    @patch("parser.analyze.sanitize_name")
+    @patch("script_to_speech.parser.analyze.analyze_chunks")
+    @patch("script_to_speech.parser.analyze.setup_parser_logging")
+    @patch("script_to_speech.parser.analyze.sanitize_name")
     @patch("datetime.datetime")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)
@@ -137,7 +137,7 @@ class TestAnalyzeScreenplayChunks:
         mock_analyze.assert_called_once()
         assert len(mock_analyze.call_args[0][0]) == 2  # Should have 2 chunks
 
-    @patch("parser.analyze.analyze_screenplay_chunks")
+    @patch("script_to_speech.parser.analyze.analyze_screenplay_chunks")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function(self, mock_parse_args, mock_analyze):
         """Test the main function."""
@@ -152,7 +152,7 @@ class TestAnalyzeScreenplayChunks:
         # Check that analyze_screenplay_chunks was called with correct arguments
         mock_analyze.assert_called_once_with("test_screenplay.json")
 
-    @patch("parser.analyze.analyze_screenplay_chunks")
+    @patch("script_to_speech.parser.analyze.analyze_screenplay_chunks")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function_with_error(self, mock_parse_args, mock_analyze):
         """Test the main function with an error."""

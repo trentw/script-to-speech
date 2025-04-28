@@ -6,12 +6,12 @@ import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
-from tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
-from tts_providers.tts_provider_manager import TTSProviderManager
-from utils.audio_utils import configure_ffmpeg, split_audio_on_silence
-from utils.logging import get_screenplay_logger
+from ..tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from ..tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+from ..tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+from ..tts_providers.tts_provider_manager import TTSProviderManager
+from .audio_utils import configure_ffmpeg, split_audio_on_silence
+from .logging import get_screenplay_logger
 
 logger = get_screenplay_logger("utils.generate_standalone_speech")
 
@@ -30,7 +30,7 @@ def get_provider_class(
 ) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
     """Get the provider class for a given provider name."""
     try:
-        module = importlib.import_module(f"tts_providers.{provider_name}.tts_provider")
+        module = importlib.import_module(f"script_to_speech.tts_providers.{provider_name}.tts_provider")
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)
@@ -179,7 +179,7 @@ def get_command_string(
 
         texts_quoted = [f'"{t}"' for t in texts]
 
-        return f"python -m utils.generate_standalone_speech {provider_name} {' '.join(config_params)} {' '.join(texts_quoted)}"
+        return f"python -m script_to_speech.utils.generate_standalone_speech {provider_name} {' '.join(config_params)} {' '.join(texts_quoted)}"
     except Exception as e:
         logger.error(f"Error generating command string: {e}")
         return ""
@@ -188,8 +188,9 @@ def get_command_string(
 def main() -> int:
     # Get available providers
     available_providers = []
-    for item in os.listdir("tts_providers"):
-        if os.path.isdir(os.path.join("tts_providers", item)) and item not in [
+    tts_providers_dir = os.path.join(os.path.dirname(__file__), "..", "tts_providers")
+    for item in os.listdir(tts_providers_dir):
+        if os.path.isdir(os.path.join(tts_providers_dir, item)) and item not in [
             "base",
             "__pycache__",
         ]:

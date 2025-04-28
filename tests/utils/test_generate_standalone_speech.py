@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pytest
 
-from utils.generate_standalone_speech import (
+from script_to_speech.utils.generate_standalone_speech import (
     SPLIT_SENTENCE,
     clean_filename,
     generate_standalone_speech,
@@ -46,9 +46,9 @@ class TestCleanFilename:
 class TestGetProviderClass:
     """Tests for the get_provider_class function."""
 
-    @patch("utils.generate_standalone_speech.importlib.import_module")
-    @patch("utils.generate_standalone_speech.isinstance")
-    @patch("utils.generate_standalone_speech.issubclass")
+    @patch("script_to_speech.utils.generate_standalone_speech.importlib.import_module")
+    @patch("script_to_speech.utils.generate_standalone_speech.isinstance")
+    @patch("script_to_speech.utils.generate_standalone_speech.issubclass")
     def test_get_provider_class_valid_provider(
         self, mock_issubclass, mock_isinstance, mock_import
     ):
@@ -79,7 +79,7 @@ class TestGetProviderClass:
         # Verify the result is our mock provider
         assert result is mock_provider
 
-    @patch("utils.generate_standalone_speech.importlib.import_module")
+    @patch("script_to_speech.utils.generate_standalone_speech.importlib.import_module")
     def test_get_provider_class_provider_not_found(self, mock_import):
         """Test get_provider_class when provider is not found."""
         # Setup import to raise ImportError
@@ -89,7 +89,7 @@ class TestGetProviderClass:
         with pytest.raises(ValueError, match="Provider 'nonexistent' not found:"):
             get_provider_class("nonexistent")
 
-    @patch("utils.generate_standalone_speech.importlib.import_module")
+    @patch("script_to_speech.utils.generate_standalone_speech.importlib.import_module")
     def test_get_provider_class_no_valid_provider_class(self, mock_import):
         """Test get_provider_class when no valid provider class is found."""
         # Set up mock module with no provider class
@@ -103,7 +103,7 @@ class TestGetProviderClass:
         ):
             get_provider_class("test_provider")
 
-    @patch("utils.generate_standalone_speech.importlib.import_module")
+    @patch("script_to_speech.utils.generate_standalone_speech.importlib.import_module")
     def test_get_provider_class_provider_identifier_mismatch(self, mock_import):
         """Test get_provider_class when provider identifier doesn't match."""
         # Create mock provider class with a different identifier
@@ -142,8 +142,8 @@ class TestGenerateStandaloneSpeech:
         def generate_audio(client, speaker_config, text):
             return b"test audio data"
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
-    @patch("utils.generate_standalone_speech.datetime")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
     def test_generate_standalone_speech_basic(self, mock_datetime, mock_makedirs):
         """Test basic functionality of generate_standalone_speech."""
         speaker_config = {"voice_id": "test_voice"}
@@ -189,9 +189,9 @@ class TestGenerateStandaloneSpeech:
                 len(open_calls) == 1
             ), f"Expected open to be called once with {expected_filename}, but got {len(open_calls)}"
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
-    @patch("utils.generate_standalone_speech.datetime")
-    @patch("utils.generate_standalone_speech.split_audio_on_silence")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    @patch("script_to_speech.utils.generate_standalone_speech.split_audio_on_silence")
     def test_generate_standalone_speech_with_split(
         self, mock_split, mock_datetime, mock_makedirs
     ):
@@ -214,7 +214,7 @@ class TestGenerateStandaloneSpeech:
         # Mock open for writing
         with patch("builtins.open", mock_open()) as mock_file:
             # Mock io.BytesIO
-            with patch("utils.generate_standalone_speech.io.BytesIO") as mock_bytesio:
+            with patch("script_to_speech.utils.generate_standalone_speech.io.BytesIO") as mock_bytesio:
                 # Setup BytesIO mock
                 mock_buffer = MagicMock()
                 mock_bytesio.return_value = mock_buffer
@@ -254,8 +254,8 @@ class TestGenerateStandaloneSpeech:
                 # Verify split audio data was written
                 mock_file().write.assert_called_once_with(b"split audio data")
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
-    @patch("utils.generate_standalone_speech.split_audio_on_silence")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.split_audio_on_silence")
     def test_generate_standalone_speech_split_error(self, mock_split, mock_makedirs):
         """Test generate_standalone_speech when splitting fails."""
         speaker_config = {"voice_id": "test_voice"}
@@ -278,8 +278,8 @@ class TestGenerateStandaloneSpeech:
 
         # No file should be created when split fails
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
-    @patch("utils.generate_standalone_speech.split_audio_on_silence")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.split_audio_on_silence")
     def test_generate_standalone_speech_split_exception(
         self, mock_split, mock_makedirs
     ):
@@ -304,14 +304,14 @@ class TestGenerateStandaloneSpeech:
 
         # No file should be created when split raises exception
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
     def test_generate_standalone_speech_with_long_text(self, mock_makedirs):
         """Test generate_standalone_speech with long text."""
         speaker_config = {"voice_id": "test_voice"}
         mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
-        with patch("utils.generate_standalone_speech.datetime") as mock_datetime:
+        with patch("script_to_speech.utils.generate_standalone_speech.datetime") as mock_datetime:
             mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
 
             # Mock open for writing
@@ -334,14 +334,14 @@ class TestGenerateStandaloneSpeech:
                     os.path.join("test_output", expected_filename), "wb"
                 )
 
-    @patch("utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
     def test_generate_standalone_speech_with_variant(self, mock_makedirs):
         """Test generate_standalone_speech with variant number > 1."""
         speaker_config = {"voice_id": "test_voice"}
         mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
-        with patch("utils.generate_standalone_speech.datetime") as mock_datetime:
+        with patch("script_to_speech.utils.generate_standalone_speech.datetime") as mock_datetime:
             mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
 
             # Mock open for writing
@@ -405,7 +405,7 @@ class TestGetCommandString:
         mock_manager.get_speaker_configuration.assert_called_once_with("test_speaker")
 
         # Verify result contains expected command components
-        assert "python -m utils.generate_standalone_speech test_provider" in result
+        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
         assert "--voice_id test_voice" in result
         assert "--model test_model" in result
         assert '"Hello world"' in result
@@ -428,7 +428,7 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert "python -m utils.generate_standalone_speech test_provider" in result
+        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 
@@ -450,7 +450,7 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert "python -m utils.generate_standalone_speech test_provider" in result
+        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 

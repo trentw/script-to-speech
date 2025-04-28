@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Dict, List, Optional, Pattern
 
-from utils.logging import get_screenplay_logger
+from ..utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("parser.screenplay")
 

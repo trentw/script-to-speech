@@ -9,13 +9,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from audio_generation.models import (
+from script_to_speech.audio_generation.models import (
     AudioClipInfo,
     AudioGenerationTask,
     ReportingState,
     TaskStatus,
 )
-from audio_generation.utils import check_audio_silence
+from script_to_speech.audio_generation.utils import check_audio_silence
 
 
 @pytest.fixture
@@ -63,7 +63,7 @@ def expected_silence_task():
 @pytest.fixture
 def mock_logger():
     """Fixture providing a mock logger."""
-    with patch("audio_generation.utils.logger") as mock:
+    with patch("script_to_speech.audio_generation.utils.logger") as mock:
         yield mock
 
 
@@ -73,7 +73,7 @@ def test_silent_clip(silence_task, mock_logger):
     reporting_state = ReportingState()
 
     # Mock the check_audio_level function
-    with patch("audio_generation.utils.check_audio_level", return_value=-60.0):
+    with patch("script_to_speech.audio_generation.utils.check_audio_level", return_value=-60.0):
         # Call function
         result = check_audio_silence(
             task=silence_task,
@@ -101,7 +101,7 @@ def test_non_silent_clip(silence_task, mock_logger):
     reporting_state = ReportingState()
 
     # Mock the check_audio_level function
-    with patch("audio_generation.utils.check_audio_level", return_value=-20.0):
+    with patch("script_to_speech.audio_generation.utils.check_audio_level", return_value=-20.0):
         # Call function
         result = check_audio_silence(
             task=silence_task,
@@ -127,7 +127,7 @@ def test_expected_silence_skipped(expected_silence_task, mock_logger):
     reporting_state = ReportingState()
 
     # This shouldn't call check_audio_level at all
-    with patch("audio_generation.utils.check_audio_level") as mock_check_level:
+    with patch("script_to_speech.audio_generation.utils.check_audio_level") as mock_check_level:
         result = check_audio_silence(
             task=expected_silence_task,
             audio_data=b"audio_data",
@@ -152,7 +152,7 @@ def test_with_log_prefix(silence_task, mock_logger):
     reporting_state = ReportingState()
 
     # Mock check_audio_level to return silent level
-    with patch("audio_generation.utils.check_audio_level", return_value=-60.0):
+    with patch("script_to_speech.audio_generation.utils.check_audio_level", return_value=-60.0):
         # Call with log prefix
         check_audio_silence(
             task=silence_task,
@@ -179,7 +179,7 @@ def test_none_level_handled(silence_task, mock_logger):
     reporting_state = ReportingState()
 
     # Mock check_audio_level to return None
-    with patch("audio_generation.utils.check_audio_level", return_value=None):
+    with patch("script_to_speech.audio_generation.utils.check_audio_level", return_value=None):
         # Call function
         result = check_audio_silence(
             task=silence_task,
