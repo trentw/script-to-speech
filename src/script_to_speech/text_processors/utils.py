@@ -2,7 +2,9 @@ import os
 from typing import List, Optional
 
 # Default processor configuration path
-DEFAULT_PROCESSOR_CONFIG = "text_processors/configs/default_processor_config.yaml"
+DEFAULT_PROCESSOR_CONFIG = (
+    "src/script_to_speech/text_processors/configs/default_processor_config.yaml"
+)
 
 
 def get_processor_configs(

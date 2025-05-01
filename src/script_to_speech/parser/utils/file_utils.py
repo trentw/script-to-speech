@@ -18,7 +18,7 @@ def get_project_root() -> Path:
     Returns:
         Path to project root directory
     """
-    return Path(__file__).resolve().parent.parent.parent
+    return Path(__file__).resolve().parent.parent.parent.parent.parent
 
 
 def sanitize_name(name: str) -> str:
@@ -39,7 +39,7 @@ def sanitize_name(name: str) -> str:
 def create_directory_structure() -> None:
     """Create the necessary directory structure relative to project root."""
     root = get_project_root()
-    required_dirs = [root / "input", root / "parser" / "logs"]
+    required_dirs = [root / "input", root / "output" / "parser_logs"]
 
     for dir_path in required_dirs:
         dir_path.mkdir(parents=True, exist_ok=True)
@@ -64,7 +64,10 @@ def create_output_folders(screenplay_name: str, run_mode: str = "") -> Tuple[str
 
     mode_prefix = f"[{run_mode}]_" if run_mode else ""
     log_file = (
-        root / "parser" / "logs" / f"{mode_prefix}{screenplay_name}_{timestamp}.log"
+        root
+        / "output"
+        / "parser_logs"
+        / f"{mode_prefix}{screenplay_name}_{timestamp}.log"
     )
 
     return str(screenplay_dir), str(log_file)

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_screenplay_logger
-
 from .screenplay_parser import ScreenplayParser
 from .utils.file_utils import get_project_root, sanitize_name
 from .utils.logging_utils import setup_parser_logging
@@ -32,7 +31,7 @@ def setup_logging(input_file_name: str) -> str:
         Path to the log file
     """
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = get_project_root() / "parser" / "logs"
+    log_dir = get_project_root() / "output" / "parser_logs"
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Remove file extension and get base name
