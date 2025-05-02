@@ -11,7 +11,6 @@ from pydub import AudioSegment
 from tqdm import tqdm
 
 from ..utils.logging import get_screenplay_logger
-
 from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 
 # Get logger for this module

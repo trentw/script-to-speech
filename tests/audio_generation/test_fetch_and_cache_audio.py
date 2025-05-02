@@ -228,7 +228,8 @@ def test_fetch_calls_update_duplicate_state(
     mock_download_manager = MagicMock()
     mock_download_manager.return_value.run.return_value = ReportingState()
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -260,7 +261,8 @@ def test_fetch_skip_cache_hits(
     mock_download_manager = MagicMock()
     mock_download_manager.return_value.run.return_value = ReportingState()
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -309,7 +311,8 @@ def test_fetch_skip_duplicate_tasks(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -363,7 +366,8 @@ def test_fetch_generate_audio(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -414,7 +418,8 @@ def test_fetch_generate_silent_audio(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Set up mock for silent audio
@@ -474,7 +479,8 @@ def test_fetch_with_silence_checking(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -545,7 +551,8 @@ def test_fetch_with_silence_detection(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -600,7 +607,8 @@ def test_fetch_tts_provider_error(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -652,7 +660,8 @@ def test_fetch_file_write_error(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act
@@ -697,7 +706,8 @@ def test_fetch_with_real_duplicate_detection(
 
     mock_download_manager.return_value.run.side_effect = mock_run_side_effect
     monkeypatch.setattr(
-        "script_to_speech.audio_generation.download_manager.AudioDownloadManager", mock_download_manager
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
     )
 
     # Act - using the real update_cache_duplicate_state function

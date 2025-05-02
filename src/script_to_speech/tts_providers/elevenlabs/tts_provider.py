@@ -14,7 +14,6 @@ from ..base.exceptions import (
     VoiceNotFoundError,
 )
 from ..base.stateful_tts_provider import StatefulTTSProviderBase
-
 from .voice_registry_manager import ElevenLabsVoiceRegistryManager
 
 

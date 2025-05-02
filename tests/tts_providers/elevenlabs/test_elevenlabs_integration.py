@@ -15,7 +15,9 @@ class TestElevenLabsIntegration:
     """Integration tests for ElevenLabsTTSProvider and VoiceRegistryManager."""
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabs")
     def test_initialization_flow(self, mock_tts_client, mock_registry_client):
         """Test integration of provider initialization."""

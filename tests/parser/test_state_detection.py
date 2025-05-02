@@ -5,15 +5,16 @@ This module focuses on testing the state detection methods and probability calcu
 that determine the type of each line in a screenplay.
 """
 
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from script_to_speech.parser.screenplay_parser import (
     IndentationContext,
     ParserConfig,
     ScreenplayParser,
     State,
 )
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestStateDetectionMethods:

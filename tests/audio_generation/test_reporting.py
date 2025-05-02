@@ -13,7 +13,11 @@ from unittest.mock import MagicMock, call, patch
 
 import pytest
 
-from script_to_speech.audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
+from script_to_speech.audio_generation.models import (
+    AudioClipInfo,
+    AudioGenerationTask,
+    ReportingState,
+)
 from script_to_speech.audio_generation.reporting import (
     print_audio_task_details,
     print_unified_report,
@@ -497,7 +501,9 @@ class TestPrintUnifiedReport:
         )
 
         # Call function with mock command generation
-        with patch("script_to_speech.audio_generation.reporting.get_command_string") as mock_get_command:
+        with patch(
+            "script_to_speech.audio_generation.reporting.get_command_string"
+        ) as mock_get_command:
             mock_get_command.return_value = (
                 "python generate_speech.py --voice=voice_id_123 --text='Short'"
             )

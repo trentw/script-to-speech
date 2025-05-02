@@ -5,6 +5,10 @@ This module focuses on testing the chunk creation, modification, and completion
 functionality in the screenplay parser.
 """
 
+from unittest.mock import MagicMock, patch
+
+import pytest
+
 from script_to_speech.parser.screenplay_parser import (
     Chunk,
     IndentationContext,
@@ -12,9 +16,6 @@ from script_to_speech.parser.screenplay_parser import (
     ScreenplayParser,
     State,
 )
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestChunkCreation:

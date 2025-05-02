@@ -214,7 +214,9 @@ class TestGenerateStandaloneSpeech:
         # Mock open for writing
         with patch("builtins.open", mock_open()) as mock_file:
             # Mock io.BytesIO
-            with patch("script_to_speech.utils.generate_standalone_speech.io.BytesIO") as mock_bytesio:
+            with patch(
+                "script_to_speech.utils.generate_standalone_speech.io.BytesIO"
+            ) as mock_bytesio:
                 # Setup BytesIO mock
                 mock_buffer = MagicMock()
                 mock_bytesio.return_value = mock_buffer
@@ -311,7 +313,9 @@ class TestGenerateStandaloneSpeech:
         mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
-        with patch("script_to_speech.utils.generate_standalone_speech.datetime") as mock_datetime:
+        with patch(
+            "script_to_speech.utils.generate_standalone_speech.datetime"
+        ) as mock_datetime:
             mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
 
             # Mock open for writing
@@ -341,7 +345,9 @@ class TestGenerateStandaloneSpeech:
         mock_provider_class = self.MockProvider
 
         # Mock datetime to return a fixed timestamp
-        with patch("script_to_speech.utils.generate_standalone_speech.datetime") as mock_datetime:
+        with patch(
+            "script_to_speech.utils.generate_standalone_speech.datetime"
+        ) as mock_datetime:
             mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
 
             # Mock open for writing
@@ -405,7 +411,10 @@ class TestGetCommandString:
         mock_manager.get_speaker_configuration.assert_called_once_with("test_speaker")
 
         # Verify result contains expected command components
-        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
+        assert (
+            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
+            in result
+        )
         assert "--voice_id test_voice" in result
         assert "--model test_model" in result
         assert '"Hello world"' in result
@@ -428,7 +437,10 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
+        assert (
+            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
+            in result
+        )
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 
@@ -450,7 +462,10 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert "python -m script_to_speech.utils.generate_standalone_speech test_provider" in result
+        assert (
+            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
+            in result
+        )
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 

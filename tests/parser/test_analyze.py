@@ -6,11 +6,16 @@ and generating statistics.
 """
 
 import json
-from script_to_speech.parser.analyze import analyze_chunks, analyze_screenplay_chunks, main
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
+
+from script_to_speech.parser.analyze import (
+    analyze_chunks,
+    analyze_screenplay_chunks,
+    main,
+)
 
 
 class TestAnalyzeChunks:

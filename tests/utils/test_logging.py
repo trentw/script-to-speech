@@ -164,7 +164,9 @@ class TestSetupScreenplayLogging:
         mock_file_handler.return_value = MagicMock()
 
         # Mock TqdmLoggingHandler to avoid affecting console output during tests
-        with patch("script_to_speech.utils.logging.TqdmLoggingHandler") as mock_tqdm_handler:
+        with patch(
+            "script_to_speech.utils.logging.TqdmLoggingHandler"
+        ) as mock_tqdm_handler:
             # Create a mock instance and track constructor arguments
             mock_instance = MagicMock()
             mock_tqdm_handler.return_value = mock_instance

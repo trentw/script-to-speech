@@ -17,7 +17,9 @@ class TestZonosTTSProvider:
         """Test initialization of the provider."""
         # No need to instantiate stateless providers
         # Just verify it's a subclass of StatelessTTSProviderBase
-        from script_to_speech.tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
+        from script_to_speech.tts_providers.base.stateless_tts_provider import (
+            StatelessTTSProviderBase,
+        )
 
         assert issubclass(ZonosTTSProvider, StatelessTTSProviderBase)
 

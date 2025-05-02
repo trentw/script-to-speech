@@ -241,7 +241,9 @@ class TestPlanAudioGeneration:
         ]
 
         # Act
-        with patch("script_to_speech.audio_generation.processing.generate_chunk_hash") as mock_hash:
+        with patch(
+            "script_to_speech.audio_generation.processing.generate_chunk_hash"
+        ) as mock_hash:
             # Return predictable hashes
             mock_hash.side_effect = [
                 "cached_hash1",

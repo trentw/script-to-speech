@@ -2,7 +2,6 @@ import re
 from typing import Dict, List, Tuple
 
 from ...utils.logging import get_screenplay_logger
-
 from ..text_preprocessor_base import TextPreProcessor
 
 logger = get_screenplay_logger(

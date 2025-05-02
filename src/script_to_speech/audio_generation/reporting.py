@@ -5,7 +5,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..tts_providers.tts_provider_manager import TTSProviderManager
 from ..utils.generate_standalone_speech import get_command_string
-
 from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 from .utils import check_audio_level, truncate_text
 

@@ -6,16 +6,17 @@ with existing JSON files to detect regressions.
 """
 
 import json
+from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+
 from script_to_speech.parser.regression_check import (
     compare_chunks_by_type,
     load_json_chunks,
     main,
     run_regression_check,
 )
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
-
-import pytest
 
 
 class TestLoadJsonChunks:

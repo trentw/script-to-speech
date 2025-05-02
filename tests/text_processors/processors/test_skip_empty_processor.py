@@ -1,6 +1,8 @@
 import pytest
 
-from script_to_speech.text_processors.processors.skip_empty_processor import SkipEmptyProcessor
+from script_to_speech.text_processors.processors.skip_empty_processor import (
+    SkipEmptyProcessor,
+)
 
 
 class TestSkipEmptyProcessor:

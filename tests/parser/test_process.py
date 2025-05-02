@@ -7,11 +7,12 @@ This module focuses on testing the functionality for processing screenplay files
 
 import json
 import os
-from script_to_speech.parser.process import main, process_screenplay
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
+
+from script_to_speech.parser.process import main, process_screenplay
 
 
 class TestProcessScreenplay:

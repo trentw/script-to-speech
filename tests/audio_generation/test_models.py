@@ -7,7 +7,11 @@ ensuring they are properly initialized and behave as expected.
 
 import pytest
 
-from script_to_speech.audio_generation.models import AudioClipInfo, AudioGenerationTask, ReportingState
+from script_to_speech.audio_generation.models import (
+    AudioClipInfo,
+    AudioGenerationTask,
+    ReportingState,
+)
 
 
 class TestAudioClipInfo:

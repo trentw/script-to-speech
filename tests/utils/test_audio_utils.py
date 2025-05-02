@@ -70,7 +70,9 @@ class TestConfigureFFmpeg:
         # Mock environmental PATH
         with patch.dict("os.environ", {"PATH": "/original/path"}):
             # Mock os.path.isdir to return False (not a directory)
-            with patch("script_to_speech.utils.audio_utils.os.path.isdir", return_value=False):
+            with patch(
+                "script_to_speech.utils.audio_utils.os.path.isdir", return_value=False
+            ):
                 # Mock os.path.dirname to return directory
                 with patch(
                     "script_to_speech.utils.audio_utils.os.path.dirname",
@@ -270,7 +272,9 @@ class TestExportAudioSegment:
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was created
-        with patch("script_to_speech.utils.audio_utils.os.path.exists", return_value=True):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=True
+        ):
             # Call function
             export_audio_segment(mock_audio, "/test/output/path.mp3")
 
@@ -315,7 +319,9 @@ class TestExportAudioSegment:
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was not created
-        with patch("script_to_speech.utils.audio_utils.os.path.exists", return_value=False):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=False
+        ):
             # Call should raise RuntimeError
             with pytest.raises(
                 RuntimeError, match="Export completed but file was not created"
@@ -329,7 +335,9 @@ class TestExportAudioSegment:
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was created
-        with patch("script_to_speech.utils.audio_utils.os.path.exists", return_value=True):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=True
+        ):
             # Call function with custom format
             export_audio_segment(mock_audio, "/test/output/path.wav", format="wav")
 

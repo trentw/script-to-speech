@@ -7,6 +7,10 @@ focusing on the core parser functionality, state detection, and chunk generation
 
 import json
 import re
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+
 from script_to_speech.parser.screenplay_parser import (
     Chunk,
     IndentationContext,
@@ -14,9 +18,6 @@ from script_to_speech.parser.screenplay_parser import (
     ScreenplayParser,
     State,
 )
-from unittest.mock import MagicMock, mock_open, patch
-
-import pytest
 
 
 class TestFullParsing:

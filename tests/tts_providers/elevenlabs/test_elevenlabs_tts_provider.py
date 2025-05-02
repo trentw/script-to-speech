@@ -22,7 +22,9 @@ class TestElevenLabsTTSProvider:
             provider = ElevenLabsTTSProvider()
 
             # Verify it's a subclass of StatefulTTSProviderBase
-            from script_to_speech.tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
+            from script_to_speech.tts_providers.base.stateful_tts_provider import (
+                StatefulTTSProviderBase,
+            )
 
             assert isinstance(provider, StatefulTTSProviderBase)
 
@@ -50,7 +52,9 @@ class TestElevenLabsTTSProvider:
             ElevenLabsTTSProvider.validate_speaker_config(invalid_config)
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+    )
     def test_initialization_in_constructor(self, mock_registry_manager):
         """Test registry manager is initialized in constructor."""
         # Initialize provider
@@ -114,7 +118,9 @@ class TestElevenLabsTTSProvider:
             ElevenLabsTTSProvider.instantiate_client()
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+    )
     def test_get_speaker_identifier(self, mock_registry_manager):
         """Test get_speaker_identifier method."""
         # Initialize provider with mocked dependencies

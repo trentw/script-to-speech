@@ -1,6 +1,8 @@
 import pytest
 
-from script_to_speech.text_processors.processors.pattern_replace_processor import PatternReplaceProcessor
+from script_to_speech.text_processors.processors.pattern_replace_processor import (
+    PatternReplaceProcessor,
+)
 
 
 class TestPatternReplaceProcessor:
