@@ -1,10 +1,10 @@
 import importlib
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Type, Union, cast
 
 import yaml
 
 from ..utils.logging import get_screenplay_logger
-
 from .text_preprocessor_base import TextPreProcessor
 from .text_processor_base import TextProcessor
 
@@ -15,12 +15,12 @@ logger = get_screenplay_logger("text_processors.manager")
 class TextProcessorManager:
     """Manages the loading and execution of text processors and pre-processors."""
 
-    def __init__(self, config_paths: List[str]):
+    def __init__(self, config_paths: List[Path]):
         """
         Initialize with multiple config files that will be processed in order.
 
         Args:
-            config_paths: List of paths to YAML config files
+            config_paths: List of Path objects to YAML config files
         """
         self.configs = []
         for path in config_paths:

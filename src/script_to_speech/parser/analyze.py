@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Dict, List
 
 from ..utils.logging import get_screenplay_logger
-
 from .utils.file_utils import sanitize_name
 from .utils.logging_utils import setup_parser_logging
 
@@ -68,7 +67,7 @@ def analyze_screenplay_chunks(json_path: str) -> None:
     """
     # Set up logging
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = Path("parser/logs")
+    log_dir = Path("output/parser_logs")
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Get original and sanitized names

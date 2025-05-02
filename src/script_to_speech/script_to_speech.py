@@ -222,17 +222,26 @@ def main() -> None:
             raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
         # Initialize Managers
+        tts_config_path = Path(args.tts_config) if args.tts_config else Path("")
         tts_manager = TTSProviderManager(
-            args.tts_config, args.provider, args.dummy_provider_override
+            tts_config_path, args.provider, args.dummy_provider_override
         )
         logger.info("TTS provider manager initialized.")
 
+        # Convert input file and processor config paths to Path objects
+        input_file_path = Path(args.input_file) if args.input_file else None
+        cmd_configs_paths = (
+            [Path(p) for p in args.processor_configs]
+            if args.processor_configs
+            else None
+        )
+
         generated_processor_configs = get_processor_configs(
-            args.input_file, args.processor_configs
+            input_file_path, cmd_configs_paths
         )
         processor = TextProcessorManager(generated_processor_configs)
         logger.info(
-            f"Text processor manager initialized with configs: {generated_processor_configs}"
+            f"Text processor manager initialized with configs: {[str(p) for p in generated_processor_configs]}"  # Log as strings
         )
 
         # Load dialogues

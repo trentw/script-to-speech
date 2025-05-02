@@ -30,7 +30,9 @@ def get_provider_class(
 ) -> Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]:
     """Get the provider class for a given provider name."""
     try:
-        module = importlib.import_module(f"script_to_speech.tts_providers.{provider_name}.tts_provider")
+        module = importlib.import_module(
+            f"script_to_speech.tts_providers.{provider_name}.tts_provider"
+        )
 
         for attr_name in dir(module):
             attr = getattr(module, attr_name)

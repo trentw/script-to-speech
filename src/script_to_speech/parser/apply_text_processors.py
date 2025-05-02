@@ -10,7 +10,6 @@ from typing import List, Optional
 from ..text_processors.processor_manager import TextProcessorManager
 from ..text_processors.utils import get_processor_configs
 from ..utils.logging import get_screenplay_logger
-
 from .analyze import analyze_chunks
 from .utils.file_utils import get_project_root, sanitize_name
 from .utils.logging_utils import setup_parser_logging
@@ -19,18 +18,18 @@ logger = get_screenplay_logger("parser.apply_text_processors")
 
 
 def apply_text_processors(
-    json_path: str,
-    processor_configs: Optional[List[str]] = None,
-    output_path: Optional[str] = None,
+    json_path: Path,
+    processor_configs: Optional[List[Path]] = None,
+    output_path: Optional[Path] = None,
 ) -> None:
     """Process an existing JSON chunks file through text processors.
 
     Args:
         json_path: Path to input JSON chunks file
-        processor_configs: Optional path to processor configuration files.
+        processor_configs: Optional list of Paths to processor configuration files.
                          If not provided, uses DEFAULT_PROCESSING_CONFIG from text_processors.utils and
                          [file name]_processor_config.yaml if it exists
-        output_path: Optional path for output file. If not provided, will use
+        output_path: Optional Path for output file. If not provided, will use
                     output/[json_name]/[json_name]-modified.json
     """
     try:
@@ -40,7 +39,7 @@ def apply_text_processors(
         log_dir.mkdir(parents=True, exist_ok=True)
 
         # Get original and sanitized names
-        original_name = Path(json_path).stem
+        original_name = json_path.stem
         sanitized_name = sanitize_name(original_name)
         log_file = log_dir / f"[apply_processors]_{sanitized_name}_{timestamp}.log"
 
@@ -61,15 +60,16 @@ def apply_text_processors(
         # Initialize text processor manager
         processor = TextProcessorManager(generated_processor_configs)
         logger.info(
-            f"Text processor manager initialized with configs: {generated_processor_configs}"
+            f"Text processor manager initialized with configs: {[str(p) for p in generated_processor_configs]}"  # Log as strings
         )
 
         # Process chunks
         modified_chunks = processor.process_chunks(chunks)
 
         # Determine output path if not provided
+        output_path_resolved: Path
         if not output_path:
-            input_path = Path(json_path)
+            input_path = json_path
             base_name = input_path.stem
             root = get_project_root()
 
@@ -77,15 +77,16 @@ def apply_text_processors(
             output_dir = root / "output" / base_name
             output_dir.mkdir(parents=True, exist_ok=True)
 
-            output_path = str(output_dir / f"{base_name}-modified.json")
+            output_path_resolved = output_dir / f"{base_name}-modified.json"
+        else:
+            output_path_resolved = output_path
 
         # Save modified chunks
-        path_obj = Path(output_path)
-        path_obj.parent.mkdir(parents=True, exist_ok=True)
-        with open(path_obj, "w", encoding="utf-8") as f:
+        output_path_resolved.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path_resolved, "w", encoding="utf-8") as f:
             json.dump(modified_chunks, f, ensure_ascii=False, indent=2)
 
-        logger.info(f"Modified chunks saved to {output_path}")
+        logger.info(f"Modified chunks saved to {output_path_resolved}")
 
         # Analyze the processed chunks
         analyze_chunks(modified_chunks)
@@ -111,8 +112,15 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    # Convert args to Path objects before calling
+    json_file_path = Path(args.json_file)
+    processor_configs_paths = (
+        [Path(p) for p in args.processor_configs] if args.processor_configs else None
+    )
+    output_path_obj = Path(args.output_path) if args.output_path else None
+
     try:
-        apply_text_processors(args.json_file, args.processor_configs, args.output_path)
+        apply_text_processors(json_file_path, processor_configs_paths, output_path_obj)
     except Exception as e:
         print(f"Error: {str(e)}")
         exit(1)

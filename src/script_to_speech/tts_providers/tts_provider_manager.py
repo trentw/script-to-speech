@@ -4,6 +4,7 @@ import os
 import threading
 from collections import defaultdict
 from io import StringIO
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
 import yaml
@@ -20,7 +21,7 @@ class TTSProviderManager:
 
     def __init__(
         self,
-        config_path: str,
+        config_path: Path,
         overall_provider: Optional[str] = None,
         dummy_provider_override: bool = False,
     ):
@@ -101,7 +102,7 @@ class TTSProviderManager:
                 f"Ensure the provider directory exists and contains tts_provider.py"
             )
 
-    def _load_config(self, config_path: str) -> None:
+    def _load_config(self, config_path: Path) -> None:
         """
         Load and validate provider configuration.
 
@@ -240,19 +241,18 @@ class TTSProviderManager:
     def get_available_providers(cls) -> List[str]:
         """Get list of available provider names."""
         providers = []
-        provider_dir = os.path.dirname(__file__)
+        provider_dir = Path(__file__).parent
 
-        for item in os.listdir(provider_dir):
-            dir_path = os.path.join(provider_dir, item)
-            if os.path.isdir(dir_path) and item not in [
+        for item in provider_dir.iterdir():
+            if item.is_dir() and item.name not in [
                 "base",
                 "__pycache__",
                 "dummy_common",
             ]:
                 try:
                     # Try to load the provider to verify it's valid
-                    cls._get_provider_class(item)
-                    providers.append(item)
+                    cls._get_provider_class(item.name)
+                    providers.append(item.name)
                 except ValueError:
                     continue
 
@@ -439,7 +439,7 @@ class TTSProviderManager:
     def generate_yaml_config(
         self,
         dialogues: List[Dict],
-        output_path: str,
+        output_path: Path,
         provider_name: Optional[str] = None,
         include_optional_fields: bool = False,
     ) -> None:
@@ -534,8 +534,8 @@ class TTSProviderManager:
 
     def update_yaml_with_provider_fields(
         self,
-        yaml_path: str,
-        output_path: str,
+        yaml_path: Path,
+        output_path: Path,
         dialogues: List[Dict],
         include_optional_fields: bool = False,
     ) -> None:
@@ -657,7 +657,7 @@ class TTSProviderManager:
 
         self._write_yaml(content, output_path)
 
-    def _write_yaml(self, content: CommentedMap, output_path: str) -> None:
+    def _write_yaml(self, content: CommentedMap, output_path: Path) -> None:
         """Write YAML content to file with consistent formatting."""
         yaml = YAML()
         yaml.indent(mapping=2, sequence=4, offset=2)
@@ -668,8 +668,8 @@ class TTSProviderManager:
 
     def update_yaml_with_provider_fields_preserving_comments(
         self,
-        yaml_path: str,
-        output_path: str,
+        yaml_path: Path,
+        output_path: Path,
         dialogues: List[Dict],
         include_optional_fields: bool = False,
     ) -> None:
