@@ -35,7 +35,7 @@ def apply_text_processors(
     try:
         # Set up logging
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = Path("parser/logs")
+        log_dir = Path("output/parser_logs")
         log_dir.mkdir(parents=True, exist_ok=True)
 
         # Get original and sanitized names

@@ -165,7 +165,6 @@ cython_debug/
 .DS_Store
 
 # Project directories
-ffmpeg/
 output/
 input/
 standalone_speech/

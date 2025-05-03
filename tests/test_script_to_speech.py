@@ -52,8 +52,6 @@ class TestParseArguments:
             "openai",
             "--tts-config",
             "config.yaml",
-            "--ffmpeg-path",
-            "/path/to/ffmpeg",
             "--check-silence",
             "-35.0",
             "--cache-overrides",
@@ -88,7 +86,6 @@ class TestParseArguments:
         assert args.gap == 300
         assert args.provider == "openai"
         assert args.tts_config == "config.yaml"
-        assert args.ffmpeg_path == "/path/to/ffmpeg"
         assert args.check_silence == -35.0
         assert args.cache_overrides == "custom_directory"
         assert args.optional_config == "id3_config.yaml"
@@ -382,7 +379,9 @@ class TestMain:
             "Logging initialized. Log file: output/folder/logs/log.txt"
         )
         mocks["logger"].info.assert_any_call("Run mode: generate-output")
-        mocks["logger"].info.assert_any_call("FFMPEG configuration successful.")
+        mocks["logger"].info.assert_any_call(
+            "FFMPEG configuration successful using static-ffmpeg."
+        )
         mocks["logger"].info.assert_any_call("TTS provider manager initialized.")
         mocks["logger"].info.assert_any_call(
             f"Loading dialogues from: {mocks['args'].input_file}"

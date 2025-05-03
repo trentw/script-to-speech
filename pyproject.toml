@@ -18,6 +18,7 @@ dependencies = [
     "zyphra>=0.1.6",
     "eyeD3>=0.9.7",
     "tqdm>=4.67.1",
+    "static-ffmpeg>=2.5",
 ]
 
 [project.optional-dependencies]
@@ -111,5 +112,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*"]
 ignore_missing_imports = true

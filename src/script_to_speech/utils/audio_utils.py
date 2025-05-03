@@ -1,56 +1,66 @@
 import io
+import logging
 import os
-from typing import Optional, Tuple
+from typing import Optional
 
 from pydub import AudioSegment
 from pydub.silence import detect_silence
 
+# Create a logger for this module
+logger = logging.getLogger(__name__)
 
-def configure_ffmpeg(ffmpeg_path: Optional[str] = None) -> None:
+
+def configure_ffmpeg() -> None:
     """
-    Configure the ffmpeg binary path for pydub and system PATH.
+    Configure the ffmpeg binary path for pydub using static-ffmpeg.
 
-    Args:
-        ffmpeg_path: Optional path to ffmpeg binary directory or executable.
-                    If not provided, system ffmpeg will be used.
+    This function will:
+    1. Use static-ffmpeg to get ffmpeg and ffprobe binaries
+    2. Configure pydub to use these binaries
+    3. Verify that ffmpeg works correctly
 
     Raises:
-        ValueError: If the provided path is invalid or executables aren't accessible
+        ImportError: If static-ffmpeg is not installed
         RuntimeError: If ffmpeg verification fails
     """
-    if ffmpeg_path:
-        ffmpeg_path = os.path.abspath(ffmpeg_path)
+    try:
+        import static_ffmpeg
+        from static_ffmpeg import run
 
-        # Add to system PATH
-        os.environ["PATH"] = f"{ffmpeg_path}:{os.environ.get('PATH', '')}"
+        logger.info("Using static-ffmpeg for ffmpeg binaries")
 
-        # Handle both directory and direct executable paths
-        if os.path.isdir(ffmpeg_path):
-            ffmpeg_executable = os.path.join(ffmpeg_path, "ffmpeg")
-            ffprobe_executable = os.path.join(ffmpeg_path, "ffprobe")
-        else:
-            ffmpeg_executable = ffmpeg_path
-            ffprobe_executable = os.path.join(os.path.dirname(ffmpeg_path), "ffprobe")
+        # Get the ffmpeg and ffprobe binaries
+        ffmpeg_executable, ffprobe_executable = (
+            run.get_or_fetch_platform_executables_else_raise()
+        )
 
-        # Verify executables exist and are executable
-        for exe in [ffmpeg_executable, ffprobe_executable]:
-            if not os.path.exists(exe):
-                raise ValueError(f"Executable not found: {exe}")
-            if not os.access(exe, os.X_OK):
-                raise ValueError(f"File is not executable: {exe}")
+        # Add to system PATH (for subprocesses that might need it)
+        ffmpeg_dir = os.path.dirname(ffmpeg_executable)
+        os.environ["PATH"] = f"{ffmpeg_dir}:{os.environ.get('PATH', '')}"
 
-        # Configure pydub
+        # Configure pydub with explicit paths
         AudioSegment.converter = ffmpeg_executable
         AudioSegment.ffmpeg = ffmpeg_executable
         AudioSegment.ffprobe = ffprobe_executable
 
-    # Verify ffmpeg works
-    try:
-        test_file = AudioSegment.silent(duration=1)
-        test_file.export("test.mp3", format="mp3")
-        os.remove("test.mp3")
-    except Exception as e:
-        raise RuntimeError("Failed to verify ffmpeg installation") from e
+        logger.info(f"static-ffmpeg binaries located at: {ffmpeg_dir}")
+        logger.info(f"ffmpeg: {ffmpeg_executable}")
+        logger.info(f"ffprobe: {ffprobe_executable}")
+
+        # Verify ffmpeg works
+        try:
+            test_file = AudioSegment.silent(duration=1)
+            test_file.export("test.mp3", format="mp3")
+            os.remove("test.mp3")
+            logger.info("FFMPEG verification successful")
+        except Exception as e:
+            raise RuntimeError(f"Failed to verify ffmpeg installation: {e}") from e
+
+    except ImportError:
+        raise ImportError(
+            "static-ffmpeg is required but not installed. "
+            "Please install it with: pip install static-ffmpeg"
+        )
 
 
 def split_audio_on_silence(

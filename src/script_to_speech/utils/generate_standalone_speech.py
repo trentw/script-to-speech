@@ -195,6 +195,7 @@ def main() -> int:
         if os.path.isdir(os.path.join(tts_providers_dir, item)) and item not in [
             "base",
             "__pycache__",
+            "dummy_common",
         ]:
             try:
                 get_provider_class(item)
@@ -269,18 +270,12 @@ def main() -> int:
         help="Amount of silence to keep in ms after splitting (default: 100)",
     )
 
-    # Add ffmpeg configuration
-    parser.add_argument(
-        "--ffmpeg-path",
-        help="Path to ffmpeg binary or directory containing ffmpeg binaries",
-    )
-
     args = parser.parse_args()
 
-    # Configure ffmpeg if path provided
-    if args.ffmpeg_path:
+    # Configure ffmpeg if using split audio method
+    if args.split_audio:
         try:
-            configure_ffmpeg(args.ffmpeg_path)
+            configure_ffmpeg()
         except Exception as e:
             logger.error(f"Error configuring ffmpeg: {e}")
             return 1

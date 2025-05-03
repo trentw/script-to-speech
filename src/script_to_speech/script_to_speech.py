@@ -68,10 +68,6 @@ def parse_arguments() -> argparse.Namespace:
         "Multiple paths can be provided.",
     )
     parser.add_argument(
-        "--ffmpeg-path",
-        help="Path to ffmpeg binary or directory containing ffmpeg binaries.",
-    )
-    parser.add_argument(
         "--check-silence",
         type=float,
         nargs="?",
@@ -213,9 +209,9 @@ def main() -> None:
                 logger.info(f"Using dummy output file: {output_file}")
             logger.info("Note: This mode is intended for testing purposes only")
 
-        # Configure ffmpeg
-        configure_ffmpeg(args.ffmpeg_path)
-        logger.info("FFMPEG configuration successful.")
+        # Configure ffmpeg using static-ffmpeg
+        configure_ffmpeg()
+        logger.info("FFMPEG configuration successful using static-ffmpeg.")
 
         # Verify input file exists
         if not os.path.exists(args.input_file):
