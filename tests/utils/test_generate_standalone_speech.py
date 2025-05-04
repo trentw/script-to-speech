@@ -411,10 +411,7 @@ class TestGetCommandString:
         mock_manager.get_speaker_configuration.assert_called_once_with("test_speaker")
 
         # Verify result contains expected command components
-        assert (
-            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
-            in result
-        )
+        assert "uv run sts-generate-standalone-speech test_provider" in result
         assert "--voice_id test_voice" in result
         assert "--model test_model" in result
         assert '"Hello world"' in result
@@ -437,10 +434,7 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert (
-            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
-            in result
-        )
+        assert "uv run sts-generate-standalone-speech test_provider" in result
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 
@@ -462,10 +456,7 @@ class TestGetCommandString:
         mock_manager.get_provider_for_speaker.assert_called_once_with("default")
 
         # Verify result uses the expected values
-        assert (
-            "python -m script_to_speech.utils.generate_standalone_speech test_provider"
-            in result
-        )
+        assert "uv run sts-generate-standalone-speech test_provider" in result
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 

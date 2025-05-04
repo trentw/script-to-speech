@@ -181,7 +181,7 @@ def get_command_string(
 
         texts_quoted = [f'"{t}"' for t in texts]
 
-        return f"python -m script_to_speech.utils.generate_standalone_speech {provider_name} {' '.join(config_params)} {' '.join(texts_quoted)}"
+        return f"uv run sts-generate-standalone-speech {provider_name} {' '.join(config_params)} {' '.join(texts_quoted)}"
     except Exception as e:
         logger.error(f"Error generating command string: {e}")
         return ""

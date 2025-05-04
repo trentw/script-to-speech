@@ -37,6 +37,12 @@ dev = [
 
 [project.scripts]
 sts-generate-audio = "script_to_speech.script_to_speech:main"
+sts-generate-standalone-speech = "script_to_speech.utils.generate_standalone_speech:main"
+sts-provider-yaml = "script_to_speech.tts_providers.utils:main"
+sts-analyze-json = "script_to_speech.parser.analyze:main"
+sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:main"
+sts-parse-screenplay = "script_to_speech.parser.process:main"
+sts-parse-regression-check-json = "script_to_speech.parser.regression_check:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/script_to_speech"]

@@ -130,7 +130,14 @@ def populate_multi_provider_yaml(
     )
 
 
-if __name__ == "__main__":
+def main() -> None:
+    import sys
+
+    sys.argv[0] = "sts-provider-yaml"
+    return run_cli()
+
+
+def run_cli() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
