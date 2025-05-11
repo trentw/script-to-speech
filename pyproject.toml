@@ -6,6 +6,10 @@ build-backend = "hatchling.build"
 name = "script_to_speech"
 version = "0.1.0"
 description = "A set of tools to convert screenplays into multi-voiced audiobooks using various TTS providers"
+authors = [
+    {name = "Trent Walkiewicz", email = "t.walkiewicz@gmail.com"}
+]
+license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
     "elevenlabs>=1.57.0",
