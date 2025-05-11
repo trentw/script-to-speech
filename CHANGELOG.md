@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- `--max-workers` run mode flag to control global maximum of concurrent downloads (was previously set by `GLOBAL_MAX_WORKERS = 12`). Updated documentation and tests accordingly
 
 ## [1.0.0] - 2025-05-11
 

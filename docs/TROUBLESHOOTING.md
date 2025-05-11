@@ -64,6 +64,12 @@ This will move any cache-matching files from standalone_speech to the screenplay
    - Each provider has separate rate limit handling
    - Future versions of Script to Speech will allow for more manual control of thread limits and backoff behavior
 
+2. **Reduce Global Concurrent Downloads
+Note that this will limit the overall (cross-provider) maximum concurrent downloads
+   ```bash
+   uv run sts-generate-audio --max-workers 5
+   ```
+
 2. **Distribute Across Providers**
    ```yaml
    # Split voices across multiple providers
@@ -172,7 +178,13 @@ For memory constrained systems, reducing the concatenation batch size can help p
    uv run sts-generate-audio --concat-batch-size 150
    ```
 
-2. **Process in Segments**
+2. **Reduce Maximum Concurrent Downloads**
+Reducing the amount of concurrent downloads can help reduce memory usage
+   ```bash
+   uv run sts-generate-audio --max-workers 5
+   ```
+
+3. **Process in Segments**
    ```bash
    # Process chapters separately
    uv run sts-generate-audio chapter1.json --populate-cache
@@ -180,7 +192,7 @@ For memory constrained systems, reducing the concatenation batch size can help p
    # Manually combine later
    ```
 
-3. **Clean Unnecessary Files**
+4. **Clean Unnecessary Files**
    ```bash
    # Remove temporary files
    rm -rf output/*/logs/old_logs_*.txt

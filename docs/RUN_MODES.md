@@ -182,6 +182,7 @@ uv run sts-generate-audio [input_json] \
 - `--max-report-misses [n]`: Maximum number of cache misses / silent clips for which to print generation commands (default: 20)
 - `--max-report-text [n]`: Maximum text length for clips included in cache miss / silent clip generation commands (default: 30)
 - `--concat-batch-size [n]`: Batch size for audio clip concatenation (default: 250)
+- `--max-workers [n]`: Maximum number of concurrent workers for audio generation/download (default: 12)
 
 ## Advanced Usage
 
@@ -213,7 +214,7 @@ uv run sts-generate-audio --check-silence --max-report-text 70
 ### Memory Management
 Large projects in memory constrained situations may benefit from:
 - Smaller batch sizes (`--concat-batch-size 100`)
-- Reducing concurrent download maximum
+- Reducing concurrent download maximum (`--max-workers` 5)
 
 ## Output and Logging
 

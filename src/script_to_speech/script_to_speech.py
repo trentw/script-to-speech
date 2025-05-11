@@ -110,6 +110,12 @@ def parse_arguments() -> argparse.Namespace:
         help="Batch size for audio concatenation (number of clips per batch).",
     )
     parser.add_argument(
+        "--max-workers",
+        type=int,
+        default=12,
+        help="Maximum number of concurrent workers for audio generation/download.",
+    )
+    parser.add_argument(
         "--dummy-provider-override",
         action="store_true",
         help="Override configured providers with dummy providers for testing purposes. "
@@ -302,6 +308,7 @@ def main() -> None:
                 tasks=all_tasks,
                 tts_provider_manager=tts_manager,
                 silence_threshold=args.check_silence,
+                max_workers=args.max_workers,
             )
 
             # Merge fetch report state (only adds newly generated silent clips)

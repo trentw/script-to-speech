@@ -378,6 +378,7 @@ Optional methods:
 
 3. **Rate Limiting**
    - Check provider-specific rate limits
+   - Limit global concurrent downloads with `--max-workers` run mode modifier
    - Distribute voices across providers
    - Monitor monthly quotas for voice adds / removes (ElevenLabs)
 

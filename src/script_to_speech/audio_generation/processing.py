@@ -23,8 +23,7 @@ DELIMITER = "~~"
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.processing")
 
-# Download manager sonstants
-GLOBAL_MAX_WORKERS = 12  # Max global concurrent TTS downloads/generations
+# Download manager constants
 INITIAL_BACKOFF_SECONDS = 10.0  # Initial backoff time when rate limited
 BACKOFF_FACTOR = 2.0  # Factor to multiply backoff time by on each retry
 MAX_RETRIES = 3  # Maximum number of times to retry a rate-limited task
@@ -367,6 +366,7 @@ def fetch_and_cache_audio(
     tasks: List[AudioGenerationTask],
     tts_provider_manager: TTSProviderManager,
     silence_threshold: Optional[float],
+    max_workers: int = 12,
 ) -> ReportingState:
     """
     Fetches non-cached audio using the AudioDownloadManager with provider-specific
@@ -377,6 +377,7 @@ def fetch_and_cache_audio(
                (potentially updated by apply_cache_overrides and check_for_silence).
         tts_provider_manager: Initialized TTSProviderManager.
         silence_threshold: dBFS threshold for detecting silence (applied to newly generated files).
+        max_workers: Maximum number of concurrent workers for audio generation/download.
 
     Returns:
         A ReportingState object containing info about *newly generated* silent clips.
@@ -423,7 +424,7 @@ def fetch_and_cache_audio(
     download_manager = AudioDownloadManager(
         tasks=tasks,
         tts_provider_manager=tts_provider_manager,
-        global_max_workers=GLOBAL_MAX_WORKERS,
+        global_max_workers=max_workers,
         initial_backoff_seconds=INITIAL_BACKOFF_SECONDS,
         backoff_factor=BACKOFF_FACTOR,
         max_retries=MAX_RETRIES,

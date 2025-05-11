@@ -726,3 +726,52 @@ def test_fetch_with_real_duplicate_detection(
         fetch_tasks_with_duplicates[2].expected_cache_duplicate is True
     )  # Duplicate marked
     assert fetch_tasks_with_duplicates[2].status == TaskStatus.SKIPPED_DUPLICATE
+
+
+@patch("os.makedirs")
+@patch("builtins.open")
+def test_fetch_with_custom_max_workers(
+    mock_open,
+    mock_makedirs,
+    fetch_tasks,
+    mock_tts_provider_manager,
+    mock_logger,
+    monkeypatch,
+):
+    """Test fetch_and_cache_audio with a custom max_workers value."""
+    # Arrange
+    mock_file = MagicMock()
+    mock_open.return_value.__enter__.return_value = mock_file
+
+    # Mock the download manager
+    mock_download_manager = MagicMock()
+
+    # Setup download manager run
+    def mock_run_side_effect():
+        # Update task status
+        fetch_tasks[0].status = TaskStatus.CACHED
+        fetch_tasks[1].status = TaskStatus.GENERATED
+        fetch_tasks[2].status = TaskStatus.GENERATED
+        return ReportingState()
+
+    mock_download_manager.return_value.run.side_effect = mock_run_side_effect
+    monkeypatch.setattr(
+        "script_to_speech.audio_generation.download_manager.AudioDownloadManager",
+        mock_download_manager,
+    )
+
+    # Act - using a custom max_workers value
+    custom_max_workers = 8
+    reporting_state = fetch_and_cache_audio(
+        tasks=fetch_tasks,
+        tts_provider_manager=mock_tts_provider_manager,
+        silence_threshold=None,
+        max_workers=custom_max_workers,
+    )
+
+    # Assert
+    mock_download_manager.assert_called_once()
+    # Verify the custom max_workers value was passed to the AudioDownloadManager
+    assert (
+        mock_download_manager.call_args[1]["global_max_workers"] == custom_max_workers
+    )
