@@ -7,12 +7,13 @@ for testing purposes.
 
 import os
 import tempfile
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 import yaml
 
-from tts_providers.tts_provider_manager import TTSProviderManager
+from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 
 
 class TestDummyProviderOverride:
@@ -36,7 +37,7 @@ class TestDummyProviderOverride:
             yaml.dump(config, temp)
             temp_path = temp.name
 
-        yield temp_path
+        yield Path(temp_path)
 
         # Cleanup
         if os.path.exists(temp_path):
@@ -79,22 +80,44 @@ class TestDummyProviderOverride:
 
     def test_script_to_speech_integration(self, sample_config_file):
         """Test integration with script_to_speech.py."""
-        import script_to_speech
+        import script_to_speech.script_to_speech as script_to_speech
 
         # Mock the parse_arguments function to return args with dummy_provider_override=True
         with (
-            patch("script_to_speech.parse_arguments") as mock_parse_args,
-            patch("script_to_speech.create_output_folders") as mock_create_folders,
-            patch("script_to_speech.setup_screenplay_logging") as mock_setup_logging,
-            patch("script_to_speech.configure_ffmpeg") as mock_configure_ffmpeg,
+            patch(
+                "script_to_speech.script_to_speech.parse_arguments"
+            ) as mock_parse_args,
+            patch(
+                "script_to_speech.script_to_speech.create_output_folders"
+            ) as mock_create_folders,
+            patch(
+                "script_to_speech.script_to_speech.setup_screenplay_logging"
+            ) as mock_setup_logging,
+            patch(
+                "script_to_speech.script_to_speech.configure_ffmpeg"
+            ) as mock_configure_ffmpeg,
             patch("os.path.exists", return_value=True),
-            patch("script_to_speech.TTSProviderManager") as mock_tts_manager,
-            patch("script_to_speech.get_processor_configs") as mock_get_configs,
-            patch("script_to_speech.TextProcessorManager") as mock_processor,
-            patch("script_to_speech.load_json_chunks") as mock_load_chunks,
-            patch("script_to_speech.plan_audio_generation") as mock_plan,
-            patch("script_to_speech.print_unified_report") as mock_report,
-            patch("script_to_speech.save_modified_json") as mock_save_json,
+            patch(
+                "script_to_speech.script_to_speech.TTSProviderManager"
+            ) as mock_tts_manager,
+            patch(
+                "script_to_speech.script_to_speech.get_processor_configs"
+            ) as mock_get_configs,
+            patch(
+                "script_to_speech.script_to_speech.TextProcessorManager"
+            ) as mock_processor,
+            patch(
+                "script_to_speech.script_to_speech.load_json_chunks"
+            ) as mock_load_chunks,
+            patch(
+                "script_to_speech.script_to_speech.plan_audio_generation"
+            ) as mock_plan,
+            patch(
+                "script_to_speech.script_to_speech.print_unified_report"
+            ) as mock_report,
+            patch(
+                "script_to_speech.script_to_speech.save_modified_json"
+            ) as mock_save_json,
             patch("os.makedirs") as mock_makedirs,
         ):
 
@@ -132,7 +155,10 @@ class TestDummyProviderOverride:
             # Configure plan_audio_generation mock
             from unittest.mock import MagicMock
 
-            from audio_generation.models import AudioGenerationTask, ReportingState
+            from script_to_speech.audio_generation.models import (
+                AudioGenerationTask,
+                ReportingState,
+            )
 
             mock_tasks = [
                 MagicMock(

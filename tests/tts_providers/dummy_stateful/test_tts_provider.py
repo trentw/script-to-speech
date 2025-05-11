@@ -1,7 +1,9 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from tts_providers.dummy_stateful.tts_provider import DummyStatefulTTSProvider
+from script_to_speech.tts_providers.dummy_stateful.tts_provider import (
+    DummyStatefulTTSProvider,
+)
 
 
 class TestDummyStatefulTTSProvider(unittest.TestCase):
@@ -20,7 +22,7 @@ class TestDummyStatefulTTSProvider(unittest.TestCase):
         ) as mock_instantiate:
             # Mock the DummyVoiceRegistryManager
             with patch(
-                "tts_providers.dummy_stateful.tts_provider.DummyVoiceRegistryManager"
+                "script_to_speech.tts_providers.dummy_stateful.tts_provider.DummyVoiceRegistryManager"
             ) as mock_registry_class:
                 # Create provider instance
                 provider = DummyStatefulTTSProvider()

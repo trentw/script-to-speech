@@ -1,6 +1,6 @@
 import pytest
 
-from text_processors.processors.text_substitution_processor import (
+from script_to_speech.text_processors.processors.text_substitution_processor import (
     TextSubstitutionProcessor,
 )
 

@@ -5,16 +5,17 @@ This module focuses on testing the chunk creation, modification, and completion
 functionality in the screenplay parser.
 """
 
-from parser.screenplay_parser import (
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from script_to_speech.parser.screenplay_parser import (
     Chunk,
     IndentationContext,
     ParserConfig,
     ScreenplayParser,
     State,
 )
-from unittest.mock import MagicMock, patch
-
-import pytest
 
 
 class TestChunkCreation:
@@ -23,7 +24,7 @@ class TestChunkCreation:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_create_title_chunk(self, mock_logger):
@@ -204,7 +205,7 @@ class TestChunkContinuation:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_continue_action_chunk(self, mock_logger):
@@ -307,7 +308,7 @@ class TestChunkCompletion:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_complete_chunk_on_state_change(self, mock_logger):
@@ -418,7 +419,7 @@ class TestSpeakerTracking:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_speaker_tracking_basic(self, mock_logger):

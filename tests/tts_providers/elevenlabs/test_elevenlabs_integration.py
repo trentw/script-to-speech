@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
 
-from tts_providers.base.exceptions import TTSError, VoiceNotFoundError
-from tts_providers.elevenlabs.tts_provider import ElevenLabsTTSProvider
-from tts_providers.elevenlabs.voice_registry_manager import (
+from script_to_speech.tts_providers.base.exceptions import TTSError, VoiceNotFoundError
+from script_to_speech.tts_providers.elevenlabs.tts_provider import ElevenLabsTTSProvider
+from script_to_speech.tts_providers.elevenlabs.voice_registry_manager import (
     ElevenLabsVoiceRegistryManager,
 )
 
@@ -15,8 +15,10 @@ class TestElevenLabsIntegration:
     """Integration tests for ElevenLabsTTSProvider and VoiceRegistryManager."""
 
     @patch.dict(os.environ, {"ELEVEN_API_KEY": "fake_api_key"})
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
-    @patch("tts_providers.elevenlabs.tts_provider.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
+    @patch("script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabs")
     def test_initialization_flow(self, mock_tts_client, mock_registry_client):
         """Test integration of provider initialization."""
         # Set up mocks for clients
@@ -43,7 +45,7 @@ class TestElevenLabsIntegration:
 
         # Get client from the instantiate_client class method
         with patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsTTSProvider.instantiate_client",
+            "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsTTSProvider.instantiate_client",
             return_value=mock_tts_client_instance,
         ):
             # We also need to patch the voice registry manager's get_library_voice_id method
@@ -65,7 +67,7 @@ class TestElevenLabsIntegration:
         """Test integration of voice ID translation through registry manager."""
         # Create provider with mock components
         with patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+            "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
         ):
             provider = ElevenLabsTTSProvider()
 
@@ -106,7 +108,7 @@ class TestElevenLabsIntegration:
         """Test integration of LRU management during audio generation."""
         # Create provider with mock registry manager
         with patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+            "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
         ):
             provider = ElevenLabsTTSProvider()
 
@@ -146,7 +148,7 @@ class TestElevenLabsIntegration:
         """Test integration of voice not found error handling."""
         # Create provider with mock components
         with patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
+            "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager"
         ):
             provider = ElevenLabsTTSProvider()
 
@@ -177,7 +179,7 @@ class TestElevenLabsIntegration:
         """Test handling a full registry when adding a new voice."""
         # Create provider with mocked registry manager
         with patch(
-            "tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
+            "script_to_speech.tts_providers.elevenlabs.tts_provider.ElevenLabsVoiceRegistryManager",
             return_value=None,
         ):
             provider = ElevenLabsTTSProvider()

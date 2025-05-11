@@ -1,11 +1,11 @@
 import io
 import os
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from pydub import AudioSegment
 
-from utils.audio_utils import (
+from script_to_speech.utils.audio_utils import (
     configure_ffmpeg,
     export_audio_segment,
     split_audio_on_silence,
@@ -15,144 +15,103 @@ from utils.audio_utils import (
 class TestConfigureFFmpeg:
     """Tests for the configure_ffmpeg function."""
 
-    @patch("utils.audio_utils.os.path.exists")
-    @patch("utils.audio_utils.os.access")
-    @patch("utils.audio_utils.AudioSegment.silent")
-    @patch("utils.audio_utils.os.remove")
-    def test_configure_ffmpeg_with_directory_path(
-        self, mock_remove, mock_silent, mock_access, mock_exists
-    ):
-        """Test configuring ffmpeg with a directory path."""
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.silent")
+    @patch("script_to_speech.utils.audio_utils.os.remove")
+    def test_configure_ffmpeg_with_static_ffmpeg(self, mock_remove, mock_silent):
+        """Test configuring ffmpeg using static-ffmpeg."""
         # Setup mocks
-        mock_exists.return_value = True
-        mock_access.return_value = True
         mock_silent.return_value = MagicMock()
         mock_silent.return_value.export.return_value = None
 
-        # Mock environmental PATH
-        with patch.dict("os.environ", {"PATH": "/original/path"}):
-            # Call function with directory path
-            configure_ffmpeg("/test/ffmpeg/path")
+        # Create a mock for static_ffmpeg module and run submodule
+        mock_run = MagicMock()
+        mock_run.get_or_fetch_platform_executables_else_raise.return_value = (
+            "/static/ffmpeg/bin/ffmpeg",
+            "/static/ffmpeg/bin/ffprobe",
+        )
 
-            # Check that path was added to PATH
-            assert "/test/ffmpeg/path" in os.environ["PATH"]
+        mock_static_ffmpeg = MagicMock()
+        mock_static_ffmpeg.run = mock_run
 
-            # Verify the existence and executability checks were performed without checking specific paths
-            assert mock_exists.call_count >= 2
-            assert mock_access.call_count >= 2
+        # Mock the imports
+        with patch.dict(
+            "sys.modules",
+            {"static_ffmpeg": mock_static_ffmpeg, "static_ffmpeg.run": mock_run},
+        ):
+            # Mock os.path.dirname to return directory
+            with patch(
+                "script_to_speech.utils.audio_utils.os.path.dirname",
+                return_value="/static/ffmpeg/bin",
+            ):
+                # Mock environmental PATH
+                with patch.dict("os.environ", {"PATH": "/original/path"}):
+                    # Call function
+                    configure_ffmpeg()
 
-            # Check that pydub was configured
-            assert "ffmpeg" in AudioSegment.converter
-            assert "ffmpeg" in AudioSegment.ffmpeg
-            assert "ffprobe" in AudioSegment.ffprobe
+                    # Check that static-ffmpeg was used to get executables
+                    mock_run.get_or_fetch_platform_executables_else_raise.assert_called_once()
 
-            # Check that verification test was performed
-            mock_silent.assert_called_once()
-            mock_silent.return_value.export.assert_called_once_with(
-                "test.mp3", format="mp3"
-            )
-            mock_remove.assert_called_once_with("test.mp3")
+                    # Check that static-ffmpeg path was added to PATH
+                    assert "/static/ffmpeg/bin" in os.environ["PATH"]
 
-    @patch("utils.audio_utils.os.path.exists")
-    @patch("utils.audio_utils.os.access")
-    @patch("utils.audio_utils.AudioSegment.silent")
-    @patch("utils.audio_utils.os.remove")
-    def test_configure_ffmpeg_with_direct_executable_path(
-        self, mock_remove, mock_silent, mock_access, mock_exists
-    ):
-        """Test configuring ffmpeg with a direct executable path."""
-        # Setup mocks
-        mock_exists.return_value = True
-        mock_access.return_value = True
-        mock_silent.return_value = MagicMock()
-        mock_silent.return_value.export.return_value = None
+                    # Check that pydub was configured with static-ffmpeg paths
+                    assert AudioSegment.converter == "/static/ffmpeg/bin/ffmpeg"
+                    assert AudioSegment.ffmpeg == "/static/ffmpeg/bin/ffmpeg"
+                    assert AudioSegment.ffprobe == "/static/ffmpeg/bin/ffprobe"
 
-        # Mock environmental PATH
-        with patch.dict("os.environ", {"PATH": "/original/path"}):
-            # Mock os.path.isdir to return False (not a directory)
-            with patch("utils.audio_utils.os.path.isdir", return_value=False):
-                # Mock os.path.dirname to return directory
-                with patch(
-                    "utils.audio_utils.os.path.dirname",
-                    return_value="/test/ffmpeg/path",
-                ):
-                    # Call function with executable path
-                    configure_ffmpeg("/test/ffmpeg/path/ffmpeg")
+                    # Check that verification test was performed
+                    mock_silent.assert_called_once()
+                    mock_silent.return_value.export.assert_called_once_with(
+                        "test.mp3", format="mp3"
+                    )
+                    mock_remove.assert_called_once_with("test.mp3")
 
-                    # Check that path was added to PATH
-                    assert "/test/ffmpeg/path" in os.environ["PATH"]
+    def test_configure_ffmpeg_static_ffmpeg_not_installed(self):
+        """Test configure_ffmpeg raises ImportError when static-ffmpeg is not installed."""
+        # Mock the import to raise ImportError
+        with patch(
+            "builtins.__import__",
+            side_effect=ImportError("No module named 'static_ffmpeg'"),
+        ):
+            # Call should raise ImportError
+            with pytest.raises(
+                ImportError, match="static-ffmpeg is required but not installed"
+            ):
+                configure_ffmpeg()
 
-                    # Verify the existence and executability checks were performed
-                    assert mock_exists.call_count >= 2
-                    assert mock_access.call_count >= 2
-
-                    # Check that pydub was configured
-                    assert "ffmpeg" in AudioSegment.converter
-                    assert "ffmpeg" in AudioSegment.ffmpeg
-                    assert "ffprobe" in AudioSegment.ffprobe
-
-    @patch("utils.audio_utils.os.path.exists")
-    def test_configure_ffmpeg_executable_not_found(self, mock_exists):
-        """Test configure_ffmpeg raises ValueError when executable not found."""
-        # Setup mock to return False (file doesn't exist)
-        mock_exists.return_value = False
-
-        # Call should raise ValueError
-        with pytest.raises(ValueError, match="Executable not found:"):
-            configure_ffmpeg("/test/ffmpeg/path")
-
-    @patch("utils.audio_utils.os.path.exists")
-    @patch("utils.audio_utils.os.access")
-    def test_configure_ffmpeg_executable_not_executable(self, mock_access, mock_exists):
-        """Test configure_ffmpeg raises ValueError when file is not executable."""
-        # Setup mocks
-        mock_exists.return_value = True
-        mock_access.return_value = False  # Not executable
-
-        # Call should raise ValueError
-        with pytest.raises(ValueError, match="File is not executable:"):
-            configure_ffmpeg("/test/ffmpeg/path")
-
-    @patch("utils.audio_utils.os.path.exists")
-    @patch("utils.audio_utils.os.access")
-    @patch("utils.audio_utils.AudioSegment.silent")
-    def test_configure_ffmpeg_verification_error(
-        self, mock_silent, mock_access, mock_exists
-    ):
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.silent")
+    def test_configure_ffmpeg_verification_error(self, mock_silent):
         """Test configure_ffmpeg raises RuntimeError when verification fails."""
-        # Setup mocks
-        mock_exists.return_value = True
-        mock_access.return_value = True
+        # Create a mock for static_ffmpeg module and run submodule
+        mock_run = MagicMock()
+        mock_run.get_or_fetch_platform_executables_else_raise.return_value = (
+            "/static/ffmpeg/bin/ffmpeg",
+            "/static/ffmpeg/bin/ffprobe",
+        )
+
+        mock_static_ffmpeg = MagicMock()
+        mock_static_ffmpeg.run = mock_run
+
+        # Setup mock to raise exception during verification
         mock_silent.side_effect = Exception("Test error")
 
-        # Call should raise RuntimeError
-        with pytest.raises(RuntimeError, match="Failed to verify ffmpeg installation"):
-            configure_ffmpeg("/test/ffmpeg/path")
-
-    @patch("utils.audio_utils.AudioSegment.silent")
-    @patch("utils.audio_utils.os.remove")
-    def test_configure_ffmpeg_with_none(self, mock_remove, mock_silent):
-        """Test configuring ffmpeg with None as path."""
-        # Setup mocks
-        mock_silent.return_value = MagicMock()
-        mock_silent.return_value.export.return_value = None
-
-        # Call function with None (should use system ffmpeg)
-        configure_ffmpeg(None)
-
-        # Check that verification test was performed
-        mock_silent.assert_called_once()
-        mock_silent.return_value.export.assert_called_once_with(
-            "test.mp3", format="mp3"
-        )
-        mock_remove.assert_called_once_with("test.mp3")
+        # Mock the imports
+        with patch.dict(
+            "sys.modules",
+            {"static_ffmpeg": mock_static_ffmpeg, "static_ffmpeg.run": mock_run},
+        ):
+            # Call should raise RuntimeError
+            with pytest.raises(
+                RuntimeError, match="Failed to verify ffmpeg installation"
+            ):
+                configure_ffmpeg()
 
 
 class TestSplitAudioOnSilence:
     """Tests for the split_audio_on_silence function."""
 
-    @patch("utils.audio_utils.AudioSegment.from_mp3")
-    @patch("utils.audio_utils.detect_silence")
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.from_mp3")
+    @patch("script_to_speech.utils.audio_utils.detect_silence")
     def test_split_audio_on_silence_success(self, mock_detect_silence, mock_from_mp3):
         """Test split_audio_on_silence with successful split."""
         # Setup mocks
@@ -194,8 +153,8 @@ class TestSplitAudioOnSilence:
         with pytest.raises(ValueError, match="Empty audio data provided"):
             split_audio_on_silence(b"")
 
-    @patch("utils.audio_utils.AudioSegment.from_mp3")
-    @patch("utils.audio_utils.detect_silence")
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.from_mp3")
+    @patch("script_to_speech.utils.audio_utils.detect_silence")
     def test_split_audio_on_silence_no_silence_detected(
         self, mock_detect_silence, mock_from_mp3
     ):
@@ -219,8 +178,8 @@ class TestSplitAudioOnSilence:
         # Check that result is None (no split performed)
         assert result is None
 
-    @patch("utils.audio_utils.AudioSegment.from_mp3")
-    @patch("utils.audio_utils.detect_silence")
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.from_mp3")
+    @patch("script_to_speech.utils.audio_utils.detect_silence")
     def test_split_audio_on_silence_split_point_beyond_audio_length(
         self, mock_detect_silence, mock_from_mp3
     ):
@@ -246,7 +205,7 @@ class TestSplitAudioOnSilence:
         # For any valid split point, should return the sliced audio
         assert result == mock_result
 
-    @patch("utils.audio_utils.AudioSegment.from_mp3")
+    @patch("script_to_speech.utils.audio_utils.AudioSegment.from_mp3")
     def test_split_audio_on_silence_error_handling(self, mock_from_mp3):
         """Test split_audio_on_silence error handling."""
         # Setup mock to raise exception
@@ -263,14 +222,16 @@ class TestSplitAudioOnSilence:
 class TestExportAudioSegment:
     """Tests for the export_audio_segment function."""
 
-    @patch("utils.audio_utils.os.makedirs")
+    @patch("script_to_speech.utils.audio_utils.os.makedirs")
     def test_export_audio_segment_success(self, mock_makedirs):
         """Test export_audio_segment with successful export."""
         # Setup mock audio segment
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was created
-        with patch("utils.audio_utils.os.path.exists", return_value=True):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=True
+        ):
             # Call function
             export_audio_segment(mock_audio, "/test/output/path.mp3")
 
@@ -297,7 +258,7 @@ class TestExportAudioSegment:
         with pytest.raises(ValueError, match="No output path provided"):
             export_audio_segment(mock_audio, "")
 
-    @patch("utils.audio_utils.os.makedirs")
+    @patch("script_to_speech.utils.audio_utils.os.makedirs")
     def test_export_audio_segment_export_error(self, mock_makedirs):
         """Test export_audio_segment when export fails."""
         # Setup mock audio segment with export that raises exception
@@ -308,28 +269,32 @@ class TestExportAudioSegment:
         with pytest.raises(RuntimeError, match="Failed to export audio:"):
             export_audio_segment(mock_audio, "/test/output/path.mp3")
 
-    @patch("utils.audio_utils.os.makedirs")
+    @patch("script_to_speech.utils.audio_utils.os.makedirs")
     def test_export_audio_segment_file_not_created(self, mock_makedirs):
         """Test export_audio_segment when file is not created after export."""
         # Setup mock audio segment
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was not created
-        with patch("utils.audio_utils.os.path.exists", return_value=False):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=False
+        ):
             # Call should raise RuntimeError
             with pytest.raises(
                 RuntimeError, match="Export completed but file was not created"
             ):
                 export_audio_segment(mock_audio, "/test/output/path.mp3")
 
-    @patch("utils.audio_utils.os.makedirs")
+    @patch("script_to_speech.utils.audio_utils.os.makedirs")
     def test_export_audio_segment_with_custom_format(self, mock_makedirs):
         """Test export_audio_segment with custom format."""
         # Setup mock audio segment
         mock_audio = MagicMock()
 
         # Setup mock to indicate file was created
-        with patch("utils.audio_utils.os.path.exists", return_value=True):
+        with patch(
+            "script_to_speech.utils.audio_utils.os.path.exists", return_value=True
+        ):
             # Call function with custom format
             export_audio_segment(mock_audio, "/test/output/path.wav", format="wav")
 

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from tts_providers.dummy_stateful.dummy_voice_registry_manager import (
+from script_to_speech.tts_providers.dummy_stateful.dummy_voice_registry_manager import (
     DummyVoiceRegistryManager,
 )
 

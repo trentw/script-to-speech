@@ -13,8 +13,6 @@ repos:
     rev: v1.7.1
     hooks:
       - id: mypy
-        # Until better package management implemented, remember to keep these
-        # in sync with requirements.txt
         additional_dependencies:
           - "types-pyYAML"
           - "types-requests"
@@ -23,25 +21,11 @@ repos:
 
   - repo: local
     hooks:
-      - id: pytest-check
+      - id: pytest-fast-checks
         name: pytest-fast-checks
         # Run only unit tests, skip slow and integration tests
-        entry: python -m pytest tests/ -v -m "unit and not slow and not integration" --maxfail=2
-        language: python
-        additional_dependencies:
-          - "pytest>=7.0.0"
-          - "pytest-mock"
-          - "pytest-cov"
-          - "pydub>=0.25.1"
-          - "elevenlabs>=0.3.0"
-          - "pdfplumber>=0.10.3"
-          - "PyYAML>=6.0.1"
-          - "ruamel.yaml>=0.17.21"
-          - "unidecode"
-          - "openai"
-          - "zyphra"
-          - "eyeD3"
-          - "tqdm"
+        entry: uv run pytest tests/ -v -m "unit and not slow and not integration" --maxfail=2
+        language: system
         pass_filenames: false
         always_run: false
         types: [python]

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 import requests
 
-from tts_providers.elevenlabs.voice_registry_manager import (
+from script_to_speech.tts_providers.elevenlabs.voice_registry_manager import (
     ElevenLabsVoiceRegistryManager,
 )
 
@@ -22,7 +22,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert isinstance(manager.voice_usage_order, OrderedDict)
         assert manager.is_initialized is False
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_initialize_voice_registry_empty(self, mock_elevenlabs):
         """Test _initialize_voice_registry with empty response."""
         # Setup mock
@@ -44,7 +46,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert len(manager.voice_usage_order) == 0
         assert manager.is_initialized is True
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_initialize_voice_registry_premade_voices(self, mock_elevenlabs):
         """Test _initialize_voice_registry with premade voices."""
         # Setup mock
@@ -85,7 +89,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert len(manager.voice_usage_order) == 0
         assert manager.is_initialized is True
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_initialize_voice_registry_shared_voices(self, mock_elevenlabs):
         """Test _initialize_voice_registry with shared voices."""
         # Setup mock
@@ -127,7 +133,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert set(manager.voice_usage_order.keys()) == {"public_id1", "public_id2"}
         assert manager.is_initialized is True
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_initialize_voice_registry_mixed_voices(self, mock_elevenlabs):
         """Test _initialize_voice_registry with mixed voice types."""
         # Setup mock
@@ -168,7 +176,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert list(manager.voice_usage_order.keys()) == ["public_id"]
         assert manager.is_initialized is True
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_find_voice_owner_found(self, mock_elevenlabs):
         """Test _find_voice_owner when owner is found."""
         # Setup mock
@@ -196,7 +206,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert owner_id == "owner_id"
         mock_client.voices.get_shared.assert_called_once_with(search="public_id")
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_find_voice_owner_not_found(self, mock_elevenlabs):
         """Test _find_voice_owner when owner is not found."""
         # Setup mock
@@ -224,7 +236,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert owner_id is None
         mock_client.voices.get_shared.assert_called_once_with(search="public_id")
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.requests.post")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.requests.post"
+    )
     def test_add_voice_to_registry_success(self, mock_post):
         """Test _add_voice_to_registry successful addition."""
         # Setup mock response
@@ -254,7 +268,9 @@ class TestElevenLabsVoiceRegistryManager:
         # Check registry was reinitialized
         manager._initialize_voice_registry.assert_called_once()
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.requests.post")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.requests.post"
+    )
     def test_add_voice_to_registry_failure(self, mock_post):
         """Test _add_voice_to_registry API failure."""
         # Setup mock response
@@ -270,7 +286,9 @@ class TestElevenLabsVoiceRegistryManager:
         with pytest.raises(RuntimeError, match="Failed to add voice to registry"):
             manager._add_voice_to_registry("public_id", "owner_id")
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.requests.delete")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.requests.delete"
+    )
     def test_remove_voice_from_registry_success(self, mock_delete):
         """Test _remove_voice_from_registry successful removal."""
         # Setup mock response
@@ -294,7 +312,9 @@ class TestElevenLabsVoiceRegistryManager:
         # Check registry was reinitialized
         manager._initialize_voice_registry.assert_called_once()
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.requests.delete")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.requests.delete"
+    )
     def test_remove_voice_from_registry_failure(self, mock_delete):
         """Test _remove_voice_from_registry API failure."""
         # Setup mock response
@@ -427,7 +447,9 @@ class TestElevenLabsVoiceRegistryManager:
         # Premade voices should not be in LRU tracking
         assert len(manager.voice_usage_order) == 0
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_get_library_voice_id_not_initialized(self, mock_elevenlabs):
         """Test get_library_voice_id when registry is not initialized."""
         # Setup mock for initialization
@@ -462,7 +484,9 @@ class TestElevenLabsVoiceRegistryManager:
         assert manager.is_initialized is True
         mock_client.voices.get_all.assert_called_once()
 
-    @patch("tts_providers.elevenlabs.voice_registry_manager.ElevenLabs")
+    @patch(
+        "script_to_speech.tts_providers.elevenlabs.voice_registry_manager.ElevenLabs"
+    )
     def test_get_library_voice_id_add_new_voice(self, mock_elevenlabs):
         """Test get_library_voice_id when adding a new voice to registry."""
         # Create manager with mocked methods

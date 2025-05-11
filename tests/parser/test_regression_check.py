@@ -6,16 +6,17 @@ with existing JSON files to detect regressions.
 """
 
 import json
-from parser.regression_check import (
+from pathlib import Path
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+
+from script_to_speech.parser.regression_check import (
     compare_chunks_by_type,
     load_json_chunks,
     main,
     run_regression_check,
 )
-from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
-
-import pytest
 
 
 class TestLoadJsonChunks:
@@ -130,13 +131,13 @@ class TestCompareChunksByType:
 class TestRunRegressionCheck:
     """Tests for the run_regression_check function."""
 
-    @patch("parser.regression_check.setup_logging")
-    @patch("parser.regression_check.load_json_chunks")
-    @patch("parser.regression_check.ScreenplayParser")
-    @patch("parser.regression_check.process_chunks")
-    @patch("parser.regression_check.compare_chunks_by_type")
-    @patch("parser.regression_check.log_chunk_comparison")
-    @patch("parser.regression_check.analyze_chunks")
+    @patch("script_to_speech.parser.regression_check.setup_logging")
+    @patch("script_to_speech.parser.regression_check.load_json_chunks")
+    @patch("script_to_speech.parser.regression_check.ScreenplayParser")
+    @patch("script_to_speech.parser.regression_check.process_chunks")
+    @patch("script_to_speech.parser.regression_check.compare_chunks_by_type")
+    @patch("script_to_speech.parser.regression_check.log_chunk_comparison")
+    @patch("script_to_speech.parser.regression_check.analyze_chunks")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_regression_check(
         self,
@@ -205,8 +206,8 @@ class TestRunRegressionCheck:
         # Check that output file was written
         mock_file_open.assert_called()
 
-    @patch("parser.regression_check.setup_logging")
-    @patch("parser.regression_check.load_json_chunks")
+    @patch("script_to_speech.parser.regression_check.setup_logging")
+    @patch("script_to_speech.parser.regression_check.load_json_chunks")
     def test_run_regression_check_error(self, mock_load, mock_setup_logging):
         """Test error handling in run_regression_check."""
         # Mock setup_logging
@@ -223,7 +224,7 @@ class TestRunRegressionCheck:
 class TestMain:
     """Tests for the main function."""
 
-    @patch("parser.regression_check.run_regression_check")
+    @patch("script_to_speech.parser.regression_check.run_regression_check")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function(self, mock_parse_args, mock_run):
         """Test the main function."""
@@ -239,7 +240,7 @@ class TestMain:
         # Check that run_regression_check was called with correct arguments
         mock_run.assert_called_once_with("test.json", False)
 
-    @patch("parser.regression_check.run_regression_check")
+    @patch("script_to_speech.parser.regression_check.run_regression_check")
     @patch("argparse.ArgumentParser.parse_args")
     def test_main_function_with_debug(self, mock_parse_args, mock_run):
         """Test the main function with debug flag."""

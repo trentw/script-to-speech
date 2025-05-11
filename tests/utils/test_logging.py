@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from utils.logging import (
+from script_to_speech.utils.logging import (
     SimpleFormatter,
     TqdmLoggingHandler,
     get_screenplay_logger,
@@ -157,14 +157,16 @@ class TestGetScreenplayLogger:
 class TestSetupScreenplayLogging:
     """Tests for the setup_screenplay_logging function."""
 
-    @patch("utils.logging.logging.FileHandler")
+    @patch("script_to_speech.utils.logging.logging.FileHandler")
     def test_setup_screenplay_logging(self, mock_file_handler):
         """Test setting up screenplay logging with file and console output."""
         # Setup mock file handler
         mock_file_handler.return_value = MagicMock()
 
         # Mock TqdmLoggingHandler to avoid affecting console output during tests
-        with patch("utils.logging.TqdmLoggingHandler") as mock_tqdm_handler:
+        with patch(
+            "script_to_speech.utils.logging.TqdmLoggingHandler"
+        ) as mock_tqdm_handler:
             # Create a mock instance and track constructor arguments
             mock_instance = MagicMock()
             mock_tqdm_handler.return_value = mock_instance

@@ -11,13 +11,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from audio_generation.models import (
+from script_to_speech.audio_generation.models import (
     AudioClipInfo,
     AudioGenerationTask,
     ReportingState,
     TaskStatus,
 )
-from audio_generation.processing import (
+from script_to_speech.audio_generation.processing import (
     apply_cache_overrides,
     check_for_silence,
     determine_speaker,
@@ -25,7 +25,7 @@ from audio_generation.processing import (
     plan_audio_generation,
     update_cache_duplicate_state,
 )
-from audio_generation.utils import check_audio_silence
+from script_to_speech.audio_generation.utils import check_audio_silence
 
 
 @pytest.fixture
@@ -94,7 +94,7 @@ def mock_text_processor_manager():
 @pytest.fixture
 def mock_logger():
     """Fixture providing a mock logger."""
-    with patch("audio_generation.processing.logger") as mock:
+    with patch("script_to_speech.audio_generation.processing.logger") as mock:
         yield mock
 
 
@@ -241,7 +241,9 @@ class TestPlanAudioGeneration:
         ]
 
         # Act
-        with patch("audio_generation.processing.generate_chunk_hash") as mock_hash:
+        with patch(
+            "script_to_speech.audio_generation.processing.generate_chunk_hash"
+        ) as mock_hash:
             # Return predictable hashes
             mock_hash.side_effect = [
                 "cached_hash1",
@@ -625,7 +627,7 @@ class TestCheckForSilence:
 
         mock_logger.info.assert_called_with("Silence checking disabled. Skipping.")
 
-    @patch("audio_generation.processing.check_audio_silence")
+    @patch("script_to_speech.audio_generation.processing.check_audio_silence")
     @patch("builtins.open")
     def test_check_silent_clip(
         self, mock_open, mock_check_silence, sample_silence_tasks, mock_logger
@@ -672,7 +674,7 @@ class TestCheckForSilence:
             mock_check_silence.call_count == 1
         )  # Only one task should be checked (non-silent cache hit)
 
-    @patch("audio_generation.utils.check_audio_silence")
+    @patch("script_to_speech.audio_generation.utils.check_audio_silence")
     @patch("builtins.open")
     def test_check_non_silent_clip(
         self, mock_open, mock_check_silence, sample_silence_tasks, mock_logger
@@ -729,7 +731,7 @@ class TestCheckForSilence:
         with (
             patch("builtins.open") as mock_open,
             patch(
-                "audio_generation.processing.check_audio_silence"
+                "script_to_speech.audio_generation.processing.check_audio_silence"
             ) as mock_check_silence,
         ):
             # Setup our side effect
@@ -990,10 +992,10 @@ class TestCheckAudioSilence:
     @pytest.fixture
     def mock_logger(self):
         """Fixture providing a mock logger."""
-        with patch("audio_generation.utils.logger") as mock:
+        with patch("script_to_speech.audio_generation.utils.logger") as mock:
             yield mock
 
-    @patch("audio_generation.utils.check_audio_level")
+    @patch("script_to_speech.audio_generation.utils.check_audio_level")
     def test_silent_clip(self, mock_check_level, silence_task, mock_logger):
         """Test checking a clip that is silent."""
         # Arrange
@@ -1015,7 +1017,7 @@ class TestCheckAudioSilence:
         assert len(reporting_state.silent_clips) == 1
         assert silence_task.cache_filename in reporting_state.silent_clips
 
-    @patch("audio_generation.utils.check_audio_level")
+    @patch("script_to_speech.audio_generation.utils.check_audio_level")
     def test_non_silent_clip(self, mock_check_level, silence_task, mock_logger):
         """Test checking a clip that is not silent."""
         # Arrange
@@ -1036,7 +1038,7 @@ class TestCheckAudioSilence:
         assert silence_task.checked_silence_level == -20.0
         assert len(reporting_state.silent_clips) == 0
 
-    @patch("audio_generation.utils.check_audio_level")
+    @patch("script_to_speech.audio_generation.utils.check_audio_level")
     def test_expected_silence_skipped(
         self, mock_check_level, expected_silence_task, mock_logger
     ):
@@ -1058,8 +1060,8 @@ class TestCheckAudioSilence:
         mock_check_level.assert_not_called()
         assert len(reporting_state.silent_clips) == 0
 
-    @patch("audio_generation.utils.check_audio_level")
-    @patch("audio_generation.utils.truncate_text")
+    @patch("script_to_speech.audio_generation.utils.check_audio_level")
+    @patch("script_to_speech.audio_generation.utils.truncate_text")
     def test_with_log_prefix(
         self, mock_truncate, mock_check_level, silence_task, mock_logger
     ):
@@ -1089,58 +1091,7 @@ class TestCheckAudioSilence:
 
         assert prefix_used, "Log prefix not used in any warning messages"
 
-    @patch("audio_generation.utils.check_audio_level")
-    def test_none_level_handled(self, mock_check_level, silence_task, mock_logger):
-        """Test handling of None returned from check_audio_level."""
-        # Arrange
-        mock_check_level.return_value = None
-        reporting_state = ReportingState()
-
-        # Act
-        result = check_audio_silence(
-            task=silence_task,
-            audio_data=b"audio_data",
-            silence_threshold=-40.0,
-            reporting_state=reporting_state,
-            log_prefix="",
-        )
-
-        # Assert
-        assert result is False  # Not silent (can't determine)
-        assert len(reporting_state.silent_clips) == 0
-
-    @patch("audio_generation.utils.check_audio_level")
-    @patch("audio_generation.utils.truncate_text")
-    def test_with_log_prefix(
-        self, mock_truncate, mock_check_level, silence_task, mock_logger
-    ):
-        """Test logging with a prefix."""
-        # Arrange
-        mock_check_level.return_value = -60.0
-        mock_truncate.return_value = "Hello..."
-        reporting_state = ReportingState()
-
-        # Act
-        check_audio_silence(
-            task=silence_task,
-            audio_data=b"audio_data",
-            silence_threshold=-40.0,
-            reporting_state=reporting_state,
-            log_prefix="PREFIX: ",
-        )
-
-        # Assert
-        # Check that at least one warning log message uses the prefix
-        prefix_used = False
-        for call in mock_logger.warning.call_args_list:
-            args, kwargs = call
-            if args and isinstance(args[0], str) and args[0].startswith("PREFIX:"):
-                prefix_used = True
-                break
-
-        assert prefix_used, "Log prefix not used in any warning messages"
-
-    @patch("audio_generation.utils.check_audio_level")
+    @patch("script_to_speech.audio_generation.utils.check_audio_level")
     def test_none_level_handled(self, mock_check_level, silence_task, mock_logger):
         """Test handling of None returned from check_audio_level."""
         # Arrange

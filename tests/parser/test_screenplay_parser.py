@@ -7,16 +7,17 @@ focusing on the core parser functionality, state detection, and chunk generation
 
 import json
 import re
-from parser.screenplay_parser import (
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+
+from script_to_speech.parser.screenplay_parser import (
     Chunk,
     IndentationContext,
     ParserConfig,
     ScreenplayParser,
     State,
 )
-from unittest.mock import MagicMock, mock_open, patch
-
-import pytest
 
 
 class TestFullParsing:
@@ -25,7 +26,7 @@ class TestFullParsing:
     @pytest.fixture
     def mock_logger(self):
         """Fixture to mock the logger."""
-        with patch("parser.screenplay_parser.logger") as mock:
+        with patch("script_to_speech.parser.screenplay_parser.logger") as mock:
             yield mock
 
     def test_parse_screenplay_empty(self, mock_logger):

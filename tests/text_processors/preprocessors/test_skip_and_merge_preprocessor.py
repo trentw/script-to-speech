@@ -1,6 +1,6 @@
 import pytest
 
-from text_processors.preprocessors.skip_and_merge_preprocessor import (
+from script_to_speech.text_processors.preprocessors.skip_and_merge_preprocessor import (
     SkipAndMergePreProcessor,
 )
 

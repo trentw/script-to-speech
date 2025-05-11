@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from tts_providers.dummy_common.mixin import DummyProviderMixin
+from script_to_speech.tts_providers.dummy_common.mixin import DummyProviderMixin
 
 
 class TestDummyProviderMixin(unittest.TestCase):
@@ -101,7 +101,7 @@ class TestDummyProviderMixin(unittest.TestCase):
         client = DummyProviderMixin.instantiate_client()
 
         # Verify the client is of the correct type
-        from dummy_tts_backend.backend import DummyTTSClient
+        from script_to_speech.dummy_tts_backend.backend import DummyTTSClient
 
         self.assertIsInstance(client, DummyTTSClient)
 

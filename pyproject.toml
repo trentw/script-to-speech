@@ -1,3 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "script_to_speech"
+version = "1.0.0"
+description = "A set of tools to convert screenplays into multi-voiced audiobooks using various TTS providers"
+authors = [
+    {name = "Trent Walkiewicz", email = "t.walkiewicz@gmail.com"}
+]
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "elevenlabs>=1.57.0",
+    "pydub>=0.25.1",
+    "pdfplumber>=0.10.3",
+    "PyYAML>=6.0.1",
+    "ruamel.yaml>=0.17.21",
+    "unidecode>=1.4.0",
+    "openai>=1.76.0",
+    "zyphra>=0.1.6",
+    "eyeD3>=0.9.7",
+    "tqdm>=4.67.1",
+    "static-ffmpeg>=2.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=25.1.0",
+    "isort>=6.0.1",
+    "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "pytest-mock>=3.14.0",
+    "mypy>=1.15.0",
+    "types-pyYAML>=6.0.12",
+    "types-requests>=2.32.0",
+    "types-tqdm>=4.67.0",
+]
+
+[project.scripts]
+sts-generate-audio = "script_to_speech.script_to_speech:main"
+sts-generate-standalone-speech = "script_to_speech.utils.generate_standalone_speech:main"
+sts-provider-yaml = "script_to_speech.tts_providers.utils:main"
+sts-analyze-json = "script_to_speech.parser.analyze:main"
+sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:main"
+sts-parse-screenplay = "script_to_speech.parser.process:main"
+sts-parse-regression-check-json = "script_to_speech.parser.regression_check:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/script_to_speech"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/script_to_speech/dummy_tts_backend/assets/" = "script_to_speech/dummy_tts_backend/assets/"
+"src/script_to_speech/text_processors/configs/" = "script_to_speech/text_processors/configs/"
+
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
@@ -58,5 +122,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*"]
 ignore_missing_imports = true
