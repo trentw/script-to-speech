@@ -1,6 +1,6 @@
 # Text Processing Pipeline
 
-Script to Speech uses a flexible text processing pipeline to transform screenplay text before audio generation. This guide explains how processors work and how to configure them.
+Script to Speech uses a flexible text processing pipeline to transform screenplay text before audio generation. This guide explains how text processors work and how to configure them.
 
 ## Preprocessors vs Processors
 
@@ -27,15 +27,15 @@ Any number of text processors can be chained together in the processing pipeline
 
 1. **Command Line Configs**: Always take precedence
    ```bash
-   uv run sts-generate-audio --processor-configs custom1.yaml custom2.yaml
+   uv run sts-generate-audio --text-processor-configs custom1.yaml custom2.yaml
    ```
 
 2. **Matching Dialogue Chunk Config**: If exists, combines with default config
-   - File: `input/[screenplay_name]/[screenplay_name]_processor_config.yaml`
+   - File: `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml`
    - Load order: `[DEFAULT_CONFIG, chunk_config]`
 
 3. **Default Config Only**: No other configs found. Should be sufficient for most use cases
-   - File: `src/script_to_speech/text_processors/configs/default_processor_config.yaml`
+   - File: `src/script_to_speech/text_processors/configs/default_text_processor_config.yaml`
 
 ## Configuration Syntax
 
@@ -61,9 +61,9 @@ processors:
 ```
 
 ### Multiple Instances of Preprocessor / Processor in Chained Configs
-Processors support two modes when multiple instances of the same configuration are present. Check processor documentation for which mode a specific config operates under:
+Processors support two modes when multiple instances of the same configuration are present. Check text processor documentation for which mode a specific config operates under:
 
-1. **Chain Mode**: Multiple instances run in sequence -- output from one is input to the next. This is the default mode that most preprocessors / processors operate under
+1. **Chain Mode**: Multiple instances run in sequence -- output from one is input to the next. This is the default mode that most text preprocessors / processors operate under
    ```yaml
    # First substitution instance, transforms "INT." -> "Interior"
    processors:
@@ -103,7 +103,7 @@ Processors support two modes when multiple instances of the same configuration a
          min_speaker_spacing: 8  # This one is used
    ```
 
-## Available Preprocessors
+## Available Text Preprocessors
 
 ### skip_and_merge
 - **Purpose**: Remove specific chunk types and merge adjacent chunks if appropriate (e.g. if a page number bisects a line of dialogue)
@@ -176,7 +176,7 @@ preprocessors:
           - ALICE CU
 ```
 
-## Available Processors
+## Available Text Processors
 
 ### skip_empty
 - **Purpose**: Replace the text content of specific chunks with empty text. For a variant that will merge the preceding / following text chunk around the empty chunk, if appropriate, see `skip_and_merge` preprocessor
@@ -236,23 +236,23 @@ processors:
           text_must_contain_string: "(gasps)"    # (optional) Only apply transform when matching this string
 ```
 
-## Custom Processor Configuration
-There are a number of default preprocessors / processors that are applied by default and can be seen in the [default_processor_config.yaml](../src/script_to_speech/text_processors/configs/default_processor_config.yaml)
+## Custom Text Processor Configuration
+There are a number of default preprocessors / processors that are applied by default and can be seen in the [default_text_processor_config.yaml](../src/script_to_speech/text_processors/configs/default_text_processor_config.yaml)
 
-### Adding to the default_processor_config.yaml
-Additional preprocessors / processors can be run in addition to the default by creating a processor_config file with the filename of `[screenplay_name]_processor_config.yaml` and placing it in the same directory 
+### Adding to the default_text_processor_config.yaml
+Additional preprocessors / processors can be run in addition to the default by creating a text_processor_config file with the filename of `[screenplay_name]_text_processor_config.yaml` and placing it in the same directory 
 
-### Replacing the default_processor_config.yaml
-When `uv run sts-generate-audio` is run with the `--processor-configs` argument, only the supplied config(s) will be used
+### Replacing the default_text_processor_config.yaml
+When `uv run sts-generate-audio` is run with the `--text-processor-configs` argument, only the supplied config(s) will be used
 
 ### Example Custom Config
-If the following config was placed at `input/[screenplay_name]/[screenplay_name]_processor_config.yaml` these preprocessors / processors would be run in addition to the defaults.
+If the following config was placed at `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` these preprocessors / processors would be run in addition to the defaults.
 
 The following call would use this custom config instead of the default (assuming the custom config is named `my_custom_config.yaml`)
 ```bash
 uv run sts-generate-audio /input/[screenplay_name]/[screenplay].json \
    --tts-config /input/[screenplay_name]/[screenplay]_voice_config.yaml \
-   --processor-configs my_custom_config.yaml
+   --text-processor-configs my_custom_config.yaml
 ```
 
 ```yaml
@@ -290,7 +290,7 @@ processors:
           replace_string: ''
 ```
 
-## Creating Custom Processors
+## Creating Custom Text Processors
 
 ### Adding a New Processor
 1. Create a new file in `src/script_to_speech/text_processors/processors/`
@@ -445,4 +445,4 @@ processors:
 3. **Unexpected Results**
    - Check processor order
    - Test with --dry-run first
-   - Use `sts-apply-text-processors-json` to test specific configs. Compare [screenplay_name].json to [screenplay_name]-modified.json to see if the intended changes were applied
+   - Use `sts-apply-text-processors-json` to test specific configs. Compare [screenplay_name].json to [screenplay_name]-text-processed.json to see if the intended changes were applied

@@ -248,9 +248,9 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
 4. **Custom Text Processing**
 
-   Custom text processor configurations can be created that will chain with the default configuration. By default, the program will look for an additional configuration file named the same as the .json dialogue chunk file, with `_processor_config.yaml` appended.
+   Custom text processor configurations can be created that will chain with the default configuration. By default, the program will look for an additional configuration file named the same as the .json dialogue chunk file, with `_text_processor_config.yaml` appended.
 
-   So, to create a custom config, create `input/your_script/your_script_processor_config.yaml`:
+   So, to create a custom config, create `input/your_script/your_script_text_processor_config.yaml`:
 
    ```yaml
    processors:
@@ -267,7 +267,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
                - text
    ```
 
-   For further information about text existing text processor transformations, or how to create your own, see [Text Processing Guide](docs/PROCESSORS.md)
+   For further information about text existing text processor transformations, or how to create your own, see [Text Processing Guide](docs/TEXT_PROCESSORS.md)
 
 ### Iterative Audio Generation with Various Run Modes
   Script to Speech supports a number of run modes to test and iteratively build dialogue clips before generating the final .mp3 output. For detailed information beyond what is listed below, see the [run modes documentation](docs/RUN_MODES.md)
@@ -349,20 +349,20 @@ input/
     ├── [screenplay_name].pdf         # Copied screenplay
     ├── [screenplay_name].txt         # Extracted text (if parser run with --text-only)
     ├── [screenplay_name].json        # Parsed dialogue chunks
-    ├── [screenplay_name]_optional_config.yaml   # ID3 tag configuration
-    ├── [screenplay_name]_processor_config.yaml  # (optional) Custom processors
-    └── [screenplay_name]_voice_config.yaml      # TTS provider config
-    └── [screenplay_name]_voice_config_populated.yaml      # TTS provider config populated with multi-provider options
+    ├── [screenplay_name]_optional_config.yaml          # ID3 tag configuration
+    ├── [screenplay_name]_text_processor_config.yaml    # (optional) Custom text processors
+    └── [screenplay_name]_voice_config.yaml             # TTS provider config
+    └── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
 
 output/
-├── parser_logs/                      # Parser operation logs
+├── parser_logs/                               # Parser operation logs
 └── [screenplay_name]/
-    ├── [screenplay_name].mp3         # Final audiobook
-    ├── [screenplay_name]-modified.json  # Dialogue chunks with text processors applied
-    ├── cache/                        # Generated audio clips
-    └── logs/                         # Generation logs
+    ├── [screenplay_name].mp3                  # Final audiobook
+    ├── [screenplay_name]-text-processed.json  # Dialogue chunks with text processors applied
+    ├── cache/                                 # Generated audio clips
+    └── logs/                                  # Generation logs
 
-standalone_speech/                   # Override audio files
+standalone_speech/                             # Override audio files
 ```
 
 ## Run Modes
@@ -380,7 +380,7 @@ Script to Speech supports flexible text processing through preprocessors and pro
 - **Preprocessors**: Modify the dialogue structure
 - **Processors**: Transform individual text lines
 
-See [PROCESSORS.md](docs/PROCESSORS.md) for configuration details.
+See [TEXT_PROCESSORS.md](docs/TEXT_PROCESSORS.md) for configuration details.
 
 ## TTS Providers
 

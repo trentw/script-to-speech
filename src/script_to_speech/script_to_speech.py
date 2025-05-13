@@ -28,7 +28,7 @@ from .audio_generation.utils import (
     load_json_chunks,
 )
 from .text_processors.processor_manager import TextProcessorManager
-from .text_processors.utils import get_processor_configs
+from .text_processors.utils import get_text_processor_configs
 from .tts_providers.tts_provider_manager import TTSProviderManager
 from .utils.audio_utils import configure_ffmpeg
 from .utils.id3_tag_utils import set_id3_tags_from_config
@@ -62,7 +62,7 @@ def parse_arguments() -> argparse.Namespace:
         "--tts-config", help="Path to YAML configuration file for TTS provider."
     )
     parser.add_argument(
-        "--processor-configs",
+        "--text-processor-configs",
         nargs="*",
         help="Path(s) to YAML configuration file(s) for text (pre)processors. "
         "Multiple paths can be provided.",
@@ -144,7 +144,9 @@ def save_modified_json(
     """Saves the processed dialogue chunks to a JSON file."""
     try:
         base_name = os.path.splitext(os.path.basename(input_file))[0]
-        modified_json_path = os.path.join(output_folder, f"{base_name}-modified.json")
+        modified_json_path = os.path.join(
+            output_folder, f"{base_name}-text-processed.json"
+        )
         with open(modified_json_path, "w", encoding="utf-8") as f:
             json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
         logger.info(f"\nProcessed dialogue saved to: {modified_json_path}")
@@ -233,17 +235,17 @@ def main() -> None:
         # Convert input file and processor config paths to Path objects
         input_file_path = Path(args.input_file) if args.input_file else None
         cmd_configs_paths = (
-            [Path(p) for p in args.processor_configs]
-            if args.processor_configs
+            [Path(p) for p in args.text_processor_configs]
+            if args.text_processor_configs
             else None
         )
 
-        generated_processor_configs = get_processor_configs(
+        generated_text_processor_configs = get_text_processor_configs(
             input_file_path, cmd_configs_paths
         )
-        processor = TextProcessorManager(generated_processor_configs)
+        processor = TextProcessorManager(generated_text_processor_configs)
         logger.info(
-            f"Text processor manager initialized with configs: {[str(p) for p in generated_processor_configs]}"  # Log as strings
+            f"Text processor manager initialized with configs: {[str(p) for p in generated_text_processor_configs]}"  # Log as strings
         )
 
         # Load dialogues

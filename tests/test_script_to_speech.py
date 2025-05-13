@@ -166,11 +166,11 @@ class TestSaveModifiedJson:
 
             # Assert
             mock_file.assert_called_once_with(
-                "/output/file-modified.json", "w", encoding="utf-8"
+                "/output/file-text-processed.json", "w", encoding="utf-8"
             )
             mock_json_dump.assert_called_once()
             mock_logger.info.assert_called_with(
-                "\nProcessed dialogue saved to: /output/file-modified.json"
+                "\nProcessed dialogue saved to: /output/file-text-processed.json"
             )
 
     def test_save_modified_json_error(self):
@@ -289,7 +289,7 @@ class TestMain:
                 "src.script_to_speech.script_to_speech.TTSProviderManager"
             ) as mock_tts_manager,
             patch(
-                "src.script_to_speech.script_to_speech.get_processor_configs"
+                "src.script_to_speech.script_to_speech.get_text_processor_configs"
             ) as mock_get_configs,
             patch(
                 "src.script_to_speech.script_to_speech.TextProcessorManager"
@@ -311,7 +311,7 @@ class TestMain:
             args.optional_config = None
             args.tts_config = Path("tts_config.yaml")
             args.provider = "openai"
-            args.processor_configs = None
+            args.text_processor_configs = None
             args.ffmpeg_path = None
             args.max_report_misses = 20
             args.max_report_text = 30
@@ -332,10 +332,10 @@ class TestMain:
                 {"type": "action", "text": "John walks away"},
             ]
 
-            # Configure get_processor_configs mock return value
+            # Configure get_text_processor_configs mock return value
             mock_get_configs.return_value = [Path("mock/default_config.yaml")]
 
-            # Configure get_processor_configs mock return value
+            # Configure get_text_processor_configs mock return value
             mock_get_configs.return_value = [Path("mock/default_config.yaml")]
             yield {
                 "args": args,

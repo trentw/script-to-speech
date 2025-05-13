@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 from ..text_processors.processor_manager import TextProcessorManager
-from ..text_processors.utils import get_processor_configs
+from ..text_processors.utils import get_text_processor_configs
 from ..utils.logging import get_screenplay_logger
 from .tts_provider_manager import TTSProviderManager
 
@@ -13,7 +13,7 @@ logger = get_screenplay_logger("utils.processor")
 
 def _handle_yaml_operation(
     input_json_path: Path,
-    processor_configs: Optional[List[Path]] = None,
+    text_processor_configs: Optional[List[Path]] = None,
     provider: Optional[str] = None,
     existing_yaml_path: Optional[Path] = None,
     include_optional_fields: bool = False,
@@ -23,7 +23,7 @@ def _handle_yaml_operation(
 
     Args:
         input_json_path: Path to the input JSON chunks file
-        processor_configs: Optional list of Paths to processing configuration files
+        text_processor_configs: Optional list of Paths to processing configuration files
         provider: Optional provider name for generation
         existing_yaml_path: Optional Path to existing YAML to populate
 
@@ -36,10 +36,10 @@ def _handle_yaml_operation(
             chunks = json.load(f)
 
         # Get processor configs
-        generated_processor_configs = get_processor_configs(
-            input_json_path, processor_configs
+        generated_text_processor_configs = get_text_processor_configs(
+            input_json_path, text_processor_configs
         )
-        processor = TextProcessorManager(generated_processor_configs)
+        processor = TextProcessorManager(generated_text_processor_configs)
         processed_chunks = processor.process_chunks(chunks)
 
         tts_manager = TTSProviderManager(

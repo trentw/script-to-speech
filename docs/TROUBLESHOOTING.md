@@ -204,18 +204,18 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 - Use `--populate-cache` for gradual processing
 - Consider processing on systems with adequate resources
 
-### 6. Processor Configuration Issues
+### 6. Text Processor Configuration Issues
 
 **Problem**: Text processors not working as expected.
 
 **Symptoms**:
 - Text not being transformed
-- Wrong processor precedence
+- Wrong text processor precedence
 - Validation errors
 
 **Solutions**:
 
-1. **Check Processor Order**
+1. **Check Text Processor Order**
 - All preprocessors from all configs, will be run before processors
 - Multiple will be processed in order
 - Within a config, (pre)processors will be run top to bottom
@@ -248,9 +248,9 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 
 2. **Validate Configuration**
    ```bash
-   # Test processor configuration
+   # Test text processor configuration
    uv run sts-apply-text-processors-json script.json \
-     --processor-configs test_config.yaml
+     --text-processor-configs test_config.yaml
    ```
 
 3. **Fix Syntax Errors**
@@ -423,7 +423,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
    ```bash
    # Test text processors independently
    uv run sts-apply-text-processors-json script.json \
-     --processor-configs test_config.yaml \
+     --text-processor-configs test_config.yaml \
      --output-path debug_output.json
    ```
 

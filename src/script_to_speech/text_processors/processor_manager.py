@@ -107,9 +107,9 @@ class TextProcessorManager:
 
         # Process each config file in order
         for config in self.configs:
-            for processor_config in config.get("processors", []):
-                module_name = processor_config["name"]
-                config_params = processor_config.get("config", {})
+            for text_processor_config in config.get("processors", []):
+                module_name = text_processor_config["name"]
+                config_params = text_processor_config.get("config", {})
 
                 try:
                     # Import from processors subdirectory

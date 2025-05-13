@@ -103,7 +103,7 @@ class TestDummyProviderOverride:
                 "script_to_speech.script_to_speech.TTSProviderManager"
             ) as mock_tts_manager,
             patch(
-                "script_to_speech.script_to_speech.get_processor_configs"
+                "script_to_speech.script_to_speech.get_text_processor_configs"
             ) as mock_get_configs,
             patch(
                 "script_to_speech.script_to_speech.TextProcessorManager"
@@ -134,7 +134,7 @@ class TestDummyProviderOverride:
             args.optional_config = None
             args.tts_config = sample_config_file
             args.provider = None
-            args.processor_configs = None
+            args.text_processor_configs = None
             args.ffmpeg_path = None
             args.max_report_misses = 20
             args.max_report_text = 30

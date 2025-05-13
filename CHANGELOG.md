@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 - `--max-workers` run mode flag to control global maximum of concurrent downloads (was previously set by `GLOBAL_MAX_WORKERS = 12`). Updated documentation and tests accordingly
 
+### Changed
+- Naming more consistent and descriptive in commands, code, and documentation
+  - "provider" -> "TTS provider"
+  - "dialog" -> "dialogue"
+  - "processor" -> "text processor"
+
 ## [1.0.0] - 2025-05-11
 
 ### Added

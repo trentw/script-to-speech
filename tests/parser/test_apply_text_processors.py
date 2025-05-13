@@ -22,7 +22,9 @@ class TestApplyTextProcessors:
 
     @patch("src.script_to_speech.parser.apply_text_processors.TextProcessorManager")
     @patch("src.script_to_speech.parser.apply_text_processors.setup_parser_logging")
-    @patch("src.script_to_speech.parser.apply_text_processors.get_processor_configs")
+    @patch(
+        "src.script_to_speech.parser.apply_text_processors.get_text_processor_configs"
+    )
     @patch("src.script_to_speech.parser.apply_text_processors.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_basic(
@@ -71,7 +73,7 @@ processors:
         # Mock sanitize_name
         mock_sanitize.return_value = "test_screenplay"
 
-        # Mock get_processor_configs
+        # Mock get_text_processor_configs
         mock_config_path = Path("config.yaml")
         mock_get_configs.return_value = [mock_config_path]
 
@@ -103,7 +105,9 @@ processors:
 
     @patch("src.script_to_speech.parser.apply_text_processors.TextProcessorManager")
     @patch("src.script_to_speech.parser.apply_text_processors.setup_parser_logging")
-    @patch("src.script_to_speech.parser.apply_text_processors.get_processor_configs")
+    @patch(
+        "src.script_to_speech.parser.apply_text_processors.get_text_processor_configs"
+    )
     @patch("src.script_to_speech.parser.apply_text_processors.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_with_dialogue(
@@ -153,7 +157,7 @@ processors:
         # Mock sanitize_name
         mock_sanitize.return_value = "test_screenplay"
 
-        # Mock get_processor_configs
+        # Mock get_text_processor_configs
         mock_config_path = Path("config.yaml")
         mock_get_configs.return_value = [mock_config_path]
 
@@ -181,7 +185,7 @@ processors:
         # Check that logging was set up
         mock_setup_logging.assert_called_once()
 
-        # Check that get_processor_configs was called with correct Path arguments
+        # Check that get_text_processor_configs was called with correct Path arguments
         mock_get_configs.assert_called_once_with(input_path, custom_config_paths)
 
         # Check that processor manager was initialized with Path
@@ -219,7 +223,7 @@ processors:
         # Mock command line arguments
         mock_args = MagicMock()
         mock_args.json_file = "test_screenplay.json"
-        mock_args.processor_configs = ["config.yaml"]
+        mock_args.text_processor_configs = ["config.yaml"]
         mock_args.output_path = "output.json"
         mock_parse_args.return_value = mock_args
 
@@ -239,7 +243,7 @@ processors:
         # Mock command line arguments
         mock_args = MagicMock()
         mock_args.json_file = "test_screenplay.json"
-        mock_args.processor_configs = ["config.yaml"]
+        mock_args.text_processor_configs = ["config.yaml"]
         mock_args.output_path = "output.json"
         mock_parse_args.return_value = mock_args
 

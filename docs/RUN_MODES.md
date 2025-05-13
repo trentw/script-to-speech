@@ -221,7 +221,7 @@ Large projects in memory constrained situations may benefit from:
 ## Output and Logging
 
 ### Output Locations
-- **Dry Run**: `output/[script]/[script]-modified.json`
+- **Dry Run**: `output/[script]/[script]-text-processed.json`
 - **Populate Cache**: Additionally, `output/[script]/cache/` directory
 - **Full Generation**: Additionally, `output/[script]/[script].mp3`
 
