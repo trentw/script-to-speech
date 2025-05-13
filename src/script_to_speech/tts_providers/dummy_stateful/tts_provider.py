@@ -12,7 +12,7 @@ class DummyStatefulTTSProvider(DummyProviderMixin, StatefulTTSProviderBase):
     Dummy stateful TTS provider implementation.
 
     This provider inherits from:
-    - DummyProviderMixin: For common dummy provider functionality
+    - DummyProviderMixin: For common dummy TTS provider functionality
     - StatefulTTSProviderBase: For the stateful provider interface
 
     It maintains state through a voice registry manager that simulates
@@ -43,7 +43,7 @@ class DummyStatefulTTSProvider(DummyProviderMixin, StatefulTTSProviderBase):
         This method:
         1. Gets the speaker ID from the config
         2. Simulates a stateful voice lookup operation
-        3. Generates the audio using the common dummy provider logic
+        3. Generates the audio using the common dummy TTS provider logic
         """
         # Get the speaker ID from the config
         speaker_id = speaker_config.get("dummy_id", "")
@@ -54,5 +54,5 @@ class DummyStatefulTTSProvider(DummyProviderMixin, StatefulTTSProviderBase):
         # Simulate stateful voice lookup (ignore return value, just for simulation)
         self.voice_registry_manager.get_dummy_voice_id(id_for_registry)
 
-        # Generate the audio using the common dummy provider logic
+        # Generate the audio using the common dummy TTS provider logic
         return self._generate_dummy_audio(client, speaker_config, text)

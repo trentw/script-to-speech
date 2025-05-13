@@ -16,7 +16,7 @@ class TestDummyProviderMixin(unittest.TestCase):
     def test_get_required_fields(self):
         """Test that required fields are returned."""
         fields = DummyProviderMixin.get_required_fields()
-        self.assertEqual(fields, [])  # No required fields for dummy providers
+        self.assertEqual(fields, [])  # No required fields for dummy TTS providers
 
     def test_get_optional_fields(self):
         """Test that optional fields are returned."""

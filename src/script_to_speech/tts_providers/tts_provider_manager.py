@@ -23,7 +23,7 @@ class TTSProviderManager:
         self,
         config_path: Path,
         overall_provider: Optional[str] = None,
-        dummy_provider_override: bool = False,
+        dummy_tts_provider_override: bool = False,
     ):
         """
         Initialize the TTS Manager.
@@ -31,11 +31,11 @@ class TTSProviderManager:
         Args:
             config_path: Path to YAML configuration file
             overall_provider: Optional provider to use when provider isn't specified in config
-            dummy_provider_override: If True, override all providers with dummy providers
+            dummy_tts_provider_override: If True, override all TTS providers with dummy TTS providers
         """
         self._config_path = config_path
         self._overall_provider = overall_provider
-        self._dummy_provider_override = dummy_provider_override
+        self._dummy_tts_provider_override = dummy_tts_provider_override
         self._provider_refs: Dict[
             str, Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]]
         ] = {}
@@ -154,9 +154,9 @@ class TTSProviderManager:
                     f"Invalid configuration for speaker '{speaker}' using provider '{provider_name}': {e}"
                 )
 
-            # If dummy provider override is enabled, prepare to swap providers
+            # If dummy TTS provider override is enabled, prepare to swap providers
             original_provider_name = provider_name
-            if self._dummy_provider_override:
+            if self._dummy_tts_provider_override:
                 # Determine if the original provider is stateful or stateless
                 provider_class = self._get_provider_class(original_provider_name)
                 if issubclass(provider_class, StatefulTTSProviderBase):
@@ -170,7 +170,7 @@ class TTSProviderManager:
                 # Update the provider in the speaker config
                 speaker_config["provider"] = provider_name
 
-                # Re-validate with the new dummy provider
+                # Re-validate with the new dummy TTS provider
                 dummy_provider_class = self._get_provider_class(provider_name)
                 dummy_provider_class.validate_speaker_config(speaker_config)
 

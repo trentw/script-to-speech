@@ -7,7 +7,7 @@ class DummyProviderMixin:
     """
     Common mixin class for dummy TTS providers.
 
-    This mixin contains shared logic for both dummy providers, such as:
+    This mixin contains shared logic for both dummy TTS providers, such as:
     - Configuration validation
     - Identifier generation
     - Client instantiation
@@ -42,7 +42,7 @@ class DummyProviderMixin:
     @classmethod
     def get_required_fields(cls) -> List[str]:
         """Get list of required config fields."""
-        return []  # No required fields for dummy providers
+        return []  # No required fields for dummy TTS providers
 
     @classmethod
     def get_optional_fields(cls) -> List[str]:

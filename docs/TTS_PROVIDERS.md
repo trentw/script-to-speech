@@ -2,7 +2,7 @@
 
 Script to Speech supports multiple Text-to-Speech providers. This guide covers configuration, capabilities, and provider-specific considerations.
 
-## Supported Providers
+## Supported TTS Providers
 
 ### [OpenAI](https://openai.com/api/)
 - **Requirements**: API key required
@@ -104,7 +104,7 @@ LUNA:
 
 ### Generated Configuration (Single Provider Workflow)
 
-The `sts-provider-yaml generate [screenplay].json --provider [provider]` command creates a template with:
+The `sts-tts-provider-yaml generate [screenplay].json --provider [provider]` command creates a template with:
 1. An entry for each speaker
 2. Pre-populated `provider` field
 2. Empty entries for each required provider field
@@ -129,10 +129,10 @@ HARRY:
 
 ### Step 1: Generate Base Configuration
 ```bash
-uv run sts-provider-yaml generate input/[screenplay]/[screenplay].json
+uv run sts-tts-provider-yaml generate input/[screenplay]/[screenplay].json
 ```
 
-### Step 2: Assign Providers
+### Step 2: Assign TTS Providers
 Edit the generated YAML to assign providers to each speaker:
 ```yaml
 default:
@@ -145,7 +145,7 @@ LUNA:
 
 ### Step 3: Populate Provider Fields
 ```bash
-uv run sts-provider-yaml populate input/[screenplay]/[screenplay].json \
+uv run sts-tts-provider-yaml populate input/[screenplay]/[screenplay].json \
   input/[screenplay]/[screenplay]_voice_config.yaml
 ```
 
@@ -267,16 +267,16 @@ The system automatically handles rate limits with:
 
 When rate limited, the system will:
 1. Pause requests for that provider
-2. Continue with other providers
+2. Continue with other TTS providers
 3. Retry after backoff period
 
 ## Provider Architecture
 
 The Script to Speech system supports two types of TTS providers: stateless and stateful. Understanding the difference is important for creating custom providers.
 
-### Stateless vs. Stateful Providers
+### Stateless vs. Stateful TTS Providers
 
-#### Stateless Providers
+#### Stateless TTS Providers
 - **Definition**: Providers that don't maintain state between API calls
 - **Implementation**: Use class methods to generate audio
 - **Examples**: OpenAI, Zonos
@@ -287,7 +287,7 @@ The Script to Speech system supports two types of TTS providers: stateless and s
   - Easier to debug
 - **When to use**: Default choice for most providers
 
-#### Stateful Providers
+#### Stateful TTS Providers
 - **Definition**: Providers that maintain state between API calls
 - **Implementation**: Same class methods as Stateless provider, except for instance-based `__init__` and `generate_audio` methods
 - **Examples**: ElevenLabs (for voice registry management)
@@ -299,23 +299,23 @@ The Script to Speech system supports two types of TTS providers: stateless and s
 ### Provider Management
 
 The `TTSProviderManager` handles:
-- **Lazy Initialization**: Providers are only initialized when needed
+- **Lazy Initialization**: TTS providers are only initialized when needed
 - **Thread Safety**: Thread locks protect provider initialization and state
 - **Client Caching**: API clients are reused across calls
 - **Multi-threading**: Each provider has its own download concurrency settings
 
-## Creating Custom Providers
+## Creating Custom TTS Providers
 
 ### Base Classes
 
-All providers implement one of two base classes:
+All TTS providers implement one of two base classes:
 
 1. `StatelessTTSProviderBase`
-   - For providers without state
+   - For TTS providers without state
    - Uses class methods
 
 2. `StatefulTTSProviderBase`
-   - For providers with state
+   - For TTS providers with state
    - Uses instance methods and `__init__`
 
 Both inherit from `TTSProviderCommonMixin` which defines common requirements.
@@ -352,10 +352,10 @@ Optional methods:
 ### Configuration Management
 1. Use the generate → assign → populate workflow
 2. Keep backup configurations for different voice setups
-3. Consider character type when assigning providers
+3. Consider character type when assigning TTS providers
 
 ### Multi-Provider Benefits
-1. **Speed**: Parallel processing across providers
+1. **Speed**: Parallel processing across TTS providers
 2. **Cost**: Optimize per-provider pricing
 3. **Quality**: Match voice types to character needs
 
@@ -379,7 +379,7 @@ Optional methods:
 3. **Rate Limiting**
    - Check provider-specific rate limits
    - Limit global concurrent downloads with `--max-workers` run mode modifier
-   - Distribute voices across providers
+   - Distribute voices across TTS providers
    - Monitor monthly quotas for voice adds / removes (ElevenLabs)
 
 4. **Quality Issues**

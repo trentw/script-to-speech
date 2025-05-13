@@ -9,7 +9,7 @@ class DummyStatelessTTSProvider(DummyProviderMixin, StatelessTTSProviderBase):
     Dummy stateless TTS provider implementation.
 
     This provider inherits from:
-    - DummyProviderMixin: For common dummy provider functionality
+    - DummyProviderMixin: For common dummy TTS provider functionality
     - StatelessTTSProviderBase: For the stateless provider interface
 
     It provides a simple implementation that directly calls the backend's

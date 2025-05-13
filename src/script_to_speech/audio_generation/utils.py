@@ -238,7 +238,7 @@ def create_output_folders(
     logs_folder = os.path.join(main_output_folder, "logs")
     output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
 
-    # If dummy provider override is enabled, modify paths
+    # If dummy TTS provider override is enabled, modify paths
     if dummy_provider_override:
         # Prepend "dummy_" to cache folder and output file
         cache_folder = os.path.join(

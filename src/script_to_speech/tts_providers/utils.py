@@ -133,7 +133,7 @@ def populate_multi_provider_yaml(
 def main() -> None:
     import sys
 
-    sys.argv[0] = "sts-provider-yaml"
+    sys.argv[0] = "sts-tts-provider-yaml"
     return run_cli()
 
 

@@ -46,7 +46,7 @@ This will move any cache-matching files from standalone_speech to the screenplay
 
 **Prevention**:
 - Use `--check-silence` during initial generation
-- Consider alternative providers for troublesome text (ElevenLabs rarely seems to have issues with silent clips)
+- Consider alternative TTS providers for troublesome text (ElevenLabs rarely seems to have issues with silent clips)
 
 ### 2. Rate Limiting
 
@@ -70,9 +70,9 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    uv run sts-generate-audio --max-workers 5
    ```
 
-2. **Distribute Across Providers**
+2. **Distribute Across TTS Providers**
    ```yaml
-   # Split voices across multiple providers
+   # Split voices across multiple TTS providers
    NARRATOR:
      provider: openai
    MAIN_CHARACTER:
@@ -82,7 +82,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    ```
 
 **Prevention**:
-- Use multiple providers
+- Use multiple TTS providers
 - Monitor provider-specific limits
 
 ### 3. API Key Issues
@@ -157,7 +157,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    ```
 
 **Prevention**:
-- Use `sts-provider-yaml generate` for templates
+- Use `sts-tts-provider-yaml generate` for templates
 - Validate configuration with `--dry-run` run mode
 - Keep backup of working configurations
 
@@ -483,7 +483,7 @@ When reporting issues, include:
    - Validate dialogue .json with `sts-analyze-json`
    - Use `--populate-cache` during audio generation to ensure all files downloaded without issue
    - Use `--check-silence` during audio generation
-   - Use `sts-generate-standalone-speech` to test new voices and providers
+   - Use `sts-generate-standalone-speech` to test new voices and TTS providers
 
 5. **Error Prevention**
    - Set up API keys properly

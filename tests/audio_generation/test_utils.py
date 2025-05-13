@@ -518,7 +518,7 @@ class TestCreateOutputFolders:
     def test_create_output_folders_with_dummy_override(
         self, mock_datetime, mock_makedirs
     ):
-        """Test creating output folders with dummy provider override."""
+        """Test creating output folders with dummy TTS provider override."""
         # Arrange
         mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
         input_file = "input/screenplay.json"

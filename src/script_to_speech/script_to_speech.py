@@ -116,10 +116,10 @@ def parse_arguments() -> argparse.Namespace:
         help="Maximum number of concurrent workers for audio generation/download.",
     )
     parser.add_argument(
-        "--dummy-provider-override",
+        "--dummy-tts-provider-override",
         action="store_true",
-        help="Override configured providers with dummy providers for testing purposes. "
-        "This will replace configured providers with dummy_stateful/dummy_stateless providers.",
+        help="Override configured TTS providers with dummy TTS providers for testing purposes. "
+        "This will replace configured TTS providers with dummy_stateful/dummy_stateless TTS providers.",
     )
 
     # Mutually exclusive group for run modes
@@ -192,7 +192,7 @@ def main() -> None:
     try:
         # Create output folders
         output_folder, cache_folder, output_file, log_file = create_output_folders(
-            args.input_file, run_mode, args.dummy_provider_override
+            args.input_file, run_mode, args.dummy_tts_provider_override
         )
 
         # Setup logging (must happen after log_file path is determined)
@@ -205,10 +205,10 @@ def main() -> None:
             )
         if args.cache_overrides:
             logger.info(f"Cache overrides enabled. Directory: {args.cache_overrides}")
-        if args.dummy_provider_override:
-            logger.info("DUMMY PROVIDER OVERRIDE MODE ENABLED")
+        if args.dummy_tts_provider_override:
+            logger.info("DUMMY TTS PROVIDER OVERRIDE MODE ENABLED")
             logger.info(
-                "All configured providers will be replaced with dummy providers and produce dummy audio"
+                "All configured TTS providers will be replaced with dummy TTS providers and produce dummy audio"
             )
             logger.info(f"Using dummy cache folder: {cache_folder}")
             if output_file:
@@ -226,7 +226,7 @@ def main() -> None:
         # Initialize Managers
         tts_config_path = Path(args.tts_config) if args.tts_config else Path("")
         tts_manager = TTSProviderManager(
-            tts_config_path, args.provider, args.dummy_provider_override
+            tts_config_path, args.provider, args.dummy_tts_provider_override
         )
         logger.info("TTS provider manager initialized.")
 

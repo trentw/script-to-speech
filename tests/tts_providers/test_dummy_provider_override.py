@@ -1,7 +1,7 @@
 """
-Tests for the dummy provider override functionality.
+Tests for the dummy TTS provider override functionality.
 
-This module tests the ability to override configured providers with dummy providers
+This module tests the ability to override configured TTS providers with dummy TTS providers
 for testing purposes.
 """
 
@@ -17,11 +17,11 @@ from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManag
 
 
 class TestDummyProviderOverride:
-    """Tests for the dummy provider override functionality."""
+    """Tests for the dummy TTS provider override functionality."""
 
     @pytest.fixture
     def sample_config_file(self):
-        """Create a temporary config file with non-dummy providers."""
+        """Create a temporary config file with non-dummy TTS providers."""
         config = {
             "default": {"provider": "openai", "model": "tts-1", "voice": "alloy"},
             "JOHN": {
@@ -43,15 +43,17 @@ class TestDummyProviderOverride:
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    def test_dummy_provider_override_enabled(self, sample_config_file):
-        """Test that providers are correctly overridden when dummy_provider_override is True."""
-        # Initialize TTSProviderManager with dummy_provider_override=True
-        manager = TTSProviderManager(sample_config_file, dummy_provider_override=True)
+    def test_dummy_tts_provider_override_enabled(self, sample_config_file):
+        """Test that providers are correctly overridden when dummy_tts_provider_override is True."""
+        # Initialize TTSProviderManager with dummy_tts_provider_override=True
+        manager = TTSProviderManager(
+            sample_config_file, dummy_tts_provider_override=True
+        )
 
         # Ensure the manager is initialized
         manager._ensure_initialized()
 
-        # Check that the providers have been swapped to dummy providers
+        # Check that the providers have been swapped to dummy TTS providers
         assert manager._speaker_providers["default"] == "dummy_stateless"
         assert manager._speaker_providers["JOHN"] == "dummy_stateful"
 
@@ -62,9 +64,9 @@ class TestDummyProviderOverride:
         assert "dummy_id" in manager._speaker_configs_map["JOHN"]
         assert manager._speaker_configs_map["JOHN"]["dummy_id"] == "some-voice-id"
 
-    def test_dummy_provider_override_disabled(self, sample_config_file):
-        """Test that providers are not overridden when dummy_provider_override is False."""
-        # Initialize TTSProviderManager with dummy_provider_override=False (default)
+    def test_dummy_tts_provider_override_disabled(self, sample_config_file):
+        """Test that providers are not overridden when dummy_tts_provider_override is False."""
+        # Initialize TTSProviderManager with dummy_tts_provider_override=False (default)
         manager = TTSProviderManager(sample_config_file)
 
         # Ensure the manager is initialized
@@ -82,7 +84,7 @@ class TestDummyProviderOverride:
         """Test integration with script_to_speech.py."""
         import script_to_speech.script_to_speech as script_to_speech
 
-        # Mock the parse_arguments function to return args with dummy_provider_override=True
+        # Mock the parse_arguments function to return args with dummy_tts_provider_override=True
         with (
             patch(
                 "script_to_speech.script_to_speech.parse_arguments"
@@ -136,7 +138,7 @@ class TestDummyProviderOverride:
             args.ffmpeg_path = None
             args.max_report_misses = 20
             args.max_report_text = 30
-            args.dummy_provider_override = True
+            args.dummy_tts_provider_override = True
             mock_parse_args.return_value = args
 
             # Configure folders mock
@@ -177,10 +179,10 @@ class TestDummyProviderOverride:
             script_to_speech.main()
 
             # Assert
-            # Check that TTSProviderManager was initialized with dummy_provider_override=True
+            # Check that TTSProviderManager was initialized with dummy_tts_provider_override=True
             mock_tts_manager.assert_called_once_with(sample_config_file, None, True)
 
-            # Check that create_output_folders was called with dummy_provider_override=True
+            # Check that create_output_folders was called with dummy_tts_provider_override=True
             mock_create_folders.assert_called_once_with(
-                args.input_file, "dry-run", True  # dummy_provider_override
+                args.input_file, "dry-run", True  # dummy_tts_provider_override
             )

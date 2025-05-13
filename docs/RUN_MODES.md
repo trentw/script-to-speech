@@ -183,6 +183,8 @@ uv run sts-generate-audio [input_json] \
 - `--max-report-text [n]`: Maximum text length for clips included in cache miss / silent clip generation commands (default: 30)
 - `--concat-batch-size [n]`: Batch size for audio clip concatenation (default: 250)
 - `--max-workers [n]`: Maximum number of concurrent workers for audio generation/download (default: 12)
+- `--dummy-tts-provider-override`: Override configured TTS providers with dummy TTS providers for testing purposes
+
 
 ## Advanced Usage
 

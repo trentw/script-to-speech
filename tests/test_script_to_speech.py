@@ -128,17 +128,17 @@ class TestParseArguments:
         # Assert
         assert args.check_silence == -40.0  # Default value
 
-    def test_dummy_provider_override_flag(self):
-        """Test the dummy-provider-override flag."""
+    def test_dummy_tts_provider_override_flag(self):
+        """Test the dummy-tts-provider-override flag."""
         # Arrange
-        test_args = ["input_file.json", "--dummy-provider-override"]
+        test_args = ["input_file.json", "--dummy-tts-provider-override"]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
             args = script_to_speech.parse_arguments()
 
         # Assert
-        assert args.dummy_provider_override is True
+        assert args.dummy_tts_provider_override is True
 
 
 class TestSaveModifiedJson:
@@ -315,7 +315,7 @@ class TestMain:
             args.ffmpeg_path = None
             args.max_report_misses = 20
             args.max_report_text = 30
-            args.dummy_provider_override = False
+            args.dummy_tts_provider_override = False
             mock_parse_args.return_value = args
 
             # Configure folders mock
@@ -392,7 +392,7 @@ class TestMain:
         mocks["tts_manager"].assert_called_once_with(
             mocks["args"].tts_config,
             mocks["args"].provider,
-            mocks["args"].dummy_provider_override,
+            mocks["args"].dummy_tts_provider_override,
         )
 
     def test_main_normal_run(self, mock_setup):
@@ -665,11 +665,11 @@ class TestMain:
 
                 script_to_speech.main()
 
-    def test_dummy_provider_override(self, mock_setup):
-        """Test that dummy provider override mode works correctly."""
+    def test_dummy_tts_provider_override(self, mock_setup):
+        """Test that dummy TTS provider override mode works correctly."""
         # Arrange
         mocks = mock_setup
-        mocks["args"].dummy_provider_override = True
+        mocks["args"].dummy_tts_provider_override = True
 
         # Act - Just call the TTSProviderManager initialization directly
         with patch("os.makedirs") as mock_makedirs:
@@ -677,11 +677,11 @@ class TestMain:
             script_to_speech.TTSProviderManager(
                 mocks["args"].tts_config,
                 mocks["args"].provider,
-                mocks["args"].dummy_provider_override,
+                mocks["args"].dummy_tts_provider_override,
             )
 
             # Assert
-            # Verify TTSProviderManager was initialized with dummy_provider_override=True
+            # Verify TTSProviderManager was initialized with dummy_tts_provider_override=True
             mocks["tts_manager"].assert_called_once_with(
                 mocks["args"].tts_config, mocks["args"].provider, True
             )

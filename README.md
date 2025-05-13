@@ -60,7 +60,7 @@ uv pip install -e ".[dev]"
 ## Basic Workflow
 
 ### Step 1: Setup Accounts with TTS Services and Configure
-Get an API key from at least one of the supported providers listed in the [TTS Providers documentation](docs/PROVIDERS.md) and add it to the project
+Get an API key from at least one of the supported providers listed in the [TTS Providers documentation](docs/TTS_PROVIDERS.md) and add it to the project
 
 ```bash
 # OpenAI
@@ -195,7 +195,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
      provider:
    ```
 
-   Edit to assign providers to each speaker. Note that if provider-specific fields are manually added, they will be persisted in the "populate" step (as seen in ALICE's case below). It is required that a provider be added for each speaker:
+   Edit to assign TTS providers to each speaker. Note that if provider-specific fields are manually added, they will be persisted in the "populate" step (as seen in ALICE's case below). It is required that a provider be added for each speaker:
 
    ```yaml
    # default: 1556 lines - Used for all non-dialogue pieces
@@ -244,7 +244,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
      voice_id:
    ```
 
-   Fill in the provider-specific fields as in the single-provider case. For provider-specific instructions, including optional fields, see the instructions header at the top of each provider grouping. For more information, see the [detailed TTS Provider documentation](docs/PROVIDERS.md)
+   Fill in the provider-specific fields as in the single-provider case. For provider-specific instructions, including optional fields, see the instructions header at the top of each provider grouping. For more information, see the [detailed TTS Provider documentation](docs/TTS_PROVIDERS.md)
 
 4. **Custom Text Processing**
 
@@ -384,14 +384,14 @@ See [PROCESSORS.md](docs/PROCESSORS.md) for configuration details.
 
 ## TTS Providers
 
-Supported providers:
+Supported TTS providers:
 
 - **OpenAI**: Preview voices at [openai.fm](https://www.openai.fm/)
 - **ElevenLabs**: Requires "Creator" plan, uses public library voices
 - **Zonos**: Alternative TTS service
 - **Dummy**: Testing only
 
-See [PROVIDERS.md](docs/PROVIDERS.md) for provider-specific configuration.
+See [TTS_PROVIDERS.md](docs/TTS_PROVIDERS.md) for provider-specific configuration.
 
 ## Advanced Topics
 
@@ -405,7 +405,7 @@ The `input` and `output` folders (including cache) can be shared between users t
 
 ### Multi-threaded Downloads
 
-Downloads are multi-threaded with separate queues per provider. Distributing voices across providers speeds up generation.
+Downloads are multi-threaded with separate queues per provider. Distributing voices across TTS providers speeds up generation.
 
 ### Cache Management
 
@@ -431,7 +431,7 @@ Changes in any of the above will mark just the relevant clips for regeneration u
 2. **Rate Limiting**
    - Each provider has different rate limits
    - The tool automatically handles backoff
-   - Spread voices across providers to avoid limits
+   - Spread voices across TTS providers to avoid limits
 
 3. **Screenplay is parsed incorrectly**
    - The parser is currently fairly fragile, and expects "standard" screenplay files with predictable margins and conventions. Additional configuration options, and automatic configuration, is planned for future releases
