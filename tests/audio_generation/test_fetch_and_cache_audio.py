@@ -58,12 +58,12 @@ def fetch_tasks():
         AudioGenerationTask(
             idx=0,
             original_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "JOHN",
                 "text": "Already cached",
             },
             processed_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "JOHN",
                 "text": "Already cached!",
             },
@@ -83,12 +83,12 @@ def fetch_tasks():
         AudioGenerationTask(
             idx=1,
             original_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "MARY",
                 "text": "Generate me",
             },
             processed_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "MARY",
                 "text": "Generate me!",
             },
@@ -107,8 +107,8 @@ def fetch_tasks():
         # Empty text that should generate a silent clip
         AudioGenerationTask(
             idx=2,
-            original_dialogue={"type": "dialog", "speaker": None, "text": ""},
-            processed_dialogue={"type": "dialog", "speaker": None, "text": ""},
+            original_dialogue={"type": "dialogue", "speaker": None, "text": ""},
+            processed_dialogue={"type": "dialogue", "speaker": None, "text": ""},
             text_to_speak="",
             speaker=None,
             provider_id="elevenlabs",
@@ -132,12 +132,12 @@ def fetch_tasks_with_duplicates():
         AudioGenerationTask(
             idx=0,
             original_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "JOHN",
                 "text": "Already cached",
             },
             processed_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "JOHN",
                 "text": "Already cached!",
             },
@@ -158,12 +158,12 @@ def fetch_tasks_with_duplicates():
         AudioGenerationTask(
             idx=1,
             original_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "MARY",
                 "text": "Duplicate path 1",
             },
             processed_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "MARY",
                 "text": "Duplicate path 1!",
             },
@@ -183,12 +183,12 @@ def fetch_tasks_with_duplicates():
         AudioGenerationTask(
             idx=2,
             original_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Duplicate path 2",
             },
             processed_dialogue={
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Duplicate path 2!",
             },

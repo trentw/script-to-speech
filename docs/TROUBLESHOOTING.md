@@ -224,7 +224,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
    ```yaml
    # config 1
    preprocessors:
-     - name: extract_dialog_parentheticals
+     - name: extract_dialogue_parentheticals
    processors:
      - name: text_substitution
      - name: capitalization_transform_processor
@@ -240,7 +240,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 
    ```yaml
    # Resultant processing pipeline ordering:
-   # extract_dialog_parentheticals -> speaker_merge_preprocessor -> text_substitution ->
+   # extract_dialogue_parentheticals -> speaker_merge_preprocessor -> text_substitution ->
    #  capitalization_transform_processor -> pattern_replace_processor
    ```
 

@@ -91,14 +91,14 @@ Processors support two modes when multiple instances of the same configuration a
    ```yaml
    # First configuration
    preprocessors:
-     - name: dual_dialog
+     - name: dual_dialogue
        config:
          min_speaker_spacing: 3
    ```
 
    ```yaml
    # Second configurtion
-     - name: dual_dialog
+     - name: dual_dialogue
        config:
          min_speaker_spacing: 8  # This one is used
    ```
@@ -106,7 +106,7 @@ Processors support two modes when multiple instances of the same configuration a
 ## Available Preprocessors
 
 ### skip_and_merge
-- **Purpose**: Remove specific chunk types and merge adjacent chunks if appropriate (e.g. if a page number bisects a line of dialog)
+- **Purpose**: Remove specific chunk types and merge adjacent chunks if appropriate (e.g. if a page number bisects a line of dialogue)
 - **Run Mode**: Chain (multiple instances can be used together)
 ```yaml
 preprocessors:
@@ -116,25 +116,25 @@ preprocessors:
         - page_number      # Example skip type     
 ```
 
-### dual_dialog
+### dual_dialogue
 - **Purpose**: Convert dual dialogue chunks into sequential dialogue
 - **Run Mode**: Override (last instance wins)
 ```yaml
 preprocessors:
-  - name: dual_dialog
+  - name: dual_dialogue
     config:
       min_speaker_spacing: 3    # Minimum spaces between speaker attributions
-      min_dialog_spacing: 2     # Minimum spaces between dialog columns
+      min_dialogue_spacing: 2   # Minimum spaces between dialogue columns
 ```
 
-### extract_dialog_parentheticals
-- **Purpose**: Extract parentheticals from dialogue so that they are spoken by the "default" speaker instead of the assigned speaker (e.g. for the dialog line "What are you doing? (gasps) Don't come any closer!" )
+### extract_dialogue_parentheticals
+- **Purpose**: Extract parentheticals from dialogue so that they are spoken by the "default" speaker instead of the assigned speaker (e.g. for the dialogue line "What are you doing? (gasps) Don't come any closer!" )
 - **Run Mode**: Chain (multiple instances can be used together)
 
 ```yaml
 # Basic config to extract any parentheticals 10 words 
 preprocessors:
-  - name: extract_dialog_parentheticals
+  - name: extract_dialogue_parentheticals
     config:
       max_words: 10            # (optional) Skip extracting parentheticals that have more than 10 words
 ```
@@ -142,7 +142,7 @@ preprocessors:
 ```yaml
 # Advanced "allow list" config to extract only specific parantheticals  containing less than 10 words
 preprocessors:
-  - name: extract_dialog_parentheticals
+  - name: extract_dialogue_parentheticals
     config:
       max_words: 10            # (optional) Skip extracting parentheticals that have more than 10 words
       extract_only:            # (optional) extract only the following parentheticals
@@ -153,7 +153,7 @@ preprocessors:
 ```yaml
 # Advanced "deny list" config to extract all parentheticals, except those listed, that contain less than 10 words
 preprocessors:
-  - name: extract_dialog_parentheticals
+  - name: extract_dialogue_parentheticals
     config:
       max_words: 10            # Skip extracting parentheticals that have more than 10 words
       extract_all_except:      # (optional) extract all, except the following, parentheticals
@@ -231,7 +231,7 @@ processors:
       transformations:
         - chunk_type: speaker_attribution        # Dialogue chunk type to transform
           case: sentence_case
-        - chunk_type: dialog_modifier
+        - chunk_type: dialogue_modifier
           case: lower_case
           text_must_contain_string: "(gasps)"    # (optional) Only apply transform when matching this string
 ```
@@ -258,7 +258,7 @@ uv run sts-generate-audio /input/[screenplay_name]/[screenplay].json \
 ```yaml
 # Custom processor configuration
 preprocessors:
-  - name: extract_dialog_parentheticals
+  - name: extract_dialogue_parentheticals
     config:
       max_words: 5
       extract_only:
@@ -338,7 +338,7 @@ from ..text_preprocessor_base import TextPreProcessor
 class MyCustomPreProcessor(TextPreProcessor):
     def process(self, chunks: List[Dict]) -> Tuple[List[Dict], bool]:
         # Your preprocessing logic here to modify the full list 
-        # of dialog chunks
+        # of dialogue chunks
         result_chunks = []
 
         # Track if your Processor made changes to the chunk

@@ -106,7 +106,7 @@ processors:
     @patch("src.script_to_speech.parser.apply_text_processors.get_processor_configs")
     @patch("src.script_to_speech.parser.apply_text_processors.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
-    def test_apply_text_processors_with_dialog(
+    def test_apply_text_processors_with_dialogue(
         self,
         mock_file_open,
         mock_sanitize,
@@ -114,13 +114,13 @@ processors:
         mock_setup_logging,
         mock_manager,
     ):
-        """Test applying text processors to chunks with dialog."""
+        """Test applying text processors to chunks with dialogue."""
         # Create test chunks
         chunks = [
             {"type": "scene_heading", "text": "INT. LIVING ROOM - DAY"},
             {"type": "action", "text": "John enters the room."},
             {"type": "speaker_attribution", "speaker": "", "text": "JOHN"},
-            {"type": "dialog", "speaker": "JOHN", "text": "Hello, how are you?"},
+            {"type": "dialogue", "speaker": "JOHN", "text": "Hello, how are you?"},
         ]
 
         # Set up different mock responses based on file path
@@ -164,7 +164,7 @@ processors:
             {"type": "action", "text": "John enters the room."},
             {"type": "speaker_attribution", "speaker": "", "text": "JOHN"},
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "JOHN",
                 "text": "Hello, how are you? (emphatically)",
             },

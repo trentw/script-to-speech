@@ -168,10 +168,10 @@ def process_chunks(
         # Get raw text from chunk
         raw_text = input_chunk.get("raw_text", "")
 
-        # Special case: Add a blank line at the end of dual_dialog chunks as this gets removed in parsing
-        if input_chunk.get("type") == "dual_dialog":
+        # Special case: Add a blank line at the end of dual_dialogue chunks as this gets removed in parsing
+        if input_chunk.get("type") == "dual_dialogue":
             raw_text += "\n"
-            logger.debug("Added blank line to dual_dialog chunk")
+            logger.debug("Added blank line to dual_dialogue chunk")
 
         lines = raw_text.split("\n")
 

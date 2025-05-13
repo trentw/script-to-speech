@@ -16,7 +16,7 @@ class TestCapitalizationTransformProcessor:
         config = {
             "transformations": [
                 {"chunk_type": "speaker_attribution", "case": "sentence_case"},
-                {"chunk_type": "dialog_modifier", "case": "lower_case"},
+                {"chunk_type": "dialogue_modifier", "case": "lower_case"},
             ]
         }
         processor = CapitalizationTransformProcessor(config)
@@ -168,7 +168,7 @@ class TestCapitalizationTransformProcessor:
             ]
         }
         processor = CapitalizationTransformProcessor(config)
-        chunk = {"type": "dialog", "text": "BOB SMITH"}  # Different from config
+        chunk = {"type": "dialogue", "text": "BOB SMITH"}  # Different from config
 
         # Act
         result, changed = processor.process(chunk)
@@ -183,7 +183,7 @@ class TestCapitalizationTransformProcessor:
         config = {
             "transformations": [
                 {"chunk_type": "speaker_attribution", "case": "sentence_case"},
-                {"chunk_type": "dialog_modifier", "case": "lower_case"},
+                {"chunk_type": "dialogue_modifier", "case": "lower_case"},
             ]
         }
         processor = CapitalizationTransformProcessor(config)
@@ -192,7 +192,7 @@ class TestCapitalizationTransformProcessor:
         chunk1 = {"type": "speaker_attribution", "text": "BOB SMITH"}
 
         # Test second transformation
-        chunk2 = {"type": "dialog_modifier", "text": "QUIETLY WHISPERS"}
+        chunk2 = {"type": "dialogue_modifier", "text": "QUIETLY WHISPERS"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -211,7 +211,7 @@ class TestCapitalizationTransformProcessor:
         config = {
             "transformations": [
                 {
-                    "chunk_type": "dialog",
+                    "chunk_type": "dialogue",
                     "case": "lower_case",
                     "text_must_contain_string": "IMPORTANT",
                 }
@@ -220,10 +220,10 @@ class TestCapitalizationTransformProcessor:
         processor = CapitalizationTransformProcessor(config)
 
         # Should match and transform
-        chunk1 = {"type": "dialog", "text": "THIS IS IMPORTANT TEXT"}
+        chunk1 = {"type": "dialogue", "text": "THIS IS IMPORTANT TEXT"}
 
         # Should not match or transform
-        chunk2 = {"type": "dialog", "text": "THIS IS REGULAR TEXT"}
+        chunk2 = {"type": "dialogue", "text": "THIS IS REGULAR TEXT"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -242,7 +242,7 @@ class TestCapitalizationTransformProcessor:
         config = {
             "transformations": [
                 {
-                    "chunk_type": "dialog",
+                    "chunk_type": "dialogue",
                     "case": "lower_case",
                     "text_must_contain_pattern": "\\d+",  # Contains digits
                 }
@@ -251,10 +251,10 @@ class TestCapitalizationTransformProcessor:
         processor = CapitalizationTransformProcessor(config)
 
         # Should match and transform (contains digits)
-        chunk1 = {"type": "dialog", "text": "CALL ME AT 555-1234"}
+        chunk1 = {"type": "dialogue", "text": "CALL ME AT 555-1234"}
 
         # Should not match or transform (no digits)
-        chunk2 = {"type": "dialog", "text": "CALL ME LATER"}
+        chunk2 = {"type": "dialogue", "text": "CALL ME LATER"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -273,7 +273,7 @@ class TestCapitalizationTransformProcessor:
         config = {
             "transformations": [
                 {
-                    "chunk_type": "dialog",
+                    "chunk_type": "dialogue",
                     "case": "lower_case",
                     "text_must_contain_string": "CALL",
                     "text_must_contain_pattern": "\\d+",  # Contains digits
@@ -283,13 +283,13 @@ class TestCapitalizationTransformProcessor:
         processor = CapitalizationTransformProcessor(config)
 
         # Should match and transform (contains "CALL" and digits)
-        chunk1 = {"type": "dialog", "text": "CALL ME AT 555-1234"}
+        chunk1 = {"type": "dialogue", "text": "CALL ME AT 555-1234"}
 
         # Should not match (contains "CALL" but no digits)
-        chunk2 = {"type": "dialog", "text": "CALL ME LATER"}
+        chunk2 = {"type": "dialogue", "text": "CALL ME LATER"}
 
         # Should not match (contains digits but not "CALL")
-        chunk3 = {"type": "dialog", "text": "MY NUMBER IS 555-1234"}
+        chunk3 = {"type": "dialogue", "text": "MY NUMBER IS 555-1234"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -311,9 +311,9 @@ class TestCapitalizationTransformProcessor:
         # Arrange - First lowercase, then if contains "important", sentence case
         config = {
             "transformations": [
-                {"chunk_type": "dialog", "case": "lower_case"},
+                {"chunk_type": "dialogue", "case": "lower_case"},
                 {
-                    "chunk_type": "dialog",
+                    "chunk_type": "dialogue",
                     "case": "sentence_case",
                     "text_must_contain_string": "important",
                 },
@@ -321,7 +321,7 @@ class TestCapitalizationTransformProcessor:
         }
         processor = CapitalizationTransformProcessor(config)
 
-        chunk = {"type": "dialog", "text": "THIS IS IMPORTANT TEXT"}
+        chunk = {"type": "dialogue", "text": "THIS IS IMPORTANT TEXT"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -333,14 +333,14 @@ class TestCapitalizationTransformProcessor:
     def test_processor_state_isolation(self):
         """Test that the processor doesn't maintain state between process calls."""
         # Arrange
-        config = {"transformations": [{"chunk_type": "dialog", "case": "lower_case"}]}
+        config = {"transformations": [{"chunk_type": "dialogue", "case": "lower_case"}]}
         processor = CapitalizationTransformProcessor(config)
 
         # First chunk to process
-        chunk1 = {"type": "dialog", "text": "HELLO WORLD"}
+        chunk1 = {"type": "dialogue", "text": "HELLO WORLD"}
 
         # Second chunk with different content
-        chunk2 = {"type": "dialog", "text": "TESTING STATE"}
+        chunk2 = {"type": "dialogue", "text": "TESTING STATE"}
 
         # Act
         result1, _ = processor.process(chunk1)

@@ -92,22 +92,22 @@ class TestChunkCreation:
         # Check speaker was tracked
         assert parser.current_speaker == "JOHN"
 
-    def test_create_dialog_chunk(self, mock_logger):
-        """Test creation of a dialog chunk."""
+    def test_create_dialogue_chunk(self, mock_logger):
+        """Test creation of a dialogue chunk."""
         parser = ScreenplayParser()
 
         # Set up speaker
         parser.current_speaker = "JOHN"
 
-        # Handle transition to dialog
+        # Handle transition to dialogue
         parser.handle_state_transition(
             "                         Hello, how are you?                                        ",
-            State.DIALOG,
+            State.DIALOGUE,
         )
 
         # Check chunk was created correctly
         assert parser.current_chunk is not None
-        assert parser.current_chunk.type == "dialog"
+        assert parser.current_chunk.type == "dialogue"
         assert parser.current_chunk.speaker == "JOHN"
         assert (
             parser.current_chunk.raw_text
@@ -115,19 +115,19 @@ class TestChunkCreation:
         )
         assert parser.current_chunk.text == "Hello, how are you?"
 
-    def test_create_dialog_modifier_chunk(self, mock_logger):
-        """Test creation of a dialog modifier chunk."""
+    def test_create_dialogue_modifier_chunk(self, mock_logger):
+        """Test creation of a dialogue modifier chunk."""
         parser = ScreenplayParser()
 
-        # Handle transition to dialog modifier
+        # Handle transition to dialogue modifier
         parser.handle_state_transition(
             "                         (pauses)                                                   ",
-            State.DIALOG_MODIFIER,
+            State.DIALOGUE_MODIFIER,
         )
 
         # Check chunk was created correctly
         assert parser.current_chunk is not None
-        assert parser.current_chunk.type == "dialog_modifier"
+        assert parser.current_chunk.type == "dialogue_modifier"
         assert parser.current_chunk.speaker is None
         assert (
             parser.current_chunk.raw_text
@@ -158,19 +158,19 @@ class TestChunkCreation:
         # Check speaker was reset
         assert parser.current_speaker == ""
 
-    def test_create_dual_dialog_chunk(self, mock_logger):
-        """Test creation of a dual dialog chunk."""
+    def test_create_dual_dialogue_chunk(self, mock_logger):
+        """Test creation of a dual dialogue chunk."""
         parser = ScreenplayParser()
 
-        # Handle transition to dual dialog
+        # Handle transition to dual dialogue
         parser.handle_state_transition(
             "               Hello!                         Hi there!                             ",
-            State.DUAL_DIALOG,
+            State.DUAL_DIALOGUE,
         )
 
         # Check chunk was created correctly
         assert parser.current_chunk is not None
-        assert parser.current_chunk.type == "dual_dialog"
+        assert parser.current_chunk.type == "dual_dialogue"
         assert parser.current_chunk.speaker is None
         assert (
             parser.current_chunk.raw_text
@@ -226,24 +226,24 @@ class TestChunkContinuation:
         )
         assert parser.current_chunk.text == "John enters the room. He looks around."
 
-    def test_continue_dialog_chunk(self, mock_logger):
-        """Test continuation of a dialog chunk."""
+    def test_continue_dialogue_chunk(self, mock_logger):
+        """Test continuation of a dialogue chunk."""
         parser = ScreenplayParser()
 
         # Set up speaker
         parser.current_speaker = "JOHN"
 
-        # Create initial dialog chunk
+        # Create initial dialogue chunk
         parser.handle_state_transition(
             "                         Hello, how are you?                                        ",
-            State.DIALOG,
+            State.DIALOGUE,
         )
         initial_chunk = parser.current_chunk
 
         # Continue with same state
         parser.handle_state_transition(
             "                         I've been looking for you.                                 ",
-            State.DIALOG,
+            State.DIALOGUE,
         )
 
         # Check chunk was continued
@@ -273,21 +273,21 @@ class TestChunkContinuation:
         assert parser.current_chunk.raw_text == "INT. LIVING ROOM - DAY\nCONTINUED:"
         assert parser.current_chunk.text == "INT. LIVING ROOM - DAY CONTINUED:"
 
-    def test_continue_dual_dialog_chunk(self, mock_logger):
-        """Test continuation of a dual dialog chunk."""
+    def test_continue_dual_dialogue_chunk(self, mock_logger):
+        """Test continuation of a dual dialogue chunk."""
         parser = ScreenplayParser()
 
-        # Create initial dual dialog chunk
+        # Create initial dual dialogue chunk
         parser.handle_state_transition(
             "               Hello!                         Hi there!                             ",
-            State.DUAL_DIALOG,
+            State.DUAL_DIALOGUE,
         )
         initial_chunk = parser.current_chunk
 
         # Continue with same state
         parser.handle_state_transition(
             "               How are you?                   I'm good!                             ",
-            State.DUAL_DIALOG,
+            State.DUAL_DIALOGUE,
         )
 
         # Check chunk was continued
@@ -368,17 +368,17 @@ class TestChunkCompletion:
             "                         Hello, how are you?                                        "
         )
 
-        # Get final chunk - this only returns the current chunk (dialog)
+        # Get final chunk - this only returns the current chunk (dialogue)
         final_chunk = parser.get_final_chunk()
 
-        # Only the current chunk (dialog) should be returned
+        # Only the current chunk (dialogue) should be returned
         assert len(final_chunk) == 1
 
-        # Check the dialog chunk
-        dialog_chunk = final_chunk[0]
-        assert dialog_chunk["type"] == "dialog"
-        assert dialog_chunk["speaker"] == "JOHN"
-        assert dialog_chunk["text"] == "Hello, how are you?"
+        # Check the dialogue chunk
+        dialogue_chunk = final_chunk[0]
+        assert dialogue_chunk["type"] == "dialogue"
+        assert dialogue_chunk["speaker"] == "JOHN"
+        assert dialogue_chunk["text"] == "Hello, how are you?"
 
         # Current chunk should be reset
         assert parser.current_chunk is None
@@ -389,7 +389,7 @@ class TestChunkCompletion:
 
         # Create a chunk and set it as the current chunk
         chunk = Chunk(
-            type="dialog",
+            type="dialogue",
             speaker="JOHN",
             raw_text="                         Hello, how are you?                                        ",
             text="Hello, how are you?",
@@ -404,7 +404,7 @@ class TestChunkCompletion:
         # Check conversion to dict
         assert len(final_chunk) == 1
         assert isinstance(final_chunk[0], dict)
-        assert final_chunk[0]["type"] == "dialog"
+        assert final_chunk[0]["type"] == "dialogue"
         assert final_chunk[0]["speaker"] == "JOHN"
         assert (
             final_chunk[0]["raw_text"]
@@ -438,12 +438,12 @@ class TestSpeakerTracking:
         # Check speaker was tracked
         assert parser.current_speaker == "JOHN"
 
-        # Process dialog
+        # Process dialogue
         parser.process_line(
             "                         Hello, how are you?                                        "
         )
 
-        # Check speaker was applied to dialog
+        # Check speaker was applied to dialogue
         assert parser.current_chunk.speaker == "JOHN"
 
     def test_speaker_tracking_with_parentheticals(self, mock_logger):
@@ -462,16 +462,16 @@ class TestSpeakerTracking:
         # Check speaker was tracked without parenthetical
         assert parser.current_speaker == "JOHN"
 
-        # Process dialog
+        # Process dialogue
         parser.process_line(
             "                         Hello, how are you?                                        "
         )
 
-        # Check speaker was applied to dialog
+        # Check speaker was applied to dialogue
         assert parser.current_chunk.speaker == "JOHN"
 
-    def test_speaker_tracking_reset_on_dual_dialog(self, mock_logger):
-        """Test speaker tracking reset on dual dialog."""
+    def test_speaker_tracking_reset_on_dual_dialogue(self, mock_logger):
+        """Test speaker tracking reset on dual dialogue."""
         parser = ScreenplayParser()
 
         # Initialize state to ACTION to ensure we're not in TITLE state
@@ -489,8 +489,8 @@ class TestSpeakerTracking:
         # Check speaker was reset
         assert parser.current_speaker == ""
 
-    def test_speaker_tracking_preserved_across_dialog_modifier(self, mock_logger):
-        """Test speaker tracking preserved across dialog modifier."""
+    def test_speaker_tracking_preserved_across_dialogue_modifier(self, mock_logger):
+        """Test speaker tracking preserved across dialogue modifier."""
         parser = ScreenplayParser()
 
         # Initialize state to ACTION to ensure we're not in TITLE state
@@ -505,7 +505,7 @@ class TestSpeakerTracking:
         # Check speaker was tracked
         assert parser.current_speaker == "JOHN"
 
-        # Process dialog modifier
+        # Process dialogue modifier
         parser.process_line(
             "                         (pauses)                                                   "
         )
@@ -513,10 +513,10 @@ class TestSpeakerTracking:
         # Check speaker is still tracked
         assert parser.current_speaker == "JOHN"
 
-        # Process dialog
+        # Process dialogue
         parser.process_line(
             "                         Hello again.                                               "
         )
 
-        # Check speaker was applied to dialog
+        # Check speaker was applied to dialogue
         assert parser.current_chunk.speaker == "JOHN"

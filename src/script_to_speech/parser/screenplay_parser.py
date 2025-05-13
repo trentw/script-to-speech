@@ -16,11 +16,11 @@ class ParserConfig:
     # Indentation level constants
     speaker_indent_min: int = 30  # Minimum indentation for speaker attribution
     speaker_indent_max: int = 45  # Maximum indentation for speaker attribution
-    dialog_indent_min: int = 20  # Minimum indentation for dialog blocks
-    dialog_indent_max: int = 29  # Maximum indentation for dialog blocks
+    dialogue_indent_min: int = 20  # Minimum indentation for dialogue blocks
+    dialogue_indent_max: int = 29  # Maximum indentation for dialogue blocks
     dual_speaker_min_speaker_spacing: int = 8  # Minimum spaces between dual speakers
-    dual_speaker_min_dialog_spacing: int = (
-        2  # Minimum spaces between blocks of dual dialog
+    dual_speaker_min_dialogue_spacing: int = (
+        2  # Minimum spaces between blocks of dual dialogue
     )
 
     # Pattern caching
@@ -55,10 +55,10 @@ class State(Enum):
     SCENE_HEADING = auto()
     ACTION = auto()
     SPEAKER_ATTRIBUTION = auto()
-    DIALOG = auto()
-    DIALOG_MODIFIER = auto()
+    DIALOGUE = auto()
+    DIALOGUE_MODIFIER = auto()
     DUAL_SPEAKER_ATTRIBUTION = auto()
-    DUAL_DIALOG = auto()
+    DUAL_DIALOGUE = auto()
     PAGE_NUMBER = auto()  # New state for page numbers
 
 
@@ -77,7 +77,7 @@ class IndentationContext:
     """Tracks indentation context during screenplay parsing."""
 
     last_speaker_indent: Optional[int] = None
-    last_dialog_indent: Optional[int] = None
+    last_dialogue_indent: Optional[int] = None
     last_action_indent: Optional[int] = None
     current_indent: Optional[int] = None
 
@@ -92,8 +92,8 @@ class IndentationContext:
         self.current_indent = indent
         if state == State.SPEAKER_ATTRIBUTION:
             self.last_speaker_indent = indent
-        elif state == State.DIALOG:
-            self.last_dialog_indent = indent
+        elif state == State.DIALOGUE:
+            self.last_dialogue_indent = indent
         elif state == State.ACTION:
             self.last_action_indent = indent
 
@@ -190,18 +190,18 @@ class ScreenplayParser:
             probs[State.DUAL_SPEAKER_ATTRIBUTION] += 1.0
             logger.debug("Detected potential dual speaker attribution")
 
-        # Dual dialog handling
+        # Dual dialogue handling
         # Reset to base probability on blank lines
-        # High probability (0.8) for less indented dialog lines
-        # Significant penalty (-0.8) to action detection in dual dialog
-        if current_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
+        # High probability (0.8) for less indented dialogue lines
+        # Significant penalty (-0.8) to action detection in dual dialogue
+        if current_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOGUE]:
             internal_spacing = self.get_max_internal_spacing(stripped)
             non_second_speaker_check = indentation < (len(line) / 2)
             text_beyond_halway_of_line_check = len(line.strip()) + indentation > (
                 len(line) / 2
             )
 
-            logger.debug(f"Dual dialog max internal spacing: {internal_spacing}")
+            logger.debug(f"Dual dialogue max internal spacing: {internal_spacing}")
             logger.debug(f"Non-second speaker indentation: {non_second_speaker_check}")
             logger.debug(
                 f"Text beyond halfway in line: {text_beyond_halway_of_line_check}"
@@ -209,44 +209,44 @@ class ScreenplayParser:
             logger.debug(f"Previous line blank: {prev_line_blank}")
 
             if prev_line_blank or (
-                internal_spacing < self.config.dual_speaker_min_dialog_spacing
+                internal_spacing < self.config.dual_speaker_min_dialogue_spacing
                 and non_second_speaker_check
                 and text_beyond_halway_of_line_check
             ):
-                # Reset dual dialog probability if:
+                # Reset dual dialogue probability if:
                 # The last line was a blank line
                 # OR the line has less than the minimum spacing between speakers AND the indentation looks like a scene header (and not the 2nd speaker) AND the text extends beyond half way across the page
-                probs[State.DUAL_DIALOG] = 0.1  # Back to baseline
-                logger.debug("Resetting dual dialog probability to baseline")
-            elif indentation < self.config.dialog_indent_min or indentation > (
+                probs[State.DUAL_DIALOGUE] = 0.1  # Back to baseline
+                logger.debug("Resetting dual dialogue probability to baseline")
+            elif indentation < self.config.dialogue_indent_min or indentation > (
                 len(line) / 2
             ):
-                probs[State.DUAL_DIALOG] += 0.8
+                probs[State.DUAL_DIALOGUE] += 0.8
                 probs[State.ACTION] -= 0.8
 
         # Relative indentation effects
-        # Moderate boost (0.4) for maintaining same dialog indentation
-        # Strong action boost (0.6) and slight dialog penalty (-0.1) for significant dedent
-        if indent_context.last_dialog_indent is not None:
-            indent_change = indentation - indent_context.last_dialog_indent
+        # Moderate boost (0.4) for maintaining same dialogue indentation
+        # Strong action boost (0.6) and slight dialogue penalty (-0.1) for significant dedent
+        if indent_context.last_dialogue_indent is not None:
+            indent_change = indentation - indent_context.last_dialogue_indent
             if abs(indent_change) <= 2:
-                probs[State.DIALOG] += 0.4
+                probs[State.DIALOGUE] += 0.4
             elif indent_change < -5:
                 probs[State.ACTION] += 0.6
-                probs[State.DIALOG] -= 0.1
+                probs[State.DIALOGUE] -= 0.1
 
-        # Dialog modifier detection
+        # Dialogue modifier detection
         # Strong continuation probability (0.7) while in modifier state
         # High probability (0.9) for complete single-line parenthetical
         # Good probability (0.7) for start of multi-line parenthetical
-        if current_state == State.DIALOG_MODIFIER:
-            probs[State.DIALOG_MODIFIER] += 0.7
-        elif self.is_dialog_modifier(line):
-            if current_state in [State.DIALOG, State.SPEAKER_ATTRIBUTION]:
+        if current_state == State.DIALOGUE_MODIFIER:
+            probs[State.DIALOGUE_MODIFIER] += 0.7
+        elif self.is_dialogue_modifier(line):
+            if current_state in [State.DIALOGUE, State.SPEAKER_ATTRIBUTION]:
                 if stripped.endswith(")"):
-                    probs[State.DIALOG_MODIFIER] += 0.9
+                    probs[State.DIALOGUE_MODIFIER] += 0.9
                 else:
-                    probs[State.DIALOG_MODIFIER] += 0.7
+                    probs[State.DIALOGUE_MODIFIER] += 0.7
 
         # Speaker attribution
         # Strong base probability (0.6) for properly indented speaker names
@@ -262,34 +262,34 @@ class ScreenplayParser:
         if self.is_right_aligned_action(line, indentation):
             probs[State.ACTION] += 0.8
 
-        # Dialog indicators
+        # Dialogue indicators
         # Moderate probability boost (0.4) for properly indented lines with speaker
-        # Additional boost (0.3) after speaker attribution or dialog modifier
+        # Additional boost (0.3) after speaker attribution or dialogue modifier
         if current_speaker:
             if (
-                self.config.dialog_indent_min
+                self.config.dialogue_indent_min
                 <= indentation
-                < self.config.dialog_indent_max
+                < self.config.dialogue_indent_max
             ):
-                probs[State.DIALOG] += 0.4
+                probs[State.DIALOGUE] += 0.4
                 if current_state == State.SPEAKER_ATTRIBUTION:
-                    probs[State.DIALOG] += 0.3
-                elif current_state == State.DIALOG_MODIFIER:
-                    probs[State.DIALOG] += 0.3
+                    probs[State.DIALOGUE] += 0.3
+                elif current_state == State.DIALOGUE_MODIFIER:
+                    probs[State.DIALOGUE] += 0.3
 
         # Action state
         # Moderate base probability (0.4) for less indented lines
-        # Additional boost (0.3) when dedenting from dialog
-        # Slight dialog penalty (-0.2) when dedenting
-        if indentation < self.config.dialog_indent_min:
+        # Additional boost (0.3) when dedenting from dialogue
+        # Slight dialogue penalty (-0.2) when dedenting
+        if indentation < self.config.dialogue_indent_min:
             probs[State.ACTION] += 0.4
             if (
-                current_state == State.DIALOG
-                and indent_context.last_dialog_indent is not None
+                current_state == State.DIALOGUE
+                and indent_context.last_dialogue_indent is not None
             ):
-                if indentation < indent_context.last_dialog_indent:
+                if indentation < indent_context.last_dialogue_indent:
                     probs[State.ACTION] += 0.3
-                    probs[State.DIALOG] -= 0.2
+                    probs[State.DIALOGUE] -= 0.2
             probs[State.TITLE] = 0.0  # Exit title state
 
         # Scene heading detection
@@ -357,7 +357,7 @@ class ScreenplayParser:
         # Page numbers should be both numeric and highly indented
         is_page = (
             bool(re.match(r"^\s*\d+\.?\s*$", stripped))
-            and indentation >= self.config.dialog_indent_max + 5
+            and indentation >= self.config.dialogue_indent_max + 5
         )
 
         if is_page:
@@ -463,15 +463,15 @@ class ScreenplayParser:
             and not any(word in stripped.lower() for word in ["int.", "ext."])
         )
 
-    def is_dialog_modifier(self, line: str) -> bool:
+    def is_dialogue_modifier(self, line: str) -> bool:
         """
-        Check if a line appears to be a dialog modifier (parenthetical).
+        Check if a line appears to be a dialogue modifier (parenthetical).
 
         Args:
             line: Text line to check
 
         Returns:
-            True if line appears to be a dialog modifier, False otherwise
+            True if line appears to be a dialogue modifier, False otherwise
         """
         stripped = line.strip()
         return stripped.startswith("(") and (
@@ -509,10 +509,10 @@ class ScreenplayParser:
             if new_state == State.SPEAKER_ATTRIBUTION:
                 self.current_speaker = self.clean_speaker_name(line.strip())
                 logger.debug(f"New speaker: {self.current_speaker}")
-            elif new_state == State.DIALOG:
+            elif new_state == State.DIALOGUE:
                 speaker = self.current_speaker
-            elif new_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOG]:
-                # Reset speaker for dual dialog sections
+            elif new_state in [State.DUAL_SPEAKER_ATTRIBUTION, State.DUAL_DIALOGUE]:
+                # Reset speaker for dual dialogue sections
                 self.current_speaker = ""
                 speaker = None
             elif new_state == State.PAGE_NUMBER:

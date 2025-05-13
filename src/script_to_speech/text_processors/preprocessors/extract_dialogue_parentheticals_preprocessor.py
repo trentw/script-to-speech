@@ -5,24 +5,24 @@ from ...utils.logging import get_screenplay_logger
 from ..text_preprocessor_base import TextPreProcessor
 
 logger = get_screenplay_logger(
-    "text_processors.preprocessors.extract_dialog_parentheticals"
+    "text_processors.preprocessors.extract_dialogue_parentheticals"
 )
 
 
-class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
+class ExtractDialogueParentheticalsPreProcessor(TextPreProcessor):
     """
-    Pre-processor that extracts parentheticals from dialog chunks to create new chunks.
+    Pre-processor that extracts parentheticals from dialogue chunks to create new chunks.
 
-    For each dialog chunk containing a parenthetical, creates:
-    - dialog chunk (text before parenthetical)
-    - dialog_modifier chunk (parenthetical content)
-    - dialog chunk (text after parenthetical)
+    For each dialogue chunk containing a parenthetical, creates:
+    - dialogue chunk (text before parenthetical)
+    - dialogue_modifier chunk (parenthetical content)
+    - dialogue chunk (text after parenthetical)
 
-    Processes recursively to handle multiple parentheticals in a single dialog chunk.
+    Processes recursively to handle multiple parentheticals in a single dialogue chunk.
 
     Config format:
     preprocessors:
-      - name: extract_dialog_parentheticals
+      - name: extract_dialogue_parentheticals
         config:
           max_words: 10  # optional, maximum words in parenthetical
           extract_only:  # or extract_all_except
@@ -134,20 +134,20 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
             return text.startswith(pattern)
         return pattern in text
 
-    def _split_dialog_at_parenthetical(
+    def _split_dialogue_at_parenthetical(
         self, chunk: Dict, start_idx: int, end_idx: int, parenthetical: str
     ) -> List[Dict]:
         """
-        Split a dialog chunk at a parenthetical into multiple chunks.
+        Split a dialogue chunk at a parenthetical into multiple chunks.
 
         Args:
-            chunk: Original dialog chunk
+            chunk: Original dialogue chunk
             start_idx: Start index of parenthetical in text
             end_idx: End index of parenthetical in text
             parenthetical: The parenthetical text (with parentheses)
 
         Returns:
-            List of new chunks (dialog, dialog_modifier, dialog)
+            List of new chunks (dialogue, dialogue_modifier, dialogue)
         """
         text = chunk["text"]
         before_text = text[:start_idx].strip()
@@ -158,43 +158,43 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
         logger.debug("Original text: %s", text)
         logger.debug("Speaker: %s", chunk["speaker"])
 
-        # Add initial dialog chunk if text exists before parenthetical
+        # Add initial dialogue chunk if text exists before parenthetical
         if before_text:
-            dialog_before = {
-                "type": "dialog",
+            dialogue_before = {
+                "type": "dialogue",
                 "speaker": chunk["speaker"],
                 "raw_text": chunk["raw_text"],
                 "text": before_text,
             }
-            result_chunks.append(dialog_before)
-            logger.debug("Created dialog chunk (before): %s", before_text)
+            result_chunks.append(dialogue_before)
+            logger.debug("Created dialogue chunk (before): %s", before_text)
 
-        # Add dialog modifier (parenthetical)
-        dialog_mod = {
-            "type": "dialog_modifier",
+        # Add dialogue modifier (parenthetical)
+        dialogue_mod = {
+            "type": "dialogue_modifier",
             "speaker": "",
             "raw_text": chunk["raw_text"],
             "text": parenthetical,
         }
-        result_chunks.append(dialog_mod)
-        logger.debug("Created dialog modifier: %s", parenthetical)
+        result_chunks.append(dialogue_mod)
+        logger.debug("Created dialogue modifier: %s", parenthetical)
 
-        # Add final dialog chunk if text exists after parenthetical
+        # Add final dialogue chunk if text exists after parenthetical
         if after_text:
-            dialog_after = {
-                "type": "dialog",
+            dialogue_after = {
+                "type": "dialogue",
                 "speaker": chunk["speaker"],
                 "raw_text": chunk["raw_text"],
                 "text": after_text,
             }
-            result_chunks.append(dialog_after)
-            logger.debug("Created dialog chunk (after): %s", after_text)
+            result_chunks.append(dialogue_after)
+            logger.debug("Created dialogue chunk (after): %s", after_text)
 
         return result_chunks
 
     def process(self, chunks: List[Dict]) -> Tuple[List[Dict], bool]:
         """
-        Process chunks by extracting parentheticals from dialog chunks.
+        Process chunks by extracting parentheticals from dialogue chunks.
 
         Args:
             chunks: List of all text chunks from the screenplay
@@ -214,8 +214,8 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
         while i < len(chunks):
             chunk = chunks[i]
 
-            # Only process dialog chunks
-            if chunk["type"] != "dialog":
+            # Only process dialogue chunks
+            if chunk["type"] != "dialogue":
                 result_chunks.append(chunk)
                 i += 1
                 continue
@@ -241,7 +241,7 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
                 parenthetical_content = match.group(1).strip()  # Just the content
 
                 logger.info(
-                    "Found dialog parenthetical: %s (in dialog: %s)",
+                    "Found dialogue parenthetical: %s (in dialogue: %s)",
                     parenthetical,
                     text,
                 )
@@ -251,27 +251,28 @@ class ExtractDialogParentheticalsPreProcessor(TextPreProcessor):
                     found_matching_parenthetical = True
 
                     # Split chunk at parenthetical
-                    new_chunks = self._split_dialog_at_parenthetical(
+                    new_chunks = self._split_dialogue_at_parenthetical(
                         chunk, actual_start, actual_end, parenthetical
                     )
 
                     made_changes = True
                     result_chunks.extend(
                         new_chunks[:-1]
-                        if len(new_chunks) > 1 and new_chunks[-1]["type"] == "dialog"
+                        if len(new_chunks) > 1 and new_chunks[-1]["type"] == "dialogue"
                         else new_chunks
                     )
 
-                    # Continue processing from last dialog chunk if it exists
-                    last_dialog = next(
-                        (c for c in reversed(new_chunks) if c["type"] == "dialog"), None
+                    # Continue processing from last dialogue chunk if it exists
+                    last_dialogue = next(
+                        (c for c in reversed(new_chunks) if c["type"] == "dialogue"),
+                        None,
                     )
-                    if last_dialog and last_dialog.get("text"):
-                        # Insert the last dialog chunk back for processing
-                        chunks.insert(i + 1, last_dialog)
+                    if last_dialogue and last_dialogue.get("text"):
+                        # Insert the last dialogue chunk back for processing
+                        chunks.insert(i + 1, last_dialogue)
                         logger.debug(
-                            "Continuing processing with remaining dialog: %s",
-                            last_dialog["text"],
+                            "Continuing processing with remaining dialogue: %s",
+                            last_dialogue["text"],
                         )
 
                     break  # Exit the inner while loop to process the next chunk

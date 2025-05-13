@@ -2,19 +2,19 @@ import re
 
 import pytest
 
-from script_to_speech.text_processors.preprocessors.extract_dialog_parentheticals_preprocessor import (
-    ExtractDialogParentheticalsPreProcessor,
+from script_to_speech.text_processors.preprocessors.extract_dialogue_parentheticals_preprocessor import (
+    ExtractDialogueParentheticalsPreProcessor,
 )
 
 
-class TestExtractDialogParentheticalsPreProcessor:
-    """Tests for the ExtractDialogParentheticalsPreProcessor class."""
+class TestExtractDialogueParentheticalsPreProcessor:
+    """Tests for the ExtractDialogueParentheticalsPreProcessor class."""
 
     def test_validate_config_valid_empty(self):
         """Test validate_config with valid empty configuration."""
         # Arrange
         config = {}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is True
@@ -23,7 +23,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with valid max_words configuration."""
         # Arrange
         config = {"max_words": 5}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is True
@@ -32,7 +32,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with valid extract_only configuration."""
         # Arrange
         config = {"extract_only": ["pause", "in french*"]}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is True
@@ -41,7 +41,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with valid extract_all_except configuration."""
         # Arrange
         config = {"extract_all_except": ["quietly", "softly*"]}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is True
@@ -50,7 +50,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with invalid max_words configuration."""
         # Arrange
         config = {"max_words": "not_an_int"}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is False
@@ -59,7 +59,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with max_words = 0 configuration."""
         # Arrange
         config = {"max_words": 0}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is False
@@ -68,7 +68,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with mutually exclusive configurations."""
         # Arrange
         config = {"extract_only": ["pause"], "extract_all_except": ["softly"]}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is False
@@ -77,7 +77,7 @@ class TestExtractDialogParentheticalsPreProcessor:
         """Test validate_config with invalid extract_only type."""
         # Arrange
         config = {"extract_only": "not_a_list"}
-        processor = ExtractDialogParentheticalsPreProcessor(config)
+        processor = ExtractDialogueParentheticalsPreProcessor(config)
 
         # Act & Assert
         assert processor.validate_config() is False
@@ -85,7 +85,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_count_words(self):
         """Test _count_words correctly counts words."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         text = "This has five words total"
 
         # Act
@@ -97,7 +97,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_should_extract_parenthetical_default(self):
         """Test _should_extract_parenthetical with default config."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
 
         # Act & Assert - By default, all parentheticals should be extracted
         assert processor._should_extract_parenthetical("pause") is True
@@ -112,7 +112,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_should_extract_parenthetical_max_words(self):
         """Test _should_extract_parenthetical with max_words config."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({"max_words": 3})
+        processor = ExtractDialogueParentheticalsPreProcessor({"max_words": 3})
 
         # Act & Assert
         assert (
@@ -126,7 +126,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_should_extract_parenthetical_extract_only(self):
         """Test _should_extract_parenthetical with extract_only config."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor(
+        processor = ExtractDialogueParentheticalsPreProcessor(
             {"extract_only": ["pause", "in french*"]}
         )
 
@@ -148,7 +148,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_should_extract_parenthetical_extract_all_except(self):
         """Test _should_extract_parenthetical with extract_all_except config."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor(
+        processor = ExtractDialogueParentheticalsPreProcessor(
             {"extract_all_except": ["quietly", "pause*"]}
         )
 
@@ -172,7 +172,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_matches_pattern_exact(self):
         """Test _matches_pattern with exact match."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
 
         # Act & Assert
         assert processor._matches_pattern("pause", "pause") is True
@@ -185,7 +185,7 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_matches_pattern_partial(self):
         """Test _matches_pattern with partial match (asterisk)."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
 
         # Act & Assert
         assert (
@@ -202,10 +202,10 @@ class TestExtractDialogParentheticalsPreProcessor:
         )  # Case insensitive
         assert processor._matches_pattern("break", "pause*") is False  # No match
 
-    def test_split_dialog_at_parenthetical(self):
-        """Test _split_dialog_at_parenthetical splits dialog correctly."""
+    def test_split_dialogue_at_parenthetical(self):
+        """Test _split_dialogue_at_parenthetical splits dialogue correctly."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         text = "This is text (with a parenthetical) in the middle."
 
         # Get the actual indices from re.search
@@ -215,38 +215,38 @@ class TestExtractDialogParentheticalsPreProcessor:
         parenthetical = match.group(0)
 
         chunk = {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "BOB",
             "text": text,
             "raw_text": "Original raw text",
         }
 
         # Act
-        result = processor._split_dialog_at_parenthetical(
+        result = processor._split_dialogue_at_parenthetical(
             chunk, start_idx, end_idx, parenthetical
         )
 
         # Assert
         assert len(result) == 3
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["speaker"] == "BOB"
         assert result[0]["text"] == "This is text"
 
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["speaker"] == ""
         assert result[1]["text"] == "(with a parenthetical)"
 
-        assert result[2]["type"] == "dialog"
+        assert result[2]["type"] == "dialogue"
         assert result[2]["speaker"] == "BOB"
         assert result[2]["text"] == "in the middle."
 
-    def test_split_dialog_at_parenthetical_start(self):
-        """Test _split_dialog_at_parenthetical when parenthetical is at start."""
+    def test_split_dialogue_at_parenthetical_start(self):
+        """Test _split_dialogue_at_parenthetical when parenthetical is at start."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         text = "(with a parenthetical) at the start."
         chunk = {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "BOB",
             "text": text,
             "raw_text": "Original raw text",
@@ -259,24 +259,24 @@ class TestExtractDialogParentheticalsPreProcessor:
         parenthetical = match.group(0)
 
         # Act
-        result = processor._split_dialog_at_parenthetical(
+        result = processor._split_dialogue_at_parenthetical(
             chunk, start_idx, end_idx, parenthetical
         )
 
         # Assert
         assert len(result) == 2
-        assert result[0]["type"] == "dialog_modifier"
+        assert result[0]["type"] == "dialogue_modifier"
         assert result[0]["speaker"] == ""
         assert result[0]["text"] == "(with a parenthetical)"
 
-        assert result[1]["type"] == "dialog"
+        assert result[1]["type"] == "dialogue"
         assert result[1]["speaker"] == "BOB"
         assert result[1]["text"] == "at the start."
 
-    def test_split_dialog_at_parenthetical_end(self):
-        """Test _split_dialog_at_parenthetical when parenthetical is at end."""
+    def test_split_dialogue_at_parenthetical_end(self):
+        """Test _split_dialogue_at_parenthetical when parenthetical is at end."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         text = "At the end (with a parenthetical)"
 
         # Get the actual indices from re.search
@@ -286,31 +286,31 @@ class TestExtractDialogParentheticalsPreProcessor:
         parenthetical = match.group(0)
 
         chunk = {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "BOB",
             "text": text,
             "raw_text": "Original raw text",
         }
 
         # Act
-        result = processor._split_dialog_at_parenthetical(
+        result = processor._split_dialogue_at_parenthetical(
             chunk, start_idx, end_idx, parenthetical
         )
 
         # Assert
         assert len(result) == 2
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["speaker"] == "BOB"
         assert result[0]["text"] == "At the end"
 
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["speaker"] == ""
         assert result[1]["text"] == "(with a parenthetical)"
 
     def test_process_empty_list(self):
         """Test process with empty chunks list."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
 
         # Act
         result, changed = processor.process([])
@@ -319,10 +319,10 @@ class TestExtractDialogParentheticalsPreProcessor:
         assert result == []
         assert changed is False
 
-    def test_process_no_dialog_chunks(self):
-        """Test process with no dialog chunks to extract parentheticals from."""
+    def test_process_no_dialogue_chunks(self):
+        """Test process with no dialogue chunks to extract parentheticals from."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {"type": "action", "text": "Action text"},
             {"type": "speaker_attribution", "text": "BOB"},
@@ -335,15 +335,15 @@ class TestExtractDialogParentheticalsPreProcessor:
         assert result == chunks
         assert changed is False
 
-    def test_process_dialog_no_parentheticals(self):
-        """Test process with dialog chunk but no parentheticals."""
+    def test_process_dialogue_no_parentheticals(self):
+        """Test process with dialogue chunk but no parentheticals."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
-                "text": "Dialog with no parentheticals",
+                "text": "Dialogue with no parentheticals",
             },
         ]
 
@@ -357,10 +357,10 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_process_extract_single_parenthetical(self):
         """Test process extracting a single parenthetical."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Text (with parenthetical) in the middle.",
                 "raw_text": "Original raw text",
@@ -372,21 +372,21 @@ class TestExtractDialogParentheticalsPreProcessor:
 
         # Assert
         assert len(result) == 3
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["text"] == "Text"
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["text"] == "(with parenthetical)"
-        assert result[2]["type"] == "dialog"
+        assert result[2]["type"] == "dialogue"
         assert result[2]["text"] == "in the middle."
         assert changed is True
 
     def test_process_extract_adjacent_parentheticals(self):
         """Test process extracts adjacent parentheticals correctly."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Start (pause)(laughs) end.",
                 "raw_text": "Original raw text",
@@ -398,19 +398,19 @@ class TestExtractDialogParentheticalsPreProcessor:
 
         # Assert
         assert len(result) == 4  # Should be 4 chunks, not 5
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["text"] == "Start"
         assert result[0]["speaker"] == "BOB"
 
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["text"] == "(pause)"
         assert result[1]["speaker"] == ""
 
-        assert result[2]["type"] == "dialog_modifier"
+        assert result[2]["type"] == "dialogue_modifier"
         assert result[2]["text"] == "(laughs)"
         assert result[2]["speaker"] == ""
 
-        assert result[3]["type"] == "dialog"
+        assert result[3]["type"] == "dialogue"
         assert result[3]["text"] == "end."
         assert result[3]["speaker"] == "BOB"
 
@@ -419,10 +419,10 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_process_extract_multiple_parentheticals_same_chunk(self):
         """Test process extracting multiple parentheticals from the same chunk."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "First (pause) then (loudly) exclaims.",
                 "raw_text": "Original raw text",
@@ -434,25 +434,25 @@ class TestExtractDialogParentheticalsPreProcessor:
 
         # Assert
         assert len(result) == 5
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["text"] == "First"
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["text"] == "(pause)"
-        assert result[2]["type"] == "dialog"
+        assert result[2]["type"] == "dialogue"
         assert result[2]["text"] == "then"
-        assert result[3]["type"] == "dialog_modifier"
+        assert result[3]["type"] == "dialogue_modifier"
         assert result[3]["text"] == "(loudly)"
-        assert result[4]["type"] == "dialog"
+        assert result[4]["type"] == "dialogue"
         assert result[4]["text"] == "exclaims."
         assert changed is True
 
     def test_process_skip_parenthetical_max_words(self):
         """Test process skips parenthetical due to max_words configuration."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({"max_words": 2})
+        processor = ExtractDialogueParentheticalsPreProcessor({"max_words": 2})
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Text (with too many words) to skip.",
                 "raw_text": "Original raw text",
@@ -469,12 +469,12 @@ class TestExtractDialogParentheticalsPreProcessor:
     def test_process_extract_pattern_matching(self):
         """Test process extracts only parentheticals matching a pattern."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor(
+        processor = ExtractDialogueParentheticalsPreProcessor(
             {"extract_only": ["pause", "whisper*"]}
         )
         chunks = [
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "First (pause) then (loudly) then (whispering) ends.",
                 "raw_text": "Original raw text",
@@ -486,33 +486,33 @@ class TestExtractDialogParentheticalsPreProcessor:
 
         # Assert
         assert len(result) == 5
-        assert result[0]["type"] == "dialog"
+        assert result[0]["type"] == "dialogue"
         assert result[0]["text"] == "First"
-        assert result[1]["type"] == "dialog_modifier"
+        assert result[1]["type"] == "dialogue_modifier"
         assert result[1]["text"] == "(pause)"
-        assert result[2]["type"] == "dialog"
+        assert result[2]["type"] == "dialogue"
         assert result[2]["text"] == "then (loudly) then"
-        assert result[3]["type"] == "dialog_modifier"
+        assert result[3]["type"] == "dialogue_modifier"
         assert result[3]["text"] == "(whispering)"
-        assert result[4]["type"] == "dialog"
+        assert result[4]["type"] == "dialogue"
         assert result[4]["text"] == "ends."
         assert changed is True
 
     def test_process_extract_with_complex_scenario(self):
         """Test process with a complex scenario including multiple chunks and parentheticals."""
         # Arrange
-        processor = ExtractDialogParentheticalsPreProcessor({})
+        processor = ExtractDialogueParentheticalsPreProcessor({})
         chunks = [
             {"type": "action", "text": "Action text"},
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Start (pause) middle (loudly) end.",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {"type": "speaker_attribution", "text": "ALICE"},
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "ALICE",
                 "text": "Reply (softly).",
                 "raw_text": "Reply raw text",
@@ -523,50 +523,50 @@ class TestExtractDialogParentheticalsPreProcessor:
         expected = [
             {"type": "action", "text": "Action text"},
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "Start",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {
-                "type": "dialog_modifier",
+                "type": "dialogue_modifier",
                 "speaker": "",
                 "text": "(pause)",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "middle",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {
-                "type": "dialog_modifier",
+                "type": "dialogue_modifier",
                 "speaker": "",
                 "text": "(loudly)",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "BOB",
                 "text": "end.",
-                "raw_text": "Dialog raw text",
+                "raw_text": "Dialogue raw text",
             },
             {"type": "speaker_attribution", "text": "ALICE"},
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "ALICE",
                 "text": "Reply",
                 "raw_text": "Reply raw text",
             },
             {
-                "type": "dialog_modifier",
+                "type": "dialogue_modifier",
                 "speaker": "",
                 "text": "(softly)",
                 "raw_text": "Reply raw text",
             },
             {
-                "type": "dialog",
+                "type": "dialogue",
                 "speaker": "ALICE",
                 "text": ".",
                 "raw_text": "Reply raw text",

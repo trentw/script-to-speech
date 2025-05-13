@@ -427,7 +427,7 @@ class TestLoadJsonChunks:
         """Test loading valid JSON chunks from a file."""
         # Arrange
         json_data = [
-            {"type": "dialog", "text": "Hello"},
+            {"type": "dialogue", "text": "Hello"},
             {"type": "action", "text": "John walks"},
         ]
         json_str = json.dumps(json_data)
@@ -439,7 +439,7 @@ class TestLoadJsonChunks:
             # Assert
             mock_file.assert_called_once_with("test_file.json", "r", encoding="utf-8")
             assert len(result) == 2
-            assert result[0]["type"] == "dialog"
+            assert result[0]["type"] == "dialogue"
             assert result[0]["text"] == "Hello"
             assert result[1]["type"] == "action"
             assert result[1]["text"] == "John walks"

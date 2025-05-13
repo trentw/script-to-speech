@@ -73,7 +73,7 @@ class TestTextProcessorManager:
 
         config2 = """
         preprocessors:
-          - name: dual_dialog
+          - name: dual_dialogue
             config: {}
         processors:
           - name: pattern_replace
@@ -95,7 +95,7 @@ class TestTextProcessorManager:
                 # Mock preprocessors and processors
                 preprocessors = {
                     "skip_and_merge": Mock(spec=TextPreProcessor),
-                    "dual_dialog": Mock(spec=TextPreProcessor),
+                    "dual_dialogue": Mock(spec=TextPreProcessor),
                 }
                 processors = {
                     "skip_empty": Mock(spec=TextProcessor),
@@ -110,7 +110,7 @@ class TestTextProcessorManager:
                 # Set module attributes
                 mock_module = mock_import.return_value
                 mock_module.SkipAndMergePreProcessor = preprocessors["skip_and_merge"]
-                mock_module.DualDialogPreProcessor = preprocessors["dual_dialog"]
+                mock_module.DualDialoguePreProcessor = preprocessors["dual_dialogue"]
                 mock_module.SkipEmptyProcessor = processors["skip_empty"]
                 mock_module.PatternReplaceProcessor = processors["pattern_replace"]
 
@@ -211,7 +211,7 @@ class TestTextProcessorManager:
         """Test the process_chunks method's overall behavior."""
         # Setup input chunks
         chunks = [
-            {"type": "dialog", "text": "Hello world"},
+            {"type": "dialogue", "text": "Hello world"},
             {"type": "action", "text": "Character walks away"},
         ]
 
@@ -268,7 +268,7 @@ class TestTextProcessorManager:
     def test_preprocess_chunks(self):
         """Test the preprocess_chunks method."""
         # Setup
-        chunks = [{"type": "dialog", "text": "Hello"}]
+        chunks = [{"type": "dialogue", "text": "Hello"}]
 
         # Mock basic config
         mock_config = """
@@ -280,8 +280,8 @@ class TestTextProcessorManager:
             # Mock preprocessor that adds a chunk
             mock_preprocessor = Mock(spec=TextPreProcessor)
             enhanced_chunks = [
-                {"type": "dialog", "text": "Hello"},
-                {"type": "dialog", "text": "World"},
+                {"type": "dialogue", "text": "Hello"},
+                {"type": "dialogue", "text": "World"},
             ]
             mock_preprocessor.process.return_value = (enhanced_chunks, True)
 
@@ -306,7 +306,7 @@ class TestTextProcessorManager:
     def test_process_chunk(self):
         """Test the process_chunk method with mocked processors."""
         # Setup
-        chunk = {"type": "dialog", "text": "Hello world"}
+        chunk = {"type": "dialogue", "text": "Hello world"}
 
         # Mock basic config
         mock_config = """
@@ -360,7 +360,7 @@ class TestTextProcessorManager:
     def test_process_chunk_error_if_preprocess_not_called(self):
         """Test that process_chunk raises error if preprocess_chunks wasn't called."""
         # Setup
-        chunk = {"type": "dialog", "text": "Hello world"}
+        chunk = {"type": "dialogue", "text": "Hello world"}
 
         # Mock basic config
         mock_config = """
@@ -436,7 +436,7 @@ class TestTextProcessorManager:
         preprocessors:
           - name: skip_and_merge
             config: {"skip_types": ["type1"]}
-          - name: dual_dialog
+          - name: dual_dialogue
             config: {"min_speaker_spacing": 3}
         processors:
           - name: skip_empty
@@ -449,7 +449,7 @@ class TestTextProcessorManager:
         preprocessors:
           - name: skip_and_merge
             config: {"skip_types": ["type2"]}
-          - name: extract_dialog_parentheticals
+          - name: extract_dialogue_parentheticals
             config: {"max_words": 5}
         processors:
           - name: skip_empty
@@ -468,7 +468,7 @@ class TestTextProcessorManager:
           - name: skip_empty
             config: {"skip_types": ["type3"]}
           - name: capitalization_transform
-            config: {"transformations": [{"chunk_type": "dialog", "case": "lower_case"}]}
+            config: {"transformations": [{"chunk_type": "dialogue", "case": "lower_case"}]}
         """
 
         # Mock open to return different content based on filename
@@ -488,8 +488,8 @@ class TestTextProcessorManager:
                 # Setup preprocessors with different multi_config_modes
                 preprocessors = {
                     "skip_and_merge": Mock(spec=TextPreProcessor),
-                    "dual_dialog": Mock(spec=TextPreProcessor),
-                    "extract_dialog_parentheticals": Mock(spec=TextPreProcessor),
+                    "dual_dialogue": Mock(spec=TextPreProcessor),
+                    "extract_dialogue_parentheticals": Mock(spec=TextPreProcessor),
                     "speaker_merge": Mock(spec=TextPreProcessor),
                 }
 
@@ -499,8 +499,8 @@ class TestTextProcessorManager:
                 )
                 # The rest use chain mode
                 for name in [
-                    "dual_dialog",
-                    "extract_dialog_parentheticals",
+                    "dual_dialogue",
+                    "extract_dialogue_parentheticals",
                     "speaker_merge",
                 ]:
                     preprocessors[name].return_value.multi_config_mode = "chain"
@@ -535,8 +535,8 @@ class TestTextProcessorManager:
                 mock_module = mock_import.return_value
                 class_names = {
                     "skip_and_merge": "SkipAndMergePreProcessor",
-                    "dual_dialog": "DualDialogPreProcessor",
-                    "extract_dialog_parentheticals": "ExtractDialogParentheticalsPreProcessor",
+                    "dual_dialogue": "DualDialoguePreProcessor",
+                    "extract_dialogue_parentheticals": "ExtractDialogueParentheticalsPreProcessor",
                     "speaker_merge": "SpeakerMergePreProcessor",
                     "skip_empty": "SkipEmptyProcessor",
                     "pattern_replace": "PatternReplaceProcessor",
@@ -555,8 +555,8 @@ class TestTextProcessorManager:
                 # Verify preprocessor counts and ordering
                 # Should have 4 preprocessors:
                 # - 1 skip_and_merge (override mode keeps last one)
-                # - 1 dual_dialog (from config1)
-                # - 1 extract_dialog_parentheticals (from config2)
+                # - 1 dual_dialogue (from config1)
+                # - 1 extract_dialogue_parentheticals (from config2)
                 # - 1 speaker_merge (from config3)
                 assert len(manager.preprocessors) == 4
 
@@ -567,12 +567,12 @@ class TestTextProcessorManager:
                     in preprocessor_types
                 )
                 assert (
-                    preprocessors["dual_dialog"].return_value.__class__
+                    preprocessors["dual_dialogue"].return_value.__class__
                     in preprocessor_types
                 )
                 assert (
                     preprocessors[
-                        "extract_dialog_parentheticals"
+                        "extract_dialogue_parentheticals"
                     ].return_value.__class__
                     in preprocessor_types
                 )
@@ -656,9 +656,9 @@ class TestTextProcessorManager:
         preprocessors:
           - name: skip_and_merge
             config: {}
-          - name: dual_dialog
+          - name: dual_dialogue
             config: {}
-          - name: extract_dialog_parentheticals
+          - name: extract_dialogue_parentheticals
             config: {}
         processors: []
         """

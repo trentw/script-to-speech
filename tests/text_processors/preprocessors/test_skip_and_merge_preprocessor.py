@@ -44,7 +44,7 @@ class TestSkipAndMergePreProcessor:
         # Arrange
         processor = SkipAndMergePreProcessor({"skip_types": []})
         chunk1 = {"type": "action", "text": "Text 1"}
-        chunk2 = {"type": "dialog", "text": "Text 2"}
+        chunk2 = {"type": "dialogue", "text": "Text 2"}
 
         # Act
         result = processor._can_merge_chunks(chunk1, chunk2)
@@ -65,12 +65,12 @@ class TestSkipAndMergePreProcessor:
         # Assert
         assert result is False
 
-    def test_can_merge_chunks_dialog_same_speaker(self):
-        """Test _can_merge_chunks with dialog chunks having the same speaker."""
+    def test_can_merge_chunks_dialogue_same_speaker(self):
+        """Test _can_merge_chunks with dialogue chunks having the same speaker."""
         # Arrange
         processor = SkipAndMergePreProcessor({"skip_types": []})
-        chunk1 = {"type": "dialog", "speaker": "BOB", "text": "Text 1"}
-        chunk2 = {"type": "dialog", "speaker": "BOB", "text": "Text 2"}
+        chunk1 = {"type": "dialogue", "speaker": "BOB", "text": "Text 1"}
+        chunk2 = {"type": "dialogue", "speaker": "BOB", "text": "Text 2"}
 
         # Act
         result = processor._can_merge_chunks(chunk1, chunk2)
@@ -78,12 +78,12 @@ class TestSkipAndMergePreProcessor:
         # Assert
         assert result is True
 
-    def test_can_merge_chunks_dialog_different_speaker(self):
-        """Test _can_merge_chunks with dialog chunks having different speakers."""
+    def test_can_merge_chunks_dialogue_different_speaker(self):
+        """Test _can_merge_chunks with dialogue chunks having different speakers."""
         # Arrange
         processor = SkipAndMergePreProcessor({"skip_types": []})
-        chunk1 = {"type": "dialog", "speaker": "BOB", "text": "Text 1"}
-        chunk2 = {"type": "dialog", "speaker": "ALICE", "text": "Text 2"}
+        chunk1 = {"type": "dialogue", "speaker": "BOB", "text": "Text 1"}
+        chunk2 = {"type": "dialogue", "speaker": "ALICE", "text": "Text 2"}
 
         # Act
         result = processor._can_merge_chunks(chunk1, chunk2)
@@ -124,7 +124,7 @@ class TestSkipAndMergePreProcessor:
         processor = SkipAndMergePreProcessor({"skip_types": ["page_number"]})
         chunks = [
             {"type": "action", "text": "Action 1"},
-            {"type": "dialog", "speaker": "BOB", "text": "Dialog 1"},
+            {"type": "dialogue", "speaker": "BOB", "text": "Dialogue 1"},
         ]
 
         # Act
@@ -141,7 +141,7 @@ class TestSkipAndMergePreProcessor:
         chunks = [
             {"type": "action", "text": "Action 1"},
             {"type": "page_number", "text": "1"},
-            {"type": "dialog", "speaker": "BOB", "text": "Dialog 1"},
+            {"type": "dialogue", "speaker": "BOB", "text": "Dialogue 1"},
         ]
 
         # Act
@@ -150,7 +150,7 @@ class TestSkipAndMergePreProcessor:
         # Assert
         assert len(result) == 2
         assert result[0]["type"] == "action"
-        assert result[1]["type"] == "dialog"
+        assert result[1]["type"] == "dialogue"
         assert changed is True
 
     def test_process_merge_around_skipped(self):
@@ -180,7 +180,7 @@ class TestSkipAndMergePreProcessor:
         chunks = [
             {"type": "action", "text": "Action 1"},
             {"type": "page_number", "text": "1"},
-            {"type": "dialog", "speaker": "BOB", "text": "Dialog 1"},
+            {"type": "dialogue", "speaker": "BOB", "text": "Dialogue 1"},
         ]
 
         # Act
@@ -189,7 +189,7 @@ class TestSkipAndMergePreProcessor:
         # Assert
         assert len(result) == 2
         assert result[0]["type"] == "action"
-        assert result[1]["type"] == "dialog"
+        assert result[1]["type"] == "dialogue"
         assert changed is True
 
     def test_process_multiple_skips(self):

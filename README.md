@@ -164,7 +164,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    - Do the speakers look correct?
    - Is there the right number of scene headers?
-   - Are there corresponding numbers of dual-dialog headers and bodies?
+   - Are there corresponding numbers of dual-dialogue headers and bodies?
    - etc.
 
 ### Advanced Text Processor / TTS-Provider Configuration
@@ -180,17 +180,17 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```yaml
    # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialog: 2082 characters
+   # Total characters: 104244, Longest dialogue: 2082 characters
    default:
      provider:
 
    # ALICE: 283 lines
-   # Total characters: 12181, Longest dialog: 365 characters
+   # Total characters: 12181, Longest dialogue: 365 characters
    ALICE:
      provider:
 
    # BOB: 120 lines
-   # Total characters: 9123, Longest dialog: 253 characters
+   # Total characters: 9123, Longest dialogue: 253 characters
    ALICE:
      provider:
    ```
@@ -199,18 +199,18 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```yaml
    # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialog: 2082 characters
+   # Total characters: 104244, Longest dialogue: 2082 characters
    default:
      provider: openai
 
    # ALICE: 283 lines
-   # Total characters: 12181, Longest dialog: 365 characters
+   # Total characters: 12181, Longest dialogue: 365 characters
    ALICE:
      provider: openai
      voice: alloy
 
    # BOB: 120 lines
-   # Total characters: 9123, Longest dialog: 253 characters
+   # Total characters: 9123, Longest dialogue: 253 characters
    ALICE:
      provider: elevenlab
    ```
@@ -226,19 +226,19 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```yaml
    # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialog: 2082 characters
+   # Total characters: 104244, Longest dialogue: 2082 characters
    default:
      provider: openai
      voice:
 
    # ALICE: 283 lines
-   # Total characters: 12181, Longest dialog: 365 characters
+   # Total characters: 12181, Longest dialogue: 365 characters
    ALICE:
      provider: openai
      voice: alloy
 
    # BOB: 120 lines
-   # Total characters: 9123, Longest dialog: 253 characters
+   # Total characters: 9123, Longest dialogue: 253 characters
    ALICE:
      provider: elevenlab
      voice_id:
@@ -303,7 +303,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
    - Applying the `--cache-overrides` option described below
 
    7. **Replace Silent Clips / "Re-Audition" Specific Clips**
-   Specific lines of dialog can be generated with `sts-generate-standalone-speech`. Multiple lines can be supplied at once. The `-v` flag will determine how many "take" wil be generated for each line. These files will be output to the `standalone_speech` directory
+   Specific lines of dialogue can be generated with `sts-generate-standalone-speech`. Multiple lines can be supplied at once. The `-v` flag will determine how many "take" wil be generated for each line. These files will be output to the `standalone_speech` directory
 
    ```bash
    # Generate replacement audio
@@ -358,7 +358,7 @@ output/
 ├── parser_logs/                      # Parser operation logs
 └── [screenplay_name]/
     ├── [screenplay_name].mp3         # Final audiobook
-    ├── [screenplay_name]-modified.json  # Dialog chunks with text processors applied
+    ├── [screenplay_name]-modified.json  # Dialogue chunks with text processors applied
     ├── cache/                        # Generated audio clips
     └── logs/                         # Generation logs
 

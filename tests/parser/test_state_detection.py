@@ -111,22 +111,22 @@ class TestStateDetectionMethods:
         # Invalid right-aligned actions (contains INT./EXT.)
         assert parser.is_right_aligned_action("INT. LIVING ROOM", 50) is False
 
-    def test_is_dialog_modifier(self):
-        """Test dialog modifier detection."""
+    def test_is_dialogue_modifier(self):
+        """Test dialogue modifier detection."""
         parser = ScreenplayParser()
 
-        # Valid dialog modifiers
-        assert parser.is_dialog_modifier("(angrily)") is True
-        assert parser.is_dialog_modifier("(whispering to John)") is True
-        assert parser.is_dialog_modifier("(pauses)") is True
-        assert parser.is_dialog_modifier("(beat)") is True
+        # Valid dialogue modifiers
+        assert parser.is_dialogue_modifier("(angrily)") is True
+        assert parser.is_dialogue_modifier("(whispering to John)") is True
+        assert parser.is_dialogue_modifier("(pauses)") is True
+        assert parser.is_dialogue_modifier("(beat)") is True
 
-        # Invalid dialog modifiers
-        assert parser.is_dialog_modifier("Not a modifier") is False
-        assert parser.is_dialog_modifier("(") is False  # Too short
-        assert parser.is_dialog_modifier(")") is False  # Too short
+        # Invalid dialogue modifiers
+        assert parser.is_dialogue_modifier("Not a modifier") is False
+        assert parser.is_dialogue_modifier("(") is False  # Too short
+        assert parser.is_dialogue_modifier(")") is False  # Too short
         assert (
-            parser.is_dialog_modifier("Hello (aside)") is False
+            parser.is_dialogue_modifier("Hello (aside)") is False
         )  # Not starting with parenthesis
 
     def test_is_dual_speaker(self):
@@ -209,8 +209,8 @@ class TestStateTransitions:
         assert parser.state == State.SPEAKER_ATTRIBUTION
         assert parser.current_speaker == "JOHN"
 
-    def test_speaker_attribution_to_dialog_transition(self, mock_logger):
-        """Test transition from speaker attribution to dialog."""
+    def test_speaker_attribution_to_dialogue_transition(self, mock_logger):
+        """Test transition from speaker attribution to dialogue."""
         parser = ScreenplayParser()
 
         # Initialize state to ACTION to ensure we're not in TITLE state
@@ -224,41 +224,41 @@ class TestStateTransitions:
         assert parser.state == State.SPEAKER_ATTRIBUTION
         assert parser.current_speaker == "JOHN"
 
-        # Process dialog
+        # Process dialogue
         parser.process_line(
             "                         Hello, how are you?                                        "
         )
-        assert parser.state == State.DIALOG
+        assert parser.state == State.DIALOGUE
 
-    def test_dialog_to_dialog_modifier_transition(self, mock_logger):
-        """Test transition from dialog to dialog modifier."""
+    def test_dialogue_to_dialogue_modifier_transition(self, mock_logger):
+        """Test transition from dialogue to dialogue modifier."""
         parser = ScreenplayParser()
 
         # Set up state
         parser.current_speaker = "JOHN"
-        parser.state = State.DIALOG
+        parser.state = State.DIALOGUE
         parser.has_left_title = True
 
-        # Process dialog modifier
+        # Process dialogue modifier
         parser.process_line(
             "                         (pauses)                                                   "
         )
-        assert parser.state == State.DIALOG_MODIFIER
+        assert parser.state == State.DIALOGUE_MODIFIER
 
-    def test_dialog_modifier_to_dialog_transition(self, mock_logger):
-        """Test transition from dialog modifier to dialog."""
+    def test_dialogue_modifier_to_dialogue_transition(self, mock_logger):
+        """Test transition from dialogue modifier to dialogue."""
         parser = ScreenplayParser()
 
         # Set up state
         parser.current_speaker = "JOHN"
-        parser.state = State.DIALOG_MODIFIER
+        parser.state = State.DIALOGUE_MODIFIER
         parser.has_left_title = True
 
-        # Process dialog
+        # Process dialogue
         parser.process_line(
             "                         Hello again.                                               "
         )
-        assert parser.state == State.DIALOG
+        assert parser.state == State.DIALOGUE
 
     def test_action_to_dual_speaker_attribution_transition(self, mock_logger):
         """Test transition from action to dual speaker attribution."""
@@ -275,8 +275,8 @@ class TestStateTransitions:
         assert parser.state == State.DUAL_SPEAKER_ATTRIBUTION
         assert parser.current_speaker == ""  # Speaker should be reset
 
-    def test_dual_speaker_attribution_to_dual_dialog_transition(self, mock_logger):
-        """Test transition from dual speaker attribution to dual dialog."""
+    def test_dual_speaker_attribution_to_dual_dialogue_transition(self, mock_logger):
+        """Test transition from dual speaker attribution to dual dialogue."""
         parser = ScreenplayParser()
 
         # Initialize state to ACTION to ensure we're not in TITLE state
@@ -289,27 +289,27 @@ class TestStateTransitions:
         )
         assert parser.state == State.DUAL_SPEAKER_ATTRIBUTION
 
-        # Process dual dialog
+        # Process dual dialogue
         parser.process_line(
             "               Hello!                         Hi there!                             "
         )
-        assert parser.state == State.DUAL_DIALOG
+        assert parser.state == State.DUAL_DIALOGUE
 
     def test_ambiguous_state_detection(self, mock_logger):
         """Test detection of ambiguous states."""
         parser = ScreenplayParser()
 
-        # Test a line that could be either action or dialog
-        # Set up context to make it more likely to be dialog
+        # Test a line that could be either action or dialogue
+        # Set up context to make it more likely to be dialogue
         parser.current_speaker = "JOHN"
-        parser.state = State.DIALOG
+        parser.state = State.DIALOGUE
         parser.has_left_title = True
 
-        # Process ambiguous line with dialog indentation
+        # Process ambiguous line with dialogue indentation
         parser.process_line(
-            "                         This could be dialog or action.                            "
+            "                         This could be dialogue or action.                            "
         )
-        assert parser.state == State.DIALOG
+        assert parser.state == State.DIALOGUE
 
         # Reset and set up context to make it more likely to be action
         parser.reset_parser_state()
@@ -317,7 +317,7 @@ class TestStateTransitions:
         parser.has_left_title = True
 
         # Process ambiguous line with action indentation
-        parser.process_line("This could be dialog or action.")
+        parser.process_line("This could be dialogue or action.")
         assert parser.state == State.ACTION
 
 

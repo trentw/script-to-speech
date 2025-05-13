@@ -206,7 +206,7 @@ class TestTextSubstitutionProcessor:
         chunk1 = {"type": "speaker_attribution", "text": "BOB (V.O.)"}
 
         # Special characters like dollar signs should be handled properly
-        chunk2 = {"type": "dialog", "text": "That costs $5.99"}
+        chunk2 = {"type": "dialogue", "text": "That costs $5.99"}
 
         # Act
         result1, changed1 = processor.process(chunk1)

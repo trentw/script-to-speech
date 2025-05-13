@@ -54,7 +54,7 @@ class TestAudioGenerationTask:
     def original_dialogue(self):
         """Fixture providing a sample original dialogue dict."""
         return {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "JOHN",
             "text": "Hello everyone.",
             "raw_text": "Hello everyone.",
@@ -64,7 +64,7 @@ class TestAudioGenerationTask:
     def processed_dialogue(self):
         """Fixture providing a sample processed dialogue dict."""
         return {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "JOHN",
             "text": "Hello everyone!",  # Processed text has added exclamation
             "raw_text": "Hello everyone.",

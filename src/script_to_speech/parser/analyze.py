@@ -31,11 +31,11 @@ def analyze_chunks(chunks: list) -> None:
         chunk_type_counts[chunk_type] = chunk_type_counts.get(chunk_type, 0) + 1
 
         # Track speakers
-        if chunk_type == "dialog":
-            # For dialog, use the specified speaker or default
+        if chunk_type == "dialogue":
+            # For dialogue, use the specified speaker or default
             speaker = chunk.get("speaker", "") or "(default)"
         else:
-            # For non-dialog chunks, always attribute to default
+            # For non-dialogue chunks, always attribute to default
             speaker = "(default)"
 
         speakers.add(speaker)

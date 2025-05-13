@@ -15,7 +15,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -42,7 +42,7 @@ class TestPatternReplaceProcessor:
         config = {
             "replacements": [
                 {
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -132,7 +132,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -161,7 +161,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -171,7 +171,7 @@ class TestPatternReplaceProcessor:
         processor = PatternReplaceProcessor(config)
 
         # This chunk should match and be modified
-        chunk = {"type": "dialog_modifier", "speaker": "BOB", "text": "(quietly)"}
+        chunk = {"type": "dialogue_modifier", "speaker": "BOB", "text": "(quietly)"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -187,7 +187,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "nonexistent_field",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -196,7 +196,7 @@ class TestPatternReplaceProcessor:
         }
         processor = PatternReplaceProcessor(config)
 
-        chunk = {"type": "dialog_modifier", "speaker": "BOB", "text": "(quietly)"}
+        chunk = {"type": "dialogue_modifier", "speaker": "BOB", "text": "(quietly)"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -212,7 +212,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
@@ -222,7 +222,7 @@ class TestPatternReplaceProcessor:
         processor = PatternReplaceProcessor(config)
 
         # This chunk should not match
-        chunk = {"type": "dialog", "speaker": "BOB", "text": "Hello world"}
+        chunk = {"type": "dialogue", "speaker": "BOB", "text": "Hello world"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -247,7 +247,7 @@ class TestPatternReplaceProcessor:
         }
         processor = PatternReplaceProcessor(config)
 
-        chunk = {"type": "dialog", "speaker": "BOB", "text": "Hello world"}
+        chunk = {"type": "dialogue", "speaker": "BOB", "text": "Hello world"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -263,14 +263,14 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "speaker",
                     "replace_pattern": ".*",
                     "replace_string": "",
                 },
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "text",
                     "replace_pattern": "^\\((.*)\\)$",
                     "replace_string": "\\1",
@@ -279,7 +279,7 @@ class TestPatternReplaceProcessor:
         }
         processor = PatternReplaceProcessor(config)
 
-        chunk = {"type": "dialog_modifier", "speaker": "BOB", "text": "(quietly)"}
+        chunk = {"type": "dialogue_modifier", "speaker": "BOB", "text": "(quietly)"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -331,10 +331,10 @@ class TestPatternReplaceProcessor:
         processor = PatternReplaceProcessor(config)
 
         # This should match
-        chunk1 = {"type": "dialog", "text": "Hello world"}
+        chunk1 = {"type": "dialogue", "text": "Hello world"}
 
         # This should not match (different case)
-        chunk2 = {"type": "dialog", "text": "hello world"}
+        chunk2 = {"type": "dialogue", "text": "hello world"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -364,9 +364,9 @@ class TestPatternReplaceProcessor:
         processor = PatternReplaceProcessor(config)
 
         # Both should match
-        chunk1 = {"type": "dialog", "text": "Hello world"}
+        chunk1 = {"type": "dialogue", "text": "Hello world"}
 
-        chunk2 = {"type": "dialog", "text": "hello world"}
+        chunk2 = {"type": "dialogue", "text": "hello world"}
 
         # Act
         result1, changed1 = processor.process(chunk1)
@@ -386,7 +386,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "text",
                     "replace_pattern": "\\(|\\)",  # Match opening or closing parenthesis
                     "replace_string": "",
@@ -395,7 +395,7 @@ class TestPatternReplaceProcessor:
         }
         processor = PatternReplaceProcessor(config)
 
-        chunk = {"type": "dialog_modifier", "text": "(softly)"}
+        chunk = {"type": "dialogue_modifier", "text": "(softly)"}
 
         # Act
         result, changed = processor.process(chunk)
@@ -411,7 +411,7 @@ class TestPatternReplaceProcessor:
             "replacements": [
                 {
                     "match_field": "type",
-                    "match_pattern": "^dialog_modifier$",
+                    "match_pattern": "^dialogue_modifier$",
                     "replace_field": "text",
                     "replace_pattern": "\\(|\\)",
                     "replace_string": "",
@@ -421,8 +421,8 @@ class TestPatternReplaceProcessor:
         processor = PatternReplaceProcessor(config)
 
         # Chunks to process
-        chunk1 = {"type": "dialog_modifier", "text": "(quietly)"}
-        chunk2 = {"type": "dialog_modifier", "text": "(loudly)"}
+        chunk1 = {"type": "dialogue_modifier", "text": "(quietly)"}
+        chunk2 = {"type": "dialogue_modifier", "text": "(loudly)"}
 
         # Act
         result1, _ = processor.process(chunk1)

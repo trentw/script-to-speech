@@ -30,9 +30,13 @@ def sample_task():
     """Fixture providing a sample AudioGenerationTask for testing."""
     return AudioGenerationTask(
         idx=1,
-        original_dialogue={"type": "dialog", "speaker": "JOHN", "text": "Hello world."},
+        original_dialogue={
+            "type": "dialogue",
+            "speaker": "JOHN",
+            "text": "Hello world.",
+        },
         processed_dialogue={
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "JOHN",
             "text": "Hello world!",
         },
@@ -87,7 +91,7 @@ class TestPrintAudioTaskDetails:
 
         # Verify log calls
         mock_logger.debug.assert_any_call("Dialogue #: 1")
-        mock_logger.debug.assert_any_call("Speaker: JOHN, Type: dialog")
+        mock_logger.debug.assert_any_call("Speaker: JOHN, Type: dialogue")
         mock_logger.debug.assert_any_call("Text: Hello world!")
         mock_logger.debug.assert_any_call("Provider ID: elevenlabs")
         mock_logger.debug.assert_any_call("Speaker ID: voice_id_123")
@@ -115,7 +119,7 @@ class TestPrintAudioTaskDetails:
 
         # Verify log calls have prefix
         mock_logger.debug.assert_any_call("  Dialogue #: 1")
-        mock_logger.debug.assert_any_call("  Speaker: JOHN, Type: dialog")
+        mock_logger.debug.assert_any_call("  Speaker: JOHN, Type: dialogue")
 
     def test_print_task_details_with_truncation(self, sample_task):
         """Test printing with text truncation."""

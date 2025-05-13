@@ -3,8 +3,8 @@ preprocessors:
     config:
       skip_types:
         - page_number
-  - name: dual_dialog
-  - name: extract_dialog_parentheticals
+  - name: dual_dialogue
+  - name: extract_dialogue_parentheticals
     config:
       max_words: 10
 
@@ -43,18 +43,18 @@ processors:
   - name: pattern_replace
     config:
       replacements:
-        # Replace the speaker for "dialog modifiers" -- parenteticals in dialog, e.g. "(gasps)" --
+        # Replace the speaker for "dialogue modifiers" -- parenteticals in dialogue, e.g. "(gasps)" --
         # with an empty speaker, so that these are read using the narrator / default speaker
         - match_field: "type"
-          match_pattern: "^dialog_modifier$"
+          match_pattern: "^dialogue_modifier$"
           replace_field: "speaker"
           replace_pattern: ".*"
           replace_string: ""
-        # Remove the parenthesis in "dialog modifiers" -- parenteticals in dialog, e.g. "(gasps)" --
+        # Remove the parenthesis in "dialogue modifiers" -- parenteticals in dialogue, e.g. "(gasps)" --
         # as some TTS providers try to generate a sound instead of providing the literal text when
         # it is wrapped in parentheses
         - match_field: "type"
-          match_pattern: "^dialog_modifier$"
+          match_pattern: "^dialogue_modifier$"
           replace_field: "text"
           replace_pattern: '^\(|\)$'
           replace_string: ""
@@ -83,5 +83,5 @@ processors:
           case: sentence_case
         - chunk_type: scene_heading
           case: sentence_case
-        - chunk_type: dialog_modifier
+        - chunk_type: dialogue_modifier
           case: lower_case

@@ -61,11 +61,11 @@ John enters the room.
         assert chunks[1]["type"] == "scene_heading"
         assert chunks[2]["type"] == "action"
 
-    def test_parse_screenplay_with_dialog(self, mock_logger):
-        """Test parsing screenplay with dialog."""
+    def test_parse_screenplay_with_dialogue(self, mock_logger):
+        """Test parsing screenplay with dialogue."""
         parser = ScreenplayParser()
 
-        # Screenplay text with dialog
+        # Screenplay text with dialogue
         text = """INT. LIVING ROOM - DAY
 
 John enters the room.
@@ -84,23 +84,23 @@ Mary looks up.
         # Parse text
         chunks = parser.parse_screenplay(text)
 
-        # Should have 7 chunks: scene heading, action, speaker, dialog, action, speaker, dialog
+        # Should have 7 chunks: scene heading, action, speaker, dialogue, action, speaker, dialogue
         assert len(chunks) == 7
         assert chunks[0]["type"] == "scene_heading"
         assert chunks[1]["type"] == "action"
         assert chunks[2]["type"] == "speaker_attribution"
-        assert chunks[3]["type"] == "dialog"
+        assert chunks[3]["type"] == "dialogue"
         assert chunks[3]["speaker"] == "JOHN"
         assert chunks[4]["type"] == "action"
         assert chunks[5]["type"] == "speaker_attribution"
-        assert chunks[6]["type"] == "dialog"
+        assert chunks[6]["type"] == "dialogue"
         assert chunks[6]["speaker"] == "MARY"
 
-    def test_parse_screenplay_with_dual_dialog(self, mock_logger):
-        """Test parsing screenplay with dual dialog."""
+    def test_parse_screenplay_with_dual_dialogue(self, mock_logger):
+        """Test parsing screenplay with dual dialogue."""
         parser = ScreenplayParser()
 
-        # Screenplay text with dual dialog
+        # Screenplay text with dual dialogue
         text = """INT. LIVING ROOM - DAY
 
 John and Mary speak simultaneously.
@@ -115,12 +115,12 @@ John and Mary speak simultaneously.
         # Parse text
         chunks = parser.parse_screenplay(text)
 
-        # Should have 4 chunks: scene heading, action, dual speaker, action (dual dialog)
+        # Should have 4 chunks: scene heading, action, dual speaker, action (dual dialogue)
         assert len(chunks) == 4
         assert chunks[0]["type"] == "scene_heading"
         assert chunks[1]["type"] == "action"
         assert chunks[2]["type"] == "dual_speaker_attribution"
-        assert chunks[3]["type"] == "action"  # Dual dialog is parsed as action
+        assert chunks[3]["type"] == "action"  # Dual dialogue is parsed as action
         assert "Hello!" in chunks[3]["text"]
         assert "Hi there!" in chunks[3]["text"]
 
@@ -151,11 +151,11 @@ Mary waters the plants.
         assert chunks[3]["type"] == "scene_heading"
         assert chunks[4]["type"] == "action"
 
-    def test_parse_screenplay_with_dialog_modifiers(self, mock_logger):
-        """Test parsing screenplay with dialog modifiers."""
+    def test_parse_screenplay_with_dialogue_modifiers(self, mock_logger):
+        """Test parsing screenplay with dialogue modifiers."""
         parser = ScreenplayParser()
 
-        # Screenplay text with dialog modifiers
+        # Screenplay text with dialogue modifiers
         text = """INT. LIVING ROOM - DAY
 
                                     JOHN
@@ -170,13 +170,13 @@ Mary waters the plants.
         # Parse text
         chunks = parser.parse_screenplay(text)
 
-        # Should have 5 chunks: scene heading, speaker, dialog, dialog modifier, dialog
+        # Should have 5 chunks: scene heading, speaker, dialogue, dialogue modifier, dialogue
         assert len(chunks) == 5
         assert chunks[0]["type"] == "scene_heading"
         assert chunks[1]["type"] == "speaker_attribution"
-        assert chunks[2]["type"] == "dialog"
-        assert chunks[3]["type"] == "dialog_modifier"
-        assert chunks[4]["type"] == "dialog"
+        assert chunks[2]["type"] == "dialogue"
+        assert chunks[3]["type"] == "dialogue_modifier"
+        assert chunks[4]["type"] == "dialogue"
         assert chunks[4]["speaker"] == "JOHN"
 
     @pytest.mark.integration

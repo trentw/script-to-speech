@@ -113,13 +113,13 @@ The `sts-tts-provider-yaml generate [screenplay].json --provider [provider]` com
 
 ```yaml
 # default: 1556 lines - Used for all non-dialogue pieces
-# Total characters: 104244, Longest dialog: 2082 characters
+# Total characters: 104244, Longest dialogue: 2082 characters
 default:
   provider: openai
   voice:
 
 # HARRY: 283 lines
-# Total characters: 12181, Longest dialog: 365 characters
+# Total characters: 12181, Longest dialogue: 365 characters
 HARRY:
   provider: openai
   voice:

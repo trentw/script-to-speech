@@ -23,8 +23,8 @@ def silence_task():
     """Fixture providing a task for silence checking."""
     return AudioGenerationTask(
         idx=1,
-        original_dialogue={"type": "dialog", "speaker": "JOHN", "text": "Hello"},
-        processed_dialogue={"type": "dialog", "speaker": "JOHN", "text": "Hello!"},
+        original_dialogue={"type": "dialogue", "speaker": "JOHN", "text": "Hello"},
+        processed_dialogue={"type": "dialogue", "speaker": "JOHN", "text": "Hello!"},
         text_to_speak="Hello!",
         speaker="JOHN",
         provider_id="elevenlabs",
@@ -44,8 +44,8 @@ def expected_silence_task():
     """Fixture providing a task that is expected to be silent."""
     return AudioGenerationTask(
         idx=0,
-        original_dialogue={"type": "dialog", "speaker": None, "text": ""},
-        processed_dialogue={"type": "dialog", "speaker": None, "text": ""},
+        original_dialogue={"type": "dialogue", "speaker": None, "text": ""},
+        processed_dialogue={"type": "dialogue", "speaker": None, "text": ""},
         text_to_speak="",
         speaker=None,
         provider_id="elevenlabs",

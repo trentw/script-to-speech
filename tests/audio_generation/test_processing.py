@@ -33,7 +33,7 @@ def sample_dialogues():
     """Fixture providing sample dialogue chunks for testing."""
     return [
         {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "JOHN",
             "text": "Hello world.",
             "raw_text": "Hello world.",
@@ -45,7 +45,7 @@ def sample_dialogues():
             "raw_text": "John walks away.",
         },
         {
-            "type": "dialog",
+            "type": "dialogue",
             "speaker": "MARY",
             "text": "Goodbye!",
             "raw_text": "Goodbye!",
@@ -408,12 +408,12 @@ class TestApplyCacheOverrides:
             AudioGenerationTask(
                 idx=0,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello!",
                 },
@@ -432,12 +432,12 @@ class TestApplyCacheOverrides:
             AudioGenerationTask(
                 idx=1,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Goodbye",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Goodbye!",
                 },
@@ -545,8 +545,8 @@ class TestCheckForSilence:
             # Cache hit that is expected to be silent
             AudioGenerationTask(
                 idx=0,
-                original_dialogue={"type": "dialog", "speaker": None, "text": ""},
-                processed_dialogue={"type": "dialog", "speaker": None, "text": ""},
+                original_dialogue={"type": "dialogue", "speaker": None, "text": ""},
+                processed_dialogue={"type": "dialogue", "speaker": None, "text": ""},
                 text_to_speak="",
                 speaker=None,
                 provider_id="elevenlabs",
@@ -563,12 +563,12 @@ class TestCheckForSilence:
             AudioGenerationTask(
                 idx=1,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello!",
                 },
@@ -588,12 +588,12 @@ class TestCheckForSilence:
             AudioGenerationTask(
                 idx=2,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Goodbye",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Goodbye!",
                 },
@@ -784,12 +784,12 @@ class TestUpdateCacheDuplicateState:
             AudioGenerationTask(
                 idx=0,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "JOHN",
                     "text": "Hello!",
                 },
@@ -808,12 +808,12 @@ class TestUpdateCacheDuplicateState:
             AudioGenerationTask(
                 idx=1,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Different",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "MARY",
                     "text": "Different!",
                 },
@@ -832,12 +832,12 @@ class TestUpdateCacheDuplicateState:
             AudioGenerationTask(
                 idx=2,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "BOB",
                     "text": "Duplicate",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "BOB",
                     "text": "Duplicate!",
                 },
@@ -875,12 +875,12 @@ class TestUpdateCacheDuplicateState:
             AudioGenerationTask(
                 idx=3,
                 original_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "ALICE",
                     "text": "Another dupe",
                 },
                 processed_dialogue={
-                    "type": "dialog",
+                    "type": "dialogue",
                     "speaker": "ALICE",
                     "text": "Another dupe!",
                 },
@@ -954,8 +954,12 @@ class TestCheckAudioSilence:
         """Fixture providing a task for silence checking."""
         return AudioGenerationTask(
             idx=1,
-            original_dialogue={"type": "dialog", "speaker": "JOHN", "text": "Hello"},
-            processed_dialogue={"type": "dialog", "speaker": "JOHN", "text": "Hello!"},
+            original_dialogue={"type": "dialogue", "speaker": "JOHN", "text": "Hello"},
+            processed_dialogue={
+                "type": "dialogue",
+                "speaker": "JOHN",
+                "text": "Hello!",
+            },
             text_to_speak="Hello!",
             speaker="JOHN",
             provider_id="elevenlabs",
@@ -974,8 +978,8 @@ class TestCheckAudioSilence:
         """Fixture providing a task that is expected to be silent."""
         return AudioGenerationTask(
             idx=0,
-            original_dialogue={"type": "dialog", "speaker": None, "text": ""},
-            processed_dialogue={"type": "dialog", "speaker": None, "text": ""},
+            original_dialogue={"type": "dialogue", "speaker": None, "text": ""},
+            processed_dialogue={"type": "dialogue", "speaker": None, "text": ""},
             text_to_speak="",
             speaker=None,
             provider_id="elevenlabs",

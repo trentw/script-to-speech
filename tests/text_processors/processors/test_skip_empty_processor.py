@@ -65,7 +65,7 @@ class TestSkipEmptyProcessor:
         # Arrange
         config = {"skip_types": ["page_number"]}
         processor = SkipEmptyProcessor(config)
-        chunk = {"type": "dialog", "text": "Hello world", "speaker": "BOB"}
+        chunk = {"type": "dialogue", "text": "Hello world", "speaker": "BOB"}
 
         # Act
         result, changed = processor.process(chunk)

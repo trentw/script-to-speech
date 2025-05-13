@@ -13,7 +13,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
     """
 
     # Types that can be merged if they're the same type
-    MERGEABLE_TYPES = {"scene_heading", "action", "dialog", "dialog_modifier"}
+    MERGEABLE_TYPES = {"scene_heading", "action", "dialogue", "dialogue_modifier"}
 
     def validate_config(self) -> bool:
         """Validate that skip_types is a list."""
@@ -26,7 +26,7 @@ class SkipAndMergePreProcessor(TextPreProcessor):
         Chunks can be merged if:
         - They are the same type
         - Type is in MERGEABLE_TYPES
-        - For dialog: they have the same speaker
+        - For dialogue: they have the same speaker
         """
         if chunk1["type"] != chunk2["type"]:
             return False
@@ -34,8 +34,8 @@ class SkipAndMergePreProcessor(TextPreProcessor):
         if chunk1["type"] not in self.MERGEABLE_TYPES:
             return False
 
-        # For dialog, speakers must match
-        if chunk1["type"] == "dialog":
+        # For dialogue, speakers must match
+        if chunk1["type"] == "dialogue":
             return chunk1.get("speaker") == chunk2.get("speaker")
 
         return True

@@ -10,7 +10,7 @@ class SpeakerMergePreProcessor(TextPreProcessor):
     """
     Pre-processor that replaces specified speaker variations with their canonical form.
     Handles both speaker_attribution chunks (changing the text of of the speaker) and
-    dialog chunks (changing the speaker)
+    dialogue chunks (changing the speaker)
 
     Configuration example:
     speakers_to_merge:
@@ -48,7 +48,7 @@ class SpeakerMergePreProcessor(TextPreProcessor):
     def _build_speaker_mapping(self) -> Dict[str, str]:
         """
         Build a mapping of child speakers to their parent speakers.
-        For dialog chunks, we'll use trimmed versions for matching.
+        For dialogue chunks, we'll use trimmed versions for matching.
         For speaker_attribution, we'll use the exact strings for replacement.
         """
         mapping = {}
@@ -97,14 +97,16 @@ class SpeakerMergePreProcessor(TextPreProcessor):
                         )
                 modified_chunk["text"] = text
 
-            elif chunk["type"] == "dialog":
-                # For dialog, match on trimmed speaker field
+            elif chunk["type"] == "dialogue":
+                # For dialogue, match on trimmed speaker field
                 speaker = chunk.get("speaker", "").strip()
                 if speaker in speaker_mapping:
                     parent_speaker = speaker_mapping[speaker]
                     modified_chunk["speaker"] = parent_speaker
                     made_changes = True
-                    logger.info(f"Merged dialog speaker: {speaker} -> {parent_speaker}")
+                    logger.info(
+                        f"Merged dialogue speaker: {speaker} -> {parent_speaker}"
+                    )
 
             result_chunks.append(modified_chunk)
 

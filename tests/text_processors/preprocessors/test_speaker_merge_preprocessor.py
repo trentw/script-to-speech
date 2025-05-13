@@ -68,7 +68,7 @@ class TestSpeakerMergePreProcessor:
         config = {"speakers_to_merge": {"BOB": ["B OB", "BO B"]}}
         processor = SpeakerMergePreProcessor(config)
         chunks = [
-            {"type": "dialog", "speaker": "ALICE", "text": "Hello there"},
+            {"type": "dialogue", "speaker": "ALICE", "text": "Hello there"},
             {"type": "speaker_attribution", "text": "CHARLIE"},
         ]
 
@@ -86,7 +86,7 @@ class TestSpeakerMergePreProcessor:
         processor = SpeakerMergePreProcessor(config)
         chunks = [
             {"type": "speaker_attribution", "text": "B OB"},
-            {"type": "dialog", "speaker": "B OB", "text": "Hello there"},
+            {"type": "dialogue", "speaker": "B OB", "text": "Hello there"},
         ]
 
         # Act
@@ -97,13 +97,13 @@ class TestSpeakerMergePreProcessor:
         assert result[1]["speaker"] == "BOB"
         assert changed is True
 
-    def test_process_merge_dialog_speaker(self):
-        """Test process merges speaker in dialog chunks."""
+    def test_process_merge_dialogue_speaker(self):
+        """Test process merges speaker in dialogue chunks."""
         # Arrange
         config = {"speakers_to_merge": {"BOB": ["B OB", "BO B"]}}
         processor = SpeakerMergePreProcessor(config)
         chunks = [
-            {"type": "dialog", "speaker": "BO B", "text": "Hello there"},
+            {"type": "dialogue", "speaker": "BO B", "text": "Hello there"},
         ]
 
         # Act
@@ -125,11 +125,11 @@ class TestSpeakerMergePreProcessor:
         processor = SpeakerMergePreProcessor(config)
         chunks = [
             {"type": "speaker_attribution", "text": "B OB"},
-            {"type": "dialog", "speaker": "B OB", "text": "Hello Alice"},
+            {"type": "dialogue", "speaker": "B OB", "text": "Hello Alice"},
             {"type": "speaker_attribution", "text": "AL ICE"},
-            {"type": "dialog", "speaker": "AL ICE", "text": "Hello Bob"},
+            {"type": "dialogue", "speaker": "AL ICE", "text": "Hello Bob"},
             {"type": "speaker_attribution", "text": "BO B"},
-            {"type": "dialog", "speaker": "BO B", "text": "Nice to meet you"},
+            {"type": "dialogue", "speaker": "BO B", "text": "Nice to meet you"},
         ]
 
         # Act
@@ -150,7 +150,7 @@ class TestSpeakerMergePreProcessor:
         config = {"speakers_to_merge": "not_a_dict"}
         processor = SpeakerMergePreProcessor(config)
         chunks = [
-            {"type": "dialog", "speaker": "BOB", "text": "Hello there"},
+            {"type": "dialogue", "speaker": "BOB", "text": "Hello there"},
         ]
 
         # Act
@@ -182,7 +182,7 @@ class TestSpeakerMergePreProcessor:
         config = {"speakers_to_merge": {"BOB": ["B OB", "BO B"]}}
         processor = SpeakerMergePreProcessor(config)
         chunks = [
-            {"type": "dialog", "speaker": "B OB", "text": "Hello there"},
+            {"type": "dialogue", "speaker": "B OB", "text": "Hello there"},
             {"type": "action", "text": "Bob walks away"},
             {"type": "scene_heading", "text": "INT. HOUSE - DAY"},
         ]

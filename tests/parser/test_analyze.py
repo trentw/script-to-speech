@@ -57,16 +57,16 @@ class TestAnalyzeChunks:
         mock_logger.info.assert_any_call("  (default): 3")
 
     @patch("script_to_speech.parser.analyze.logger")
-    def test_analyze_chunks_with_dialog(self, mock_logger):
-        """Test analyzing chunks with dialog."""
+    def test_analyze_chunks_with_dialogue(self, mock_logger):
+        """Test analyzing chunks with dialogue."""
         # Create test chunks
         chunks = [
             {"type": "scene_heading", "text": "INT. LIVING ROOM - DAY"},
             {"type": "action", "text": "John enters the room."},
             {"type": "speaker_attribution", "speaker": "", "text": "JOHN"},
-            {"type": "dialog", "speaker": "JOHN", "text": "Hello, how are you?"},
+            {"type": "dialogue", "speaker": "JOHN", "text": "Hello, how are you?"},
             {"type": "speaker_attribution", "speaker": "", "text": "MARY"},
-            {"type": "dialog", "speaker": "MARY", "text": "I'm fine, thank you."},
+            {"type": "dialogue", "speaker": "MARY", "text": "I'm fine, thank you."},
         ]
 
         # Call function
@@ -77,7 +77,7 @@ class TestAnalyzeChunks:
         mock_logger.info.assert_any_call("  scene_heading: 1")
         mock_logger.info.assert_any_call("  action: 1")
         mock_logger.info.assert_any_call("  speaker_attribution: 2")
-        mock_logger.info.assert_any_call("  dialog: 2")
+        mock_logger.info.assert_any_call("  dialogue: 2")
         mock_logger.info.assert_any_call(
             f"\nTotal Distinct Speakers:\n  {3}"
         )  # JOHN, MARY, default

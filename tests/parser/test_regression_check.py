@@ -104,7 +104,7 @@ class TestCompareChunksByType:
             {"type": "title", "text": "Title"},
             {"type": "scene_heading", "text": "INT. LIVING ROOM - DAY"},
             {"type": "scene_heading", "text": "EXT. GARDEN - DAY"},
-            {"type": "dialog", "speaker": "JOHN", "text": "Hello"},
+            {"type": "dialogue", "speaker": "JOHN", "text": "Hello"},
         ]
 
         # Call function
@@ -123,9 +123,9 @@ class TestCompareChunksByType:
         assert comparison["action"]["parsed"] == 0
         assert comparison["action"]["diff"] == -1
 
-        assert comparison["dialog"]["original"] == 0
-        assert comparison["dialog"]["parsed"] == 1
-        assert comparison["dialog"]["diff"] == 1
+        assert comparison["dialogue"]["original"] == 0
+        assert comparison["dialogue"]["parsed"] == 1
+        assert comparison["dialogue"]["diff"] == 1
 
 
 class TestRunRegressionCheck:

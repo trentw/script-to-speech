@@ -406,7 +406,7 @@ class TTSProviderManager:
 
     def _analyze_speakers(self, dialogues: List[Dict]) -> Dict[str, int]:
         """
-        Analyze list of dialog chunks to count speaker lines.
+        Analyze list of dialogue chunks to count speaker lines.
         'default' speaker is used for chunks with no speaker attribute.
         Returns counts with 'default' first, followed by other speakers sorted by frequency.
         """
@@ -417,14 +417,14 @@ class TTSProviderManager:
         default_count = 0
 
         for dialogue in dialogues:
-            if dialogue["type"] == "dialog":
+            if dialogue["type"] == "dialogue":
                 speaker = dialogue.get("speaker")
                 if speaker:
                     counts[speaker] += 1
                 else:
                     default_count += 1
             else:
-                # Non-dialog chunks use default speaker
+                # Non-dialogue chunks use default speaker
                 default_count += 1
 
         # Create ordered dict with default first
@@ -447,7 +447,7 @@ class TTSProviderManager:
         Generate initial YAML configuration template for TTS providers.
 
         Args:
-            dialogues: List of dialog chunks
+            dialogues: List of dialogue chunks
             output_path: Where to save the YAML template
             provider_name: Optional specific provider to generate for
         """
@@ -503,7 +503,7 @@ class TTSProviderManager:
                     or (not dialogue.get("speaker") and speaker == "default")
                 )
             )
-            longest_dialog = max(
+            longest_dialogue = max(
                 (
                     len(str(dialogue.get("text", "")))
                     for dialogue in dialogues
@@ -520,10 +520,10 @@ class TTSProviderManager:
                 comment = (
                     f"\ndefault: {count} lines - Used for all non-dialogue pieces "
                     "(scene descriptions, scene headings, etc.)\n"
-                    f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                    f"Total characters: {total_chars}, Longest dialogue: {longest_dialogue} characters"
                 )
             else:
-                comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialogue: {longest_dialogue} characters"
 
             content.yaml_set_comment_before_after_key(
                 speaker, before=comment, after="\n"
@@ -545,7 +545,7 @@ class TTSProviderManager:
         Args:
             yaml_path: Path to existing YAML file
             output_path: Where to save the updated YAML
-            dialogues: List of dialog chunks
+            dialogues: List of dialogue chunks
         """
         # Load existing YAML to get provider assignments
         yaml = YAML()
@@ -629,7 +629,7 @@ class TTSProviderManager:
                         or (not dialogue.get("speaker") and speaker == "default")
                     )
                 )
-                longest_dialog = max(
+                longest_dialogue = max(
                     (
                         len(str(dialogue.get("text", "")))
                         for dialogue in dialogues
@@ -646,10 +646,10 @@ class TTSProviderManager:
                     comment = (
                         f"\ndefault: {count} lines - Used for all non-dialogue pieces "
                         "(scene descriptions, scene headings, etc.)\n"
-                        f"Total characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                        f"Total characters: {total_chars}, Longest dialogue: {longest_dialogue} characters"
                     )
                 else:
-                    comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialog: {longest_dialog} characters"
+                    comment = f"\n{speaker}: {count} lines\nTotal characters: {total_chars}, Longest dialogue: {longest_dialogue} characters"
 
                 content.yaml_set_comment_before_after_key(
                     speaker, before=comment, after="\n"
@@ -680,7 +680,7 @@ class TTSProviderManager:
         Args:
             yaml_path: Path to existing YAML file
             output_path: Where to save the updated YAML
-            dialogues: List of dialog chunks (not used in this version, kept for interface compatibility)
+            dialogues: List of dialogue chunks (not used in this version, kept for interface compatibility)
         """
         # Read the entire file
         with open(yaml_path, "r") as f:
