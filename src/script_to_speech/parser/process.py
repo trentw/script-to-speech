@@ -8,15 +8,10 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
+from ..utils.file_system_utils import create_output_folders, sanitize_name
 from ..utils.logging import get_screenplay_logger
 from ..utils.optional_config_generation import generate_optional_config
 from .screenplay_parser import ScreenplayParser
-from .utils.file_utils import (
-    create_directory_structure,
-    create_output_folders,
-    get_project_root,
-    sanitize_name,
-)
 from .utils.logging_utils import setup_parser_logging
 from .utils.text_utils import extract_text_preserving_whitespace
 
@@ -53,18 +48,25 @@ def process_screenplay(
     original_name = Path(input_file).stem
     sanitized_name = sanitize_name(original_name)
 
-    # Create directory structure
-    create_directory_structure()
-
     # Set up output folders and logging
     is_pdf = file_ext == ".pdf"
     run_mode = (
         f"{'pdf' if is_pdf else 'text'}_{'text_only' if text_only else 'full_parse'}"
     )
-    screenplay_dir, log_file = create_output_folders(sanitized_name, run_mode)
+
+    # Use the unified create_output_folders function
+    main_output_folder, cache_folder, logs_folder, log_file = create_output_folders(
+        input_file, run_mode
+    )
+
+    # Create screenplay directory in input folder
+    screenplay_dir = Path("input") / sanitized_name
+    screenplay_dir.mkdir(parents=True, exist_ok=True)
 
     # Set up logging with DEBUG for file, INFO for console
-    setup_parser_logging(log_file, file_level=logging.DEBUG, console_level=logging.INFO)
+    setup_parser_logging(
+        str(log_file), file_level=logging.DEBUG, console_level=logging.INFO
+    )
     logger.info(f"Starting processing of {input_file}")
     logger.info(f"Sanitized name: {sanitized_name}")
 

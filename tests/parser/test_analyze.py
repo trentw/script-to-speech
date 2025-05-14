@@ -99,7 +99,7 @@ class TestAnalyzeScreenplayChunks:
 
     @patch("script_to_speech.parser.analyze.analyze_chunks")
     @patch("script_to_speech.parser.analyze.setup_parser_logging")
-    @patch("script_to_speech.parser.analyze.sanitize_name")
+    @patch("script_to_speech.utils.file_system_utils.sanitize_name")
     @patch("datetime.datetime")
     @patch("pathlib.Path.mkdir")
     @patch("builtins.open", new_callable=mock_open)

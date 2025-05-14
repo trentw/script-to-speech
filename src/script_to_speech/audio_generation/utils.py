@@ -213,63 +213,6 @@ def load_json_chunks(input_file: str) -> List[Dict[str, Any]]:
         raise IOError(f"Could not read input file {input_file}") from e
 
 
-def create_output_folders(
-    input_file: str, run_mode: str = "", dummy_provider_override: bool = False
-) -> Tuple[str, str, str, str]:
-    """
-    Create and return paths for output folders (main, cache, logs, output file).
-
-    Args:
-        input_file: Path to the input JSON file
-        run_mode: String indicating run mode for log file name prefix
-        dummy_provider_override: If True, prepend "dummy_" to cache folder and output file names
-
-    Returns:
-        Tuple of (main_output_folder, cache_folder, output_file, log_file)
-    """
-    # Get base name without extension
-    base_name = os.path.splitext(os.path.basename(input_file))[0]
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Set up folder structure relative to the script's execution directory
-    # Assuming 'output' is a top-level directory
-    main_output_folder = os.path.join("output", base_name)
-    cache_folder = os.path.join(main_output_folder, "cache")
-    logs_folder = os.path.join(main_output_folder, "logs")
-    output_file = os.path.join(main_output_folder, f"{base_name}.mp3")
-
-    # If dummy TTS provider override is enabled, modify paths
-    if dummy_provider_override:
-        # Prepend "dummy_" to cache folder and output file
-        cache_folder = os.path.join(
-            os.path.dirname(cache_folder), f"dummy_{os.path.basename(cache_folder)}"
-        )
-        if output_file:
-            output_dir = os.path.dirname(output_file)
-            output_filename = f"dummy_{os.path.basename(output_file)}"
-            output_file = os.path.join(output_dir, output_filename)
-
-    # Create log filename with run mode prefix
-    dummy_prefix = "[dummy]" if dummy_provider_override else ""
-    mode_prefix = f"[{run_mode}]_" if run_mode else ""
-    log_file = os.path.join(
-        logs_folder, f"{dummy_prefix}{mode_prefix}log_{timestamp}.txt"
-    )
-
-    # Create directories
-    try:
-        os.makedirs(cache_folder, exist_ok=True)
-        logger.debug(f"Ensured cache folder exists: {cache_folder}")
-        os.makedirs(logs_folder, exist_ok=True)
-        logger.debug(f"Ensured logs folder exists: {logs_folder}")
-
-    except OSError as e:
-        logger.error(f"Error creating output directories: {e}")
-        raise  # Propagate the error
-
-    return main_output_folder, cache_folder, output_file, log_file
-
-
 def truncate_text(text: str, max_length: int = 40) -> str:
     """Truncate text if needed"""
     truncated_text = text

@@ -24,13 +24,13 @@ from .audio_generation.reporting import (
 )
 from .audio_generation.utils import (
     concatenate_tasks_batched,
-    create_output_folders,
     load_json_chunks,
 )
 from .text_processors.processor_manager import TextProcessorManager
 from .text_processors.utils import get_text_processor_configs
 from .tts_providers.tts_provider_manager import TTSProviderManager
 from .utils.audio_utils import configure_ffmpeg
+from .utils.file_system_utils import create_output_folders
 from .utils.id3_tag_utils import set_id3_tags_from_config
 from .utils.logging import get_screenplay_logger, setup_screenplay_logging
 
@@ -187,13 +187,21 @@ def main() -> None:
     logger.info(f"\n--- Setting up for {run_mode.upper()} mode ---")
     # --- Setup ---
     try:
-        # Create output folders
-        output_folder, cache_folder, output_file, log_file = create_output_folders(
+        # Create output folders using the unified utility function
+        main_output_folder, cache_folder, logs_folder, log_file = create_output_folders(
             args.input_file, run_mode, args.dummy_tts_provider_override
         )
 
+        # Construct output file path for the final MP3
+        input_path_obj = Path(args.input_file)
+        base_name = input_path_obj.stem
+        output_filename = f"{base_name}.mp3"
+        if args.dummy_tts_provider_override:
+            output_filename = f"dummy_{output_filename}"
+        output_file = main_output_folder / output_filename
+
         # Setup logging (must happen after log_file path is determined)
-        setup_screenplay_logging(log_file)
+        setup_screenplay_logging(str(log_file))
         logger.info(f"Logging initialized. Log file: {log_file}")
         logger.info(f"Run mode: {run_mode}")
         if args.check_silence is not None:
@@ -263,7 +271,7 @@ def main() -> None:
             dialogues=dialogues,
             tts_provider_manager=tts_manager,
             processor=processor,
-            cache_folder=cache_folder,
+            cache_folder=str(cache_folder),
             cache_overrides_dir=args.cache_overrides,
         )
         # Merge initial planning report state
@@ -280,7 +288,7 @@ def main() -> None:
             apply_cache_overrides(
                 tasks=all_tasks,
                 cache_overrides_dir=args.cache_overrides,
-                cache_folder=cache_folder,
+                cache_folder=str(cache_folder),
             )
             # Note: Reporting state might need updating here if an override fixed a silent clip,
             # but recheck_audio_files later should handle consistency.
@@ -316,7 +324,7 @@ def main() -> None:
             # Recheck file status after potential generation/overrides
             logger.info("\n--- Rechecking Cache Status ---")
             recheck_audio_files(
-                combined_reporting_state, cache_folder, args.check_silence, logger
+                combined_reporting_state, str(cache_folder), args.check_silence, logger
             )
             logger.info("Recheck complete")
 
@@ -327,7 +335,7 @@ def main() -> None:
             # Use task-based concatenation function
             concatenate_tasks_batched(
                 tasks=all_tasks,
-                output_file=output_file,
+                output_file=str(output_file),
                 batch_size=args.concat_batch_size,
                 gap_duration_ms=args.gap,
             )
@@ -340,7 +348,7 @@ def main() -> None:
             )
             if optional_config_path:
                 logger.info(f"Setting ID3 tags from config: {optional_config_path}")
-                if set_id3_tags_from_config(output_file, optional_config_path):
+                if set_id3_tags_from_config(str(output_file), optional_config_path):
                     logger.info("  ID3 tags set successfully.")
                 else:
                     logger.warning(
@@ -374,7 +382,7 @@ def main() -> None:
     )
 
     # Save modified JSON regardless of run mode (useful for debugging)
-    save_modified_json(modified_dialogues, output_folder, args.input_file)
+    save_modified_json(modified_dialogues, str(main_output_folder), args.input_file)
 
     # --- Completion Summary ---
     logger.info(f"\n--- {run_mode.upper()} Mode Completed ---")

@@ -7,8 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
 
+from ..utils.file_system_utils import create_output_folders
 from ..utils.logging import get_screenplay_logger
-from .utils.file_utils import sanitize_name
 from .utils.logging_utils import setup_parser_logging
 
 logger = get_screenplay_logger("parser.analyze")
@@ -65,15 +65,9 @@ def analyze_screenplay_chunks(json_path: str) -> None:
     Args:
         json_path: Path to the JSON chunks file
     """
-    # Set up logging
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = Path("output/parser_logs")
-    log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Get original and sanitized names
-    original_name = Path(json_path).stem
-    sanitized_name = sanitize_name(original_name)
-    log_file = log_dir / f"[analyze]_{sanitized_name}_{timestamp}.log"
+    # Use the unified create_output_folders function
+    _, _, _, log_file = create_output_folders(str(json_path), run_mode="analyze")
 
     setup_parser_logging(
         str(log_file), file_level=logging.DEBUG, console_level=logging.INFO

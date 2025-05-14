@@ -9,9 +9,9 @@ from typing import List, Optional
 
 from ..text_processors.processor_manager import TextProcessorManager
 from ..text_processors.utils import get_text_processor_configs
+from ..utils.file_system_utils import create_output_folders
 from ..utils.logging import get_screenplay_logger
 from .analyze import analyze_chunks
-from .utils.file_utils import get_project_root, sanitize_name
 from .utils.logging_utils import setup_parser_logging
 
 logger = get_screenplay_logger("parser.apply_text_processors")
@@ -33,15 +33,14 @@ def apply_text_processors(
                     output/[json_name]/[json_name]-text-processed.json
     """
     try:
-        # Set up logging
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_dir = Path("output/parser_logs")
-        log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Get original and sanitized names
+        # Get original name
         original_name = json_path.stem
-        sanitized_name = sanitize_name(original_name)
-        log_file = log_dir / f"[apply_processors]_{sanitized_name}_{timestamp}.log"
+
+        # Use the unified create_output_folders function
+        main_output_folder, _, _, log_file = create_output_folders(
+            str(json_path), run_mode="apply_processors"
+        )
 
         setup_parser_logging(
             str(log_file), file_level=logging.DEBUG, console_level=logging.INFO
@@ -69,20 +68,14 @@ def apply_text_processors(
         # Determine output path if not provided
         output_path_resolved: Path
         if not output_path:
-            input_path = json_path
-            base_name = input_path.stem
-            root = get_project_root()
-
-            # Create output structure
-            output_dir = root / "output" / base_name
-            output_dir.mkdir(parents=True, exist_ok=True)
-
-            output_path_resolved = output_dir / f"{base_name}-text-processed.json"
+            # Use the main output folder from create_output_folders
+            output_path_resolved = (
+                main_output_folder / f"{original_name}-text-processed.json"
+            )
         else:
             output_path_resolved = output_path
 
         # Save modified chunks
-        output_path_resolved.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path_resolved, "w", encoding="utf-8") as f:
             json.dump(modified_chunks, f, ensure_ascii=False, indent=2)
 

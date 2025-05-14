@@ -314,12 +314,12 @@ class TestMain:
             args.dummy_tts_provider_override = False
             mock_parse_args.return_value = args
 
-            # Configure folders mock
+            # Configure folders mock - use Path objects instead of strings
             mock_create_folders.return_value = (
-                "output/folder",
-                "output/folder/cache",
-                "output/folder/output.mp3",
-                "output/folder/logs/log.txt",
+                Path("output/folder"),
+                Path("output/folder/cache"),
+                Path("output/folder/logs"),
+                Path("output/folder/logs/log.txt"),
             )
 
             # Configure load_chunks mock
@@ -372,7 +372,7 @@ class TestMain:
 
         # Assert
         mocks["logger"].info.assert_any_call(
-            "Logging initialized. Log file: output/folder/logs/log.txt"
+            f"Logging initialized. Log file: {Path('output/folder/logs/log.txt')}"
         )
         mocks["logger"].info.assert_any_call("Run mode: generate-output")
         mocks["logger"].info.assert_any_call(

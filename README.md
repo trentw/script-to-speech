@@ -355,12 +355,11 @@ input/
     └── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
 
 output/
-├── parser_logs/                               # Parser operation logs
 └── [screenplay_name]/
     ├── [screenplay_name].mp3                  # Final audiobook
     ├── [screenplay_name]-text-processed.json  # Dialogue chunks with text processors applied
     ├── cache/                                 # Generated audio clips
-    └── logs/                                  # Generation logs
+    └── logs/                                  # Parsing and generation logs
 
 standalone_speech/                             # Override audio files
 ```

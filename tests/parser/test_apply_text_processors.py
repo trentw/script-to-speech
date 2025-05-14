@@ -25,7 +25,7 @@ class TestApplyTextProcessors:
     @patch(
         "src.script_to_speech.parser.apply_text_processors.get_text_processor_configs"
     )
-    @patch("src.script_to_speech.parser.apply_text_processors.sanitize_name")
+    @patch("src.script_to_speech.utils.file_system_utils.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_basic(
         self,
@@ -108,7 +108,7 @@ processors:
     @patch(
         "src.script_to_speech.parser.apply_text_processors.get_text_processor_configs"
     )
-    @patch("src.script_to_speech.parser.apply_text_processors.sanitize_name")
+    @patch("src.script_to_speech.utils.file_system_utils.sanitize_name")
     @patch("builtins.open", new_callable=mock_open)
     def test_apply_text_processors_with_dialogue(
         self,

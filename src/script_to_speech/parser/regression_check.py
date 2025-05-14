@@ -13,9 +13,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from ..utils.file_system_utils import create_output_folders
 from ..utils.logging import get_screenplay_logger
 from .screenplay_parser import ScreenplayParser
-from .utils.file_utils import get_project_root, sanitize_name
 from .utils.logging_utils import setup_parser_logging
 
 logger = get_screenplay_logger("parser.regression_check")
@@ -30,15 +30,11 @@ def setup_logging(input_file_name: str) -> str:
     Returns:
         Path to the log file
     """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir = get_project_root() / "output" / "parser_logs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    # Use the unified create_output_folders function
+    _, _, _, log_file = create_output_folders(
+        input_file_name, run_mode="regressioncheck"
+    )
 
-    # Remove file extension and get base name
-    base_name = Path(input_file_name).stem
-    sanitized_name = sanitize_name(base_name)
-
-    log_file = log_dir / f"[regressioncheck]_{sanitized_name}_{timestamp}.log"
     setup_parser_logging(
         str(log_file), file_level=logging.DEBUG, console_level=logging.INFO
     )

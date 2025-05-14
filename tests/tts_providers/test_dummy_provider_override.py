@@ -143,10 +143,10 @@ class TestDummyProviderOverride:
 
             # Configure folders mock
             mock_create_folders.return_value = (
-                "output/folder",
-                "output/folder/cache",
-                "output/folder/output.mp3",
-                "output/folder/logs/log.txt",
+                Path("output/folder"),
+                Path("output/folder/cache"),
+                Path("output/folder/logs"),
+                Path("output/folder/logs/log.txt"),
             )
 
             # Configure load_chunks mock

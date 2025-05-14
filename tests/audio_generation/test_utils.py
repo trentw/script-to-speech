@@ -16,7 +16,6 @@ from pydub import AudioSegment
 from script_to_speech.audio_generation.utils import (
     check_audio_level,
     concatenate_tasks_batched,
-    create_output_folders,
     load_json_chunks,
     truncate_text,
 )
@@ -463,95 +462,6 @@ class TestLoadJsonChunks:
             # Act and Assert
             with pytest.raises(FileNotFoundError):
                 load_json_chunks("non_existent_file.json")
-
-
-class TestCreateOutputFolders:
-    """Tests for output folders creation function."""
-
-    @patch("os.makedirs")
-    @patch("script_to_speech.audio_generation.utils.datetime")
-    def test_create_output_folders(self, mock_datetime, mock_makedirs):
-        """Test creating output folders."""
-        # Arrange
-        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
-        input_file = "input/screenplay.json"
-
-        # Act
-        main_folder, cache_folder, output_file, log_file = create_output_folders(
-            input_file
-        )
-
-        # Assert
-        assert main_folder == "output/screenplay"
-        assert cache_folder == "output/screenplay/cache"
-        assert output_file == "output/screenplay/screenplay.mp3"
-        assert log_file == "output/screenplay/logs/log_20230101_120000.txt"
-
-        mock_makedirs.assert_any_call("output/screenplay/cache", exist_ok=True)
-        mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
-
-    @patch("os.makedirs")
-    @patch("script_to_speech.audio_generation.utils.datetime")
-    def test_create_output_folders_with_run_mode(self, mock_datetime, mock_makedirs):
-        """Test creating output folders with run mode specified."""
-        # Arrange
-        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
-        input_file = "input/screenplay.json"
-        run_mode = "dry-run"
-
-        # Act
-        main_folder, cache_folder, output_file, log_file = create_output_folders(
-            input_file, run_mode
-        )
-
-        # Assert
-        assert main_folder == "output/screenplay"
-        assert cache_folder == "output/screenplay/cache"
-        assert output_file == "output/screenplay/screenplay.mp3"
-        assert log_file == "output/screenplay/logs/[dry-run]_log_20230101_120000.txt"
-
-        mock_makedirs.assert_any_call("output/screenplay/cache", exist_ok=True)
-        mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
-
-    @patch("os.makedirs")
-    @patch("script_to_speech.audio_generation.utils.datetime")
-    def test_create_output_folders_with_dummy_override(
-        self, mock_datetime, mock_makedirs
-    ):
-        """Test creating output folders with dummy TTS provider override."""
-        # Arrange
-        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
-        input_file = "input/screenplay.json"
-        run_mode = "dry-run"
-        dummy_provider_override = True
-
-        # Act
-        main_folder, cache_folder, output_file, log_file = create_output_folders(
-            input_file, run_mode, dummy_provider_override
-        )
-
-        # Assert
-        assert main_folder == "output/screenplay"
-        assert cache_folder == "output/screenplay/dummy_cache"
-        assert output_file == "output/screenplay/dummy_screenplay.mp3"
-        assert (
-            log_file
-            == "output/screenplay/logs/[dummy][dry-run]_log_20230101_120000.txt"
-        )
-
-        mock_makedirs.assert_any_call("output/screenplay/dummy_cache", exist_ok=True)
-        mock_makedirs.assert_any_call("output/screenplay/logs", exist_ok=True)
-
-    @patch("os.makedirs")
-    def test_create_output_folders_handles_errors(self, mock_makedirs):
-        """Test error handling when creating output folders."""
-        # Arrange
-        mock_makedirs.side_effect = OSError("Failed to create directory")
-        input_file = "input/screenplay.json"
-
-        # Act and Assert
-        with pytest.raises(OSError, match="Failed to create directory"):
-            create_output_folders(input_file)
 
 
 class TestTruncateText:

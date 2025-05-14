@@ -20,7 +20,6 @@ class TestProcessScreenplay:
 
     @patch("script_to_speech.parser.process.extract_text_preserving_whitespace")
     @patch("script_to_speech.parser.process.ScreenplayParser")
-    @patch("script_to_speech.parser.process.create_directory_structure")
     @patch("script_to_speech.parser.process.create_output_folders")
     @patch("script_to_speech.parser.process.setup_parser_logging")
     @patch("script_to_speech.parser.process.generate_optional_config")
@@ -37,7 +36,6 @@ class TestProcessScreenplay:
         mock_generate_config,
         mock_setup_logging,
         mock_create_folders,
-        mock_create_structure,
         mock_parser,
         mock_extract_text,
     ):
@@ -49,7 +47,12 @@ class TestProcessScreenplay:
         mock_samefile.return_value = False
 
         # Mock folder creation
-        mock_create_folders.return_value = ("/path/to/screenplay", "/path/to/log")
+        mock_create_folders.return_value = (
+            Path("/path/to/screenplay"),
+            Path("/path/to/cache"),
+            Path("/path/to/logs"),
+            Path("/path/to/log"),
+        )
 
         # Mock text extraction
         mock_extract_text.return_value = "Extracted text"
@@ -67,9 +70,6 @@ class TestProcessScreenplay:
         # Call function
         process_screenplay("test.pdf")
 
-        # Check that directory structure was created
-        mock_create_structure.assert_called_once()
-
         # Check that text was extracted
         mock_extract_text.assert_called_once()
 
@@ -83,8 +83,8 @@ class TestProcessScreenplay:
         # Check that config was generated
         mock_generate_config.assert_called_once()
 
+    @patch("script_to_speech.parser.process.extract_text_preserving_whitespace")
     @patch("script_to_speech.parser.process.ScreenplayParser")
-    @patch("script_to_speech.parser.process.create_directory_structure")
     @patch("script_to_speech.parser.process.create_output_folders")
     @patch("script_to_speech.parser.process.setup_parser_logging")
     @patch("script_to_speech.parser.process.generate_optional_config")
@@ -101,8 +101,8 @@ class TestProcessScreenplay:
         mock_generate_config,
         mock_setup_logging,
         mock_create_folders,
-        mock_create_structure,
         mock_parser,
+        mock_extract_text,
     ):
         """Test processing a TXT file."""
         # Mock file existence
@@ -112,7 +112,12 @@ class TestProcessScreenplay:
         mock_samefile.return_value = False
 
         # Mock folder creation
-        mock_create_folders.return_value = ("/path/to/screenplay", "/path/to/log")
+        mock_create_folders.return_value = (
+            Path("/path/to/screenplay"),
+            Path("/path/to/cache"),
+            Path("/path/to/logs"),
+            Path("/path/to/log"),
+        )
 
         # Set up mock file content
         mock_file_open.return_value.__enter__.return_value.read.return_value = (
@@ -131,9 +136,6 @@ class TestProcessScreenplay:
 
         # Call function
         process_screenplay("test.txt")
-
-        # Check that directory structure was created
-        mock_create_structure.assert_called_once()
 
         # Check that text file was read
         mock_file_open.assert_called()
