@@ -39,9 +39,9 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
    For alternate / more detailed UV installation instructions, see [UV's documentation](https://docs.astral.sh/uv/getting-started/installation/).
 
 2. **Create a copy of the project**
-   Either [download](https://github.com/trentw/screenplayAudio/archive/refs/heads/master.zip) the project, or use git to clone it:
+   Either [download](https://github.com/trentw/script-to-speech/archive/refs/heads/master.zip) the project, or use git to clone it:
    ```bash
-   git clone https://github.com/yourusername/script-to-speech.git
+   git clone https://github.com/trentw/script-to-speech.git
    cd script-to-speech
    ```
 
