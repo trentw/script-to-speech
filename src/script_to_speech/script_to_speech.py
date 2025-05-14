@@ -54,11 +54,6 @@ def parse_arguments() -> argparse.Namespace:
         help="Gap duration between dialogues in milliseconds.",
     )
     parser.add_argument(
-        "--provider",
-        choices=TTSProviderManager.get_available_providers(),
-        help="Choose the default TTS provider (if not specified in voice config).",
-    )
-    parser.add_argument(
         "--tts-config", help="Path to YAML configuration file for TTS provider."
     )
     parser.add_argument(
@@ -228,7 +223,7 @@ def main() -> None:
         # Initialize Managers
         tts_config_path = Path(args.tts_config) if args.tts_config else Path("")
         tts_manager = TTSProviderManager(
-            tts_config_path, args.provider, args.dummy_tts_provider_override
+            tts_config_path, None, args.dummy_tts_provider_override
         )
         logger.info("TTS provider manager initialized.")
 

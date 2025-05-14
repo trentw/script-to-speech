@@ -48,8 +48,6 @@ class TestParseArguments:
             "input_file.json",
             "--gap",
             "300",
-            "--provider",
-            "openai",
             "--tts-config",
             "config.yaml",
             "--check-silence",
@@ -84,7 +82,6 @@ class TestParseArguments:
         # Assert
         assert args.input_file == "input_file.json"
         assert args.gap == 300
-        assert args.provider == "openai"
         assert args.tts_config == "config.yaml"
         assert args.check_silence == -35.0
         assert args.cache_overrides == "custom_directory"
@@ -310,7 +307,6 @@ class TestMain:
             args.cache_overrides = None
             args.optional_config = None
             args.tts_config = Path("tts_config.yaml")
-            args.provider = "openai"
             args.text_processor_configs = None
             args.ffmpeg_path = None
             args.max_report_misses = 20
@@ -391,7 +387,7 @@ class TestMain:
         # Verify TTSProviderManager was initialized with the correct parameters
         mocks["tts_manager"].assert_called_once_with(
             mocks["args"].tts_config,
-            mocks["args"].provider,
+            None,
             mocks["args"].dummy_tts_provider_override,
         )
 

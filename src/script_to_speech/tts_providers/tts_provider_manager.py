@@ -483,6 +483,7 @@ class TTSProviderManager:
             speaker_config = CommentedMap()
             if provider_name:
                 provider_class = self._get_provider_class(provider_name)
+                speaker_config["provider"] = provider_name
                 for field in provider_class.get_required_fields():
                     speaker_config[field] = None
                 if include_optional_fields:

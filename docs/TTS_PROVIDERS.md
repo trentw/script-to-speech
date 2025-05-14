@@ -104,7 +104,7 @@ LUNA:
 
 ### Generated Configuration (Single Provider Workflow)
 
-The `sts-tts-provider-yaml generate [screenplay].json --provider [provider]` command creates a template with:
+The `sts-tts-provider-yaml generate [screenplay].json --tts-provider [provider]` command creates a template with:
 1. An entry for each speaker
 2. Pre-populated `provider` field
 2. Empty entries for each required provider field

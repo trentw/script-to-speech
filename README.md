@@ -94,7 +94,7 @@ This creates:
 
 ```bash
 # Generate YAML config for a single provider
-uv run sts-tts-provider-yaml generate input/your_script/your_script.json --provider openai
+uv run sts-tts-provider-yaml generate input/your_script/your_script.json --tts-provider openai
 ```
 
 This creates `input/your_script/your_script_voice_config.yaml`

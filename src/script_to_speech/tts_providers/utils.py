@@ -155,7 +155,7 @@ def run_cli() -> None:
     )
     generate_parser.add_argument("input_json", help="Path to input JSON chunks file")
     generate_parser.add_argument(
-        "--provider", help="Optional provider name for generation"
+        "--tts-provider", help="Optional TTS provider name for generation"
     )
     generate_parser.add_argument(
         processing_config_arg, nargs="*", help=processing_config_help
@@ -196,7 +196,7 @@ def run_cli() -> None:
             output_path = generate_yaml_config(
                 input_json_path_obj,
                 processing_configs_paths,
-                args.provider,
+                args.tts_provider,
                 args.include_optional_fields,
             )
             print(f"Generated YAML configuration: {output_path}")
