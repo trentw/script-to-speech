@@ -4,7 +4,7 @@ Convert screenplays into multi-voiced audiobooks using various Text-to-Speech (T
 
 ## Overview
 
-Script to Speech is a command-line tool that transforms screenplay files (PDF or TXT) into audiobooks with multiple voices. It handles text processing, speaker attribution, and audio generation through a flexible pipeline that supports combining multiple TTS providers to produce an audiobook.
+Script to Speech is a command-line tool that transforms screenplay files (PDF or TXT) into audiobooks with multiple voices. It handles screenplay parsing, speaker attribution, text processing, and audio generation through a flexible pipeline that supports combining multiple TTS providers to produce an audiobook.
 
 ### Key Features
 
