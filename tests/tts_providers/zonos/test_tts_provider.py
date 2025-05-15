@@ -26,47 +26,49 @@ class TestZonosTTSProvider:
     def test_validate_config_valid(self):
         """Test validate_speaker_config with valid configuration."""
         # Test with minimal valid config (now a class method)
-        valid_config = {"voice_seed": 12345}
+        valid_config = {"default_voice_name": "american_female"}
         ZonosTTSProvider.validate_speaker_config(valid_config)  # Should not raise
 
         # Test with all valid fields
         full_config = {
-            "voice_seed": 12345,
+            "default_voice_name": "british_male",
             "speaking_rate": 20,
             "language_iso_code": "en-us",
         }
         ZonosTTSProvider.validate_speaker_config(full_config)  # Should not raise
 
-    def test_validate_config_invalid_missing_voice_seed(self):
-        """Test validate_speaker_config with missing voice_seed."""
-        # Test with missing voice_seed (now a class method)
+    def test_validate_config_invalid_missing_default_voice_name(self):
+        """Test validate_speaker_config with missing default_voice_name."""
+        # Test with missing default_voice_name (now a class method)
         invalid_config = {"speaking_rate": 20}
-        with pytest.raises(ValueError, match="Missing required field 'voice_seed'"):
+        with pytest.raises(
+            ValueError, match="Missing required field 'default_voice_name'"
+        ):
             ZonosTTSProvider.validate_speaker_config(invalid_config)
 
-    def test_validate_config_invalid_voice_seed_type(self):
-        """Test validate_speaker_config with invalid voice_seed type."""
-        # Test with non-integer voice_seed (now a class method)
-        invalid_config = {"voice_seed": "not_an_int"}
-        with pytest.raises(ValueError, match="invalid literal for int"):
+    def test_validate_config_invalid_default_voice_name_type(self):
+        """Test validate_speaker_config with invalid default_voice_name type."""
+        # Test with non-string default_voice_name (now a class method)
+        invalid_config = {"default_voice_name": 12345}
+        with pytest.raises(
+            ValueError, match="Field 'default_voice_name' must be a string"
+        ):
             ZonosTTSProvider.validate_speaker_config(invalid_config)
 
-    def test_validate_config_invalid_voice_seed_range(self):
-        """Test validate_speaker_config with out-of-range voice_seed."""
-        # Test with voice_seed too high (now a class method)
-        invalid_config = {"voice_seed": ZonosTTSProvider.MAX_SEED + 1}
-        with pytest.raises(ValueError, match="Invalid voice_seed"):
-            ZonosTTSProvider.validate_speaker_config(invalid_config)
-
-        # Test with voice_seed too low (now a class method)
-        invalid_config = {"voice_seed": ZonosTTSProvider.MIN_SEED - 1}
-        with pytest.raises(ValueError, match="Invalid voice_seed"):
+    def test_validate_config_invalid_default_voice_name_value(self):
+        """Test validate_speaker_config with invalid default_voice_name value."""
+        # Test with invalid default_voice_name (now a class method)
+        invalid_config = {"default_voice_name": "invalid_voice"}
+        with pytest.raises(VoiceNotFoundError, match="Invalid default_voice_name"):
             ZonosTTSProvider.validate_speaker_config(invalid_config)
 
     def test_validate_config_invalid_speaking_rate_type(self):
         """Test validate_speaker_config with invalid speaking_rate type."""
         # Test with non-numeric speaking_rate (now a class method)
-        invalid_config = {"voice_seed": 12345, "speaking_rate": "not_a_number"}
+        invalid_config = {
+            "default_voice_name": "american_female",
+            "speaking_rate": "not_a_number",
+        }
         with pytest.raises(ValueError, match="Field 'speaking_rate' must be a number"):
             ZonosTTSProvider.validate_speaker_config(invalid_config)
 
@@ -74,7 +76,7 @@ class TestZonosTTSProvider:
         """Test validate_speaker_config with out-of-range speaking_rate."""
         # Test with speaking_rate too high (now a class method)
         invalid_config = {
-            "voice_seed": 12345,
+            "default_voice_name": "american_female",
             "speaking_rate": ZonosTTSProvider.MAX_SPEAKING_RATE + 1,
         }
         with pytest.raises(ValueError, match="Invalid speaking_rate"):
@@ -82,7 +84,7 @@ class TestZonosTTSProvider:
 
         # Test with speaking_rate too low (now a class method)
         invalid_config = {
-            "voice_seed": 12345,
+            "default_voice_name": "american_female",
             "speaking_rate": ZonosTTSProvider.MIN_SPEAKING_RATE - 1,
         }
         with pytest.raises(ValueError, match="Invalid speaking_rate"):
@@ -91,7 +93,10 @@ class TestZonosTTSProvider:
     def test_validate_config_invalid_language_type(self):
         """Test validate_speaker_config with invalid language_iso_code type."""
         # Test with non-string language_iso_code (now a class method)
-        invalid_config = {"voice_seed": 12345, "language_iso_code": 123}
+        invalid_config = {
+            "default_voice_name": "american_female",
+            "language_iso_code": 123,
+        }
         with pytest.raises(
             ValueError, match="Field 'language_iso_code' must be a string"
         ):
@@ -100,7 +105,10 @@ class TestZonosTTSProvider:
     def test_validate_config_invalid_language_value(self):
         """Test validate_speaker_config with invalid language_iso_code value."""
         # Test with invalid language_iso_code (now a class method)
-        invalid_config = {"voice_seed": 12345, "language_iso_code": "invalid_language"}
+        invalid_config = {
+            "default_voice_name": "american_female",
+            "language_iso_code": "invalid_language",
+        }
         with pytest.raises(ValueError, match="Invalid language_iso_code"):
             ZonosTTSProvider.validate_speaker_config(invalid_config)
 
@@ -124,38 +132,51 @@ class TestZonosTTSProvider:
                 mock_zyphra_client.assert_called_once_with(api_key="fake_api_key")
                 assert client is not None
 
+    def test_get_valid_voices(self):
+        """Test get_valid_voices method."""
+        # Get the valid voices
+        valid_voices = ZonosTTSProvider.get_valid_voices()
+
+        # Verify it's a set and contains expected voices
+        assert isinstance(valid_voices, set)
+        assert "american_female" in valid_voices
+        assert "british_male" in valid_voices
+        assert len(valid_voices) > 0
+
     def test_get_speaker_identifier(self):
         """Test get_speaker_identifier method."""
         provider = ZonosTTSProvider()
 
         # Test with direct config dictionaries instead of stored speaker configs
         # Minimal config
-        default_id = provider.get_speaker_identifier({"voice_seed": 12345})
+        default_id = provider.get_speaker_identifier(
+            {"default_voice_name": "american_female"}
+        )
 
         # Full config
         full_config = {
-            "voice_seed": 67890,
+            "default_voice_name": "british_male",
             "speaking_rate": 20,
             "language_iso_code": "en-us",
         }
         bob_id = provider.get_speaker_identifier(full_config)
 
         # Verify identifiers format and uniqueness
-        assert default_id.startswith("s12345_")
-        assert bob_id.startswith("s67890_")
+        assert default_id.startswith("american_female_")
+        assert bob_id.startswith("british_male_")
         assert default_id != bob_id  # Should be different due to different configs
 
     def test_get_speaker_identifier_invalid(self):
         """Test get_speaker_identifier with invalid config."""
         provider = ZonosTTSProvider()
 
-        # Should raise for missing voice_seed
+        # Should raise for missing default_voice_name
         with pytest.raises(TTSError):
             provider.get_speaker_identifier({})
 
-        # Should raise for invalid voice_seed type
+        # Should raise for invalid default_voice_name type
         with pytest.raises(TTSError):
-            provider.get_speaker_identifier({"voice_seed": None})
+            provider.get_speaker_identifier({"default_voice_name": None})
 
     # get_speaker_configuration method has been removed from provider and moved to TTSProviderManager
 
@@ -169,15 +190,20 @@ class TestZonosTTSProvider:
         # Check YAML instructions contain key information
         instructions = ZonosTTSProvider.get_yaml_instructions()
         assert "ZONOS_API_KEY" in instructions
-        assert "voice_seed:" in instructions
+        assert "default_voice_name:" in instructions
         assert "speaking_rate:" in instructions
         assert "language_iso_code:" in instructions
+
+        # Check that it includes the valid voices
+        valid_voices = ZonosTTSProvider.get_valid_voices()
+        for voice in valid_voices:
+            assert voice in instructions
 
     def test_get_required_fields(self):
         """Test get_required_fields class method."""
         # Check required fields
         required_fields = ZonosTTSProvider.get_required_fields()
-        assert required_fields == ["voice_seed"]
+        assert required_fields == ["default_voice_name"]
 
     def test_get_optional_fields(self):
         """Test get_optional_fields class method."""
@@ -225,14 +251,16 @@ class TestZonosTTSProvider:
         mock_client.audio.speech.create.return_value = b"fake_audio_data"
 
         # Create basic speaker config
-        speaker_config = {"voice_seed": 12345}
+        speaker_config = {"default_voice_name": "american_female"}
 
         # Generate audio with passed client and config
         audio_data = provider.generate_audio(mock_client, speaker_config, "Test text")
 
         # Verify API was called correctly
         mock_client.audio.speech.create.assert_called_once_with(
-            text="Test text", seed=12345, mime_type=ZonosTTSProvider.MIME_TYPE
+            text="Test text",
+            default_voice_name="american_female",
+            mime_type=ZonosTTSProvider.MIME_TYPE,
         )
         assert audio_data == b"fake_audio_data"
 
@@ -249,7 +277,7 @@ class TestZonosTTSProvider:
 
         # Create config with optional parameters
         speaker_config = {
-            "voice_seed": 67890,
+            "default_voice_name": "british_male",
             "speaking_rate": 20,
             "language_iso_code": "en-us",
         }
@@ -260,7 +288,7 @@ class TestZonosTTSProvider:
         # Verify API was called with all parameters
         mock_client.audio.speech.create.assert_called_once_with(
             text="Test text",
-            seed=67890,
+            default_voice_name="british_male",
             mime_type=ZonosTTSProvider.MIME_TYPE,
             speaking_rate=20,
             language_iso_code="en-us",
@@ -274,7 +302,9 @@ class TestZonosTTSProvider:
 
         # Generate audio with None client should raise error
         with pytest.raises(TTSError, match="Zyphra client is not initialized"):
-            provider.generate_audio(None, {"voice_seed": 12345}, "Test text")
+            provider.generate_audio(
+                None, {"default_voice_name": "american_female"}, "Test text"
+            )
 
     @patch.dict(os.environ, {"ZONOS_API_KEY": "fake_api_key"})
     def test_generate_audio_zyphra_error(self):
@@ -285,7 +315,7 @@ class TestZonosTTSProvider:
         mock_client = MagicMock()
 
         # Create speaker config
-        speaker_config = {"voice_seed": 12345}
+        speaker_config = {"default_voice_name": "american_female"}
 
         # Create a proper exception structure for ZyphraError
         class MockZyphraError(Exception):
@@ -308,7 +338,7 @@ class TestZonosTTSProvider:
         mock_client = MagicMock()
 
         # Create speaker config
-        speaker_config = {"voice_seed": 12345}
+        speaker_config = {"default_voice_name": "american_female"}
 
         # Make API call raise generic Exception
         mock_client.audio.speech.create.side_effect = Exception("Generic error")
@@ -316,5 +346,3 @@ class TestZonosTTSProvider:
         # Should raise TTSError for generic error
         with pytest.raises(TTSError, match="Failed to generate audio"):
             provider.generate_audio(mock_client, speaker_config, "Test text")
-
-    # The _is_empty_value method has been removed in the refactoring

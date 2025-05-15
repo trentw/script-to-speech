@@ -2,12 +2,25 @@ import hashlib
 import json
 import os
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Set, Union
 
 from zyphra import ZyphraClient, ZyphraError
 
 from ..base.exceptions import TTSError, VoiceNotFoundError
 from ..base.stateless_tts_provider import StatelessTTSProviderBase
+
+# Define valid voice literals - these are the default voices supported by the Zonos API
+DefaultVoiceType = Literal[
+    "american_female",
+    "american_male",
+    "anime_girl",
+    "british_female",
+    "british_male",
+    "energetic_boy",
+    "energetic_girl",
+    "japanese_female",
+    "japanese_male",
+]
 
 
 class ZonosTTSProvider(StatelessTTSProviderBase):
@@ -18,8 +31,6 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
     MIME_TYPE = "audio/mp3"
     MIN_SPEAKING_RATE = 5
     MAX_SPEAKING_RATE = 35
-    MIN_SEED = -1
-    MAX_SEED = 2147483647
     VALID_LANGUAGES = {"en-us", "fr-fr", "de", "ja", "ko", "cmn"}
 
     @classmethod
@@ -35,24 +46,33 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
             raise TTSError(f"Failed to initialize Zyphra client: {e}")
 
     @classmethod
+    def get_valid_voices(cls) -> Set[str]:
+        """Get the set of valid default voice names from DefaultVoiceType."""
+        import typing
+
+        # Get the arguments from the Literal type
+        args = typing.get_args(DefaultVoiceType)
+        return set(args)
+
+    @classmethod
     def generate_audio(
         cls, client: ZyphraClient, speaker_config: Dict[str, Any], text: str
     ) -> bytes:
         """Generate audio for the given speaker and text."""
 
         try:
-            voice_seed = speaker_config.get("voice_seed")
+            default_voice_name = speaker_config.get("default_voice_name")
             speaking_rate = speaker_config.get("speaking_rate")
             language_code = speaker_config.get("language_iso_code")
 
-            if voice_seed is None:  # Should be caught by validation
+            if default_voice_name is None:  # Should be caught by validation
                 raise TTSError(
-                    f"Missing 'voice_seed' in speaker config: {speaker_config}"
+                    f"Missing 'default_voice_name' in speaker config: {speaker_config}"
                 )
 
             params = {
                 "text": text,
-                "seed": int(voice_seed),
+                "default_voice_name": default_voice_name,
                 "mime_type": cls.MIME_TYPE,
             }
 
@@ -80,14 +100,16 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
     def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
         """Get the voice identifier that changes if any generation parameter changes."""
         # Create a dictionary of all non-empty parameters that affect voice generation
-        voice_seed = speaker_config.get("voice_seed")
+        default_voice_name = speaker_config.get("default_voice_name")
         speaking_rate = speaker_config.get("speaking_rate")
         language_code = speaker_config.get("language_iso_code")
 
-        if voice_seed is None:  # Should be caught by validation
-            raise TTSError(f"Missing 'voice_seed' in speaker config: {speaker_config}")
+        if default_voice_name is None:  # Should be caught by validation
+            raise TTSError(
+                f"Missing 'default_voice_name' in speaker config: {speaker_config}"
+            )
 
-        params = {"seed": voice_seed, "mime_type": cls.MIME_TYPE}
+        params = {"default_voice_name": default_voice_name, "mime_type": cls.MIME_TYPE}
 
         # Only include optional parameters if they have non-empty values
         if speaking_rate:
@@ -97,7 +119,9 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
 
         # Create a hash of the parameters
         params_str = json.dumps(params, sort_keys=True)
-        return f"s{voice_seed}_{hashlib.md5(params_str.encode()).hexdigest()[:12]}"
+        return (
+            f"{default_voice_name}_{hashlib.md5(params_str.encode()).hexdigest()[:12]}"
+        )
 
     @classmethod
     def get_provider_identifier(cls) -> str:
@@ -107,7 +131,10 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
     @classmethod
     def get_yaml_instructions(cls) -> str:
         """Get configuration instructions."""
-        return """# Zonos TTS Configuration
+        valid_voices = cls.get_valid_voices()
+        voices_str = ", ".join(sorted(valid_voices))
+
+        return f"""# Zonos TTS Configuration
 #
 # Required Environment Variable:
 #   ZONOS_API_KEY: Your Zonos API key
@@ -115,18 +142,18 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
 # Instructions:
 #   - For each speaker, specify:
 #     Required fields:
-#       voice_seed: Integer between -1 and 2147483647
+#       default_voice_name: One of [{voices_str}]
 #     Optional fields:
-#       speaking_rate: Float between 5 and 35
-#       language_iso_code: One of [en-us, fr-fr, de, ja, ko, cmn]
+#       speaking_rate: Float between {cls.MIN_SPEAKING_RATE} and {cls.MAX_SPEAKING_RATE}
+#       language_iso_code: One of [{", ".join(sorted(cls.VALID_LANGUAGES))}]
 #
 # Example (minimal):
 #   default:
-#     voice_seed: 12345
+#     default_voice_name: american_female
 #
 # Example (with optional fields):
 #   MARIA:
-#     voice_seed: 67890
+#     default_voice_name: british_female
 #     speaking_rate: 20
 #     language_iso_code: fr-fr
 #
@@ -136,7 +163,7 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
     @classmethod
     def get_required_fields(cls) -> List[str]:
         """Get required configuration fields."""
-        return ["voice_seed"]
+        return ["default_voice_name"]
 
     @classmethod
     def get_optional_fields(cls) -> List[str]:
@@ -146,19 +173,19 @@ class ZonosTTSProvider(StatelessTTSProviderBase):
     @classmethod
     def validate_speaker_config(cls, speaker_config: Dict[str, Any]) -> None:
         """Validate speaker configuration."""
-        if "voice_seed" not in speaker_config:
+        if "default_voice_name" not in speaker_config:
             raise ValueError(
-                f"Missing required field 'voice_seed' in speaker configuration: {speaker_config}"
+                f"Missing required field 'default_voice_name' in speaker configuration: {speaker_config}"
             )
 
-        voice_seed = int(speaker_config["voice_seed"])
-        if not isinstance(speaker_config["voice_seed"], int):
-            raise ValueError("Field 'voice_seed' must be an integer")
+        default_voice_name = speaker_config["default_voice_name"]
+        if not isinstance(default_voice_name, str):
+            raise ValueError("Field 'default_voice_name' must be a string")
 
-        if not cls.MIN_SEED <= voice_seed <= cls.MAX_SEED:
-            raise ValueError(
-                f"Invalid voice_seed '{voice_seed}'. Must be between "
-                f"{cls.MIN_SEED} and {cls.MAX_SEED}"
+        valid_voices = cls.get_valid_voices()
+        if default_voice_name not in valid_voices:
+            raise VoiceNotFoundError(
+                f"Invalid default_voice_name '{default_voice_name}'. Must be one of: {', '.join(sorted(valid_voices))}"
             )
 
         # Validate optional fields if present and non-empty

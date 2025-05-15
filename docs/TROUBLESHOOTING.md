@@ -117,7 +117,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
 3. **Validate Key Format**
    - OpenAI: Starts with `sk-`
    - ElevenLabs: 32-character string
-   - Zonos: Provider-specific format
+   - Zonos: Starts with `zsk-`
 
 **Prevention**:
 - Use `.env` file for persistent keys
@@ -152,8 +152,8 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
 
 3. **Zonos**
    ```bash
-   # Validate voice seed range
-   voice_seed: 12345  # Must be between -1 and 2147483647
+   # Validate voice is one of the default_voice_name from zonos documentation
+   default_voice_name: american_male  # Must be one of 9 default voices
    ```
 
 **Prevention**:

@@ -46,12 +46,12 @@ Script to Speech supports multiple Text-to-Speech providers. This guide covers c
 
 ### [Zyphra Zonos](https://playground.zyphra.com/sign-in) (API version)
 - **Requirements**: API key required; free plan okay
-- **Voice Options**: Configurable voice seeds
+- **Voice Options**: Configurable voice from 9 options
 - **Concurrent Downloads**: 5 threads
 - **Customization**: Speaking rate and language options
 - **Considerations**
   - **Pros**
-    - Free plan gives a good number of generations a month
+    - Free plan gives 100 minutes of generations a month
   - **Cons**
     - Few voices offered
     - Generation comparatively slow
@@ -99,7 +99,7 @@ HARRY:
 
 LUNA:
   provider: zonos
-  voice_seed: 12345
+  default_voice_name: american_male
 ```
 
 ### Generated Configuration (Single Provider Workflow)
@@ -238,7 +238,18 @@ JOHN:
 ### Zonos Configuration
 
 Required fields:
-- `voice_seed`: Integer between -1 and 2147483647
+- `default_voice_name`: one of 9 available voices
+
+Available voices:
+- american_female
+- american_male	
+- anime_girl
+- british_female
+- british_male
+- energetic_boy
+- energetic_girl
+- japanese_female
+- japanese_male
 
 Optional fields:
 - `speaking_rate`: Float between 5 and 35
@@ -248,13 +259,13 @@ Example:
 ```yaml
 ROBOT:
   provider: zonos
-  voice_seed: 42
+  default_voice_name: american_female
   speaking_rate: 20
   language_iso_code: en-us
 
 ALIEN:
   provider: zonos
-  voice_seed: 999999
+  default_voice_name: american_male
 ```
 
 ## Rate Limiting
@@ -374,7 +385,7 @@ Optional methods:
 2. **Voice Not Found**
    - ElevenLabs: Ensure voice ID is from public library
    - OpenAI: Verify voice name matches available options
-   - Zonos: Check voice seed is within valid range
+   - Zonos: Check default_voice_name is a valid voice
 
 3. **Rate Limiting**
    - Check provider-specific rate limits
