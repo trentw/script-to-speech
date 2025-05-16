@@ -8,7 +8,7 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 
 ### Key Features
 
-- **Multi-provider support**: Use OpenAI, ElevenLabs, Zonos, or custom TTS providers. TTS providers can be set at a per-speaker level
+- **Multi-provider support**: Use OpenAI, ElevenLabs, Cartesia, Zonos, or custom TTS providers. TTS providers can be set at a per-speaker level
 - **Text processing pipeline**: Customize how text is processed before audio generation
 - **Multi-threaded downloads**: With separate queues per provider for faster generation
 - **Silence detection**: Identify and replace silent audio clips
@@ -68,6 +68,9 @@ export OPENAI_API_KEY="your-api-key"
 
 # ElevenLabs
 export ELEVEN_API_KEY="your-api-key"
+
+# Cartesia
+export CARTESIA_API_KEY="your-api-key"
 
 # Zonos
 export ZONOS_API_KEY="your-api-key"
@@ -387,7 +390,8 @@ Supported TTS providers:
 
 - **OpenAI**: Preview voices at [openai.fm](https://www.openai.fm/)
 - **ElevenLabs**: Requires "Creator" plan, uses public library voices
-- **Zonos**: Alternative TTS service
+- **Cartesia**: TTS with a free plan and a number of voices
+- **Zonos**: TTS service with a free plan and a few voices
 - **Dummy**: Testing only
 
 See [TTS_PROVIDERS.md](docs/TTS_PROVIDERS.md) for provider-specific configuration.
@@ -443,6 +447,7 @@ Required for TTS providers:
 
 - `OPENAI_API_KEY`: OpenAI API access
 - `ELEVEN_API_KEY`: ElevenLabs API access
+- `CARTESIA_API_KEY`: Cartesia API access
 - `ZONOS_API_KEY`: Zonos API access
 
 ## License

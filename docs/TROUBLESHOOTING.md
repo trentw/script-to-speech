@@ -101,6 +101,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    # Verify keys are set
    echo $OPENAI_API_KEY
    echo $ELEVEN_API_KEY
+   echo $CARTESIA_API_KEY
    echo $ZONOS_API_KEY
    ```
 
@@ -117,6 +118,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
 3. **Validate Key Format**
    - OpenAI: Starts with `sk-`
    - ElevenLabs: 32-character string
+   - Cartesia: Starts with `sk_car_`
    - Zonos: Starts with `zsk-`
 
 **Prevention**:

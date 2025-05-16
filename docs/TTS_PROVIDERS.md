@@ -44,6 +44,25 @@ Script to Speech supports multiple Text-to-Speech providers. This guide covers c
     - Characters where accent / age / style is important
     - Filling out the wider world of side characters
 
+### [Cartesia](https://play.cartesia.ai/)
+- **Concurrent Downloads**: 2 threads
+- **Customization**: Language options and speaking rate (experimental)
+- **Considerations**
+  - **Pros**
+    - Free plan gives 25 minutes of generations a month
+    - Voice audio quality fairly high
+    - Fast generation
+    - Features a few dozen voices
+    - $5 / month plan gets 125 minutes of audio
+  - **Cons**
+    - Voice cadence / delivery at times inconsistent
+    - Voice less life-like than OpenAI or ElevenLabs providers
+    - Inconsistent delivery of ALL UPPERCASE text
+  - **Best For**
+    - Side characters
+    - Testing
+
+
 ### [Zyphra Zonos](https://playground.zyphra.com/sign-in) (API version)
 - **Requirements**: API key required; free plan okay
 - **Voice Options**: Configurable voice from 9 options
@@ -234,6 +253,31 @@ JOHN:
   provider: elevenlabs
   voice_id: ErXwobaYiN019PkySvjV  # Public library ID
 ```
+
+### Cartesia Configuration
+
+Required fields:
+- `voice_id`: one of 9 available voices
+Voices and theird IDs can be found at the [Cartesia Playground](https://play.cartesia.ai/)
+
+Optional fields
+- `language`: One of [en,fr,de,es,pt,zh,ja,hi,it,ko,nl,pl,ru,sv,tr]
+- `speed`: One of ["slow", "normal", "fast"] 
+  - *note: this is an experimental feature that doesn't work for all voices*
+
+Example:
+```yaml
+BECCA:
+  provider: cartesia
+  voice_id: bf0a246a-8642-498a-9950-80c35e9276b5
+  speed: fast
+  language: fr
+
+TOM:
+  provider: cartesia
+  voice_id: 4df027cb-2920-4a1f-8c34-f21529d5c3fe
+```
+
 
 ### Zonos Configuration
 
