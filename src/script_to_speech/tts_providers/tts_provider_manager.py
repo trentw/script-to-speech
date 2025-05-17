@@ -165,7 +165,7 @@ class TTSProviderManager:
                     provider_name = "dummy_stateless"
 
                 # Add dummy_id if it doesn't exist
-                self._add_dummy_id_to_config(speaker_config, provider_class)
+                self._add_dummy_id_to_config(speaker, speaker_config, provider_class)
 
                 # Update the provider in the speaker config
                 speaker_config["provider"] = provider_name
@@ -185,7 +185,10 @@ class TTSProviderManager:
             self._provider_refs[provider_name] = provider_class
 
     def _add_dummy_id_to_config(
-        self, speaker_config: Dict[str, Any], original_provider_class: Type
+        self,
+        speaker: str,
+        speaker_config: Dict[str, Any],
+        original_provider_class: Type,
     ) -> None:
         """
         Add a dummy_id to the speaker config if it doesn't exist.
@@ -209,6 +212,10 @@ class TTSProviderManager:
             if field != "provider" and field in speaker_config:
                 dummy_id_value = speaker_config[field]
                 break
+
+        # If we didn't get a value from required fields, fall back to the speaker name
+        if not dummy_id_value:
+            dummy_id_value = speaker
 
         # If we found a value, add it as dummy_id
         if dummy_id_value is not None:
