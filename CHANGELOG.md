@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 - Support for [Cartesia](https://play.cartesia.ai/text-to-speech) TTS provider
+- Support for [Minimax](https://www.minimax.io/audio/text-to-speech) TTS provider with voice mixing capability
 
 ### Changed
 - Changed zonos tts-provider to base behavior on `default_voice_name` instead of `voice_seed`, since `voice_seed` is no longer part of the zonos API

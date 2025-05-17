@@ -24,6 +24,7 @@ dependencies = [
     "tqdm>=4.67.1",
     "static-ffmpeg>=2.5",
     "cartesia>=2.0.3",
+    "requests>=2.32.0",
 ]
 
 [project.optional-dependencies]
@@ -123,5 +124,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*"]
 ignore_missing_imports = true

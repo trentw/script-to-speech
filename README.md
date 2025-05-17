@@ -8,7 +8,7 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 
 ### Key Features
 
-- **Multi-provider support**: Use OpenAI, ElevenLabs, Cartesia, Zonos, or custom TTS providers. TTS providers can be set at a per-speaker level
+- **Multi-provider support**: Use OpenAI, ElevenLabs, Cartesia, Minimax, Zonos, or custom TTS providers. TTS providers can be set at a per-speaker level
 - **Text processing pipeline**: Customize how text is processed before audio generation
 - **Multi-threaded downloads**: With separate queues per provider for faster generation
 - **Silence detection**: Identify and replace silent audio clips
@@ -71,6 +71,10 @@ export ELEVEN_API_KEY="your-api-key"
 
 # Cartesia
 export CARTESIA_API_KEY="your-api-key"
+
+# Minimax
+export MINIMAX_API_KEY="your-api-key"
+export MINIMAX_GROUP_ID="your-group-id"
 
 # Zonos
 export ZONOS_API_KEY="your-api-key"
@@ -391,6 +395,7 @@ Supported TTS providers:
 - **OpenAI**: Preview voices at [openai.fm](https://www.openai.fm/)
 - **ElevenLabs**: Requires "Creator" plan, uses public library voices
 - **Cartesia**: TTS with a free plan and a number of voices
+- **Minimax**: TTS with voice mixing capabilities and emotion control
 - **Zonos**: TTS service with a free plan and a few voices
 - **Dummy**: Testing only
 
@@ -448,6 +453,8 @@ Required for TTS providers:
 - `OPENAI_API_KEY`: OpenAI API access
 - `ELEVEN_API_KEY`: ElevenLabs API access
 - `CARTESIA_API_KEY`: Cartesia API access
+- `MINIMAX_API_KEY`: Minimax API access
+- `MINIMAX_GROUP_ID`: Minimax Group ID
 - `ZONOS_API_KEY`: Zonos API access
 
 ## License

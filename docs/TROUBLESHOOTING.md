@@ -102,6 +102,8 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    echo $OPENAI_API_KEY
    echo $ELEVEN_API_KEY
    echo $CARTESIA_API_KEY
+   echo $MINIMAX_API_KEY
+   echo $MINIMAX_GROUP_ID
    echo $ZONOS_API_KEY
    ```
 
@@ -116,10 +118,12 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    ```
 
 3. **Validate Key Format**
-   - OpenAI: Starts with `sk-`
-   - ElevenLabs: 32-character string
-   - Cartesia: Starts with `sk_car_`
-   - Zonos: Starts with `zsk-`
+    - OpenAI: Starts with `sk-`
+    - ElevenLabs: 32-character string
+    - Cartesia: Starts with `sk_car_`
+    - Minimax (API key): Bearer token format, long string
+    - Minimax (Group ID): String of digits
+    - Zonos: Starts with `zsk-`
 
 **Prevention**:
 - Use `.env` file for persistent keys
@@ -152,11 +156,24 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    voice_id: ErXwobaYiN019PkySvjV  # ID must be from public library
    ```
 
-3. **Zonos**
-   ```bash
-   # Validate voice is one of the default_voice_name from zonos documentation
-   default_voice_name: american_male  # Must be one of 9 default voices
-   ```
+3. **Minimax**
+    ```bash
+    # Validate voice_id is one of the valid voice IDs
+    voice_id: Casual_Guy  # Must be one of system voices
+    
+    # If using voice_mix, ensure proper structure
+    voice_mix:
+      - voice_id: Casual_Guy  # Must be valid voice ID
+        weight: 70  # Must be 1-100
+      - voice_id: Deep_Voice_Man
+        weight: 30
+    ```
+
+4. **Zonos**
+    ```bash
+    # Validate voice is one of the default_voice_name from zonos documentation
+    default_voice_name: american_male  # Must be one of 9 default voices
+    ```
 
 **Prevention**:
 - Use `sts-tts-provider-yaml generate` for templates

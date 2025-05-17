@@ -63,6 +63,29 @@ Script to Speech supports multiple Text-to-Speech providers. This guide covers c
     - Testing
 
 
+### [Minimax](https://www.minimax.io/audio)
+- **Requirements**: API key and Group ID required
+- **Voice Options**: 60+ system voices with voice mixing capabilities
+- **Concurrent Downloads**: 5 threads
+- **Customization**: Voice mixing, speed, volume, pitch, emotion, language boost
+- **Considerations**
+  - **Pros**
+    - Good number of high-quality voices, with a few different accents, and a number of configuration options available
+      - Voice mixing allows blending multiple voices with different weights
+      - Emotion control / pitch control for expressive speech
+    - Extensive non-english support
+    - Fast generation
+    - Cheap
+  - **Cons**
+    - Some voices lack life-like expressiveness, despite being high-quality otherwise
+    - Some small quirks make for distracting dialogue
+      - Issues with reading numbers at times (e.g. "In the year 1972" -> "In the year one-nine-seven-two")
+      - Seems to pick the wrong heteronym more than providers like Elevenlabs / OpenAI (e.g. "*close* up" -> "*cloz* up" instead of "*cloce* up"; "we're going *live*" -> "we're going *liv*" instead of "we're going *live*")
+  - **Best For**
+    - Main and supporting characters (though maybe not narrators)
+    - Emotional dialogue with varied expressions or ones requiring a voice blend
+    - Non-english characters
+
 ### [Zyphra Zonos](https://playground.zyphra.com/sign-in) (API version)
 - **Requirements**: API key required; free plan okay
 - **Voice Options**: Configurable voice from 9 options
@@ -96,6 +119,13 @@ export OPENAI_API_KEY="your-api-key"
 
 # ElevenLabs
 export ELEVEN_API_KEY="your-api-key"
+
+# Cartesia
+export CARTESIA_API_KEY="your-api-key"
+
+# Minimax
+export MINIMAX_API_KEY="your-api-key"
+export MINIMAX_GROUP_ID="your-group-id"
 
 # Zonos
 export ZONOS_API_KEY="your-api-key"
@@ -279,6 +309,113 @@ TOM:
 ```
 
 
+### Minimax Configuration
+
+Required fields:
+- `voice_id`: One of 17 available system voices
+
+Available voices:
+- English_expressive_narrator
+- English_radiant_girl
+- English_magnetic_voiced_man
+- English_compelling_lady1
+- English_Aussie_Bloke
+- English_captivating_female1
+- English_Upbeat_Woman
+- English_Trustworth_Man
+- English_CalmWoman
+- English_UpsetGirl
+- English_Gentle-voiced_man
+- English_Whispering_girl_v3
+- English_Diligent_Man
+- English_Graceful_Lady
+- English_ReservedYoungMan
+- English_PlayfulGirl
+- English_ManWithDeepVoice
+- English_GentleTeacher
+- English_MaturePartner
+- English_FriendlyPerson
+- English_MatureBoss
+- English_Debator
+- English_Abbess
+- English_LovelyGirl
+- English_Steadymentor
+- English_Deep-VoicedGentleman
+- English_DeterminedMan
+- English_Wiselady
+- English_CaptivatingStoryteller
+- English_AttractiveGirl
+- English_DecentYoungMan
+- English_SentimentalLady
+- English_ImposingManner
+- English_SadTeen
+- English_ThoughtfulMan
+- English_PassionateWarrior
+- English_DecentBoy
+- English_WiseScholar
+- English_Soft-spokenGirl
+- English_SereneWoman
+- English_ConfidentWoman
+- English_patient_man_v1
+- English_Comedian
+- English_GorgeousLady
+- English_BossyLeader
+- English_LovelyLady
+- English_Strong-WilledBoy
+- English_Deep-tonedMan
+- English_StressedLady
+- English_AssertiveQueen
+- English_AnimeCharacter
+- English_Jovialman
+- English_WhimsicalGirl
+- English_CharmingQueen
+- English_Kind-heartedGirl
+- English_FriendlyNeighbor
+- English_Sweet_Female_4
+- English_Magnetic_Male_2
+- English_Lively_Male_11
+- English_Friendly_Female_3
+- English_Steady_Female_1
+- English_Lively_Male_10
+- English_Magnetic_Male_12
+- English_Steady_Female_5
+
+Optional fields:
+- `voice_mix`: List of voice blends (1-4 items), each with:
+  - `voice_id`: One of the 17 system voices
+  - `weight`: Integer between 1-100
+  - Note: If provided, takes precedence over the top-level `voice_id`. Only one of `voice_id` or `voice_mix` can be supplied
+- `speed`: (default: 1.0) Float between 0.5-2.0
+- `volume`: (default: 1.0) Float between >0.0-10.0
+- `pitch`: (default: 0) Integer between -12 to 12
+- `emotion`: One of ["happy", "sad", "angry", "fear", "disgust", "neutral", "surprise"]
+- `english_normalization`: (default: true) Boolean (true/false)
+- `language_boost`: (default: "English") One of ["Chinese", "English", "Japanese", "Korean", "French", "Spanish", "German"]
+
+Example (with voice_id):
+```yaml
+DAVID:
+  provider: minimax
+  voice_id: Calm_Woman
+  speed: 1.2
+  volume: 8.0
+  pitch: 2
+  emotion: happy
+  english_normalization: false
+  language_boost: Spanish
+```
+
+Example (with voice_mix):
+```yaml
+MARIA:
+  provider: minimax
+  voice_mix:
+    - voice_id: Patient_Man
+      weight: 70
+    - voice_id: Young_Knight
+      weight: 30
+```
+
 ### Zonos Configuration
 
 Required fields:
@@ -423,13 +560,18 @@ Optional methods:
    # Check environment variables
    echo $OPENAI_API_KEY
    echo $ELEVEN_API_KEY
+   echo $CARTESIA_API_KEY
+   echo $MINIMAX_API_KEY
+   echo $MINIMAX_GROUP_ID
    echo $ZONOS_API_KEY
    ```
 
 2. **Voice Not Found**
-   - ElevenLabs: Ensure voice ID is from public library
-   - OpenAI: Verify voice name matches available options
-   - Zonos: Check default_voice_name is a valid voice
+    - ElevenLabs: Ensure voice ID is from public library
+    - OpenAI: Verify voice name matches available options
+    - Minimax: Verify voice_id is one of the specified system voices
+    - Minimax: Check voice_mix structure if using voice mixing
+    - Zonos: Check default_voice_name is a valid voice
 
 3. **Rate Limiting**
    - Check provider-specific rate limits
@@ -438,9 +580,11 @@ Optional methods:
    - Monitor monthly quotas for voice adds / removes (ElevenLabs)
 
 4. **Quality Issues**
-   - OpenAI: Try different voices for different character types
-   - ElevenLabs: Use "narrative"/"conversational" tagged voices
-   - Zonos: Adjust speaking rate parameter
+    - OpenAI: Try different voices for different character types
+    - ElevenLabs: Use "narrative"/"conversational" tagged voices
+    - Minimax: Experiment with voice_mix for unique character voices
+    - Minimax: Adjust emotion, speed, and pitch parameters for expressiveness
+    - Zonos: Adjust speaking rate parameter
 
 ### Debugging
 ```bash
