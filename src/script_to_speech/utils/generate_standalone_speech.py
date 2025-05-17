@@ -1,8 +1,10 @@
 import argparse
 import importlib
 import io
+import json
 import os
 import re
+import shlex
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
@@ -171,13 +173,32 @@ def get_command_string(
         provider_name = provider_manager.get_provider_for_speaker(speaker or "default")
         config = provider_manager.get_speaker_configuration(speaker)
 
+        # Get the provider class to determine required fields
+        provider_class = get_provider_class(provider_name)
+        required_fields = provider_class.get_required_fields()
+
         # Build command with all configuration parameters
         config_params = []
+
+        # First, add all parameters from the config
         for param_name, param_value in config.items():
             if (
                 param_name != "provider" and param_value is not None
             ):  # Filter out 'provider' key
-                config_params.append(f"--{param_name} {param_value}")
+                # Handle complex types (lists, dicts) by serializing to JSON
+                if isinstance(param_value, (list, dict)):
+                    value_str = json.dumps(param_value)
+                else:
+                    value_str = str(param_value)
+
+                # Quote the value for safe command-line usage
+                config_params.append(f"--{param_name} {shlex.quote(value_str)}")
+
+        # Then, ensure all required fields are included
+        for field in required_fields:
+            if field not in config:
+                # Add the required field with an empty string value
+                config_params.append(f"--{field} {shlex.quote('')}")
 
         texts_quoted = [f'"{t}"' for t in texts]
 
@@ -185,6 +206,24 @@ def get_command_string(
     except Exception as e:
         logger.error(f"Error generating command string: {e}")
         return ""
+
+
+def json_or_str_type(value_str: str) -> Any:
+    """
+    Attempts to parse a string as JSON. If successful, returns the parsed object.
+    Otherwise, returns the original string.
+
+    Args:
+        value_str: The string value to parse
+
+    Returns:
+        The parsed JSON object if valid, otherwise the original string
+    """
+    try:
+        return json.loads(value_str)
+    except (json.JSONDecodeError, TypeError):
+        # If it's not valid JSON or not a string, return the original value
+        return value_str
 
 
 def main() -> int:
@@ -220,6 +259,7 @@ def main() -> int:
         parser.add_argument(
             f"--{field}",
             required=True,
+            type=json_or_str_type,  # Use custom type to handle JSON
             help=f"Required {field} parameter for {parser.parse_known_args()[0].provider}",
         )
 
@@ -228,6 +268,7 @@ def main() -> int:
         parser.add_argument(
             f"--{field}",
             required=False,
+            type=json_or_str_type,  # Use custom type to handle JSON
             help=f"Optional {field} parameter for {parser.parse_known_args()[0].provider}",
         )
 

@@ -11,6 +11,7 @@ from script_to_speech.utils.generate_standalone_speech import (
     generate_standalone_speech,
     get_command_string,
     get_provider_class,
+    json_or_str_type,
 )
 
 
@@ -386,11 +387,59 @@ class TestGenerateStandaloneSpeech:
         # Function should just log the error and return
 
 
+class TestJsonOrStrType:
+    """Tests for the json_or_str_type function."""
+
+    def test_json_or_str_type_with_valid_json(self):
+        """Test json_or_str_type with valid JSON strings."""
+        # Test with a JSON object
+        result = json_or_str_type('{"key": "value"}')
+        assert isinstance(result, dict)
+        assert result == {"key": "value"}
+
+        # Test with a JSON array
+        result = json_or_str_type("[1, 2, 3]")
+        assert isinstance(result, list)
+        assert result == [1, 2, 3]
+
+        # Test with a JSON number
+        result = json_or_str_type("42")
+        assert isinstance(result, int)
+        assert result == 42
+
+        # Test with a JSON boolean
+        result = json_or_str_type("true")
+        assert isinstance(result, bool)
+        assert result is True
+
+    def test_json_or_str_type_with_invalid_json(self):
+        """Test json_or_str_type with invalid JSON strings."""
+        # Test with a regular string
+        result = json_or_str_type("Hello world")
+        assert isinstance(result, str)
+        assert result == "Hello world"
+
+        # Test with an invalid JSON string
+        result = json_or_str_type("{key: value}")  # Missing quotes
+        assert isinstance(result, str)
+        assert result == "{key: value}"
+
+        # Test with None
+        result = json_or_str_type(None)
+        assert result is None
+
+
 class TestGetCommandString:
     """Tests for the get_command_string function."""
 
-    def test_get_command_string_basic(self):
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_basic(self, mock_get_provider_class):
         """Test basic functionality of get_command_string."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
         # Mock provider manager
         mock_manager = MagicMock()
         mock_manager.get_provider_for_speaker.return_value = "test_provider"
@@ -410,14 +459,23 @@ class TestGetCommandString:
         # Verify configuration was retrieved
         mock_manager.get_speaker_configuration.assert_called_once_with("test_speaker")
 
+        # Verify provider class was retrieved
+        mock_get_provider_class.assert_called_once_with("test_provider")
+
         # Verify result contains expected command components
         assert "uv run sts-generate-standalone-speech test_provider" in result
         assert "--voice_id test_voice" in result
         assert "--model test_model" in result
         assert '"Hello world"' in result
 
-    def test_get_command_string_with_default_speaker(self):
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_default_speaker(self, mock_get_provider_class):
         """Test get_command_string with '(default)' speaker."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
         # Mock provider manager
         mock_manager = MagicMock()
         mock_manager.get_provider_for_speaker.return_value = "test_provider"
@@ -438,8 +496,14 @@ class TestGetCommandString:
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 
-    def test_get_command_string_with_none_speaker(self):
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_none_speaker(self, mock_get_provider_class):
         """Test get_command_string with None speaker."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
         # Mock provider manager
         mock_manager = MagicMock()
         mock_manager.get_provider_for_speaker.return_value = "test_provider"
@@ -460,8 +524,14 @@ class TestGetCommandString:
         assert "--voice_id default_voice" in result
         assert '"Hello world"' in result
 
-    def test_get_command_string_with_none_params(self):
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_none_params(self, mock_get_provider_class):
         """Test get_command_string with None parameter values."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
         # Mock provider manager
         mock_manager = MagicMock()
         mock_manager.get_provider_for_speaker.return_value = "test_provider"
@@ -481,8 +551,14 @@ class TestGetCommandString:
         assert "--stability 0.5" in result
         assert "--model" not in result
 
-    def test_get_command_string_with_multiple_texts(self):
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_multiple_texts(self, mock_get_provider_class):
         """Test get_command_string with multiple text strings."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
         # Mock provider manager
         mock_manager = MagicMock()
         mock_manager.get_provider_for_speaker.return_value = "test_provider"
@@ -501,6 +577,68 @@ class TestGetCommandString:
         assert '"Hello world"' in result
         assert '"Another text"' in result
         assert '"Third text"' in result
+
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_complex_params(self, mock_get_provider_class):
+        """Test get_command_string with complex parameter values (lists, dicts)."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = ["voice_id"]
+        mock_get_provider_class.return_value = mock_provider
+
+        # Mock provider manager
+        mock_manager = MagicMock()
+        mock_manager.get_provider_for_speaker.return_value = "test_provider"
+        mock_manager.get_speaker_configuration.return_value = {
+            "voice_id": "test_voice",
+            "options": {"pitch": 1.2, "speed": 0.9},
+            "tags": ["tag1", "tag2", "tag3"],
+        }
+
+        # Call function
+        result = get_command_string(
+            provider_manager=mock_manager, speaker="test_speaker", texts=["Hello world"]
+        )
+
+        # Verify result includes serialized complex params
+        assert "--voice_id test_voice" in result
+        assert (
+            '--options \'{"pitch": 1.2, "speed": 0.9}\'' in result
+            or '--options \'{"speed": 0.9, "pitch": 1.2}\'' in result
+        )
+        assert '--tags \'["tag1", "tag2", "tag3"]\'' in result
+
+    @patch("script_to_speech.utils.generate_standalone_speech.get_provider_class")
+    def test_get_command_string_with_missing_required_fields(
+        self, mock_get_provider_class
+    ):
+        """Test get_command_string with missing required fields."""
+        # Mock provider class
+        mock_provider = MagicMock()
+        mock_provider.get_required_fields.return_value = [
+            "voice_id",
+            "model",
+            "stability",
+        ]
+        mock_get_provider_class.return_value = mock_provider
+
+        # Mock provider manager
+        mock_manager = MagicMock()
+        mock_manager.get_provider_for_speaker.return_value = "test_provider"
+        mock_manager.get_speaker_configuration.return_value = {
+            "voice_id": "test_voice",
+            # Missing "model" and "stability" which are required
+        }
+
+        # Call function
+        result = get_command_string(
+            provider_manager=mock_manager, speaker="test_speaker", texts=["Hello world"]
+        )
+
+        # Verify result includes all required fields, even those missing from config
+        assert "--voice_id test_voice" in result
+        assert "--model ''" in result
+        assert "--stability ''" in result
 
     def test_get_command_string_error_handling(self):
         """Test get_command_string error handling."""
