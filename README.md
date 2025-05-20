@@ -457,6 +457,26 @@ Required for TTS providers:
 - `MINIMAX_GROUP_ID`: Minimax Group ID
 - `ZONOS_API_KEY`: Zonos API access
 
+### Using .env Files (Recommended)
+
+For local development, you can use a `.env` file to store your API keys instead of setting them as environment variables in your shell. This approach is more convenient and for developers, helps prevent accidental exposure of your keys.
+
+1. Copy the provided `.env.example` file to a new file named `.env` in the project root:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Edit the `.env` file and add your API keys:
+   ```
+   OPENAI_API_KEY="your-openai-key-here"
+   ELEVEN_API_KEY="your-elevenlabs-key-here"
+   # Add other keys as needed
+   ```
+
+3. The application will automatically load these variables when it starts.
+
+**Note**: The `.env` file is excluded from version control via `.gitignore` to prevent accidentally committing your API keys. Never commit your actual API keys to version control.
+
 ## License
 
 MIT licensed. See [LICENSE](LICENSE) for more information

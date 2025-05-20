@@ -8,14 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added .env file support for TTS Provider API key storage
 - Support for [Cartesia](https://play.cartesia.ai/text-to-speech) TTS provider
 - Support for [Minimax](https://www.minimax.io/audio/text-to-speech) TTS provider with voice mixing capability
 
 ### Changed
+- `generate_standalone_speech` now uses `tts_provider_manger` to generate audio instead of custom provider creation. This aligns the code / behavior with the core audio generation behavior in `script_to_speech.py`
+- Pulling `tts_provider_config` parsing out of `tts_provider_manager` so that the manager is instantiated with a configuration dict
 - Updating generate_standalone_speech to support outputting and parsing command strings corresponding to complex configs (like the dict-based config for Minimax's `voice_mix`)
 - Changed zonos tts-provider to base behavior on `default_voice_name` instead of `voice_seed`, since `voice_seed` is no longer part of the zonos API
 
 ### Fixed
+- Adding py.typed to src root and updating pyproject.toml to have mypy path = src
 - For `--dummy-tts-provider-override` run mode, fall back to speaker name for `dummy_id` in cases where required fields are blank / not present 
 
 ## [1.0.1] - 2025-05-14

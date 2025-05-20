@@ -42,9 +42,7 @@ def _handle_yaml_operation(
         processor = TextProcessorManager(generated_text_processor_configs)
         processed_chunks = processor.process_chunks(chunks)
 
-        tts_manager = TTSProviderManager(
-            config_path=Path(""), overall_provider=provider
-        )
+        tts_manager = TTSProviderManager(config_data={}, overall_provider=provider)
 
         # Determine output path and operation
         yaml_output: Path

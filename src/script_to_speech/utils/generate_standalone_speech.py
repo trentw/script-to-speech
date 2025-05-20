@@ -54,8 +54,7 @@ def get_provider_class(
 
 
 def generate_standalone_speech(
-    provider_class: Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]],
-    speaker_config: Dict[str, Any],
+    tts_manager: TTSProviderManager,
     text: str,
     variant_num: int = 1,
     output_dir: str = "standalone_speech",
@@ -65,11 +64,10 @@ def generate_standalone_speech(
     keep_silence: int = 100,
 ) -> None:
     """
-    Generate speech using specified provider.
+    Generate speech using specified provider via TTSProviderManager.
 
     Args:
-        provider_class: TTS provider class (stateful or stateless)
-        speaker_config: Configuration dictionary for the specific voice/speaker
+        tts_manager: TTSProviderManager instance to use for generation
         text: Text to convert to speech
         variant_num: Variant number when generating multiple versions
         output_dir: Directory for output files
@@ -82,21 +80,9 @@ def generate_standalone_speech(
         # Prepend constant sentence if split mode is enabled
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
 
-        # Instantiate the client
-        client = provider_class.instantiate_client()
-
-        # Generate speech based on provider type
-        if issubclass(provider_class, StatefulTTSProviderBase):
-            # Create and use stateful provider instance
-            provider_instance = provider_class()
-            audio_data = provider_instance.generate_audio(
-                client, speaker_config, generation_text
-            )
-        else:  # Stateless class
-            # Call class method directly
-            audio_data = provider_class.generate_audio(
-                client, speaker_config, generation_text
-            )
+        # Generate audio using TTSProviderManager
+        # "default" is the key used in _build_tts_config_data
+        audio_data = tts_manager.generate_audio("default", generation_text)
 
         # Create timestamp for unique filenames
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -107,9 +93,10 @@ def generate_standalone_speech(
         # Create base filename components
         text_preview = clean_filename(text[:30])
         variant_suffix = f"_variant{variant_num}" if variant_num > 1 else ""
-        # Get provider and speaker identifiers (directly from class methods)
-        provider_id = provider_class.get_provider_identifier()
-        voice_id = provider_class.get_speaker_identifier(speaker_config)
+
+        # Get provider and speaker identifiers from TTSProviderManager
+        provider_id = tts_manager.get_provider_identifier("default")
+        voice_id = tts_manager.get_speaker_identifier("default")
 
         if split_audio:
             # Process audio through splitter
@@ -226,6 +213,42 @@ def json_or_str_type(value_str: str) -> Any:
         return value_str
 
 
+# Helper function to build config for TTSProviderManager
+def _build_tts_config_data(
+    args: argparse.Namespace,
+    provider_class: Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]],
+) -> Dict[str, Any]:
+    """Builds the TTS configuration data structure for TTSProviderManager, for a single 'default'."""
+    speaker_specific_config: Dict[str, Any] = {}
+
+    # Provider name must be part of the speaker_specific_config for validation and later use by TTSProviderManager
+    speaker_specific_config["provider"] = args.provider
+
+    required_fields = provider_class.get_required_fields()
+    optional_fields = provider_class.get_optional_fields()
+
+    for field in required_fields:
+        if field == "provider":  # Already added
+            continue
+        speaker_specific_config[field] = getattr(args, field)
+
+    for field in optional_fields:
+        value = getattr(args, field, None)
+        if value is not None:
+            speaker_specific_config[field] = value
+
+    # Validate the constructed speaker config
+    try:
+        provider_class.validate_speaker_config(speaker_specific_config)
+    except Exception as e:
+        raise ValueError(
+            f"Generated speaker_config for provider '{args.provider}' is invalid: {e}"
+        )
+
+    # TTSProviderManager expects a dict of {speaker_name: speaker_config_dict}
+    return {"default": speaker_specific_config}
+
+
 def main() -> int:
     # Get available providers
     available_providers = []
@@ -249,18 +272,24 @@ def main() -> int:
         "provider", choices=available_providers, help="TTS provider to use"
     )
 
+    # Temporarily parse known args to get the provider name for dynamic argument setup
+    temp_args, _ = parser.parse_known_args()
+    provider_name_for_args = temp_args.provider
+
     # Get provider class to determine fields
-    provider_class = get_provider_class(parser.parse_known_args()[0].provider)
+    provider_class = get_provider_class(provider_name_for_args)
     required_fields = provider_class.get_required_fields()
     optional_fields = provider_class.get_optional_fields()
 
-    # Add arguments for each required field
+    # Add arguments for each required field (excluding 'provider' as it's a positional arg)
     for field in required_fields:
+        if field == "provider":
+            continue
         parser.add_argument(
             f"--{field}",
             required=True,
-            type=json_or_str_type,  # Use custom type to handle JSON
-            help=f"Required {field} parameter for {parser.parse_known_args()[0].provider}",
+            type=json_or_str_type,
+            help=f"Required {field} parameter for {provider_name_for_args}",
         )
 
     # Add arguments for each optional field
@@ -268,8 +297,8 @@ def main() -> int:
         parser.add_argument(
             f"--{field}",
             required=False,
-            type=json_or_str_type,  # Use custom type to handle JSON
-            help=f"Optional {field} parameter for {parser.parse_known_args()[0].provider}",
+            type=json_or_str_type,
+            help=f"Optional {field} parameter for {provider_name_for_args}",
         )
 
     parser.add_argument("texts", nargs="+", help="Text strings to convert to speech")
@@ -321,32 +350,26 @@ def main() -> int:
             logger.error(f"Error configuring ffmpeg: {e}")
             return 1
 
-    # Build the speaker configuration dictionary from arguments
-    speaker_config: Dict[str, Any] = {}
-
-    # Add required fields
-    for field in required_fields:
-        speaker_config[field] = getattr(args, field)
-
-    # Add optional fields if provided
-    for field in optional_fields:
-        value = getattr(args, field, None)
-        if value is not None:
-            speaker_config[field] = value
-
     try:
-        # Validate the constructed speaker config using the provider class
-        provider_class.validate_speaker_config(speaker_config)
+        # Get the provider class again based on the final parsed args.provider
+        # This is important because parse_known_args might not have all info if args are interleaved.
+        final_provider_class = get_provider_class(args.provider)
 
-        # Store the provider class reference directly (no instantiation at this point)
-        provider_ref = provider_class
+        # Build the configuration data for TTSProviderManager
+        tts_config_data = _build_tts_config_data(args, final_provider_class)
+
+        # Instantiate TTSProviderManager
+        tts_manager = TTSProviderManager(
+            config_data=tts_config_data,
+            overall_provider=None,
+            dummy_tts_provider_override=False,  # Standalone utility typically doesn't use dummy override
+        )
 
         # Generate speech for each text string
         for text in args.texts:
             for variant in range(1, args.variants + 1):
                 generate_standalone_speech(
-                    provider_class=provider_ref,
-                    speaker_config=speaker_config,
+                    tts_manager=tts_manager,
                     text=text,
                     variant_num=variant if args.variants > 1 else 1,
                     output_dir=args.output_dir,

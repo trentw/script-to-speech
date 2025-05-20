@@ -8,7 +8,7 @@ for testing purposes.
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pytest
 import yaml
@@ -45,9 +45,13 @@ class TestDummyProviderOverride:
 
     def test_dummy_tts_provider_override_enabled(self, sample_config_file):
         """Test that providers are correctly overridden when dummy_tts_provider_override is True."""
-        # Initialize TTSProviderManager with dummy_tts_provider_override=True
+        # Load the config file into a dictionary
+        with open(sample_config_file, "r") as f:
+            config_data_for_test = yaml.safe_load(f)
+
+        # Initialize TTSProviderManager with dummy_tts_provider_override=True and config_data
         manager = TTSProviderManager(
-            sample_config_file, dummy_tts_provider_override=True
+            config_data=config_data_for_test, dummy_tts_provider_override=True
         )
 
         # Ensure the manager is initialized
@@ -66,8 +70,14 @@ class TestDummyProviderOverride:
 
     def test_dummy_tts_provider_override_disabled(self, sample_config_file):
         """Test that providers are not overridden when dummy_tts_provider_override is False."""
-        # Initialize TTSProviderManager with dummy_tts_provider_override=False (default)
-        manager = TTSProviderManager(sample_config_file)
+        # Load the config file into a dictionary
+        with open(sample_config_file, "r") as f:
+            config_data_for_test = yaml.safe_load(f)
+
+        # Initialize TTSProviderManager with dummy_tts_provider_override=False (default) and config_data
+        manager = TTSProviderManager(
+            config_data=config_data_for_test
+        )  # dummy_tts_provider_override defaults to False
 
         # Ensure the manager is initialized
         manager._ensure_initialized()
@@ -85,6 +95,10 @@ class TestDummyProviderOverride:
         import script_to_speech.script_to_speech as script_to_speech
 
         # Mock the parse_arguments function to return args with dummy_tts_provider_override=True
+        # Also, prepare the expected config data that will be "loaded" by script_to_speech.main
+        with open(sample_config_file, "r") as f:
+            expected_config_data_for_assertion = yaml.safe_load(f)
+
         with (
             patch(
                 "script_to_speech.script_to_speech.parse_arguments"
@@ -98,10 +112,21 @@ class TestDummyProviderOverride:
             patch(
                 "script_to_speech.script_to_speech.configure_ffmpeg"
             ) as mock_configure_ffmpeg,
-            patch("os.path.exists", return_value=True),
+            patch(
+                "os.path.exists", return_value=True
+            ),  # Ensure main thinks the config file exists
+            # Mock the file open and yaml.safe_load that script_to_speech.main will perform
+            patch(
+                "builtins.open",
+                new_callable=mock_open,
+                read_data=sample_config_file.read_text(),
+            ) as mock_file_open_in_main,
+            patch(
+                "yaml.safe_load", return_value=expected_config_data_for_assertion
+            ) as mock_yaml_load_in_main,
             patch(
                 "script_to_speech.script_to_speech.TTSProviderManager"
-            ) as mock_tts_manager,
+            ) as mock_tts_manager,  # This is the one we assert against
             patch(
                 "script_to_speech.script_to_speech.get_text_processor_configs"
             ) as mock_get_configs,
@@ -120,7 +145,8 @@ class TestDummyProviderOverride:
             patch(
                 "script_to_speech.script_to_speech.save_modified_json"
             ) as mock_save_json,
-            patch("os.makedirs") as mock_makedirs,
+            patch("os.makedirs") as mock_makedirs,  # From original test
+            patch("sys.exit") as mock_exit,  # To prevent test from exiting
         ):
 
             # Configure parse_arguments mock
@@ -179,8 +205,18 @@ class TestDummyProviderOverride:
             script_to_speech.main()
 
             # Assert
-            # Check that TTSProviderManager was initialized with dummy_tts_provider_override=True
-            mock_tts_manager.assert_called_once_with(sample_config_file, None, True)
+            # Check that TTSProviderManager was initialized with the loaded config_data and dummy_tts_provider_override=True
+            mock_tts_manager.assert_called_once_with(
+                config_data=expected_config_data_for_assertion,
+                overall_provider=None,  # As per args.provider being None in this test's setup for parse_args
+                dummy_tts_provider_override=True,
+            )
+
+            # Ensure that script_to_speech.main attempted to load the correct config file
+            mock_file_open_in_main.assert_called_once_with(
+                sample_config_file, "r", encoding="utf-8"
+            )
+            mock_yaml_load_in_main.assert_called_once()
 
             # Check that create_output_folders was called with dummy_tts_provider_override=True
             mock_create_folders.assert_called_once_with(

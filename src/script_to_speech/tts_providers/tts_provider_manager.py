@@ -11,6 +11,8 @@ import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
+from script_to_speech.utils.env_utils import load_environment_variables
+
 from .base.exceptions import TTSError, VoiceNotFoundError
 from .base.stateful_tts_provider import StatefulTTSProviderBase
 from .base.stateless_tts_provider import StatelessTTSProviderBase
@@ -21,7 +23,7 @@ class TTSProviderManager:
 
     def __init__(
         self,
-        config_path: Path,
+        config_data: Dict[str, Any],
         overall_provider: Optional[str] = None,
         dummy_tts_provider_override: bool = False,
     ):
@@ -29,11 +31,15 @@ class TTSProviderManager:
         Initialize the TTS Manager.
 
         Args:
-            config_path: Path to YAML configuration file
+            config_data: Dictionary containing TTS provider configuration
             overall_provider: Optional provider to use when provider isn't specified in config
             dummy_tts_provider_override: If True, override all TTS providers with dummy TTS providers
         """
-        self._config_path = config_path
+        # Load environment variables from .env file if it exists
+        # Ensures API keys for TTS providers are available before any provider is initialized
+        load_environment_variables()
+
+        self._config_data = config_data
         self._overall_provider = overall_provider
         self._dummy_tts_provider_override = dummy_tts_provider_override
         self._provider_refs: Dict[
@@ -52,7 +58,7 @@ class TTSProviderManager:
     def _ensure_initialized(self) -> None:
         """Ensure config is loaded and providers are initialized."""
         if not self._is_initialized:
-            self._load_config(self._config_path)
+            self._load_config(self._config_data)
             self._is_initialized = True
 
     @classmethod
@@ -102,36 +108,35 @@ class TTSProviderManager:
                 f"Ensure the provider directory exists and contains tts_provider.py"
             )
 
-    def _load_config(self, config_path: Path) -> None:
+    def _load_config(self, config_data: Dict[str, Any]) -> None:
         """
-        Load and validate provider configuration.
+        Load and validate provider configuration from a dictionary.
 
         Args:
-            config_path: Path to YAML configuration file
+            config_data: Dictionary containing TTS provider configuration
 
         Raises:
             ValueError: If configuration is invalid or providers cannot be initialized
         """
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-
-        if not isinstance(config, dict):
+        if not isinstance(config_data, dict):
             raise ValueError(
-                f"Invalid YAML format in {config_path}: root must be a mapping"
+                "Invalid configuration data: root must be a mapping (dictionary)"
             )
+
+        config = config_data  # Use the provided dictionary directly
 
         # Store speaker configs and determine required providers
         required_providers = set()
         self._speaker_configs_map.clear()
         self._speaker_providers.clear()
 
-        if not config:
-            raise ValueError(f"Voice configuration file '{config_path}' is empty.")
+        if not config:  # Check if the provided dictionary is empty
+            raise ValueError("Voice configuration data is empty.")
 
         for speaker, speaker_config in config.items():
             if not isinstance(speaker_config, dict):
                 raise ValueError(
-                    f"Configuration for speaker '{speaker}' in {config_path} must be a mapping, not {type(speaker_config)}"
+                    f"Configuration for speaker '{speaker}' must be a mapping (dictionary), not {type(speaker_config)}"
                 )
 
             # Get provider from config or use overall provider

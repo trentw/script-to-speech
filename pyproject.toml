@@ -16,6 +16,7 @@ dependencies = [
     "pydub>=0.25.1",
     "pdfplumber>=0.10.3",
     "PyYAML>=6.0.1",
+    "python-dotenv>=1.0.0",
     "ruamel.yaml>=0.17.21",
     "unidecode>=1.4.0",
     "openai>=1.76.0",
@@ -35,7 +36,7 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "pytest-mock>=3.14.0",
-    "mypy>=1.15.0",
+    "mypy>=1.10.0",  # Aligned with pre-commit and latest stable
     "types-pyYAML>=6.0.12",
     "types-requests>=2.32.0",
     "types-tqdm>=4.67.0",
@@ -102,7 +103,7 @@ include_trailing_comma = true
 skip = ["ffmpeg", "input", "output", "__pycache__", "source_screenplays", "standalone_speech", "venv"]
 
 [tool.mypy]
-python_version = "3.8"  # Set to your project's min Python version
+python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -111,8 +112,8 @@ check_untyped_defs = true
 disallow_untyped_decorators = false
 no_implicit_optional = true
 strict_optional = true
-namespace_packages = true
 explicit_package_bases = true
+mypy_path = "src"
 
 # Exclude directories
 exclude = "/(ffmpeg|input|output|__pycache__|source_screenplays|standalone_speech|venv)/.*"
@@ -124,5 +125,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*"]
 ignore_missing_imports = true

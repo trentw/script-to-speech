@@ -1625,6 +1625,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-dotenv"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/88/2c/7bb1416c5620485aa793f2de31d3df393d3686aa8a8506d11e10e13c5baf/python_dotenv-1.1.0.tar.gz", hash = "sha256:41f90bc6f5f177fb41f53e87666db362025010eb28f60a01c9143bfa33a2b2d5", size = 39920, upload_time = "2025-03-25T10:14:56.835Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1e/18/98a99ad95133c6a6e2005fe89faedf294a748bd5dc803008059409ac9b1e/python_dotenv-1.1.0-py3-none-any.whl", hash = "sha256:d7c01d9e2293916c18baf562d95698754b0dbbb5e74d457c45d4f6561fb9d55d", size = 20256, upload_time = "2025-03-25T10:14:55.034Z" },
+]
+
+[[package]]
 name = "pywin32-ctypes"
 version = "0.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1808,6 +1817,7 @@ dependencies = [
     { name = "openai" },
     { name = "pdfplumber" },
     { name = "pydub" },
+    { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "requests" },
     { name = "ruamel-yaml" },
@@ -1838,7 +1848,7 @@ requires-dist = [
     { name = "elevenlabs", specifier = ">=1.57.0" },
     { name = "eyed3", specifier = ">=0.9.7" },
     { name = "isort", marker = "extra == 'dev'", specifier = ">=6.0.1" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.15.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
     { name = "openai", specifier = ">=1.76.0" },
     { name = "pdfplumber", specifier = ">=0.10.3" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.2.0" },
@@ -1846,6 +1856,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3.5" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.1.1" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.0" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.32.0" },
     { name = "ruamel-yaml", specifier = ">=0.17.21" },

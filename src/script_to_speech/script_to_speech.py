@@ -7,6 +7,7 @@ import traceback
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import yaml
 from pydub import AudioSegment
 from tqdm import tqdm
 
@@ -22,10 +23,7 @@ from .audio_generation.reporting import (
     print_unified_report,
     recheck_audio_files,
 )
-from .audio_generation.utils import (
-    concatenate_tasks_batched,
-    load_json_chunks,
-)
+from .audio_generation.utils import concatenate_tasks_batched, load_json_chunks
 from .text_processors.processor_manager import TextProcessorManager
 from .text_processors.utils import get_text_processor_configs
 from .tts_providers.tts_provider_manager import TTSProviderManager
@@ -186,6 +184,7 @@ def main() -> None:
 
     logger.info(f"\n--- Setting up for {run_mode.upper()} mode ---")
     # --- Setup ---
+    tts_manager = None
     try:
         # Create output folders using the unified utility function
         main_output_folder, cache_folder, logs_folder, log_file = create_output_folders(
@@ -229,9 +228,36 @@ def main() -> None:
             raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
         # Initialize Managers
-        tts_config_path = Path(args.tts_config) if args.tts_config else Path("")
+        tts_config_data_loaded = {}
+        if args.tts_config:
+            tts_config_path_obj = Path(args.tts_config)
+            if not tts_config_path_obj.exists():
+                raise FileNotFoundError(
+                    f"TTS configuration file not found: {tts_config_path_obj}"
+                )
+
+            with open(tts_config_path_obj, "r", encoding="utf-8") as f:
+                tts_config_data_loaded = yaml.safe_load(f)
+
+            if not isinstance(tts_config_data_loaded, dict):
+                raise ValueError(
+                    f"Invalid YAML format in {tts_config_path_obj}: root must be a mapping (dictionary)."
+                )
+            if not tts_config_data_loaded:  # Check if the dictionary is empty
+                raise ValueError(
+                    f"TTS configuration file '{tts_config_path_obj}' is empty or provides no configuration data."
+                )
+        else:
+            # If no --tts-config is provided, we proceed with an empty dict.
+            # TTSProviderManager will handle this (e.g., error out if 'default' speaker is needed but not found).
+            logger.warning(
+                "No TTS configuration file specified. TTSProviderManager will be initialized with an empty configuration."
+            )
+
         tts_manager = TTSProviderManager(
-            tts_config_path, None, args.dummy_tts_provider_override
+            config_data=tts_config_data_loaded,
+            overall_provider=None,
+            dummy_tts_provider_override=args.dummy_tts_provider_override,
         )
         logger.info("TTS provider manager initialized.")
 
@@ -360,6 +386,26 @@ def main() -> None:
     except Exception as e:
         logger.error(f"An error occurred during processing: {e}", exc_info=True)
         # Attempt to print report even if processing failed
+        # Check if tts_manager is bound before using it
+        if tts_manager is not None:
+            print_unified_report(
+                reporting_state=combined_reporting_state,
+                logger=logger,
+                tts_provider_manager=tts_manager,
+                silence_checking_enabled=args.check_silence is not None,
+                max_misses_to_report=args.max_report_misses,
+                max_text_length=args.max_report_text,
+            )
+        else:
+            logger.error(
+                "TTS provider manager was not initialized due to a setup error. Cannot print detailed report."
+            )
+        sys.exit(1)
+
+    # --- Final Reporting ---
+    logger.info("\n--- Final Report ---")
+    # Check if tts_manager is bound before using it
+    if tts_manager is not None:
         print_unified_report(
             reporting_state=combined_reporting_state,
             logger=logger,
@@ -368,28 +414,28 @@ def main() -> None:
             max_misses_to_report=args.max_report_misses,
             max_text_length=args.max_report_text,
         )
-        sys.exit(1)
-
-    # --- Final Reporting ---
-    logger.info("\n--- Final Report ---")
-    print_unified_report(
-        reporting_state=combined_reporting_state,
-        logger=logger,
-        tts_provider_manager=tts_manager,
-        silence_checking_enabled=args.check_silence is not None,
-        max_misses_to_report=args.max_report_misses,
-        max_text_length=args.max_report_text,
-    )
+    else:
+        logger.warning(
+            "TTS provider manager was not initialized. Cannot print detailed final report."
+        )
 
     # Save modified JSON regardless of run mode (useful for debugging)
-    save_modified_json(modified_dialogues, str(main_output_folder), args.input_file)
+    # Ensure modified_dialogues is defined even if processing failed
+    if modified_dialogues:
+        save_modified_json(modified_dialogues, str(main_output_folder), args.input_file)
+    else:
+        logger.warning("Modified dialogues not available to save.")
 
     # --- Completion Summary ---
     logger.info(f"\n--- {run_mode.upper()} Mode Completed ---")
     logger.info(f"Log file: {log_file}")
     logger.info(f"Cache folder: {cache_folder}")
     if not args.dry_run and not args.populate_cache:
-        logger.info(f"Output file: {output_file}")
+        # Ensure output_file is defined before using it
+        if output_file:
+            logger.info(f"Output file: {output_file}")
+        else:
+            logger.warning("Output file path not determined.")
 
     logger.info("Script finished.\n")
 

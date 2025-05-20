@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, call, mock_open, patch
 
 import pytest
+import yaml
 from pydub import AudioSegment
 
 from src.script_to_speech import script_to_speech
@@ -281,7 +282,19 @@ class TestMain:
             patch(
                 "src.script_to_speech.script_to_speech.configure_ffmpeg"
             ) as mock_configure_ffmpeg,
-            patch("os.path.exists", return_value=True),
+            patch(
+                "os.path.exists", return_value=True
+            ),  # For general os.path.exists calls
+            patch("pathlib.Path.exists", return_value=True),  # For Path.exists() calls
+            patch(
+                "builtins.open", mock_open(read_data="some yaml data")
+            ),  # Mock file open operations
+            patch(
+                "yaml.safe_load",
+                return_value={
+                    "default": {"provider": "test_provider", "voice": "test_voice"}
+                },
+            ),  # Mock YAML loading
             patch(
                 "src.script_to_speech.script_to_speech.TTSProviderManager"
             ) as mock_tts_manager,
@@ -347,13 +360,28 @@ class TestMain:
         mocks = mock_setup
 
         # Act
+        # Define the expected config data that yaml.safe_load should return
+        expected_loaded_config_data = {
+            "default": {"provider": "test_provider", "voice": "test_voice"}
+        }
+
         with (
             patch(
                 "src.script_to_speech.script_to_speech.plan_audio_generation"
             ) as mock_plan,
             patch("sys.exit") as mock_exit,
+            patch(
+                "src.script_to_speech.script_to_speech.save_modified_json"
+            ) as mock_save_json,  # Mock save_modified_json
+            # Mock the file reading and YAML parsing within script_to_speech.main
+            patch(
+                "builtins.open", mock_open(read_data="some yaml data")
+            ) as mock_file_open,
+            patch(
+                "yaml.safe_load", return_value=expected_loaded_config_data
+            ) as mock_yaml_load,
         ):
-            # Configure plan_audio_generation to return a valid response before raising exception
+            # Configure plan_audio_generation to return a valid response
             mock_tasks = [
                 MagicMock(
                     spec=AudioGenerationTask,
@@ -367,10 +395,17 @@ class TestMain:
             ]
             mock_plan.return_value = (mock_tasks, ReportingState())
 
-            # Now we can check that setup phase is completed properly
+            # Act: Call the main function
             script_to_speech.main()
 
         # Assert
+        # Check if open was called with the tts_config path
+        mock_file_open.assert_called_once_with(
+            mocks["args"].tts_config, "r", encoding="utf-8"
+        )
+        # Check if yaml.safe_load was called
+        mock_yaml_load.assert_called_once()
+
         mocks["logger"].info.assert_any_call(
             f"Logging initialized. Log file: {Path('output/folder/logs/log.txt')}"
         )
@@ -386,15 +421,18 @@ class TestMain:
 
         # Verify TTSProviderManager was initialized with the correct parameters
         mocks["tts_manager"].assert_called_once_with(
-            mocks["args"].tts_config,
-            None,
-            mocks["args"].dummy_tts_provider_override,
+            config_data=expected_loaded_config_data,  # Expect the loaded dictionary
+            overall_provider=None,
+            dummy_tts_provider_override=mocks["args"].dummy_tts_provider_override,
         )
 
     def test_main_normal_run(self, mock_setup):
         """Test a normal run of the main function."""
         # Arrange
         mocks = mock_setup
+        expected_loaded_config_data = {
+            "default": {"provider": "test_provider", "voice": "test_voice"}
+        }
 
         mock_tasks = [
             MagicMock(
@@ -419,6 +457,12 @@ class TestMain:
 
         # Setup additional mocks for the processing phase
         with (
+            patch(
+                "builtins.open", mock_open(read_data="some yaml data")
+            ) as mock_file_open,  # Added
+            patch(
+                "yaml.safe_load", return_value=expected_loaded_config_data
+            ) as mock_yaml_load,  # Added
             patch(
                 "src.script_to_speech.script_to_speech.plan_audio_generation"
             ) as mock_plan,
@@ -452,7 +496,7 @@ class TestMain:
             patch(
                 "src.script_to_speech.script_to_speech.save_modified_json"
             ) as mock_save_json,
-            patch("os.path.exists", return_value=True),
+            # Note: os.path.exists and pathlib.Path.exists are already mocked in mock_setup
         ):
 
             # Configure mocks
@@ -480,6 +524,9 @@ class TestMain:
         # Arrange
         mocks = mock_setup
         mocks["args"].dry_run = True
+        expected_loaded_config_data = {
+            "default": {"provider": "test_provider", "voice": "test_voice"}
+        }
 
         mock_tasks = [
             MagicMock(
@@ -495,6 +542,12 @@ class TestMain:
 
         # Setup additional mocks for the processing phase
         with (
+            patch(
+                "builtins.open", mock_open(read_data="some yaml data")
+            ) as mock_file_open,
+            patch(
+                "yaml.safe_load", return_value=expected_loaded_config_data
+            ) as mock_yaml_load,
             patch(
                 "src.script_to_speech.script_to_speech.plan_audio_generation"
             ) as mock_plan,
@@ -539,6 +592,9 @@ class TestMain:
         # Arrange
         mocks = mock_setup
         mocks["args"].populate_cache = True
+        expected_loaded_config_data = {
+            "default": {"provider": "test_provider", "voice": "test_voice"}
+        }
 
         mock_tasks = [
             MagicMock(
@@ -554,6 +610,12 @@ class TestMain:
 
         # Setup additional mocks for the processing phase
         with (
+            patch(
+                "builtins.open", mock_open(read_data="some yaml data")
+            ) as mock_file_open,
+            patch(
+                "yaml.safe_load", return_value=expected_loaded_config_data
+            ) as mock_yaml_load,
             patch(
                 "src.script_to_speech.script_to_speech.plan_audio_generation"
             ) as mock_plan,
@@ -618,6 +680,14 @@ class TestMain:
 
         # Setup additional mocks for the processing phase
         with (
+            # Mock file operations for tts_config.yaml
+            patch("builtins.open", mock_open(read_data="some yaml data")),
+            patch(
+                "yaml.safe_load",
+                return_value={
+                    "default": {"provider": "test_provider", "voice": "test_voice"}
+                },
+            ),
             patch(
                 "src.script_to_speech.script_to_speech.plan_audio_generation"
             ) as mock_plan,
@@ -631,14 +701,21 @@ class TestMain:
             patch(
                 "src.script_to_speech.script_to_speech.save_modified_json"
             ) as mock_save,
-            patch("sys.exit") as mock_exit,
+            patch(
+                "sys.exit", side_effect=SystemExit
+            ) as mock_exit,  # Mock sys.exit and raise SystemExit
         ):
 
             # Configure mocks - plan works but check_for_silence fails
             mock_plan.return_value = (mock_tasks, ReportingState())
 
-            # Act
-            script_to_speech.main()
+            # Act - expect SystemExit to be raised
+            try:
+                script_to_speech.main()
+                pytest.fail("Expected SystemExit to be raised")
+            except SystemExit:
+                # This is expected
+                pass
 
             # Assert
             # Since in the try/except, we're expecting print_unified_report to be called
@@ -646,6 +723,7 @@ class TestMain:
             mock_exit.assert_called_once_with(1)
             mocks["logger"].error.assert_called()
 
+            # Assert that the report was printed at least once (it might be called in the main except block)
             assert mock_report.call_count >= 1
 
     def test_main_error_handling(self, mock_setup):
@@ -662,24 +740,43 @@ class TestMain:
                 script_to_speech.main()
 
     def test_dummy_tts_provider_override(self, mock_setup):
-        """Test that dummy TTS provider override mode works correctly."""
+        """Test that dummy TTS provider override mode works correctly when main() is called."""
         # Arrange
         mocks = mock_setup
-        mocks["args"].dummy_tts_provider_override = True
+        mocks["args"].dummy_tts_provider_override = True  # Set the flag for this test
 
-        # Act - Just call the TTSProviderManager initialization directly
-        with patch("os.makedirs") as mock_makedirs:
-            # Call the function that initializes the TTSProviderManager
-            script_to_speech.TTSProviderManager(
-                mocks["args"].tts_config,
-                mocks["args"].provider,
-                mocks["args"].dummy_tts_provider_override,
-            )
+        # Define the expected config data that yaml.safe_load should return
+        expected_loaded_config_data = {
+            "default": {"provider": "dummy_provider", "voice": "dummy_voice"}
+        }
+
+        # Act
+        # We need to mock file operations as script_to_speech.main() will try to load the config
+        with (
+            patch(
+                "builtins.open", mock_open(read_data="dummy yaml data")
+            ) as mock_file_open,
+            patch(
+                "yaml.safe_load", return_value=expected_loaded_config_data
+            ) as mock_yaml_load,
+            patch(
+                "src.script_to_speech.script_to_speech.plan_audio_generation"
+            ) as mock_plan,  # Mock to prevent full run
+            patch("sys.exit") as mock_exit,  # Mock to prevent exit
+        ):
+            mock_plan.return_value = (
+                [],
+                ReportingState(),
+            )  # Minimal return for plan_audio_generation
+            script_to_speech.main()
 
             # Assert
             # Verify TTSProviderManager was initialized with dummy_tts_provider_override=True
+            # and the loaded config_data
             mocks["tts_manager"].assert_called_once_with(
-                mocks["args"].tts_config, mocks["args"].provider, True
+                config_data=expected_loaded_config_data,
+                overall_provider=None,  # As per script_to_speech.main's current usage
+                dummy_tts_provider_override=True,  # This is what we're testing
             )
 
     def test_modified_json_error_handling(self):
