@@ -167,5 +167,3 @@ cython_debug/
 # Project directories
 output/
 input/
-standalone_speech/
-source_screenplays/
