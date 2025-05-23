@@ -69,6 +69,8 @@ class AudioDownloadManager:
         self.provider_backoff_time: Dict[str, float] = defaultdict(
             lambda: initial_backoff_seconds
         )
+        # Track when we last hit rate limits for conservative backoff reset
+        self.provider_last_rate_limit_time: Dict[str, float] = defaultdict(float)
 
         # Initialize task tracking
         self.pending_tasks: List[AudioGenerationTask] = []
@@ -163,19 +165,39 @@ class AudioDownloadManager:
             return
 
         with self.state_lock:
-            # Mark the provider as rate limited
+            # Check if provider is already rate limited (concurrent in-flight task)
+            was_already_rate_limited = self.provider_rate_limited[task.provider_id]
+
+            # Mark the provider as rate limited and track when it happened
             self.provider_rate_limited[task.provider_id] = True
+            current_time = time.time()
+            self.provider_last_rate_limit_time[task.provider_id] = current_time
 
-            # Calculate backoff time (exponential backoff based on retry count)
-            current_backoff = self.provider_backoff_time[task.provider_id]
-            self.provider_backoff_until[task.provider_id] = (
-                time.time() + current_backoff
-            )
+            # Only escalate backoff for the first task that hits rate limit
+            # Concurrent in-flight tasks shouldn't escalate the backoff
+            if not was_already_rate_limited:
+                # Calculate backoff time (exponential backoff based on retry count)
+                current_backoff = self.provider_backoff_time[task.provider_id]
+                self.provider_backoff_until[task.provider_id] = (
+                    current_time + current_backoff
+                )
 
-            # Increase backoff for next time
-            self.provider_backoff_time[task.provider_id] = min(
-                current_backoff * self.backoff_factor, MAX_BACKOFF_SECONDS
-            )
+                # Increase backoff for next time
+                self.provider_backoff_time[task.provider_id] = min(
+                    current_backoff * self.backoff_factor, MAX_BACKOFF_SECONDS
+                )
+
+                logger.info(
+                    f"Task {task.idx} hit rate limit for provider '{task.provider_id}' (first), "
+                    f"retry {task.retry_count + 1}/{self.max_retries} scheduled in {current_backoff:.2f}s. "
+                    f"Provider locked until backoff period ends."
+                )
+            else:
+                # This is a concurrent in-flight task, don't escalate backoff
+                logger.info(
+                    f"Task {task.idx} hit rate limit for provider '{task.provider_id}' (concurrent), "
+                    f"retry {task.retry_count + 1}/{self.max_retries} will use existing backoff period."
+                )
 
             # Update task status and retry count
             task.status = TaskStatus.FAILED_RATE_LIMIT
@@ -184,10 +206,6 @@ class AudioDownloadManager:
             # Add to retry queue if under max retries
             if task.retry_count <= self.max_retries:
                 self.rate_limited_tasks[task.provider_id].append(task)
-                logger.info(
-                    f"Task {task.idx} hit rate limit for provider '{task.provider_id}', "
-                    f"retry {task.retry_count}/{self.max_retries} scheduled in {current_backoff:.2f}s"
-                )
             else:
                 logger.error(
                     f"Task {task.idx} exceeded max retries ({self.max_retries}), "
@@ -334,6 +352,7 @@ class AudioDownloadManager:
                 # If backoff period is over, we can retry tasks for this provider
                 if current_time >= self.provider_backoff_until[provider_id]:
                     self.provider_rate_limited[provider_id] = False
+
                     # Clear the rate limited tasks list and add them to retry list
                     tasks_to_retry.extend(tasks)
                     self.rate_limited_tasks[provider_id] = []
@@ -382,6 +401,14 @@ class AudioDownloadManager:
 
             # If no tasks are ready to process, wait a bit and check again
             if not self.pending_tasks:
+                # Log current state for debugging
+                rate_limited_count = sum(
+                    len(tasks) for tasks in self.rate_limited_tasks.values()
+                )
+                if rate_limited_count > 0:
+                    logger.debug(
+                        f"Waiting for rate limit backoff to expire ({rate_limited_count} tasks waiting)"
+                    )
                 time.sleep(0.5)  # Short sleep to avoid CPU spinning
                 continue
 
@@ -416,6 +443,18 @@ class AudioDownloadManager:
                         self.global_semaphore.acquire()
 
                         try:
+                            # Check rate limit status AFTER acquiring semaphores
+                            # This prevents tasks from executing if rate limit was hit
+                            # by another concurrent task after initial submission
+                            if not self._can_process_task(task):
+                                # Skipping logging due to potential log spam in high rate-limit situations
+                                # logger.debug(
+                                #    f"Task {task.idx} deferred due to provider '{provider_id}' rate limit"
+                                # )
+                                # Return None to indicate task should be retried later
+                                # The task will be re-added to pending queue
+                                return None
+
                             # Process the task
                             return self._process_single_task(task)
                         finally:
@@ -438,7 +477,23 @@ class AudioDownloadManager:
                     time.sleep(0.5)
                     continue
 
-                logger.info(f"Submitted {len(futures_map)} tasks to thread pool")
+                # Log provider distribution of submitted tasks
+                provider_counts: Dict[str, int] = {}
+                for task in tasks_to_submit:
+                    provider_id = task.provider_id or "unknown"
+                    provider_counts[provider_id] = (
+                        provider_counts.get(provider_id, 0) + 1
+                    )
+
+                provider_info = ", ".join(
+                    [
+                        f"{provider}: {count}"
+                        for provider, count in provider_counts.items()
+                    ]
+                )
+                logger.info(
+                    f"Submitted {len(futures_map)} tasks to thread pool ({provider_info})"
+                )
 
                 # Process completed tasks with a progress bar
                 with tqdm(
@@ -456,6 +511,16 @@ class AudioDownloadManager:
                             # Get the result (may raise an exception)
                             task_reporting_state = future.result()
 
+                            # Check if task was deferred due to rate limit
+                            if task_reporting_state is None:
+                                # Task was skipped due to rate limit, add back to pending
+                                with self.state_lock:
+                                    self.pending_tasks.append(task)
+                                # Skipping logging due to potential log spam in high rate-limit situations
+                                # logger.debug(f"Task {task.idx} deferred due to provider '{task.provider_id}' rate limit")
+                                # Don't update progress bar for deferred tasks
+                                continue
+
                             # Update progress bar
                             progress_bar.update(1)
 
@@ -470,6 +535,52 @@ class AudioDownloadManager:
                             # Mark as completed
                             with self.state_lock:
                                 self.completed_tasks.append(task)
+
+                                # Conservative backoff reset: only reset if we've had sustained success
+                                # Reset backoff only if we've gone 2x the current backoff time without hitting rate limits
+                                if (
+                                    task.provider_id
+                                    and task.provider_id in self.provider_backoff_time
+                                ):
+                                    current_time = time.time()
+                                    current_backoff = self.provider_backoff_time[
+                                        task.provider_id
+                                    ]
+                                    last_rate_limit_time = (
+                                        self.provider_last_rate_limit_time[
+                                            task.provider_id
+                                        ]
+                                    )
+
+                                    # Calculate grace period (2x current backoff time)
+                                    grace_period = current_backoff * 2
+                                    time_since_last_rate_limit = (
+                                        current_time - last_rate_limit_time
+                                    )
+
+                                    if (
+                                        current_backoff > self.initial_backoff_seconds
+                                        and time_since_last_rate_limit >= grace_period
+                                    ):
+                                        old_backoff = current_backoff
+                                        self.provider_backoff_time[task.provider_id] = (
+                                            self.initial_backoff_seconds
+                                        )
+                                        logger.info(
+                                            f"Task {task.idx} completed successfully, "
+                                            f"reset provider '{task.provider_id}' backoff from {old_backoff:.2f}s to {self.initial_backoff_seconds:.2f}s "
+                                            f"after {time_since_last_rate_limit:.1f}s grace period"
+                                        )
+                                    elif current_backoff > self.initial_backoff_seconds:
+                                        # Log when we're still in grace period
+                                        remaining_grace = (
+                                            grace_period - time_since_last_rate_limit
+                                        )
+                                        logger.debug(
+                                            f"Task {task.idx} completed successfully, "
+                                            f"provider '{task.provider_id}' backoff remains at {current_backoff:.2f}s "
+                                            f"(grace period: {remaining_grace:.1f}s remaining)"
+                                        )
 
                             logger.debug(f"Task {task.idx} completed successfully")
 

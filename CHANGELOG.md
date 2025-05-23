@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Changed zonos tts-provider to base behavior on `default_voice_name` instead of `voice_seed`, since `voice_seed` is no longer part of the zonos API
 
 ### Fixed
+- Better handling of rate-limiting / backoff handling for providers with rolling maximum request windows
 - `standalone_speech` and `source_screenplay` folders now correctly created on first checkout
 - Adding py.typed to src root and updating pyproject.toml to have mypy path = src
 - For `--dummy-tts-provider-override` run mode, fall back to speaker name for `dummy_id` in cases where required fields are blank / not present 
