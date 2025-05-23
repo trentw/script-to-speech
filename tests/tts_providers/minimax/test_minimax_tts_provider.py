@@ -625,4 +625,4 @@ class TestMinimaxTTSProvider:
 
     def test_get_max_download_threads(self):
         """Test get_max_download_threads returns the expected value."""
-        assert MinimaxTTSProvider.get_max_download_threads() == 5
+        assert MinimaxTTSProvider.get_max_download_threads() == 1

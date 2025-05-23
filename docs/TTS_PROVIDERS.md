@@ -66,7 +66,7 @@ Script to Speech supports multiple Text-to-Speech providers. This guide covers c
 ### [Minimax](https://www.minimax.io/audio)
 - **Requirements**: API key and Group ID required
 - **Voice Options**: 60+ system voices with voice mixing capabilities
-- **Concurrent Downloads**: 5 threads
+- **Concurrent Downloads**: 1 thread (multi-threading supported, but rate-limit generally hit)
 - **Customization**: Voice mixing, speed, volume, pitch, emotion, language boost
 - **Considerations**
   - **Pros**
@@ -74,13 +74,14 @@ Script to Speech supports multiple Text-to-Speech providers. This guide covers c
       - Voice mixing allows blending multiple voices with different weights
       - Emotion control / pitch control for expressive speech
     - Extensive non-english support
-    - Fast generation
+    - Fast generation (but aggressive rate-limiting negates most benefit)
     - Cheap
   - **Cons**
     - Some voices lack life-like expressiveness, despite being high-quality otherwise
     - Some small quirks make for distracting dialogue
       - Issues with reading numbers at times (e.g. "In the year 1972" -> "In the year one-nine-seven-two")
       - Seems to pick the wrong heteronym more than providers like Elevenlabs / OpenAI (e.g. "*close* up" -> "*cloz* up" instead of "*cloce* up"; "we're going *live*" -> "we're going *liv*" instead of "we're going *live*")
+      - Some strange pronunciation for English words at times
   - **Best For**
     - Main and supporting characters (though maybe not narrators)
     - Emotional dialogue with varied expressions or ones requiring a voice blend

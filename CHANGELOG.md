@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Support for [Minimax](https://www.minimax.io/audio/text-to-speech) TTS provider with voice mixing capability
 
 ### Changed
+- Reduced Minimax concurrent thread count from 5 to 1 thread as rate limit was being constantly hit with even 2 threads
 - `generate_standalone_speech` now uses `tts_provider_manger` to generate audio instead of custom provider creation. This aligns the code / behavior with the core audio generation behavior in `script_to_speech.py`
 - Pulling `tts_provider_config` parsing out of `tts_provider_manager` so that the manager is instantiated with a configuration dict
 - Updating generate_standalone_speech to support outputting and parsing command strings corresponding to complex configs (like the dict-based config for Minimax's `voice_mix`)

@@ -286,9 +286,9 @@ class MinimaxTTSProvider(StatelessTTSProviderBase):
         Get the max number of concurrent download threads for Minimax provider.
 
         Returns:
-            int: Returns 5 concurrent threads (default assumption)
+            int: Returns 1 concurrent threads
         """
-        return 5
+        return 1
 
     @classmethod
     def get_speaker_identifier(cls, speaker_config: Dict[str, Any]) -> str:
