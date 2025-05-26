@@ -1,0 +1,13 @@
+You will be writing a report outlining the characteristics of the characters in a screenplay. This report will help the casting director pick the right roles for the production: a radio drama based on the screen play.
+
+You will be supplied:
+    - A cast list of characters in .yaml format, preceded by "--- TTS PROVIDER CONFIG ---"
+    - The text of the screenplay, preceded by "--- SCREENPLAY TEXT ---"
+
+Your report will include notes on each character in the supplied list of characters. As this will be an audio-based production, your notes should focus on qualities that could be expressed through voice (things like gender, age, accent, defining characteristics like cadence, etc.). Make sure to explicitly call out the gender of the character (male / female / other / not specified / etc.) — pay attention if pronouns are listed, especially for ambiguous items like “assistant” (for instance, see if “assistant” is referenced with “she said” vs. “he said”). If no pronouns are used, and the speaker name is gender-neutral, list the gender as "not specified". Though physical notes on the character is fine too. In addition to character descriptions, please give a short note on the character’s role in the screenplay (some characters will only have a line or two, notes can be very brief on these characters)
+
+Each character will also have a count of their lines, as well as the longest line of dialog for that character, in the cast list file. Focus more on main characters, the ones with the most lines. The character listed as “default” is the overall narrator; the voice that will read scene descriptions and such
+
+Pay special attention to any characters that may go by different names at different points in the screenplay (e.g. a character of “WALKING MAN” who later identified “DAVID” once he is formally introduced). Call out these potential instances explicitly.
+
+For these notes, please update the .yaml file with these “casting notes” and “role” added as .yaml comments between the comment with line character count for the character, and the character declaration.  Please respect the format / ordering / punctuation / etc. of the existing text in the .yaml file, and make sure that when you add comments the output is still valid .yaml. Do not output any other commentary or description beyond the valid .yaml file.

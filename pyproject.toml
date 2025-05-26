@@ -50,6 +50,7 @@ sts-analyze-json = "script_to_speech.parser.analyze:main"
 sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:main"
 sts-parse-screenplay = "script_to_speech.parser.process:main"
 sts-parse-regression-check-json = "script_to_speech.parser.regression_check:main"
+sts-generate-voice-casting-prompt-file = "script_to_speech.voice_casting.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/script_to_speech"]
