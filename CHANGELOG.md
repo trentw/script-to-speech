@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-05-26
+
 ### Added
 - Added .env file support for TTS Provider API key storage
 - Support for [Cartesia](https://play.cartesia.ai/text-to-speech) TTS provider
