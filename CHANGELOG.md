@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
 - Added `sts-generate-voice-casting-prompt-file` utility to aid in casting voice configs
 
 ## [1.1.0] - 2025-05-26

@@ -26,6 +26,7 @@ dependencies = [
     "static-ffmpeg>=2.5",
     "cartesia>=2.0.3",
     "requests>=2.32.0",
+    "pyperclip>=1.8.2",
 ]
 
 [project.optional-dependencies]
@@ -51,6 +52,7 @@ sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:
 sts-parse-screenplay = "script_to_speech.parser.process:main"
 sts-parse-regression-check-json = "script_to_speech.parser.regression_check:main"
 sts-generate-voice-casting-prompt-file = "script_to_speech.voice_casting.cli:main"
+sts-copy-to-clipboard = "script_to_speech.utils.clipboard_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/script_to_speech"]
@@ -126,5 +128,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*"]
 ignore_missing_imports = true

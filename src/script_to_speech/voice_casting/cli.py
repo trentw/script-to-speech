@@ -51,7 +51,7 @@ def main() -> None:
         output_file_name = output_file_path.name
 
         print(f"\nSuccessfully generated voice casting prompt file:")
-        print(f"  {output_file_path.resolve()}")
+        print(f"  {output_file_path}")
         print(
             f"\nWARNING: The full text content of '{args.source_screenplay_path.name}' is included in this prompt."
         )
@@ -62,10 +62,11 @@ def main() -> None:
         print(
             f"1. Upload the file '{output_file_name}' to your preferred LLM interface."
         )
-        print(f"   OR")
+        print(f"     --OR--")
         print(
-            f"   Copy the entire contents of '{output_file_name}' and paste it into the LLM prompt."
+            f"   Run the following command to copy the prompt to your clipboard, for easy pasting:"
         )
+        print(f"     uv run sts-copy-to-clipboard '{output_file_path}'")
         print(
             f"2. After the LLM processes the content and provides updated YAML for character notes:"
         )
