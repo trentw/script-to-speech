@@ -235,6 +235,17 @@ HARRY:
   voice_id: ErXwobaYiN019PkySvjV
 ```
 
+### Step 5: Validate Configuration
+```bash
+# Basic validation (checks for missing/extra/duplicate speakers)
+uv run sts-tts-provider-yaml validate input/[screenplay]/[screenplay].json \
+  input/[screenplay]/[screenplay]_voice_config.yaml
+
+# Strict validation (also validates provider-specific fields)
+uv run sts-tts-provider-yaml validate input/[screenplay]/[screenplay].json \
+  input/[screenplay]/[screenplay]_voice_config.yaml --strict
+```
+
 ## Provider-Specific Configuration
 
 ### OpenAI Configuration
@@ -546,6 +557,7 @@ Optional methods:
 1. Use the generate → assign → populate workflow
 2. Keep backup configurations for different voice setups
 3. Consider character type when assigning TTS providers
+4. Validate configurations with `sts-tts-provider-yaml validate`
 
 ### Multi-Provider Benefits
 1. **Speed**: Parallel processing across TTS providers
@@ -567,20 +579,29 @@ Optional methods:
    echo $ZONOS_API_KEY
    ```
 
-2. **Voice Not Found**
+2. **Voice Configuration Validation**
+   ```bash
+   # Check for missing/extra/duplicate speakers
+   uv run sts-tts-provider-yaml validate script.json config.yaml
+   
+   # Strict validation including provider field validation
+   uv run sts-tts-provider-yaml validate script.json config.yaml --strict
+   ```
+
+3. **Voice Not Found**
     - ElevenLabs: Ensure voice ID is from public library
     - OpenAI: Verify voice name matches available options
     - Minimax: Verify voice_id is one of the specified system voices
     - Minimax: Check voice_mix structure if using voice mixing
     - Zonos: Check default_voice_name is a valid voice
 
-3. **Rate Limiting**
+4. **Rate Limiting**
    - Check provider-specific rate limits
    - Limit global concurrent downloads with `--max-workers` run mode modifier
    - Distribute voices across TTS providers
    - Monitor monthly quotas for voice adds / removes (ElevenLabs)
 
-4. **Quality Issues**
+5. **Quality Issues**
     - OpenAI: Try different voices for different character types
     - ElevenLabs: Use "narrative"/"conversational" tagged voices
     - Minimax: Experiment with voice_mix for unique character voices
@@ -592,4 +613,9 @@ Optional methods:
 # Test single line of dialogue
 uv run sts-generate-standalone-speech openai --voice echo "Test text"
 
+# Validate voice configuration against script
+uv run sts-tts-provider-yaml validate input/script.json config.yaml
+
+# Strict validation including provider field validation
+uv run sts-tts-provider-yaml validate input/script.json config.yaml --strict
 ```

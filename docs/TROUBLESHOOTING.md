@@ -141,14 +141,23 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
 
 **Solutions**:
 
-1. **OpenAI**
+1. **Validate Configuration**
+   ```bash
+   # Check for missing/extra/duplicate speakers
+   uv run sts-tts-provider-yaml validate script.json config.yaml
+   
+   # Strict validation including provider field validation
+   uv run sts-tts-provider-yaml validate script.json config.yaml --strict
+   ```
+
+2. **OpenAI**
 - Ensure a valid voice option is being used
    ```bash
    # Valid voice options
    voices: [alloy, ash, coral, echo, fable, onyx, nova, sage, shimmer]
    ```
 
-2. **ElevenLabs**
+3. **ElevenLabs**
 - Check voice ID is from public voice library (https://elevenlabs.io/app/voice-library) and not the "My voices" library (https://elevenlabs.io/app/voice-lab)
 - Search for voice ID in the [public voice library](https://elevenlabs.io/app/voice-library) to make sure it still exists.  Voices are some times removed from ElevenLabs
    ```bash
@@ -156,7 +165,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
    voice_id: ErXwobaYiN019PkySvjV  # ID must be from public library
    ```
 
-3. **Minimax**
+4. **Minimax**
     ```bash
     # Validate voice_id is one of the valid voice IDs
     voice_id: Casual_Guy  # Must be one of system voices
@@ -169,7 +178,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
         weight: 30
     ```
 
-4. **Zonos**
+5. **Zonos**
     ```bash
     # Validate voice is one of the default_voice_name from zonos documentation
     default_voice_name: american_male  # Must be one of 9 default voices
@@ -177,7 +186,7 @@ Note that this will limit the overall (cross-provider) maximum concurrent downlo
 
 **Prevention**:
 - Use `sts-tts-provider-yaml generate` for templates
-- Validate configuration with `--dry-run` run mode
+- Validate configuration with `--dry-run` run mode and / or `sts-tts-provider-yaml validate`
 - Keep backup of working configurations
 
 ### 5. Memory and Disk Space Issues
@@ -422,6 +431,56 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 - Use `--populate-cache` run mode to ensure all files downloaded before generation
 - Use local cache when possible
 
+### 11. LLM Voice Casting Issues
+
+**Problem**: Issues with LLM-assisted voice casting workflow.
+
+**Symptoms**:
+- LLM returns invalid YAML
+- Missing speakers in LLM output
+- Configuration validation errors
+
+**Solutions**:
+1. **Try a different LLM**
+   - Certain LLM providers / models struggle with the task of adding .yaml comments with leaving the rest of the structure intact
+      - Claude Sonnet and Gemini Pro seem to work well
+
+2. **Generate Proper Casting Prompt**
+   ```bash
+   # Ensure prompt includes current configuration
+   uv run sts-generate-voice-casting-prompt-file \
+     source_screenplays/script.pdf \
+     input/script/script_voice_config.yaml
+   ```
+
+3. **Copy Prompt Easily**
+   ```bash
+   # Copy to clipboard for easy pasting into LLM
+   uv run sts-copy-to-clipboard input/script/script_voice_casting_prompt.txt
+   ```
+
+4. **Validate LLM Output**
+   ```bash
+   # Check for structural issues
+   uv run sts-tts-provider-yaml validate input/script/script.json \
+     input/script/script_voice_config.yaml
+   
+   # Strict validation for provider fields
+   uv run sts-tts-provider-yaml validate input/script/script.json \
+     input/script/script_voice_config.yaml --strict
+   ```
+
+5. **Common LLM Output Issues**
+   - Missing speakers: LLM may not include all characters from the script
+   - Extra speakers: LLM may add characters not present in the script
+   - Invalid provider fields: LLM may use incorrect voice IDs or provider names
+   - YAML formatting errors: LLM may produce malformed YAML
+
+**Prevention**:
+- Provide clear instructions to the LLM about maintaining all existing speakers. Consider using a custom prompt
+- Validate configuration before proceeding with audio generation
+- Keep backup of working configurations
+
 ## Debugging Tools
 
 ### Command Line Tools
@@ -438,7 +497,16 @@ Reducing the amount of concurrent downloads can help reduce memory usage
    uv run sts-generate-audio script.json --tts-config config.yaml --dry-run
    ```
 
-3. **Processor Testing**
+3. **Configuration Validation**
+   ```bash
+   # Check voice configuration against script
+   uv run sts-tts-provider-yaml validate script.json config.yaml
+   
+   # Strict validation including provider fields
+   uv run sts-tts-provider-yaml validate script.json config.yaml --strict
+   ```
+
+4. **Processor Testing**
    ```bash
    # Test text processors independently
    uv run sts-apply-text-processors-json script.json \
@@ -446,11 +514,20 @@ Reducing the amount of concurrent downloads can help reduce memory usage
      --output-path debug_output.json
    ```
 
-4. **Parser Regression Testing**
+5. **Parser Regression Testing**
    ```bash
    # When making changes to the parser, show differences in output between
    # parser version used to originally generate script.json and current parser logic
    uv run sts-parse-regression-check-json script.json
+   ```
+
+6. **Voice Casting Utilities**
+   ```bash
+   # Generate LLM prompt for voice casting
+   uv run sts-generate-voice-casting-prompt-file script.pdf config.yaml
+   
+   # Copy any file to clipboard
+   uv run sts-copy-to-clipboard file.txt
    ```
 
 ### Log Analysis
@@ -492,6 +569,7 @@ When reporting issues, include:
    - Keep backup configurations
    - Version control YAML files
    - Document custom changes
+   - Use `sts-tts-provider-yaml validate` to check configurations
 
 3. **Resource Management**
    - Monitor disk space
@@ -503,8 +581,15 @@ When reporting issues, include:
    - Use `--populate-cache` during audio generation to ensure all files downloaded without issue
    - Use `--check-silence` during audio generation
    - Use `sts-generate-standalone-speech` to test new voices and TTS providers
+   - Validate voice configurations with `sts-tts-provider-yaml validate`
 
 5. **Error Prevention**
    - Set up API keys properly
    - Follow naming conventions
    - Use provided templates
+   - Validate configurations before audio generation
+
+6. **LLM-Assisted Workflows**
+   - Use `sts-generate-voice-casting-prompt-file` for consistent prompts
+   - Always validate LLM output with `sts-tts-provider-yaml validate`
+   - Keep backup configurations before making LLM-suggested changes

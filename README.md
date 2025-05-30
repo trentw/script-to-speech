@@ -13,6 +13,7 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 - **Multi-threaded downloads**: With separate queues per provider for faster generation
 - **Silence detection**: Identify and replace silent audio clips
 - **Cache system**: Resume interrupted generations and reuse audio. Change text / speaker assignments and only regenerte that specific audio
+- **Voice casting assistance**: Generate prompts for LLM-assisted voice casting and validation
 
 ## CLI Commands
 
@@ -25,6 +26,8 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 | `sts-analyze-json`                | Analyze screenplay structure       |
 | `sts-apply-text-processors-json`  | Apply text transformations         |
 | `sts-parse-regression-check-json` | Validate parser output             |
+| `sts-generate-voice-casting-prompt-file` | Generate LLM casting prompts |
+| `sts-copy-to-clipboard`           | Copy file contents to clipboard    |
 
 ## Quick Start
 
@@ -253,7 +256,54 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    Fill in the provider-specific fields as in the single-provider case. For provider-specific instructions, including optional fields, see the instructions header at the top of each provider grouping. For more information, see the [detailed TTS Provider documentation](docs/TTS_PROVIDERS.md)
 
-4. **Custom Text Processing**
+### LLM-Assisted Voice Casting
+
+> **WARNING:** By default, the `sts-generate-voice-casting-prompt-file` command creates a prompt containing the full text of the supplied screenplay. Make sure to understand the data collection policies of any non-local LLM to which you may be supplying this prompt
+
+4. **Generate Voice Casting Prompt**
+
+   For complex scripts with many characters, you can use an LLM to generate casting notes (gender, vocal qualities, role summary, etc.) for each speaker in the screenplay:
+
+   ```bash
+   # Generate a prompt file for LLM-assisted voice casting
+   uv run sts-generate-voice-casting-prompt-file \
+     source_screenplays/your_script.pdf \
+     input/your_script/your_script_voice_config.yaml
+   ```
+
+   This creates `input/your_script/your_script_voice_casting_prompt.txt` containing:
+   - Instructions for the LLM to provide casting notes for each character in the voice configuration
+   - Your current voice configuration
+   - The full screenplay text
+
+5. **Copy Prompt to Clipboard**
+
+   ```bash
+   # Copy the generated prompt to your clipboard for easy pasting into an LLM
+   uv run sts-copy-to-clipboard input/your_script/your_script_voice_casting_prompt.txt
+   ```
+
+6. **Validate LLM Output**
+
+   After receiving updated voice configuration from the LLM, validate it:
+
+   ```bash
+   # Check for missing/extra/duplicate speakers and provider field issues
+   uv run sts-tts-provider-yaml validate input/your_script/your_script.json \
+     input/your_script/your_script_voice_config.yaml
+   ```
+
+   Use the `--strict` flag to also validate provider-specific configuration fields:
+
+   ```bash
+   # Strict validation including provider field validation
+   uv run sts-tts-provider-yaml validate input/your_script/your_script.json \
+     input/your_script/your_script_voice_config.yaml --strict
+   ```
+
+### Custom Text Processing
+
+7. **Custom Text Processing**
 
    Custom text processor configurations can be created that will chain with the default configuration. By default, the program will look for an additional configuration file named the same as the .json dialogue chunk file, with `_text_processor_config.yaml` appended.
 
@@ -279,7 +329,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 ### Iterative Audio Generation with Various Run Modes
   Script to Speech supports a number of run modes to test and iteratively build dialogue clips before generating the final .mp3 output. For detailed information beyond what is listed below, see the [run modes documentation](docs/RUN_MODES.md)
 
-   5. **Dry Run Testing**
+   8. **Dry Run Testing**
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
@@ -295,7 +345,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
   - Determining which audio files will be generated (useful when a speaker / dialogue chunk has been modified, and you want to see which files will be regenerated)
   - When used in combination with the `--check-silence` option described below to check for silent clips without attempting to regenerate them
 
-   6. **Populate cache with Silence Detection**
+   9. **Populate cache with Silence Detection**
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
      --tts-config input/your_script/your_script_voice_config_populated.yaml \
@@ -309,7 +359,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
    - Checkig price / quality / etc. before committing to full audio generation -- if the process is killed, it will resume downloading only new dialogues on next execution
    - Applying the `--cache-overrides` option described below
 
-   7. **Replace Silent Clips / "Re-Audition" Specific Clips**
+   10. **Replace Silent Clips / "Re-Audition" Specific Clips**
    Specific lines of dialogue can be generated with `sts-generate-standalone-speech`. Multiple lines can be supplied at once. The `-v` flag will determine how many "take" wil be generated for each line. These files will be output to the `standalone_speech` directory
 
    ```bash
@@ -327,7 +377,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
      standalone_speech/[original_cache_filename].mp3
    ```
 
-   8. **Apply Replacements**
+   11. **Apply Replacements**
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
@@ -337,7 +387,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    Replaces silent clips with generated audio and continues downloading any missing audio files
 
-   9. **Repeat** until all audio is cached, then generate final output:
+   12. **Repeat** until all audio is cached, then generate final output:
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
@@ -358,8 +408,9 @@ input/
     ├── [screenplay_name].json        # Parsed dialogue chunks
     ├── [screenplay_name]_optional_config.yaml          # ID3 tag configuration
     ├── [screenplay_name]_text_processor_config.yaml    # (optional) Custom text processors
-    └── [screenplay_name]_voice_config.yaml             # TTS provider config
-    └── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
+    ├── [screenplay_name]_voice_config.yaml             # TTS provider config
+    ├── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
+    └── [screenplay_name]_voice_casting_prompt.txt      # (optional) LLM casting prompt
 
 output/
 └── [screenplay_name]/
@@ -441,7 +492,12 @@ Changes in any of the above will mark just the relevant clips for regeneration u
    - The tool automatically handles backoff
    - Spread voices across TTS providers to avoid limits
 
-3. **Screenplay is parsed incorrectly**
+3. **Voice Configuration Errors**
+   - Use `sts-tts-provider-yaml validate` to check for missing/extra/duplicate speakers
+   - Use `--strict` flag to validate provider-specific fields
+   - Check voice IDs match provider requirements
+
+4. **Screenplay is parsed incorrectly**
    - The parser is currently fairly fragile, and expects "standard" screenplay files with predictable margins and conventions. Additional configuration options, and automatic configuration, is planned for future releases
 
 See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more solutions.
