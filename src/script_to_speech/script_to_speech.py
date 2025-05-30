@@ -333,7 +333,10 @@ def main() -> None:
 
         # 4. Fetch/Generate Audio (Not for dry-run)
         if not args.dry_run:
-            logger.info("\n--- Fetching any Non-Cached Aduio Files ---")
+            logger.info("\n--- Fetching any Non-Cached Audio Files ---")
+            logger.info(
+                "⚠️  PRIVACY NOTICE: Audio generation relies on 3rd party services. See PRIVACY.md for more details"
+            )
             # Fetch and cache the audio files
             fetch_reporting_state = fetch_and_cache_audio(
                 tasks=all_tasks,

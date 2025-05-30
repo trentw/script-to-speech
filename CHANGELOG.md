@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added more extensive privacy notices and data usage suggestions, including [PRIVACY.md](PRIVACY.md)
+- Added clearer in-line privacy notices when a 3rd party service is being used
 - Added `validate` mode to `sts-tts-provider-yaml` script to identify missing / additional / duplicate speakers in .yaml voice configuration, as well as validate fields with `--strict` flag
 - Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
 - Added `sts-generate-voice-casting-prompt-file` utility to aid in casting voice configs

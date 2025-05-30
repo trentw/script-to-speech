@@ -15,6 +15,18 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 - **Cache system**: Resume interrupted generations and reuse audio. Change text / speaker assignments and only regenerte that specific audio
 - **Voice casting assistance**: Generate prompts for LLM-assisted voice casting and validation
 
+## Privacy & Data Handling
+
+**Script to Speech Privacy**: This tool operates entirely locally on your machine and collects no user data, has no telemetry, tracking, or analytics, and makes no network requests except to the services required for its core functionality.
+
+**Audio Generation**: To convert your screenplay text into speech, Script to Speech sends individual dialogue chunks to TTS providers (OpenAI, ElevenLabs, etc.) you configure. Each provider receives only the specific text being converted to audio.
+
+**Voice Casting (Optional)**: If you choose to use the LLM-assisted voice casting feature, your complete screenplay text and voice configuration are sent to the LLM service you select to generate casting recommendations.
+
+**Important**: Before using any TTS provider or LLM service, review their privacy policies, data retention practices, and training data policies to ensure they align with your privacy requirements.
+
+See our [Privacy Policy](PRIVACY.md) for detailed information about data flows, recommendations for privacy-conscious usage, and contact information.
+
 ## CLI Commands
 
 | Command                           | Description                        |
@@ -256,9 +268,15 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    Fill in the provider-specific fields as in the single-provider case. For provider-specific instructions, including optional fields, see the instructions header at the top of each provider grouping. For more information, see the [detailed TTS Provider documentation](docs/TTS_PROVIDERS.md)
 
-### LLM-Assisted Voice Casting
+### (Optional) LLM-Assisted Voice Casting 
 
-> **WARNING:** By default, the `sts-generate-voice-casting-prompt-file` command creates a prompt containing the full text of the supplied screenplay. Make sure to understand the data collection policies of any non-local LLM to which you may be supplying this prompt
+> **⚠️ PRIVACY WARNING**: The `sts-generate-voice-casting-prompt-file` command creates a prompt containing the **full text** of your screenplay. Before using any cloud-based LLM service:
+> - Review their privacy policy and data usage practices
+> - Ensure you're comfortable sharing your screenplay content
+> - Consider whether the LLM provider uses uploaded content for training
+> - For sensitive content, consider using local LLM solutions instead
+> 
+> See our [Privacy Policy](PRIVACY.md) for detailed guidance on privacy-conscious usage.
 
 4. **Generate Voice Casting Prompt**
 

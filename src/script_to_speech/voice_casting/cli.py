@@ -52,12 +52,17 @@ def main() -> None:
 
         print(f"\nSuccessfully generated voice casting prompt file:")
         print(f"  {output_file_path}")
+        print(f"\n⚠️  PRIVACY NOTICE:")
         print(
-            f"\nWARNING: The full text content of '{args.source_screenplay_path.name}' is included in this prompt."
+            f"   This optional feature includes the COMPLETE TEXT of '{args.source_screenplay_path.name}'"
         )
-        print(
-            f"Make sure to understand the data collection policies of any non-local LLM to which you may be supplying this prompt"
-        )
+        print(f"   Before uploading to any LLM service:")
+        print(f"   • Review the service's privacy policy and data usage practices")
+        print(f"   • Ensure you're comfortable sharing your screenplay content")
+        print(f"   • Consider whether the service uses your content for AI training")
+        print(f"   • Alternative: Skip LLM assistance and configure voices manually")
+        print(f"   • For sensitive content, consider local LLM solutions")
+        print(f"   See PRIVACY.md for detailed guidance on privacy-conscious usage.")
         print(f"\nTo use this file with an LLM for voice casting:")
         print(
             f"1. Upload the file '{output_file_name}' to your preferred LLM interface."
@@ -90,7 +95,7 @@ def main() -> None:
         print(
             f"     uv run sts-tts-provider-yaml validate 'input/{screenplay_name}/{screenplay_name}.json' \\"
         )
-        print(f"     'input/{screenplay_name}/{screenplay_name}_voice_config.yaml'")
+        print(f"       'input/{screenplay_name}/{screenplay_name}_voice_config.yaml'")
 
     except FileNotFoundError as e:
         print(f"\nError: {e}", file=sys.stderr)
