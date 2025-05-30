@@ -83,6 +83,14 @@ def main() -> None:
         print(
             f"    incorporating the new casting notes and role descriptions as comments)."
         )
+        print(
+            f"6. (optional) Check that the LLM output a valid voice configuration file (no missing / duplicate / extra speakers)."
+        )
+        print(f"   Example command using `uv run sts-tts-provider-yaml validate`:")
+        print(
+            f"     uv run sts-tts-provider-yaml validate 'input/{screenplay_name}/{screenplay_name}.json' \\"
+        )
+        print(f"     'input/{screenplay_name}/{screenplay_name}_voice_config.yaml'")
 
     except FileNotFoundError as e:
         print(f"\nError: {e}", file=sys.stderr)
