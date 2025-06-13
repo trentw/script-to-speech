@@ -1,0 +1,120 @@
+# Voice Library Schema Definition
+# This schema defines standard voice properties used across all providers
+
+voice_properties:
+
+  # Range properties
+  age:
+    description: "Perceived age"
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.1: "child"
+      0.3: "young adult"
+      0.5: "adult"
+      0.7: "middle aged"
+      0.9: "elderly"
+
+  authority:
+    description: "Authority/assertiveness"
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "gentle/soft"
+      0.5: "neutral"
+      1.0: "commanding/assertive"
+
+  energy:
+    description: "Energy/animation level"
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "calm/subdued"
+      0.5: "neutral/balanced"
+      1.0: "energetic/animated"
+
+  pace:
+    description: "Speaking pace/speed"
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "very slow"
+      0.3: "slow"
+      0.5: "neutral/moderate"
+      0.7: "fast"
+      1.0: "very fast"
+
+  performative:
+    description: "Naturalness of speech"
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "robotic/artificial"
+      0.3: "stilted/some unnatural elements"
+      0.5: "neutral/conversational/natural"
+      0.7: "exaggerated/theatrical"
+      1.0: "over-the-top/highly-stylized/caricature"
+
+  pitch:
+    description: "How high-pitched voice is"  
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "very low"
+      0.3: "low"
+      0.5: "neutral"
+      0.7: "high"
+      1.0: "very high"
+  
+  quality:
+    description: "Audio and speech quality"    
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "significant audio or voice issues"
+      0.5: "some audio or voice issues"
+      1.0: "clear audio and high-quality voice"
+
+  # Enum properties
+  accent:
+    description: "Primary accent of the voice"
+    type: enum
+    values: 
+      - "australian"
+      - "american_general"
+      - "american_southern" 
+      - "american_midwest"
+      - "american_new_york"
+      - "british"
+      - "british_cockney"
+      - "british_welsh"
+      - "canadian"
+      - "chinese"
+      - "french"
+      - "german"
+      - "indian"
+      - "irish"
+      - "italian"
+      - "japanese"
+      - "korean"
+      - "scottish"
+      - "spanish"
+      - "russian"
+      - "not_specified"
+
+  gender:
+    description: "Perceived gender of voice"
+    type: enum
+    values: ["masculine", "feminine", "androgynous", "not_specified"]
+
+  # Free-form text fields
+  special_vocal_characteristics:
+    description: "Special vocal characteristics (e.g., 'slight vocal fry', 'breathy', 'nasal quality', 'stutter on s sounds')"    
+    type: text

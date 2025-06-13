@@ -1,0 +1,37 @@
+# ElevenLabs Voice Library
+# Provider: elevenlabs
+
+provider_metadata:
+  cost_value: 0.3
+
+voices:
+
+  sully:
+    config:
+      voice_id: "wAGzRVkxKEs8La0lmdrE"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: .7
+      authority: .7
+      clarity: .5
+      energy: .3
+      pace: .4
+      performative: .5
+      pitch: .2
+      quality: 1.0
+
+    description:
+      provider_description: "Deep mature American male"
+      provider_use_cases: "Narrative & Story"
+      custom_description: "Deep, middle-aged voice. Warmth and kindness despite somewhat gruff exterior"
+      perceived_age: "50-65 years"
+
+    tags:
+      provider_use_cases: ["narrative", "story"]
+      custom_tags: ["soothing", "kind", "jolly"]
+      character_types: ["narrator", "father", "grandfather", "older_man", "teacher"]
+    
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/Bo6DtogKR9MFeVzUzR8msFIzsz92/voices/wAGzRVkxKEs8La0lmdrE/694524f9-fac6-4c16-a9de-8bb69e178312.mp3"

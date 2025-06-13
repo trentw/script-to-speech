@@ -1,0 +1,63 @@
+# OpenAI Voice Library
+# Provider: openai
+
+provider_metadata:
+  cost_value: 1.0
+
+voices:
+
+  # Onyx - Deep, authoritative male voice
+  onyx:
+    config:
+      voice: onyx
+      
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: .5
+      authority: .75
+      energy: .4
+      pace: .5
+      performative: .5
+      pitch: .25
+      quality: 1.0
+
+    description:
+      custom_description: "Deep, resonant voice. Conveys authority and trustworthiness."
+      perceived_age: "30-50 years"
+
+    tags:
+      character_types: ["narrator", "authority_figure", "professional", "news_anchor"]
+      custom_tags: ["trustworthy", "subdued", "news_anchor"]
+
+    preview_url: "https://cdn.openai.com/API/docs/audio/onyx.wav"
+
+  # Nova - Feminine, versatile voice
+  nova:
+    sts_id: nova
+    config:
+      voice: nova
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: .5
+      authority: .5
+      energy: .6
+      pace: .6
+      performative: .5
+      pitch: .5
+      quality: 1.0
+
+    description:
+      custom_description: "Friendly, approachable voice with natural conversational flow"
+      perceived_age: "25-35 years"
+
+    tags:
+      character_types: ["protagonist", "friend", "professional"]
+      custom_tags: ["neutral", "friendly", "approachable", "even"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/nova.wav"
+
