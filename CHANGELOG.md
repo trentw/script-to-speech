@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added validation for voice library, validation scripts, and pre-commit hook
+- Added voice library schema an minimal library files
 - Added more extensive privacy notices and data usage suggestions, including [PRIVACY.md](PRIVACY.md)
 - Added clearer in-line privacy notices when a 3rd party service is being used
 - Added `validate` mode to `sts-tts-provider-yaml` script to identify missing / additional / duplicate speakers in .yaml voice configuration, as well as validate fields with `--strict` flag
