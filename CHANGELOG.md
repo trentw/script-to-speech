@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Incorporating voice library "expansion" into tts provider manager and standalone speech utility
 - Added validation for voice library, validation scripts, and pre-commit hook
 - Added voice library schema an minimal library files
 - Added more extensive privacy notices and data usage suggestions, including [PRIVACY.md](PRIVACY.md)

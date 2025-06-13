@@ -227,6 +227,19 @@ def _build_tts_config_data(
     required_fields = provider_class.get_required_fields()
     optional_fields = provider_class.get_optional_fields()
 
+    # If sts_id is present, skip required fields and validation, just add sts_id and any overrides (required or optional)
+    if getattr(args, "sts_id", None):
+        speaker_specific_config["sts_id"] = args.sts_id
+        # Add any supplied required or optional fields as overrides (except provider and sts_id)
+        for field in required_fields + optional_fields:
+            if field in ("provider", "sts_id"):
+                continue
+            value = getattr(args, field, None)
+            if value is not None:
+                speaker_specific_config[field] = value
+        return {"default": speaker_specific_config}
+
+    # Otherwise, require all required fields and validate
     for field in required_fields:
         if field == "provider":  # Already added
             continue
@@ -271,6 +284,18 @@ def main() -> int:
     parser.add_argument(
         "provider", choices=available_providers, help="TTS provider to use"
     )
+    parser.add_argument(
+        "--sts_id",
+        required=False,
+        help="Voice library sts_id to expand into full voice_config",
+    )
+
+    # Check if --sts_id is present in sys.argv (before parsing)
+    import sys
+
+    sts_id_present = any(
+        arg == "--sts_id" or arg.startswith("--sts_id=") for arg in sys.argv
+    )
 
     # Temporarily parse known args to get the provider name for dynamic argument setup
     temp_args, _ = parser.parse_known_args()
@@ -287,9 +312,9 @@ def main() -> int:
             continue
         parser.add_argument(
             f"--{field}",
-            required=True,
+            required=not sts_id_present,
             type=json_or_str_type,
-            help=f"Required {field} parameter for {provider_name_for_args}",
+            help=f"Required {field} parameter for {provider_name_for_args}{' (ignored if --sts_id is provided)' if sts_id_present else ''}",
         )
 
     # Add arguments for each optional field

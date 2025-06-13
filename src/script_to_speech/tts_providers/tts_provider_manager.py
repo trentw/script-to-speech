@@ -13,6 +13,7 @@ from ruamel.yaml.comments import CommentedMap
 
 from script_to_speech.utils.env_utils import load_environment_variables
 
+from ..voice_library.voice_library import VoiceLibrary
 from .base.exceptions import TTSError, VoiceNotFoundError
 from .base.stateful_tts_provider import StatefulTTSProviderBase
 from .base.stateless_tts_provider import StatelessTTSProviderBase
@@ -48,6 +49,7 @@ class TTSProviderManager:
         self._speaker_providers: Dict[str, str] = {}
         self._speaker_configs_map: Dict[str, Dict[str, Any]] = {}
         self._provider_clients: Dict[str, Any] = {}
+        self._voice_library = VoiceLibrary()
         self._is_initialized = False
 
         # Dictionaries for thread-safe lazy loading
@@ -149,6 +151,20 @@ class TTSProviderManager:
                 raise ValueError(
                     f"No provider specified for speaker '{speaker}' and no overall provider set"
                 )
+
+            # Check for sts_id and expand config if present
+            if "sts_id" in speaker_config:
+                sts_id = speaker_config.pop("sts_id")  # Remove sts_id from config
+
+                # Get expansion from voice library
+                expanded_config = self._voice_library.expand_config(
+                    provider_name, sts_id
+                )
+
+                # Merge: expanded config first, then user overrides
+                final_config = {**expanded_config, **speaker_config}
+                speaker_config.clear()
+                speaker_config.update(final_config)
 
             # Validate speaker config using the provider's static method
             try:
