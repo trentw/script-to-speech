@@ -448,7 +448,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 2. **Generate Proper Casting Prompt**
    ```bash
    # Ensure prompt includes current configuration
-   uv run sts-generate-voice-casting-prompt-file \
+   uv run sts-generate-character-notes-prompt \
      source_screenplays/script.pdf \
      input/script/script_voice_config.yaml
    ```
@@ -524,7 +524,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 6. **Voice Casting Utilities**
    ```bash
    # Generate LLM prompt for voice casting
-   uv run sts-generate-voice-casting-prompt-file script.pdf config.yaml
+   uv run sts-generate-character-notes-prompt script.pdf config.yaml
    
    # Copy any file to clipboard
    uv run sts-copy-to-clipboard file.txt
@@ -590,6 +590,6 @@ When reporting issues, include:
    - Validate configurations before audio generation
 
 6. **LLM-Assisted Workflows**
-   - Use `sts-generate-voice-casting-prompt-file` for consistent prompts
+   - Use `sts-generate-character-notes-prompt` for consistent prompts
    - Always validate LLM output with `sts-tts-provider-yaml validate`
    - Keep backup configurations before making LLM-suggested changes

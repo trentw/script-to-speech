@@ -38,7 +38,7 @@ See our [Privacy Policy](PRIVACY.md) for detailed information about data flows, 
 | `sts-analyze-json`                | Analyze screenplay structure       |
 | `sts-apply-text-processors-json`  | Apply text transformations         |
 | `sts-parse-regression-check-json` | Validate parser output             |
-| `sts-generate-voice-casting-prompt-file` | Generate LLM casting prompts |
+| `sts-generate-character-notes-prompt` | Generate LLM casting prompts   |
 | `sts-copy-to-clipboard`           | Copy file contents to clipboard    |
 
 ## Quick Start
@@ -270,7 +270,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
 ### (Optional) LLM-Assisted Voice Casting 
 
-> **⚠️ PRIVACY WARNING**: The `sts-generate-voice-casting-prompt-file` command creates a prompt containing the **full text** of your screenplay. Before using any cloud-based LLM service:
+> **⚠️ PRIVACY WARNING**: The `sts-generate-character-notes-prompt` command creates a prompt containing the **full text** of your screenplay. Before using any cloud-based LLM service:
 > - Review their privacy policy and data usage practices
 > - Ensure you're comfortable sharing your screenplay content
 > - Consider whether the LLM provider uses uploaded content for training
@@ -284,7 +284,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```bash
    # Generate a prompt file for LLM-assisted voice casting
-   uv run sts-generate-voice-casting-prompt-file \
+   uv run sts-generate-character-notes-prompt \
      source_screenplays/your_script.pdf \
      input/your_script/your_script_voice_config.yaml
    ```

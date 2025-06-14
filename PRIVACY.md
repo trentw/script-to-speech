@@ -44,7 +44,7 @@ To convert your screenplay text into speech, Script to Speech sends individual d
 
 ### Voice Casting (Optional Feature)
 
-If you choose to use the LLM-assisted voice casting feature (`sts-generate-voice-casting-prompt-file`), this is entirely optional and can be skipped.
+If you choose to use the LLM-assisted voice casting feature (`sts-generate-character-notes-prompt`), this is entirely optional and can be skipped.
 
 **LLM Services (when you choose to use voice casting):**
 

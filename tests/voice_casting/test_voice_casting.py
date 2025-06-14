@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from script_to_speech.voice_casting import cli
-from script_to_speech.voice_casting.casting_utils import (
+from script_to_speech.voice_casting import character_notes_cli
+from script_to_speech.voice_casting.character_notes_utils import (
     generate_voice_casting_prompt_file,
 )
 
@@ -58,7 +58,9 @@ def test_cli_success(monkeypatch, tmp_path, capsys):
     def fake_generate(*args, **kwargs):
         return dummy_output
 
-    monkeypatch.setattr(cli, "generate_voice_casting_prompt_file", fake_generate)
+    monkeypatch.setattr(
+        character_notes_cli, "generate_voice_casting_prompt_file", fake_generate
+    )
     test_args = [
         "prog",
         str(screenplay_path),
@@ -67,7 +69,7 @@ def test_cli_success(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(sys, "argv", test_args)
 
     # Act
-    cli.main()
+    character_notes_cli.main()
     captured = capsys.readouterr()
 
     # Assert
@@ -84,7 +86,9 @@ def test_cli_file_not_found(monkeypatch, tmp_path):
     def fake_generate(*args, **kwargs):
         raise FileNotFoundError("missing file")
 
-    monkeypatch.setattr(cli, "generate_voice_casting_prompt_file", fake_generate)
+    monkeypatch.setattr(
+        character_notes_cli, "generate_voice_casting_prompt_file", fake_generate
+    )
     test_args = [
         "prog",
         str(screenplay_path),
@@ -94,5 +98,5 @@ def test_cli_file_not_found(monkeypatch, tmp_path):
 
     # Act / Assert
     with pytest.raises(SystemExit) as e:
-        cli.main()
+        character_notes_cli.main()
     assert e.value.code == 1

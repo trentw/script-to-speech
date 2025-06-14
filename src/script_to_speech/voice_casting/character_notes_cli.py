@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml  # For YAMLError
 
-from .casting_utils import generate_voice_casting_prompt_file
+from .character_notes_utils import generate_voice_casting_prompt_file
 
 
 def parse_arguments() -> argparse.Namespace:
