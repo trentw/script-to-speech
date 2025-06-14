@@ -164,6 +164,12 @@ cython_debug/
 
 .DS_Store
 
+# Coding assistant configurations
+CLAUDE.md
+codemcp.toml
+.cursorrules
+.claude
+
 # Project directories
 output/
 input/
