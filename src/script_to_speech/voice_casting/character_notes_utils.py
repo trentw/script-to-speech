@@ -8,7 +8,9 @@ import yaml
 
 from script_to_speech.parser.utils.text_utils import extract_text_preserving_whitespace
 
-DEFAULT_PROMPT_FILENAME = "default_casting_prompt.txt"
+from .voice_casting_common import read_prompt_file
+
+DEFAULT_PROMPT_FILENAME = "default_character_notes_prompt.txt"
 
 
 def generate_voice_casting_prompt_file(
@@ -59,25 +61,12 @@ def generate_voice_casting_prompt_file(
     output_file_name = f"{screenplay_name}_voice_casting_prompt.txt"
     output_file_path = input_dir / output_file_name
 
-    # 1. Read Prompt Content
-    prompt_content = ""
-    actual_prompt_file_to_read: Optional[Path] = None
-
-    if prompt_file_path:
-        actual_prompt_file_to_read = prompt_file_path
-    else:
-        # Construct path to default prompt relative to this file's directory
-        default_prompt_path = Path(__file__).parent / DEFAULT_PROMPT_FILENAME
-        if default_prompt_path.is_file():
-            actual_prompt_file_to_read = default_prompt_path
-        else:
-            raise FileNotFoundError(
-                f"Default prompt file '{DEFAULT_PROMPT_FILENAME}' not found in {Path(__file__).parent}"
-            )
-
-    if actual_prompt_file_to_read:
-        with open(actual_prompt_file_to_read, "r", encoding="utf-8") as f:
-            prompt_content = f.read()
+    # 1. Read Prompt Content using shared function
+    prompt_content = read_prompt_file(
+        prompt_file_path=prompt_file_path,
+        default_filename=DEFAULT_PROMPT_FILENAME,
+        parent_dir=Path(__file__).parent,
+    )
 
     # 2. Read TTS Provider Config
     try:
