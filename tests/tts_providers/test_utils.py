@@ -10,9 +10,11 @@ import pytest
 from ruamel.yaml.constructor import DuplicateKeyError
 
 from script_to_speech.tts_providers.utils import (
+    VoiceConfigStatistics,
     _handle_yaml_operation,
     _load_processed_chunks,
     _print_validation_report,
+    generate_voice_config_statistics,
     generate_yaml_config,
     populate_multi_provider_yaml,
     validate_yaml_config,
@@ -313,7 +315,7 @@ default:
             }
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path
             )
 
@@ -322,6 +324,7 @@ default:
             assert extra == []
             assert duplicates == []
             assert invalid == {}
+            assert isinstance(statistics, VoiceConfigStatistics)
 
     @patch("script_to_speech.tts_providers.utils._load_processed_chunks")
     @patch("builtins.open", new_callable=mock_open)
@@ -356,7 +359,7 @@ Bob:
             }
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path
             )
 
@@ -400,7 +403,7 @@ Charlie:
             }
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path
             )
 
@@ -451,7 +454,7 @@ Charlie:
                 mock_file.return_value.readlines.return_value = yaml_lines
 
                 # Act
-                missing, extra, duplicates, invalid = validate_yaml_config(
+                missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                     input_json_path, voice_config_yaml_path
                 )
 
@@ -499,7 +502,7 @@ Alice:
                 mock_manager._get_provider_class.return_value = mock_provider_class
 
                 # Act
-                missing, extra, duplicates, invalid = validate_yaml_config(
+                missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                     input_json_path, voice_config_yaml_path, strict=True
                 )
 
@@ -537,7 +540,7 @@ Alice:
             mock_yaml.load.return_value = {"Alice": {"voice_id": "alice_voice"}}
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path, strict=True
             )
 
@@ -574,7 +577,7 @@ Alice: "not a dictionary"
             mock_yaml.load.return_value = {"Alice": "not a dictionary"}
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path, strict=True
             )
 
@@ -644,7 +647,7 @@ default:
             }
 
             # Act
-            missing, extra, duplicates, invalid = validate_yaml_config(
+            missing, extra, duplicates, invalid, statistics = validate_yaml_config(
                 input_json_path, voice_config_yaml_path
             )
 
@@ -665,10 +668,15 @@ class TestPrintValidationReport:
         extra_speakers = []
         duplicate_speakers = []
         invalid_configs = {}
+        statistics = VoiceConfigStatistics()
 
         # Act
         _print_validation_report(
-            missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+            missing_speakers,
+            extra_speakers,
+            duplicate_speakers,
+            invalid_configs,
+            statistics,
         )
 
         # Assert
@@ -685,8 +693,13 @@ class TestPrintValidationReport:
         invalid_configs = {"Eve": "Missing provider field"}
 
         # Act
+        statistics = VoiceConfigStatistics()
         _print_validation_report(
-            missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+            missing_speakers,
+            extra_speakers,
+            duplicate_speakers,
+            invalid_configs,
+            statistics,
         )
 
         # Assert
@@ -707,8 +720,13 @@ class TestPrintValidationReport:
         invalid_configs = {}
 
         # Act
+        statistics = VoiceConfigStatistics()
         _print_validation_report(
-            missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+            missing_speakers,
+            extra_speakers,
+            duplicate_speakers,
+            invalid_configs,
+            statistics,
         )
 
         # Assert
@@ -732,8 +750,13 @@ class TestPrintValidationReport:
         }
 
         # Act
+        statistics = VoiceConfigStatistics()
         _print_validation_report(
-            missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+            missing_speakers,
+            extra_speakers,
+            duplicate_speakers,
+            invalid_configs,
+            statistics,
         )
 
         # Assert
@@ -746,3 +769,101 @@ class TestPrintValidationReport:
         assert "Missing speaker(s) in YAML:" not in captured.out
         assert "Extra speaker(s) in YAML:" not in captured.out
         assert "Duplicate speaker(s) in YAML:" not in captured.out
+
+
+class TestGenerateVoiceConfigStatistics:
+    """Tests for generate_voice_config_statistics function."""
+
+    def test_generate_voice_config_statistics_basic(self):
+        """Test basic statistics generation."""
+        # Arrange
+        processed_chunks = [
+            {"type": "dialogue", "speaker": "Alice", "text": "Hello there!"},
+            {"type": "dialogue", "speaker": "Bob", "text": "Hi Alice!"},
+            {"type": "action", "text": "They shake hands."},
+        ]
+
+        voice_config_data = {
+            "Alice": {"provider": "openai", "voice_id": "alice_voice"},
+            "Bob": {"provider": "elevenlabs", "voice_id": "bob_voice"},
+            "default": {"provider": "openai", "voice_id": "narrator_voice"},
+        }
+
+        # Act
+        statistics = generate_voice_config_statistics(
+            processed_chunks, voice_config_data
+        )
+
+        # Assert
+        assert isinstance(statistics, VoiceConfigStatistics)
+        assert len(statistics.provider_stats) == 2
+
+        # Check OpenAI stats
+        openai_stats = statistics.provider_stats["openai"]
+        assert openai_stats.voice_count == 2  # Alice and default
+        assert openai_stats.total_lines == 2  # Alice dialogue + action (default)
+
+        # Check ElevenLabs stats
+        elevenlabs_stats = statistics.provider_stats["elevenlabs"]
+        assert elevenlabs_stats.voice_count == 1  # Bob
+        assert elevenlabs_stats.total_lines == 1  # Bob dialogue
+
+    def test_generate_voice_config_statistics_with_duplicates(self):
+        """Test statistics generation with duplicate voice configurations."""
+        # Arrange
+        processed_chunks = [
+            {"type": "dialogue", "speaker": "Alice", "text": "Hello!"},
+            {"type": "dialogue", "speaker": "Charlie", "text": "Hey!"},
+        ]
+
+        voice_config_data = {
+            "Alice": {"provider": "openai", "voice_id": "same_voice", "speed": 1.0},
+            "Charlie": {
+                "provider": "openai",
+                "voice_id": "same_voice",
+                "speed": 1.0,
+            },  # Duplicate
+            "Bob": {"provider": "openai", "voice_id": "different_voice"},
+        }
+
+        # Act
+        statistics = generate_voice_config_statistics(
+            processed_chunks, voice_config_data
+        )
+
+        # Assert
+        assert "openai" in statistics.voice_duplicates
+        duplicates = statistics.voice_duplicates["openai"]
+        assert len(duplicates) == 1
+
+        duplicate_info = duplicates[0]
+        assert set(duplicate_info.characters) == {"Alice", "Charlie"}
+        assert duplicate_info.voice_config["voice_id"] == "same_voice"
+        assert duplicate_info.voice_config["speed"] == 1.0
+
+        # Check character statistics are included
+        assert "Alice" in duplicate_info.character_stats
+        assert "Charlie" in duplicate_info.character_stats
+        assert duplicate_info.character_stats["Alice"].line_count == 1
+        assert duplicate_info.character_stats["Charlie"].line_count == 1
+
+    def test_generate_voice_config_statistics_no_duplicates(self):
+        """Test statistics generation with no duplicate voice configurations."""
+        # Arrange
+        processed_chunks = [
+            {"type": "dialogue", "speaker": "Alice", "text": "Hello!"},
+            {"type": "dialogue", "speaker": "Bob", "text": "Hi!"},
+        ]
+
+        voice_config_data = {
+            "Alice": {"provider": "openai", "voice_id": "alice_voice"},
+            "Bob": {"provider": "openai", "voice_id": "bob_voice"},
+        }
+
+        # Act
+        statistics = generate_voice_config_statistics(
+            processed_chunks, voice_config_data
+        )
+
+        # Assert
+        assert len(statistics.voice_duplicates) == 0

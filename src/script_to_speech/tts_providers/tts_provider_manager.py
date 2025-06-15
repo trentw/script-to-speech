@@ -11,6 +11,11 @@ import yaml
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
+from script_to_speech.utils.dialogue_stats_utils import (
+    analyze_speaker_lines,
+    calculate_speaker_character_stats,
+    get_speaker_statistics,
+)
 from script_to_speech.utils.env_utils import load_environment_variables
 
 from ..voice_library.voice_library import VoiceLibrary
@@ -432,38 +437,6 @@ class TTSProviderManager:
     # Voice Configuration YAML generation
     ####
 
-    def _analyze_speakers(self, dialogues: List[Dict]) -> Dict[str, int]:
-        """
-        Analyze list of dialogue chunks to count speaker lines.
-        'default' speaker is used for chunks with no speaker attribute.
-        Returns counts with 'default' first, followed by other speakers sorted by frequency.
-        """
-        from collections import Counter
-        from typing import Counter as TypedCounter
-
-        counts: TypedCounter[str] = Counter()
-        default_count = 0
-
-        for dialogue in dialogues:
-            if dialogue["type"] == "dialogue":
-                speaker = dialogue.get("speaker")
-                if speaker:
-                    counts[speaker] += 1
-                else:
-                    default_count += 1
-            else:
-                # Non-dialogue chunks use default speaker
-                default_count += 1
-
-        # Create ordered dict with default first
-        result = {"default": default_count}
-
-        # Add other speakers sorted by count (descending) then name
-        for speaker, count in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
-            result[speaker] = count
-
-        return result
-
     def generate_yaml_config(
         self,
         dialogues: List[Dict],
@@ -486,7 +459,7 @@ class TTSProviderManager:
         yaml.width = 4096
 
         # Get speaker statistics
-        speaker_counts = self._analyze_speakers(dialogues)
+        speaker_counts = analyze_speaker_lines(dialogues)
 
         # Build base content structure
         content = CommentedMap()
@@ -524,25 +497,9 @@ class TTSProviderManager:
             content[speaker] = speaker_config
 
             # Calculate character statistics
-            total_chars = sum(
-                len(str(dialogue.get("text", "")))
-                for dialogue in dialogues
-                if (
-                    dialogue.get("speaker") == speaker
-                    or (not dialogue.get("speaker") and speaker == "default")
-                )
-            )
-            longest_dialogue = max(
-                (
-                    len(str(dialogue.get("text", "")))
-                    for dialogue in dialogues
-                    if (
-                        dialogue.get("speaker") == speaker
-                        or (not dialogue.get("speaker") and speaker == "default")
-                    )
-                ),
-                default=0,
-            )
+            char_stats = calculate_speaker_character_stats(dialogues, speaker)
+            total_chars = char_stats["total_characters"]
+            longest_dialogue = char_stats["longest_dialogue"]
 
             # Special comment for default speaker
             if speaker == "default":
@@ -606,7 +563,7 @@ class TTSProviderManager:
             provider_groups[config["provider"]].append(speaker)
 
         # Get speaker statistics for line counts
-        speaker_counts = self._analyze_speakers(dialogues)
+        speaker_counts = analyze_speaker_lines(dialogues)
 
         # Build new content
         content = CommentedMap()
@@ -650,25 +607,9 @@ class TTSProviderManager:
                 count = speaker_counts.get(speaker, 0)
 
                 # Calculate character statistics
-                total_chars = sum(
-                    len(str(dialogue.get("text", "")))
-                    for dialogue in dialogues
-                    if (
-                        dialogue.get("speaker") == speaker
-                        or (not dialogue.get("speaker") and speaker == "default")
-                    )
-                )
-                longest_dialogue = max(
-                    (
-                        len(str(dialogue.get("text", "")))
-                        for dialogue in dialogues
-                        if (
-                            dialogue.get("speaker") == speaker
-                            or (not dialogue.get("speaker") and speaker == "default")
-                        )
-                    ),
-                    default=0,
-                )
+                char_stats = calculate_speaker_character_stats(dialogues, speaker)
+                total_chars = char_stats["total_characters"]
+                longest_dialogue = char_stats["longest_dialogue"]
 
                 # Special comment for default speaker
                 if speaker == "default":

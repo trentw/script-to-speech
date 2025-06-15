@@ -2,17 +2,264 @@ import json
 import logging
 import sys
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ruamel.yaml import YAML
 from ruamel.yaml.constructor import DuplicateKeyError
 
 from ..text_processors.processor_manager import TextProcessorManager
 from ..text_processors.utils import get_text_processor_configs
+from ..utils.dialogue_stats_utils import SpeakerStats, get_speaker_statistics
 from ..utils.logging import get_screenplay_logger
 from .tts_provider_manager import TTSProviderManager
 
 logger = get_screenplay_logger("utils.processor")
+
+
+class ProviderStatistics:
+    """Statistics for a single TTS provider."""
+
+    def __init__(self, provider_name: str):
+        self.provider_name = provider_name
+        self.voice_count = 0
+        self.total_lines = 0
+        self.total_characters = 0
+
+
+class VoiceDuplicateInfo:
+    """Information about duplicate voice configurations."""
+
+    def __init__(self, voice_config_key: str, voice_config: dict):
+        self.voice_config_key = voice_config_key  # Serialized config for uniqueness
+        self.voice_config = voice_config  # The actual config dict
+        self.characters: List[str] = []  # List of character names using this config
+        self.character_stats: Dict[str, SpeakerStats] = (
+            {}
+        )  # Statistics for each character
+
+
+class VoiceConfigStatistics:
+    """Complete statistics for voice configuration analysis."""
+
+    def __init__(self) -> None:
+        self.provider_stats: Dict[str, ProviderStatistics] = {}
+        self.voice_duplicates: Dict[str, List[VoiceDuplicateInfo]] = (
+            {}
+        )  # Grouped by provider
+
+
+def _serialize_voice_config(voice_config: dict) -> str:
+    """
+    Create a unique key for voice configuration based on all properties except speaker name.
+
+    Args:
+        voice_config: The voice configuration dictionary
+
+    Returns:
+        str: A serialized key representing the unique voice configuration
+    """
+    import json
+
+    # Create a copy without the speaker-specific fields
+    config_copy = {k: v for k, v in voice_config.items() if k not in ["speaker"]}
+
+    # Sort keys for consistent serialization
+    return json.dumps(config_copy, sort_keys=True)
+
+
+def _get_provider_statistics(
+    voice_config_data: dict, speaker_stats: dict
+) -> Dict[str, ProviderStatistics]:
+    """
+    Calculate provider-specific statistics.
+
+    Args:
+        voice_config_data: The loaded voice configuration YAML data
+        speaker_stats: Dictionary of speaker statistics from dialogue analysis
+
+    Returns:
+        Dict[str, ProviderStatistics]: Statistics grouped by provider
+    """
+    provider_stats = {}
+
+    for speaker, config in voice_config_data.items():
+        if not isinstance(config, dict):
+            continue
+
+        provider_name = config.get("provider")
+        if not provider_name:
+            continue
+
+        # Initialize provider stats if not exists
+        if provider_name not in provider_stats:
+            provider_stats[provider_name] = ProviderStatistics(provider_name)
+
+        provider_stat = provider_stats[provider_name]
+        provider_stat.voice_count += 1
+
+        # Add speaker statistics if available
+        if speaker in speaker_stats:
+            speaker_data = speaker_stats[speaker]
+            provider_stat.total_lines += speaker_data.line_count
+            provider_stat.total_characters += speaker_data.total_characters
+
+    return provider_stats
+
+
+def _get_voice_duplicate_analysis(
+    voice_config_data: dict, speaker_stats: Dict[str, SpeakerStats]
+) -> Dict[str, List[VoiceDuplicateInfo]]:
+    """
+    Analyze voice configurations for duplicates, grouped by provider.
+
+    Args:
+        voice_config_data: The loaded voice configuration YAML data
+        speaker_stats: Dictionary of speaker statistics from dialogue analysis
+
+    Returns:
+        Dict[str, List[VoiceDuplicateInfo]]: Duplicate analysis grouped by provider
+    """
+    # Track voice configs by provider
+    provider_voice_configs: Dict[str, Dict[str, VoiceDuplicateInfo]] = {}
+
+    for speaker, config in voice_config_data.items():
+        if not isinstance(config, dict):
+            continue
+
+        provider_name = config.get("provider")
+        if not provider_name:
+            continue
+
+        # Initialize provider tracking if not exists
+        if provider_name not in provider_voice_configs:
+            provider_voice_configs[provider_name] = {}
+
+        # Generate unique key for this voice configuration
+        voice_key = _serialize_voice_config(config)
+
+        # Track this voice configuration
+        if voice_key not in provider_voice_configs[provider_name]:
+            provider_voice_configs[provider_name][voice_key] = VoiceDuplicateInfo(
+                voice_key, config
+            )
+
+        # Add this character to the voice configuration
+        provider_voice_configs[provider_name][voice_key].characters.append(speaker)
+
+        # Add character statistics if available
+        if speaker in speaker_stats:
+            provider_voice_configs[provider_name][voice_key].character_stats[
+                speaker
+            ] = speaker_stats[speaker]
+
+    # Filter to only include duplicates (configs used by multiple characters)
+    duplicates_by_provider = {}
+    for provider_name, voice_configs in provider_voice_configs.items():
+        duplicates = [
+            duplicate_info
+            for duplicate_info in voice_configs.values()
+            if len(duplicate_info.characters) > 1
+        ]
+        if duplicates:
+            duplicates_by_provider[provider_name] = duplicates
+
+    return duplicates_by_provider
+
+
+def generate_voice_config_statistics(
+    processed_chunks: List[dict], voice_config_data: dict
+) -> VoiceConfigStatistics:
+    """
+    Generate comprehensive statistics for voice configuration analysis.
+
+    Args:
+        processed_chunks: List of processed dialogue chunks
+        voice_config_data: The loaded voice configuration YAML data
+
+    Returns:
+        VoiceConfigStatistics: Complete statistics object
+    """
+    # Get speaker statistics from dialogue analysis
+    speaker_stats = get_speaker_statistics(processed_chunks)
+
+    # Generate provider statistics
+    provider_stats = _get_provider_statistics(voice_config_data, speaker_stats)
+
+    # Generate voice duplicate analysis
+    voice_duplicates = _get_voice_duplicate_analysis(voice_config_data, speaker_stats)
+
+    # Create and populate the statistics object
+    stats = VoiceConfigStatistics()
+    stats.provider_stats = provider_stats
+    stats.voice_duplicates = voice_duplicates
+
+    return stats
+
+
+def _format_statistics_report(stats: VoiceConfigStatistics) -> str:
+    """
+    Format the statistics into a human-readable report.
+
+    Args:
+        stats: The statistics object to format
+
+    Returns:
+        str: Formatted statistics report
+    """
+    lines = []
+
+    # Provider Statistics Section
+    lines.append("\n" + "=" * 60)
+    lines.append("VOICE CONFIGURATION STATISTICS")
+    lines.append("=" * 60)
+
+    if stats.provider_stats:
+        lines.append("\nProvider Statistics:")
+        lines.append("-" * 30)
+
+        for provider_name, provider_stat in sorted(stats.provider_stats.items()):
+            lines.append(f"  {provider_name}:")
+            lines.append(f"    • Voices: {provider_stat.voice_count}")
+            lines.append(f"    • Total lines: {provider_stat.total_lines}")
+            lines.append(f"    • Total characters: {provider_stat.total_characters}")
+    else:
+        lines.append("\nNo provider statistics available.")
+
+    # Voice Duplicate Analysis Section
+    lines.append("\nVoice Duplicate Analysis:")
+    lines.append("-" * 30)
+
+    if stats.voice_duplicates:
+        for provider_name, duplicates in sorted(stats.voice_duplicates.items()):
+            lines.append(f"\n  {provider_name}:")
+            for i, duplicate_info in enumerate(duplicates, 1):
+                # Show the voice configuration (excluding provider since it's obvious)
+                config_display = {
+                    k: v
+                    for k, v in duplicate_info.voice_config.items()
+                    if k != "provider"
+                }
+                lines.append(f"    Duplicate #{i}: {config_display}")
+                lines.append("      Characters using this voice:")
+
+                # Add character statistics for each character using this duplicate voice
+                for character in sorted(duplicate_info.characters):
+                    # Get character statistics
+                    char_stats = duplicate_info.character_stats.get(character)
+                    if char_stats:
+                        lines.append(
+                            f"        • {character}: {char_stats.line_count} lines, "
+                            f"{char_stats.total_characters} characters, "
+                            f"longest dialogue: {char_stats.longest_dialogue} characters"
+                        )
+                    else:
+                        lines.append(
+                            f"        • {character}: (no statistics available)"
+                        )
+    else:
+        lines.append("  ✓ No duplicate voice configurations found.")
+
+    return "\n".join(lines)
 
 
 def _handle_yaml_operation(
@@ -224,16 +471,24 @@ def run_cli() -> None:
             )
             print(f"Generated populated YAML: {output_path}")
         elif args.command == "validate":
-            missing_speakers, extra_speakers, duplicate_speakers, invalid_configs = (
-                validate_yaml_config(
-                    input_json_path_obj,
-                    Path(args.voice_config),
-                    processing_configs_paths,
-                    args.strict,
-                )
+            (
+                missing_speakers,
+                extra_speakers,
+                duplicate_speakers,
+                invalid_configs,
+                statistics,
+            ) = validate_yaml_config(
+                input_json_path_obj,
+                Path(args.voice_config),
+                processing_configs_paths,
+                args.strict,
             )
             _print_validation_report(
-                missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+                missing_speakers,
+                extra_speakers,
+                duplicate_speakers,
+                invalid_configs,
+                statistics,
             )
 
             # Exit with error code if any issues were found
@@ -265,7 +520,7 @@ def validate_yaml_config(
     voice_config_yaml_path: Path,
     processing_configs: Optional[List[Path]] = None,
     strict: bool = False,
-) -> Tuple[List[str], List[str], List[str], dict]:
+) -> Tuple[List[str], List[str], List[str], dict, VoiceConfigStatistics]:
     """
     Validate that all voices in the script are present in the YAML, no extras, and no duplicates.
     Optionally, validate provider fields for each voice (strict mode).
@@ -277,11 +532,12 @@ def validate_yaml_config(
         strict: If True, validate provider-specific fields for each voice
 
     Returns:
-        Tuple of (missing_speakers, extra_speakers, duplicate_speakers, invalid_configs)
+        Tuple of (missing_speakers, extra_speakers, duplicate_speakers, invalid_configs, statistics)
         - missing_speakers: List of speakers in script but not in YAML
         - extra_speakers: List of speakers in YAML but not in script
         - duplicate_speakers: List of speakers with duplicate keys in YAML
         - invalid_configs: Dict mapping speaker names to validation error messages
+        - statistics: VoiceConfigStatistics object with comprehensive analysis
     """
     logger.info("=" * 60)
     logger.info("Starting YAML configuration validation")
@@ -383,7 +639,17 @@ def validate_yaml_config(
             except Exception as validation_error:
                 invalid_configs[speaker] = str(validation_error)
 
-    return missing_speakers, extra_speakers, duplicate_speakers, invalid_configs
+    # Generate voice configuration statistics
+    logger.info("Generating voice configuration statistics...")
+    statistics = generate_voice_config_statistics(processed_chunks, yaml_data)
+
+    return (
+        missing_speakers,
+        extra_speakers,
+        duplicate_speakers,
+        invalid_configs,
+        statistics,
+    )
 
 
 # CLI integration
@@ -392,8 +658,14 @@ def _print_validation_report(
     extra_speakers: list[str],
     duplicate_speakers: list[str],
     invalid_configs: dict[str, str],
+    statistics: VoiceConfigStatistics,
 ) -> None:
     """Print a formatted validation report showing any issues found."""
+
+    # Always show voice statistics at the beginning
+    statistics_report = _format_statistics_report(statistics)
+    print(statistics_report)
+
     print()
     print("=" * 60)
     print("VALIDATION RESULTS")
@@ -405,9 +677,8 @@ def _print_validation_report(
 
     if not has_issues:
         print("✓ Validation successful: no issues found.")
-        return
-
-    print("⚠ Validation completed with issues:")
+    else:
+        print("⚠ Validation completed with issues:")
 
     if missing_speakers:
         print(f"  • Missing speaker(s) in YAML: {', '.join(missing_speakers)}")

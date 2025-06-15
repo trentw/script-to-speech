@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added additional reporting functionality to `validate` mode of `sts-tts-provider-yaml` to report provide stats provider usage + duplicate voice stats 
 - Added `sts-generate-voice-library-casting-prompt` utility to aid in casting voice configs, utilizing the voice library
 - Incorporating voice library "expansion" into tts provider manager and standalone speech utility
 - Added validation for voice library, validation scripts, and pre-commit hook
