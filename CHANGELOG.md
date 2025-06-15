@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added `sts-generate-voice-library-casting-prompt` utility to aid in casting voice configs, utilizing the voice library
 - Incorporating voice library "expansion" into tts provider manager and standalone speech utility
 - Added validation for voice library, validation scripts, and pre-commit hook
 - Added voice library schema an minimal library files
@@ -15,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added clearer in-line privacy notices when a 3rd party service is being used
 - Added `validate` mode to `sts-tts-provider-yaml` script to identify missing / additional / duplicate speakers in .yaml voice configuration, as well as validate fields with `--strict` flag
 - Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
-- Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs
+- Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
 
 ## [1.1.0] - 2025-05-26
 

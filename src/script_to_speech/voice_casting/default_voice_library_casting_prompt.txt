@@ -1,0 +1,55 @@
+You will be enhancing a voice configuration file by selecting appropriate voices from available voice library data for each character in a screenplay production.
+
+You will be supplied:
+    - A voice library schema defining voice properties, preceded by "--- VOICE LIBRARY SCHEMA ---"
+    - A voice configuration YAML file, preceded by "--- VOICE CONFIGURATION ---"
+    - Voice library data for one or more TTS providers, preceded by "--- VOICE LIBRARY DATA ([PROVIDER]) ---"
+
+Your task is to:
+1. Review the voice library schema to understand available voice properties and their ranges/values
+2. Review each character in the voice configuration file, paying special attention to any .yaml comments that give casting notes for the character
+3. Analyze the available voices in the voice library data for each provider
+4. Select the most appropriate voice for each character based on:
+   - Character gender, age, and personality traits (if specified in comments)
+   - Voice properties defined in the schema (gender, age, authority, energy, pitch, quality, etc.)
+   - Voice descriptions and character type tags
+   - Use the schema's scale points and enum values as guides for property matching
+
+For each character in the voice configuration that needs to be populated (voices that either have no .yaml property set for the voice, or only has the "provider" property set) update their provider configuration to use a specific voice from the voice library data.
+A properly configured voice is one that has the "provider" value set, and an "sts_id" value set to one of the voices from the voice library data.
+
+Example valid voice configuration:
+
+NAOMI:
+  provider: elevenlabs
+  sts_id: sully
+
+
+Overall casting considerations:
+- Match character traits to voice properties (e.g., authoritative characters to high-authority voices)
+- Use gender-appropriate voices unless the character specifically requires otherwise, or the gender is unspecified
+- Consider the character's role and importance (main characters may benefit from higher-quality voices)
+- Ensure voice diversity across the cast to make characters distinguishable. Unique voices for characters is preferred, but some situations are okay for voice reuse (see "Specific casting considerations" below)
+
+
+Specific casting considerations:
+- The "default" character is typically the narrator and should use a clear, neutral, high-quality, voice. As voice is often the most used, a high 
+  "cost_value" property from "provider_metadata" should be preferred
+- Lead characters (characters with dozens to hundreds of lines) should use the highest quality voices that fall close to .5 on the "performative" property. Especially for leads, if a property from the schema is not covered in the casting notes for the character, neutral voice properties should be preferred
+- Lead character should really try to match an appropriate voice to the character description
+- Lead characters should NOT have their voice re-used for other characters (with the exception of characters that are actually the same person, e.g. "BOB" and "BOB O.S.")
+- Supporting characters (characters with a dozen or two lines) should prefer high quality voices, but can use lower quality than leads if necessary. 
+- Supporting characters voices can be re-used for a few background characters if needed
+- Supporting characters should try to match the character description (particularly when it seems thematically important, e.g. "the wise old oracle"), but can fall back to partially matching voices that broadly fit (e.g. an elderly voice, even if the energy isn't a good match)
+- Background characters (characters with only a few lines) can pretty much use whatever voices are left over from casting lead + supporting characters; there should be an attempt to use high-quality voices / voices that match the casting description, but generally if the gender is a match, the voice should be considered
+- Background characters can re-use voices that have already been cast if unique voices run out, or if a voice is more appropriate than remaining unique voices.
+- When a voice is used for more than one character, you should try your best to avoid casting the same voice in roles that may be used in the same section of a screenplay (e.g. avoid casting the same voice as "PROTESTER #1" and "PROTESTER #2 as they would likely be in a scene together)
+
+
+Output the complete updated YAML configuration file with:
+- All character voice assignments updated with specific voice library selections
+- Original structure and formatting preserved
+- Any existing comments and metadata maintained
+- Valid YAML syntax throughout
+
+Do not output any other commentary or description beyond the valid YAML file.

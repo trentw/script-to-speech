@@ -52,6 +52,7 @@ sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:
 sts-parse-screenplay = "script_to_speech.parser.process:main"
 sts-parse-regression-check-json = "script_to_speech.parser.regression_check:main"
 sts-generate-character-notes-prompt = "script_to_speech.voice_casting.character_notes_cli:main"
+sts-generate-voice-library-casting-prompt = "script_to_speech.voice_casting.voice_library_casting_cli:main"
 sts-copy-to-clipboard = "script_to_speech.utils.clipboard_cli:main"
 sts-validate-voice-library-data = "script_to_speech.voice_library.cli:main"
 
