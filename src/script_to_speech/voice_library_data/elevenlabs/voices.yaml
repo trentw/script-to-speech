@@ -5,7 +5,6 @@ provider_metadata:
   cost_value: 0.3
 
 voices:
-
   sully:
     config:
       voice_id: "wAGzRVkxKEs8La0lmdrE"
@@ -14,16 +13,17 @@ voices:
       accent: "american_general"
       gender: "masculine"
 
-      age: .7
-      authority: .7
-      clarity: .5
-      energy: .3
-      pace: .4
-      performative: .5
-      pitch: .2
+      age: 0.7
+      authority: 0.7
+      energy: 0.3
+      pace: 0.4
+      performative: 0.5
+      pitch: 0.2
       quality: 1.0
+      range: 0.7
 
     description:
+      provider_name: "Sully"
       provider_description: "Deep mature American male"
       provider_use_cases: "Narrative & Story"
       custom_description: "Deep, middle-aged voice. Warmth and kindness despite somewhat gruff exterior"
@@ -32,6 +32,914 @@ voices:
     tags:
       provider_use_cases: ["narrative", "story"]
       custom_tags: ["soothing", "kind", "jolly"]
-      character_types: ["narrator", "father", "grandfather", "older_man", "teacher"]
-    
+      character_types:
+        ["narrator", "father", "grandfather", "older_man", "teacher"]
+
     preview_url: "https://storage.googleapis.com/eleven-public-prod/Bo6DtogKR9MFeVzUzR8msFIzsz92/voices/wAGzRVkxKEs8La0lmdrE/694524f9-fac6-4c16-a9de-8bb69e178312.mp3"
+
+  nikolay:
+    config:
+      voice_id: "WczBIOau2qV9z7nLeDqq"
+
+    voice_properties:
+      accent: "russian"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.4
+      pace: 0.6
+      performative: 0.35
+      pitch: 0.4
+      quality: 0.85
+      range: 0.4
+
+    description:
+      provider_name: "Nikolay Ivanov"
+      provider_description: "A young man with a Russian accent. Excellent for social media content."
+      provider_use_cases: "Social Media"
+      custom_description: "Energetic young Russian male with hyped, enthusiastic delivery perfect for engaging social content"
+      perceived_age: "22 - 40"
+
+    tags:
+      provider_use_cases: ["social_media"]
+      custom_tags: ["enunciated", "enthusiastic"]
+      character_types: ["sidekick", "friend", "villain"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/yjBt6nIkr4ZRL3htPHA7CQ7t5Mb2/voices/WczBIOau2qV9z7nLeDqq/1279bb75-3d47-4cf9-8e1f-83017fbbca09.mp3"
+
+  shiv:
+    config:
+      voice_id: "LrnwgcdTLxc99sutUxGU"
+
+    voice_properties:
+      accent: "indian"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.6
+      energy: 0.7
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.4
+      quality: 1
+      range: 0.8
+
+    description:
+      provider_name: "Shiv - Mature Deep Voice"
+      provider_description: "Shiv is the pen name of an Indian professional with decades of experience. His voice carries that weight and will be useful in areas where authority and engagement are needed, such as social media, audiobooks, and ads."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Mature Indian professional voice with decades of experience, authoritative yet engaging delivery"
+      perceived_age: "30 - 50"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["expressive", "lyrical", "natural", "experienced"]
+      character_types:
+        ["storyteller", "hero", "protagonist", "wiseman", "authority_figure"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/workspace/514d94e9241c48e8b7905375729c436f/voices/LrnwgcdTLxc99sutUxGU/LxCoMLmzFMBBbcEZyGRe.mp3"
+
+  brayden:
+    config:
+      voice_id: "3XOBzXhnDY98yeWQ3GdM"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.25
+      authority: 0.6
+      energy: 0.5
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.4
+      quality: 0.9
+      range: 0.6
+
+    description:
+      provider_name: "Brayden - Conversational Older Teen"
+      provider_description: "A deep-voiced male teenager. Perfect for conversations."
+      provider_use_cases: "Conversational"
+      custom_description: "Deep-voiced teenage male with casual, natural conversational style"
+      perceived_age: "14-20"
+
+    tags:
+      provider_use_cases: ["conversational"]
+      custom_tags: ["teen"]
+      character_types: ["son", "child", "teen", "friend", "protagonist"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/3XOBzXhnDY98yeWQ3GdM/IoPSuJAdubcv54f771o8.mp3"
+
+  carl:
+    config:
+      voice_id: "ujQHYmRqdrO1xbZlxbbq"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.7
+      authority: 0.9
+      energy: 0.4
+      pace: 0.4
+      performative: 0.5
+      pitch: 0.25
+      quality: 1
+      range: 0.6
+
+    description:
+      provider_name: "Carl - Big Voice"
+      provider_description: "Old American man. Has a smooth tone, which works well for reading audiobooks."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Smooth-toned older American male voice, modulated and perfect for audiobook narration"
+      perceived_age: "50-75"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["deep", "big", "smooth"]
+      character_types:
+        ["cowboy", "sheriff", "professor", "boss", "father", "grandfather"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/ZNTWuC7IYQQWqzzeKbpLS0FeplI3/voices/ujQHYmRqdrO1xbZlxbbq/a8357e1f-b7bd-4d32-96ff-ab8c8971af17.mp3"
+
+  kary:
+    config:
+      voice_id: "4rwC6xlwNjrg40xWm8Vb"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.5
+      authority: 0.6
+      energy: 0.5
+      pace: 0.3
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.5
+
+    description:
+      provider_name: "Kary"
+      provider_description: "Clear and natural American accent with a warm, engaging tone. Ideal for narration, presentations, commercials, and more."
+      provider_use_cases: "Informative Educational"
+      custom_description: "Clear, natural American female voice with warm, engaging tone perfect for educational content"
+      perceived_age: "22-35"
+
+    tags:
+      provider_use_cases: ["informative_educational"]
+      custom_tags: ["calm", "soothing", "balanced", "warm", "engaging"]
+      character_types:
+        ["friend", "advisor", "sage", "co-worker", "professional"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/J1Hwt02VGEYnhcf8lwTuTJER3xz1/voices/4rwC6xlwNjrg40xWm8Vb/70f98ae5-5cd1-4b49-9051-2c0cd35a87cc.mp3"
+
+  dallin:
+    config:
+      voice_id: "alFofuDn3cOwyoz1i44T"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.6
+      authority: 0.65
+      energy: 0.6
+      pace: 0.4
+      performative: 0.65
+      pitch: 0.38
+      quality: 1
+      range: 0.75
+
+    description:
+      provider_name: "Dallin - Storyteller"
+      provider_description: "Adult American Male Voice. Calming, Deep, Warm. Perfect for stories."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Calming, deep, warm American male voice designed specifically for storytelling"
+      perceived_age: "35-50"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["charming", "gripping", "gentle"]
+      character_types:
+        ["narrator", "detective", "protagonist", "dad", "husband"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/1D73t5OmWJcLCgnlSL28i2bB7Iq2/voices/alFofuDn3cOwyoz1i44T/f3121486-aa47-4540-9e8a-16a642ce77c2.mp3"
+
+  daniel:
+    config:
+      voice_id: "NRufILPAWzdcgy7tj2Zt"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.4
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.4
+
+    description:
+      provider_name: "Daniel"
+      provider_description: "Warm and intriguing voice, perfect for narrations aimed at a younger audience. Works well for audiobooks."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Warm, intriguing young male voice with casual delivery, perfect for younger audience content"
+      perceived_age: "25-40"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["wistful", "neutral", "calm"]
+      character_types: ["friend", "dreamer", "therapist", "narrator"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/XnWQKpONeagjUl8iUXy6rvndEts2/voices/NRufILPAWzdcgy7tj2Zt/67092911-6573-4e47-ab89-f9c1fb598039.mp3"
+
+  laurance:
+    config:
+      voice_id: "Kmju93KBVazUppMtolIC"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.65
+      energy: 0.5
+      pace: 0.6
+      performative: 0.5
+      pitch: 0.45
+      quality: 1
+      range: 0.6
+
+    description:
+      provider_name: "Laurance"
+      provider_description: "All-round good for all type of content"
+      provider_use_cases: "Narrative Story"
+      custom_description: "Versatile middle-aged American male voice suitable for all types of content"
+      perceived_age: "22 - 40"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["confident", "direct", "assertive"]
+      character_types: ["protagonist", "ally", "businessman"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/ofJ3ST4rvZcJUjpc7t5B7gqcCz93/voices/Kmju93KBVazUppMtolIC/ba8e809f-5bb7-4334-b007-355f1c10e2e0.mp3"
+
+  attank:
+    config:
+      voice_id: "Z7HhYXzYeRsQk3RnXqiG"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.65
+      energy: 0.5
+      pace: 0.4
+      performative: 0.5
+      pitch: 0.35
+      quality: 0.8
+      range: 0.6
+
+    description:
+      provider_name: "Attank"
+      provider_description: "Middle-aged Male with African accent. Voice is Calm & Excited. Perfect for Conversations."
+      provider_use_cases: "Conversational"
+      custom_description: "Middle-aged male with African accent, balancing calm and excited energy for conversations"
+      perceived_age: "25-45"
+      quality_issues: "'p' sounds blown out"
+
+    tags:
+      provider_use_cases: ["conversational"]
+      custom_tags: ["black", "african_american", "poetic", "calm"]
+      character_types: ["boss", "friend", "protagonist", "businessman"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/jLMjtM4Qn8VhmDhKAjoJEM8aW6I3/voices/Z7HhYXzYeRsQk3RnXqiG/1sX6DkzYCIzDdrW8H4mx.mp3"
+
+  christian:
+    config:
+      voice_id: "6xPz2opT0y5qtoRh1U1Y"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.6
+      authority: 0.5
+      energy: 0.5
+      pace: 0.65
+      performative: 0.5
+      pitch: 0.6
+      quality: 1
+      range: 0.6
+
+    description:
+      provider_name: "Christian"
+      provider_description: "Middle aged American male voice. Good for clear narration."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Clear, confident middle-aged American male voice perfect for professional narration"
+      perceived_age: "30-45"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["confident", "reliable"]
+      character_types: ["salesman", "detective", "narrator", "professional"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/ideEvUQCAVRZz99Tr3IrRRUvriH2/voices/6xPz2opT0y5qtoRh1U1Y/24372a6d-c40d-485f-897a-a865ec9ecac1.mp3"
+
+  mark:
+    config:
+      voice_id: "UgBBYS2sOqTuMpoF3BR0"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.5
+      pace: 0.45
+      performative: 0.4
+      pitch: 0.5
+      quality: 0.9
+      range: 0.55
+
+    description:
+      provider_name: "Mark - Natural Conversations"
+      provider_description: "A casual, young-adult speaking in a natural manner. Perfect for Conversational AI."
+      provider_use_cases: "Conversational"
+      custom_description: "Natural, casual young adult male voice designed specifically for conversational AI applications"
+      perceived_age: "22-35"
+
+    tags:
+      provider_use_cases: ["conversational"]
+      custom_tags: ["slight_nasal"]
+      character_types: ["teacher", "protagonist", "narrator"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/y7Wmp2r8nCeGkLiXiwMOVWktro13/voices/UgBBYS2sOqTuMpoF3BR0/0Oc7jiXwWN9kRTXfQsmw.mp3"
+
+  justin:
+    config:
+      voice_id: "uFIXVu9mmnDZ7dTKCBTX"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.65
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.6
+
+    description:
+      provider_name: "Justin Time - eLearning Narration"
+      provider_description: "A friendly American English speaking learning professional. Perfect for eLearning courses, explainer videos, and educational podcasts."
+      provider_use_cases: "Informative Educational"
+      custom_description: "Friendly, confident American professional voice specialized for eLearning and educational content"
+      perceived_age: "25-35"
+
+    tags:
+      provider_use_cases: ["informative_educational"]
+      custom_tags: ["upbeat", "optimistic", "neutral", "friendly"]
+      character_types: ["protagonist", "narrator"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/uFIXVu9mmnDZ7dTKCBTX/L2OIPpOua49vKaHHqxCG.mp3"
+
+  king_chuku:
+    config:
+      voice_id: "XALcFq0WF65uNKzmpcZW"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.6
+      authority: 0.7
+      energy: 0.7
+      pace: 0.35
+      performative: 0.75
+      pitch: 0.25
+      quality: 0.85
+      range: 0.7
+
+    description:
+      provider_name: "King Chuku the Great"
+      provider_description: "Young adult American male.A deep and powerful voice of a young stoic king. Perfect for narration, speeches, and more!"
+      provider_use_cases: "Narrative Story"
+      custom_description: "Deep, powerful voice of a young stoic king, commanding yet controlled"
+      perceived_age: "25-45"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["deep", "exaggerated", "regal"]
+      character_types: ["villain", "orator", "bartender", "king"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/L1bjkSxFkdaPTd0sdJ9J4EBNUmj1/voices/XALcFq0WF65uNKzmpcZW/882b12dd-e636-44c4-972f-81693cc3965e.mp3"
+
+  antonio:
+    config:
+      voice_id: "s2wvuS7SwITYg8dqsJdn"
+
+    voice_properties:
+      accent: "italian"
+      gender: "masculine"
+
+      age: 0.65
+      authority: 0.5
+      energy: 0.6
+      pace: 0.5
+      performative: 0.75
+      pitch: 0.5
+      quality: 1
+      range: 0.7
+
+    description:
+      provider_name: "Antonio - Grumpy Grandpa"
+      provider_description: "An elderly Italian-American male voice with a thick New York/Italian accent, fluctuating between calm nostalgia and explosive anger. The voice has a natural gruffness and commanding presence, with occasional raspy undertones when shouting. Perfect for portraying an old-school mobster character reminiscing about the past."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Grumpy elderly Italian-American with thick accent, fluctuating between nostalgia and anger"
+      perceived_age: "40-65"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["expressive", "character", "raspy"]
+      character_types:
+        ["storyteller", "bard", "shopkeeper", "father", "grandfather"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/7ePDl5AGulYrR1U5dCPx5dEHX2g2/voices/s2wvuS7SwITYg8dqsJdn/S58qVSIAWV6Iy2TXEyFx.mp3"
+
+  joey:
+    config:
+      voice_id: "96GdqBzBPBtvQD46bSw2"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.25
+      authority: 0.3
+      energy: 0.4
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.6
+      quality: 0.8
+      range: 0.5
+
+    description:
+      provider_name: "Joey - Youthful and Energetic"
+      provider_description: "A youthful and energetic voice that is curious about the world."
+      provider_use_cases: "Conversational"
+      custom_description: "Youthful, energetic voice with natural curiosity and enthusiasm"
+      perceived_age: "12-19"
+
+    tags:
+      provider_use_cases: ["conversational"]
+      custom_tags: ["young", "hopeful", "curious"]
+      character_types: ["child", "teen", "son", "boy"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/OYXYCpZtGecbEYUXokb1xPi7P7T2/voices/96GdqBzBPBtvQD46bSw2/fa0f6707-739e-42d4-aa07-95975cbd071f.mp3"
+
+  burt:
+    config:
+      voice_id: "kdVjFjOXaqExaDvXZECX"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.4
+      energy: 0.35
+      pace: 0.5
+      performative: 0.35
+      pitch: 0.5
+      quality: 0.5
+      range: 0.5
+
+    description:
+      provider_name: "Burt"
+      provider_description: "Middle-aged Asian American male. Good for narration or as a character voice."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Calm, middle-aged Asian American male voice suitable for narration and character work"
+      perceived_age: "22-40"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["slight_robotic", "stilted", "unnatural"]
+      character_types: ["background", "extra"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/OgMJiVAehyeaRuNnrBxSovksRX13/voices/kdVjFjOXaqExaDvXZECX/lDFq3oGBLoiv7q4QyPrd.mp3"
+
+  jon_paul:
+    config:
+      voice_id: "rdDUoCO1RjwdMmNjmhHV"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.4
+      authority: 0.5
+      energy: 0.4
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Jon Paul"
+      provider_description: "Black African American male voice (30's), Great for narrative & fiction novel."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Calm, young African American male voice perfect for narrative and fiction"
+      perceived_age: "18 -35"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["smooth", "calm", "black", "african_american"]
+      character_types: ["student", "protagonist", "friend"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/wxwaPEXV0YdUV0xrfOVblY7ckfu1/voices/rdDUoCO1RjwdMmNjmhHV/mbckzUkxiuzkiUQpybvI.mp3"
+
+  anthony:
+    config:
+      voice_id: "sjwRAsCdMJodJszgJ6Ks"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.5
+      pace: 0.45
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.75
+
+    description:
+      provider_name: "Anthony Francis"
+      provider_description: "Young American male voice. Works well for Audiobooks."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Casual young American male voice designed for audiobook narration"
+      perceived_age: "22-45"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["natural", "neutral", "engaged", "friendly"]
+      character_types: ["teacher", "protagonist", "narrator"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/sjwRAsCdMJodJszgJ6Ks/2aS1FpA3UqupRomSKCDK.mp3"
+
+  stella:
+    config:
+      voice_id: "1cka6GVMj7REg0libjPN"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.5
+      authority: 0.5
+      energy: 0.6
+      pace: 0.45
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.75
+
+    description:
+      provider_name: "Stella - warm and expressive"
+      provider_description: "A warm and expressive voice. Well suited for podcasts."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Warm, expressive young female voice with cheeky personality, perfect for podcasts"
+      perceived_age: "20-35"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["eager", "natural", "hopeful", "warm"]
+      character_types:
+        ["protagonist", "professional", "businesswoman", "girlfriend"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/Eq8tyIYOx5PoyXO0aMbKV4xG1FW2/voices/1cka6GVMj7REg0libjPN/216943a2-9952-4d8e-bda1-2fe7b7e16345.mp3"
+
+  archie:
+    config:
+      voice_id: "kmSVBPu7loj4ayNinwWM"
+
+    voice_properties:
+      accent: "british"
+      gender: "masculine"
+
+      age: 0.45
+      authority: 0.4
+      energy: 0.4
+      pace: 0.35
+      performative: 0.5
+      pitch: 0.5
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Archie - English teen youth"
+      provider_description: "A young British English male voice; warm, deep and easy to understand. Friendly and enthusiastic, it's great for narration, podcasts and social media such as YouTube, Tiktok, Reels and Stories. This studio-produced audio works well for a late teen male Gen-Z voice in audiobooks, games, high-quality video dubbing, advertising and reading."
+      provider_use_cases: "Social Media"
+      custom_description: "Warm, deep British teen voice with friendly enthusiasm, perfect for Gen-Z content"
+      perceived_age: "18-35"
+
+    tags:
+      provider_use_cases: ["social_media"]
+      custom_tags: ["soft", "laid_back", "lyrical"]
+      character_types: ["friend", "doctor", "butler"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/kmSVBPu7loj4ayNinwWM/YOCkh6Kvyz07q9hkhZ4l.mp3"
+
+  florence:
+    config:
+      voice_id: "DC49YeSbP9fB5uZdhi1b"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.35
+      authority: 0.35
+      energy: 0.6
+      pace: 0.6
+      performative: 0.5
+      pitch: 0.65
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Florence - captivating"
+      provider_description: "A very pleasant and kind voice. Fantastic for storytelling."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Pleasant, kind young female voice that's captivating and perfect for storytelling"
+      perceived_age: "16 - 30"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["young", "expressive", "wistful"]
+      character_types: ["student", "daughter"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/avAQkHBz5SaiYVBWzLeeYSJekX53/voices/DC49YeSbP9fB5uZdhi1b/a4563a4e-43e1-4b95-8607-5056627c1554.mp3"
+
+  adina:
+    config:
+      voice_id: "umKoJK6tP1ALjO0zo1EE"
+
+    voice_properties:
+      accent: "canadian"
+      gender: "feminine"
+
+      age: 0.2
+      authority: 0.2
+      energy: 0.65
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.7
+      quality: 0.75
+      range: 0.6
+
+    description:
+      provider_name: "Adina - Teen Girl"
+      provider_description: "Adolescent teen girl with a warm voice. Works well for Social media."
+      provider_use_cases: "Social Media"
+      custom_description: "Warm adolescent teen girl voice with neutral delivery, perfect for social media content"
+      perceived_age: "8-16"
+
+    tags:
+      provider_use_cases: ["social_media"]
+      custom_tags: ["enunciated", "young", "cheerful"]
+      character_types: ["child", "girl", "daughter"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/XZGGrr0Cr7Q9yExDbvU4mz2hcvB2/voices/umKoJK6tP1ALjO0zo1EE/83eff72a-745b-400c-81d1-e01cc82410d8.mp3"
+
+  lucas:
+    config:
+      voice_id: "s0XGIcqmceN2l7kjsqoZ"
+
+    voice_properties:
+      accent: "american_midwest"
+      gender: "masculine"
+
+      age: 0.25
+      authority: 0.3
+      energy: 0.6
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.5
+      quality: 0.85
+      range: 0.6
+
+    description:
+      provider_name: "Lucas - Warm, Casual, Neutral American Voice"
+      provider_description: "Lucas provides a friendly, engaging tone to your audio projects. Recorded in a professional studio environment, his words are clear and crisp, yet full of unique tonalities and expressions. Lucas has a neutral midwestern-based accent, which can be easily understood by nearly all English speakers."
+      provider_use_cases: "Conversational"
+      custom_description: "Warm, casual young male with neutral Midwestern accent, professionally recorded with clear delivery"
+      perceived_age: "13-20"
+
+    tags:
+      provider_use_cases: ["conversational"]
+      custom_tags: ["young"]
+      character_types: ["student", "boy", "son", "teen"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/database/user/GPZjZGGxHlNjWJTVFWwEKsp4zN83/voices/s0XGIcqmceN2l7kjsqoZ/dW8e35sROhN7WpjAWWso.mp3"
+
+  brittney:
+    config:
+      voice_id: "pjcYQlDFKMbcOUp6F5GD"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.4
+      authority: 0.4
+      energy: 0.7
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.5
+      quality: 1
+      range: 0.8
+
+    description:
+      provider_name: "Brittney"
+      provider_description: "A calm and relaxing female voice, ideal for meditation and self-reflection. The tone is smooth and measured, painting a clear picture for the listener with a youthful, vibrant voice."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Calm, relaxing young female voice with smooth, measured delivery perfect for meditation"
+      perceived_age: "18-35"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["expressive", "natural", "engaging"]
+      character_types: ["protagonist", "adventurer", "friend", "student"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/pjcYQlDFKMbcOUp6F5GD/5zLsYiRlHlqOzAHAmJT0.mp3"
+
+  lucy:
+    config:
+      voice_id: "WseOyZTGijtqvQSnqVKn"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.65
+      authority: 0.65
+      energy: 0.4
+      pace: 0.4
+      performative: 0.55
+      pitch: 0.35
+      quality: 1
+      range: 0.7
+
+    description:
+      provider_name: "Lucy"
+      provider_description: "A calm middle aged female voice. Good for storytelling and newsbroadcasts."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Calm, middle-aged female voice suitable for both storytelling and news broadcasting"
+      perceived_age: "30-50"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["natural", "thoughtful", "news"]
+      character_types: ["teacher", "doctor", "protagonist", "narrator"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/A9EfCF9oB3dZhYWZzjzRipmJohS2/voices/WseOyZTGijtqvQSnqVKn/1fe4b942-66d6-4df0-89ac-1ba220c7c067.mp3"
+
+  russell:
+    config:
+      voice_id: "VrpwKyFPv8etbiWgnoyA"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.7
+      authority: 0.8
+      energy: 0.5
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.15
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Russell"
+      provider_description: "Great for storytelling"
+      provider_use_cases: "Narrative Story"
+      custom_description: "Wise-sounding older male voice with storytelling expertise"
+      perceived_age: "50-70"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["deep", "gravelly", "commanding", "reflective"]
+      character_types: ["police", "cowboy", "judge", "father", "grandfather"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/lHja2HgPeCQKtqUxGMUcO9oRNkf1/voices/VrpwKyFPv8etbiWgnoyA/cc63d954-d952-4903-b679-fc343a8f11f0.mp3"
+
+  ryan:
+    config:
+      voice_id: "rU18Fk3uSDhmg5Xh41o4"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.5
+      authority: 0.4
+      energy: 0.5
+      pace: 0.35
+      performative: 0.5
+      pitch: 0.6
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Ryan Kurk"
+      provider_description: "A very pleasant and kind voice. Great for shorts or narration."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Pleasant, kind middle-aged male voice perfect for short content and narration"
+      perceived_age: "22-35"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["neutral", "natural", "friendly", "helpful"]
+      character_types: ["doctor", "friend", "protagonist", "businessman"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/rU18Fk3uSDhmg5Xh41o4/1ssldWxzIJ4T23tMR561.mp3"
+
+  tom:
+    config:
+      voice_id: "Hx6sZDehEFJkHK0v83Z6"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: 0.6
+      authority: 0.7
+      energy: 0.4
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.3
+      quality: 1
+      range: 0.65
+
+    description:
+      provider_name: "Tom"
+      provider_description: "Young American man. Has a formal tone to his voice, makes for great narrator."
+      provider_use_cases: "Narrative Story"
+      custom_description: "Young American male with formal tone, excellent for professional narration"
+      perceived_age: "35 - 50"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["calm", "deep", "patient", "wise"]
+      character_types:
+        ["businessman", "butler", "boss", "judge", "police", "protagonist"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/vNUKlSqkmggIV22qKj8BKmFukHI2/voices/Hx6sZDehEFJkHK0v83Z6/157ea619-e5aa-4d72-ad21-be4d11fba191.mp3"
+
+  brittany:
+    config:
+      voice_id: "lkVAP8k5tC0Wr1dYyQZH"
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: 0.5
+      authority: 0.4
+      energy: 0.7
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.6
+      quality: 0.9
+      range: 0.7
+
+    description:
+      provider_name: "Brittany - Warm, Bright, Gentle Female Narrative Voice"
+      provider_description: "A middle-aged American female. Has a Kind, natural and gentle speaking voice. Great for non-fiction and inspirational!"
+      provider_use_cases: "Narrative Story"
+      custom_description: "Warm, bright, gentle middle-aged female voice perfect for inspirational and non-fiction content"
+      perceived_age: "22-35"
+
+    tags:
+      provider_use_cases: ["narrative_story"]
+      custom_tags: ["expressive", "engaging", "wistful"]
+      character_types: ["teacher", "doctor", "protagonist"]
+
+    preview_url: "https://storage.googleapis.com/eleven-public-prod/custom/voices/lkVAP8k5tC0Wr1dYyQZH/39Rbp5ldM4jDcGm4BE53.mp3"

@@ -82,6 +82,16 @@ voice_properties:
       0.5: "some audio or voice issues"
       1.0: "clear audio and high-quality voice"
 
+  range:
+    description: "Expressive range of character"    
+    type: range
+    min: 0.0
+    max: 1.0
+    scale_points:
+      0.0: "monotone/unvaried"
+      0.5: "normal/conversational"
+      1.0: "highly expressive"
+
   # Enum properties
   accent:
     description: "Primary accent of the voice"
