@@ -62,6 +62,7 @@ def generate_standalone_speech(
     silence_threshold: int = -40,
     min_silence_len: int = 500,
     keep_silence: int = 100,
+    output_filename: Optional[str] = None,
 ) -> None:
     """
     Generate speech using specified provider via TTSProviderManager.
@@ -75,6 +76,7 @@ def generate_standalone_speech(
         silence_threshold: Silence threshold in dBFS for splitting
         min_silence_len: Minimum silence length in ms for splitting
         keep_silence: Amount of silence to keep in ms after splitting
+        output_filename: Optional custom filename (without extension)
     """
     try:
         # Prepend constant sentence if split mode is enabled
@@ -125,7 +127,10 @@ def generate_standalone_speech(
                 return
 
         # Create final filename and path
-        filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}.mp3"
+        if output_filename:
+            filename = f"{output_filename}{variant_suffix}.mp3"
+        else:
+            filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}.mp3"
         output_path = os.path.join(output_dir, filename)
 
         # Save audio

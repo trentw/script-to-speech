@@ -45,7 +45,8 @@ dev = [
 
 [project.scripts]
 sts-generate-audio = "script_to_speech.script_to_speech:main"
-sts-generate-standalone-speech = "script_to_speech.utils.generate_standalone_speech:main"
+sts-generate-standalone-speech = "script_to_speech.utils.generate_standalone_speech:main" 
+sts-batch-generate-standalone-speech = "script_to_speech.utils.batch_standalone_speech_generator:main"
 sts-tts-provider-yaml = "script_to_speech.tts_providers.utils:main"
 sts-analyze-json = "script_to_speech.parser.analyze:main"
 sts-apply-text-processors-json = "script_to_speech.parser.apply_text_processors:main"

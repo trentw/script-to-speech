@@ -608,6 +608,100 @@ class TestGenerateStandaloneSpeech:
         # Verify output directory was created
         mock_makedirs.assert_called_once_with("test_output", exist_ok=True)
 
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    @patch("script_to_speech.utils.env_utils.load_environment_variables")
+    def test_generate_standalone_speech_with_custom_filename(
+        self, mock_load_env, mock_datetime, mock_makedirs
+    ):
+        """Test generate_standalone_speech with custom output filename."""
+        mock_load_env.return_value = True
+
+        speaker_config = {"voice_id": "test_voice"}
+        provider_name = self.MockProvider.get_provider_identifier()
+        config_data = {"default": {"provider": provider_name, **speaker_config}}
+
+        # Instantiate and mock TTSProviderManager
+        mock_tts_manager = TTSProviderManager(
+            config_data=config_data, dummy_tts_provider_override=False
+        )
+        mock_tts_manager.generate_audio = MagicMock(return_value=b"test audio data")
+        mock_tts_manager.get_provider_identifier = MagicMock(return_value=provider_name)
+        mock_tts_manager.get_speaker_identifier = MagicMock(
+            return_value=self.MockProvider.get_speaker_identifier(speaker_config)
+        )
+
+        # Mock datetime to return a fixed timestamp
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+
+        # Mock open for writing
+        with patch("builtins.open", mock_open()) as mock_file:
+            # Call function with custom output filename
+            generate_standalone_speech(
+                tts_manager=mock_tts_manager,
+                text="Hello world",
+                output_dir="test_output",
+                output_filename="custom_filename",
+            )
+
+            # Verify TTSManager.generate_audio was called correctly
+            mock_tts_manager.generate_audio.assert_called_once_with(
+                "default", "Hello world"
+            )
+
+            # Check that a file was written with the expected data
+            mock_file().write.assert_called_once_with(b"test audio data")
+
+            # Verify output directory was created
+            mock_makedirs.assert_called_once_with("test_output", exist_ok=True)
+
+            # Verify file was opened with custom filename (no timestamp/provider info)
+            expected_filename = "custom_filename.mp3"
+            expected_path = os.path.join("test_output", expected_filename)
+            mock_file.assert_any_call(expected_path, "wb")
+
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    @patch("script_to_speech.utils.env_utils.load_environment_variables")
+    def test_generate_standalone_speech_with_custom_filename_and_variant(
+        self, mock_load_env, mock_datetime, mock_makedirs
+    ):
+        """Test generate_standalone_speech with custom filename and variant."""
+        mock_load_env.return_value = True
+
+        speaker_config = {"voice_id": "test_voice"}
+        provider_name = self.MockProvider.get_provider_identifier()
+        config_data = {"default": {"provider": provider_name, **speaker_config}}
+
+        # Instantiate and mock TTSProviderManager
+        mock_tts_manager = TTSProviderManager(
+            config_data=config_data, dummy_tts_provider_override=False
+        )
+        mock_tts_manager.generate_audio = MagicMock(return_value=b"test audio data")
+        mock_tts_manager.get_provider_identifier = MagicMock(return_value=provider_name)
+        mock_tts_manager.get_speaker_identifier = MagicMock(
+            return_value=self.MockProvider.get_speaker_identifier(speaker_config)
+        )
+
+        # Mock datetime to return a fixed timestamp
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+
+        # Mock open for writing
+        with patch("builtins.open", mock_open()) as mock_file:
+            # Call function with custom output filename and variant > 1
+            generate_standalone_speech(
+                tts_manager=mock_tts_manager,
+                text="Hello world",
+                variant_num=3,
+                output_dir="test_output",
+                output_filename="custom_filename",
+            )
+
+            # Verify file was opened with custom filename including variant suffix
+            expected_filename = "custom_filename_variant3.mp3"
+            expected_path = os.path.join("test_output", expected_filename)
+            mock_file.assert_any_call(expected_path, "wb")
+
 
 class TestJsonOrStrType:
     """Tests for the json_or_str_type function."""
