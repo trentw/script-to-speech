@@ -116,6 +116,7 @@ class ScreenplayParser:
         self.chunks: List[Chunk] = []
         self.indent_context = IndentationContext()
         self.prev_line = ""
+        self.prev_non_empty_line = ""
 
     def state_to_type(self, state: State) -> str:
         """
@@ -150,6 +151,7 @@ class ScreenplayParser:
         current_speaker: str,
         indent_context: IndentationContext,
         prev_line: str,
+        prev_non_empty_line: str,
     ) -> Dict[State, float]:
         """
         Calculate probability scores for each possible state.
@@ -162,6 +164,7 @@ class ScreenplayParser:
             current_speaker: Current speaker name or empty string
             indent_context: Indentation context tracking object
             prev_line: Previous line of text
+            prev_non_empty_line: Previous non-empty line of text
 
         Returns:
             Dictionary mapping states to their probability scores
@@ -239,7 +242,10 @@ class ScreenplayParser:
         # Strong continuation probability (0.7) while in modifier state
         # High probability (0.9) for complete single-line parenthetical
         # Good probability (0.7) for start of multi-line parenthetical
-        if current_state == State.DIALOGUE_MODIFIER:
+        if (
+            current_state == State.DIALOGUE_MODIFIER
+            and not prev_non_empty_line.strip().endswith(")")
+        ):
             probs[State.DIALOGUE_MODIFIER] += 0.7
         elif self.is_dialogue_modifier(line):
             if current_state in [State.DIALOGUE, State.SPEAKER_ATTRIBUTION]:
@@ -330,10 +336,12 @@ class ScreenplayParser:
             current_speaker=self.current_speaker,
             indent_context=self.indent_context,
             prev_line=self.prev_line,
+            prev_non_empty_line=self.prev_non_empty_line,
         )
 
-        # Update previous line for next call
+        # Update previous lines for next call
         self.prev_line = line
+        self.prev_non_empty_line = line
 
         # Get the state with highest probability
         new_state = max(probs.items(), key=lambda x: x[1])[0]
@@ -546,6 +554,7 @@ class ScreenplayParser:
         self.chunks = []
         self.indent_context = IndentationContext()
         self.prev_line = ""
+        self.prev_non_empty_line = ""
 
     def _chunk_to_dict(self, chunk: Chunk) -> Dict[str, str]:
         """
