@@ -179,6 +179,104 @@ Mary waters the plants.
         assert chunks[4]["type"] == "dialogue"
         assert chunks[4]["speaker"] == "JOHN"
 
+    def test_parse_screenplay_with_multiline_dialogue_modifiers(self, mock_logger):
+        """Test parsing screenplay with multi-line dialogue modifiers."""
+        parser = ScreenplayParser()
+
+        # Screenplay text with multi-line dialogue modifier (based on provided example)
+        text = """INT. KITCHEN - DAY
+
+                                  TRUCKDRIVER                                       
+                        We gotta bust outta here ...  git                           
+                        to where there's some folks ...                             
+                        somebody with guns or                                       
+                        somethin ... .                                              
+                            (He quickly moves toward the                            
+                            kitchen.)                                               
+                        I'll try to scare up some grub.
+"""
+
+        # Parse text
+        chunks = parser.parse_screenplay(text)
+
+        # Should have 5 chunks: scene_heading, speaker, dialogue, dialogue_modifier, dialogue
+        assert len(chunks) == 5
+        assert chunks[0]["type"] == "scene_heading"
+        assert chunks[1]["type"] == "speaker_attribution"
+        assert chunks[1]["text"] == "TRUCKDRIVER"
+
+        assert chunks[2]["type"] == "dialogue"
+        assert chunks[2]["speaker"] == "TRUCKDRIVER"
+        expected_dialogue1 = "We gotta bust outta here ...  git to where there's some folks ... somebody with guns or somethin ... ."
+        assert chunks[2]["text"] == expected_dialogue1
+
+        assert chunks[3]["type"] == "dialogue_modifier"
+        expected_modifier = "(He quickly moves toward the kitchen.)"
+        assert chunks[3]["text"] == expected_modifier
+
+        assert chunks[4]["type"] == "dialogue"
+        assert chunks[4]["speaker"] == "TRUCKDRIVER"
+        assert chunks[4]["text"] == "I'll try to scare up some grub."
+
+    def test_parse_screenplay_dialogue_modifier_regression(self, mock_logger):
+        """Test that dialogue modifiers don't capture subsequent speaker attributions."""
+        parser = ScreenplayParser()
+
+        # Screenplay text that reproduces the regression from multi_line_2.txt
+        text = """INT. LIVING ROOM - DAY
+
+                                   ALICE                                             
+                         It doesn't work that way, kid.                           
+                         You don't know me.                             
+                                                                                    
+                                                                (CONTINUED)         
+                                                                                    
+               CONTINUED: (2)                                                       
+                                                                                    
+                                   CAT                                             
+                         You don't know anything about me!                          
+                                                                                    
+                                   ALICE                                             
+                         I know enough.
+"""
+
+        # Parse text
+        chunks = parser.parse_screenplay(text)
+
+        # Should have 9 chunks total
+        assert len(chunks) == 9
+
+        # Verify the structure matches expected output
+        assert chunks[0]["type"] == "scene_heading"
+
+        assert chunks[1]["type"] == "speaker_attribution"
+        assert chunks[1]["text"] == "ALICE"
+
+        assert chunks[2]["type"] == "dialogue"
+        assert chunks[2]["speaker"] == "ALICE"
+        expected_alice_dialogue1 = "It doesn't work that way, kid. You don't know me."
+        assert chunks[2]["text"] == expected_alice_dialogue1
+
+        assert chunks[3]["type"] == "dialogue_modifier"
+        assert chunks[3]["text"] == "(CONTINUED)"
+
+        assert chunks[4]["type"] == "action"
+        assert chunks[4]["text"] == "CONTINUED: (2)"
+
+        assert chunks[5]["type"] == "speaker_attribution"
+        assert chunks[5]["text"] == "CAT"
+
+        assert chunks[6]["type"] == "dialogue"
+        assert chunks[6]["speaker"] == "CAT"
+        assert chunks[6]["text"] == "You don't know anything about me!"
+
+        assert chunks[7]["type"] == "speaker_attribution"
+        assert chunks[7]["text"] == "ALICE"
+
+        assert chunks[8]["type"] == "dialogue"
+        assert chunks[8]["speaker"] == "ALICE"
+        assert chunks[8]["text"] == "I know enough."
+
     @pytest.mark.integration
     @patch("builtins.open", new_callable=mock_open)
     def test_parse_real_world_example(self, mock_file_open, mock_logger):

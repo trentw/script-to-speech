@@ -253,6 +253,8 @@ class TestStateTransitions:
         parser.current_speaker = "JOHN"
         parser.state = State.DIALOGUE_MODIFIER
         parser.has_left_title = True
+        # Set up previous line to simulate having just processed a dialogue modifier that ended with ")"
+        parser.prev_non_empty_line = "                         (pauses)                                                   "
 
         # Process dialogue
         parser.process_line(

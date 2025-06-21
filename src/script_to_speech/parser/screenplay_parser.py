@@ -246,10 +246,10 @@ class ScreenplayParser:
             current_state == State.DIALOGUE_MODIFIER
             and not prev_non_empty_line.strip().endswith(")")
         ):
-            probs[State.DIALOGUE_MODIFIER] += 0.7
+            probs[State.DIALOGUE_MODIFIER] += 0.9
         elif self.is_dialogue_modifier(line):
             if current_state in [State.DIALOGUE, State.SPEAKER_ATTRIBUTION]:
-                if stripped.endswith(")"):
+                if stripped.startswith("(") or stripped.endswith(")"):
                     probs[State.DIALOGUE_MODIFIER] += 0.9
                 else:
                     probs[State.DIALOGUE_MODIFIER] += 0.7
