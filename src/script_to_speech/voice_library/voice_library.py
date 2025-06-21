@@ -69,12 +69,26 @@ class VoiceLibrary:
                 if data and isinstance(data, dict) and "voices" in data:
                     voices = data["voices"]
                     if isinstance(voices, dict):
+                        # Check for duplicate voice IDs
+                        for voice_id in voices:
+                            if voice_id in all_voices:
+                                logger.error(
+                                    f"Duplicate voice ID '{voice_id}' found in {voice_file}. "
+                                    f"Voice already exists in voice library for provider '{provider}'"
+                                )
+                                raise ValueError(
+                                    f"Duplicate voice ID '{voice_id}' found in {voice_file.name} "
+                                    f"for provider '{provider}'"
+                                )
                         all_voices.update(voices)
                     else:
                         logger.warning(
                             f"Invalid voices section in {voice_file}: not a dictionary"
                         )
 
+            except ValueError:
+                # Re-raise ValueError (like duplicate voice IDs) immediately
+                raise
             except Exception as e:
                 logger.error(f"Error loading {voice_file}: {str(e)}")
                 # Continue loading other files

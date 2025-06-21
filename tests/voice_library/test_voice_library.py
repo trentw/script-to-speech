@@ -368,3 +368,48 @@ class TestVoiceLibrary:
 
             # Assert
             assert result == {}
+
+    def test_load_provider_voices_duplicate_voice_ids(self):
+        """Test _load_provider_voices raises error on duplicate voice IDs across files."""
+        # Arrange
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            provider_dir = temp_path / "test_provider"
+            provider_dir.mkdir()
+
+            # Create two files with overlapping voice IDs
+            voice_data1 = {
+                "voices": {
+                    "voice1": {
+                        "config": {"voice": "v1"},
+                        "description": "Voice 1 from file 1",
+                    },
+                    "voice2": {"config": {"voice": "v2"}, "description": "Voice 2"},
+                }
+            }
+            voice_data2 = {
+                "voices": {
+                    "voice1": {
+                        "config": {"voice": "v1_duplicate"},
+                        "description": "Voice 1 from file 2",
+                    },
+                    "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"},
+                }
+            }
+
+            voice_file1 = provider_dir / "voices1.yaml"
+            voice_file2 = provider_dir / "voices2.yaml"
+
+            with open(voice_file1, "w") as f:
+                yaml.dump(voice_data1, f)
+            with open(voice_file2, "w") as f:
+                yaml.dump(voice_data2, f)
+
+            library = VoiceLibrary(library_root=temp_path)
+
+            # Act & Assert
+            with pytest.raises(
+                ValueError,
+                match="Duplicate voice ID 'voice1' found in voices2.yaml for provider 'test_provider'",
+            ):
+                library._load_provider_voices("test_provider")

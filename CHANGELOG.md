@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
 
 ### Fixed
+- Added duplicate checking across voice library .yaml files for a given provider to ensure uniqueness
 - Fixed a couple parser issues where multi-line dialogue_modifiers were being terminated early, and where they were incorrectly being attributed as dialogues
 - Fixed parser issue where dialogue_modifiers weren't properly being terminated in some cases by adding tracking of last non-blank line, and checking for closed parenthesis
 - Fixed issue with `sts-parse-regression-check-json` where it could get "out of sync" in some cases and incorrectly show chunks as added / removed
