@@ -225,23 +225,21 @@ def analyze_chunks(
     parser_compare = parser_chunks.copy()
 
     # Track missing and additional chunks
-    missing_chunks = []
-    additional_chunks = []
+    missing_chunks: List[Dict[str, Any]] = []
+    additional_chunks: List[Dict[str, Any]] = []
 
     # Compare chunks
-    while parser_compare and input_compare:
-        # Get the first line of the first parser chunk
+    while input_compare and parser_compare:
+        # Get the first line of each chunk
         parser_chunk = parser_compare[0]
-        parser_first_line = get_first_line(parser_chunk)
-
-        # Check if this line is in the first input chunk
         input_chunk = input_compare[0]
+
+        parser_first_line = get_first_line(parser_chunk)
         input_first_line = get_first_line(input_chunk)
 
+        # Fast path – current top chunks already match
         if parser_first_line in input_chunk["raw_text"]:
-            # Lines match, compare chunks
             differences = compare_chunks(input_chunk, parser_chunk)
-
             if differences:
                 logger.info(
                     f'Chunk with text "{get_chunk_snippet(input_chunk)}" has differences:'
@@ -259,24 +257,31 @@ def analyze_chunks(
                 logger.debug(f"  Speaker: {parser_chunk['speaker']}")
                 logger.debug(f"  Text: {parser_chunk['text']}")
 
-            # Remove both chunks
+            # advance both lists
             input_compare.pop(0)
             parser_compare.pop(0)
+            continue
+
+        # Look ahead in *both* directions and choose the nearer match
+        dist_in_input = find_chunk_with_line(input_compare, parser_first_line)
+        dist_in_parser = find_chunk_with_line(parser_compare, input_first_line)
+
+        if dist_in_input == -1 and dist_in_parser == -1:
+            # No future alignment point on either side -> treat both chunks
+            # as unmatched and drop one from each to keep moving.
+            missing_chunks.append(input_compare.pop(0))
+            additional_chunks.append(parser_compare.pop(0))
+
+        elif dist_in_parser == -1 or (0 <= dist_in_input < dist_in_parser):
+            # Parser is *behind* the input: pop intervening input chunks as missing
+            for _ in range(dist_in_input):
+                missing_chunks.append(input_compare.pop(0))
         else:
-            # Check if the line is in any input chunk
-            chunk_index = find_chunk_with_line(input_compare, parser_first_line)
+            # Input is behind (or parser match is closer): pop parser chunks as additional
+            for _ in range(dist_in_parser):
+                additional_chunks.append(parser_compare.pop(0))
 
-            if chunk_index > 0:
-                # Parser is missing chunks
-                for i in range(chunk_index):
-                    missing_chunk = input_compare.pop(0)
-                    missing_chunks.append(missing_chunk)
-            else:
-                # Parser has additional chunks
-                additional_chunk = parser_compare.pop(0)
-                additional_chunks.append(additional_chunk)
-
-    # Handle any remaining chunks
+    # Any leftovers after the loop are also unmatched
     missing_chunks.extend(input_compare)
     additional_chunks.extend(parser_compare)
 
@@ -285,10 +290,9 @@ def analyze_chunks(
         logger.info(
             f"\nInput has {len(missing_chunks)} chunks that the current parser doesn't generate:"
         )
-        for i, chunk in enumerate(missing_chunks):
-            snippet = get_chunk_snippet(chunk)
+        for i, chunk in enumerate(missing_chunks, start=1):
             logger.info(
-                f"  Missing chunk #{i+1} (\"{snippet}\"), type: {chunk['type']}"
+                f'  Missing chunk #{i} ("{get_chunk_snippet(chunk)}"), type: {chunk["type"]}'
             )
 
     # Log additional chunks
@@ -296,10 +300,9 @@ def analyze_chunks(
         logger.info(
             f"\nCurrent parser generates {len(additional_chunks)} chunks not in the input:"
         )
-        for i, chunk in enumerate(additional_chunks):
-            snippet = get_chunk_snippet(chunk)
+        for i, chunk in enumerate(additional_chunks, start=1):
             logger.info(
-                f"  Additional chunk #{i+1} (\"{snippet}\"), type: {chunk['type']}"
+                f'  Additional chunk #{i} ("{get_chunk_snippet(chunk)}"), type: {chunk["type"]}'
             )
 
 

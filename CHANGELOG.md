@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
 - Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
 
+### Fixed
+- Fixed issue with `sts-parse-regression-check-json` where it could get "out of sync" in some cases and incorrectly show chunks as added / removed
+
 ## [1.1.0] - 2025-05-26
 
 ### Added

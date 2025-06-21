@@ -6,12 +6,14 @@ with existing JSON files to detect regressions.
 """
 
 import json
+import logging
 from pathlib import Path
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 
 from script_to_speech.parser.regression_check import (
+    analyze_chunks,
     compare_chunks_by_type,
     load_json_chunks,
     main,
@@ -128,6 +130,59 @@ class TestCompareChunksByType:
         assert comparison["dialogue"]["diff"] == 1
 
 
+class TestAnalyzeChunksMisalignment:
+    """Validate that analyze_chunks realigns after an extra parser chunk."""
+
+    def test_realignment_after_extra_parser_chunk(self, caplog):
+        """
+        The parser output contains an extra chunk *before* the lists diverge.
+        The function should report exactly one 'additional' chunk and no
+        'missing' chunks – proving that the bidirectional look-ahead
+        prevents the cascade of false positives.
+        """
+        from script_to_speech.parser import regression_check as rc
+
+        with (
+            patch(
+                "script_to_speech.parser.regression_check.compare_chunks",
+                return_value=[],
+            ),
+            patch(
+                "script_to_speech.parser.regression_check.get_chunk_snippet",
+                side_effect=lambda c: c["raw_text"][:20],
+            ),
+        ):
+            input_chunks = [
+                {"type": "action", "raw_text": "Line A", "text": "Line A"},
+                {"type": "action", "raw_text": "Line B", "text": "Line B"},
+                {"type": "action", "raw_text": "Line C", "text": "Line C"},
+            ]
+
+            parser_chunks = [
+                {"type": "action", "raw_text": "Line A", "text": "Line A"},
+                {
+                    "type": "action",
+                    "raw_text": "Line EXTRA",
+                    "text": "Line EXTRA",
+                },  # extra
+                {"type": "action", "raw_text": "Line B", "text": "Line B"},
+                {"type": "action", "raw_text": "Line C", "text": "Line C"},
+            ]
+
+            caplog.set_level(
+                logging.INFO, logger="script_to_speech.parser.regression_check"
+            )
+            analyze_chunks(input_chunks, parser_chunks)
+
+        log_text = caplog.text
+        assert "Current parser generates 1 chunks not in the input" in log_text
+        # No 'Input has … chunks that the current parser doesn't generate' message
+        assert "Input has" not in log_text
+
+
+# --------------------------------------------------------------------------- #
+#  run_regression_check() orchestration tests
+# --------------------------------------------------------------------------- #
 class TestRunRegressionCheck:
     """Tests for the run_regression_check function."""
 
