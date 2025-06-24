@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
 - Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
 
+### Changed
+- Changed `--tts_config` to be a required parameter for `sts-generate-audio`, and updated variable naming to `tts_provider_config` to be more consistent with rest of code
+
 ### Fixed
 - Added duplicate checking across voice library .yaml files for a given provider to ensure uniqueness
 - Fixed a couple parser issues where multi-line dialogue_modifiers were being terminated early, and where they were incorrectly being attributed as dialogues

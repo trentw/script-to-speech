@@ -61,13 +61,13 @@ def process_sts_ids(
 
             try:
                 # Build TTS config for this sts_id
-                tts_config_data = {
+                tts_provider_config_data = {
                     "default": {"provider": provider_name, "sts_id": sts_id}
                 }
 
                 # Create TTSProviderManager
                 tts_manager = TTSProviderManager(
-                    config_data=tts_config_data,
+                    config_data=tts_provider_config_data,
                     overall_provider=None,
                     dummy_tts_provider_override=False,
                 )
@@ -121,14 +121,14 @@ def process_configs(
             provider_class = get_provider_class(provider_name)
 
             # Build TTS config
-            tts_config_data = {"default": config.copy()}
+            tts_provider_config_data = {"default": config.copy()}
 
             # Validate the config
-            provider_class.validate_speaker_config(tts_config_data["default"])
+            provider_class.validate_speaker_config(tts_provider_config_data["default"])
 
             # Create TTSProviderManager
             tts_manager = TTSProviderManager(
-                config_data=tts_config_data,
+                config_data=tts_provider_config_data,
                 overall_provider=None,
                 dummy_tts_provider_override=False,
             )

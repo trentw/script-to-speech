@@ -32,7 +32,7 @@ class TestParseArguments:
     def test_required_arguments(self):
         """Test parsing with only required arguments."""
         # Arrange
-        test_args = ["input_file.json"]
+        test_args = ["input_file.json", "tts_provider_config.yaml"]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
@@ -40,6 +40,7 @@ class TestParseArguments:
 
         # Assert
         assert args.input_file == "input_file.json"
+        assert args.tts_provider_config == "tts_provider_config.yaml"
         assert args.gap == 500  # Default value
 
     def test_optional_arguments(self):
@@ -47,10 +48,9 @@ class TestParseArguments:
         # Arrange
         test_args = [
             "input_file.json",
+            "config.yaml",
             "--gap",
             "300",
-            "--tts-config",
-            "config.yaml",
             "--check-silence",
             "-35.0",
             "--cache-overrides",
@@ -83,7 +83,7 @@ class TestParseArguments:
         # Assert
         assert args.input_file == "input_file.json"
         assert args.gap == 300
-        assert args.tts_config == "config.yaml"
+        assert args.tts_provider_config == "config.yaml"
         assert args.check_silence == -35.0
         assert args.cache_overrides == "custom_directory"
         assert args.optional_config == "id3_config.yaml"
@@ -93,7 +93,7 @@ class TestParseArguments:
     def test_mutually_exclusive_run_modes(self):
         """Test parsing with mutually exclusive run modes."""
         # Arrange
-        test_args = ["input_file.json", "--dry-run"]
+        test_args = ["input_file.json", "tts_provider_config.yaml", "--dry-run"]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
@@ -104,7 +104,7 @@ class TestParseArguments:
         assert args.populate_cache is False
 
         # Test with populate-cache
-        test_args = ["input_file.json", "--populate-cache"]
+        test_args = ["input_file.json", "tts_provider_config.yaml", "--populate-cache"]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
@@ -117,7 +117,7 @@ class TestParseArguments:
     def test_check_silence_flag_with_no_value(self):
         """Test the check-silence flag when provided without a value."""
         # Arrange
-        test_args = ["input_file.json", "--check-silence"]
+        test_args = ["input_file.json", "tts_provider_config.yaml", "--check-silence"]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
@@ -129,7 +129,11 @@ class TestParseArguments:
     def test_dummy_tts_provider_override_flag(self):
         """Test the dummy-tts-provider-override flag."""
         # Arrange
-        test_args = ["input_file.json", "--dummy-tts-provider-override"]
+        test_args = [
+            "input_file.json",
+            "tts_provider_config.yaml",
+            "--dummy-tts-provider-override",
+        ]
 
         # Act
         with patch.object(sys, "argv", ["script_to_speech.py"] + test_args):
@@ -319,7 +323,7 @@ class TestMain:
             args.check_silence = -40.0
             args.cache_overrides = None
             args.optional_config = None
-            args.tts_config = Path("tts_config.yaml")
+            args.tts_provider_config = Path("tts_provider_config.yaml")
             args.text_processor_configs = None
             args.ffmpeg_path = None
             args.max_report_misses = 20
@@ -399,9 +403,9 @@ class TestMain:
             script_to_speech.main()
 
         # Assert
-        # Check if open was called with the tts_config path
+        # Check if open was called with the tts_provider_config path
         mock_file_open.assert_called_once_with(
-            mocks["args"].tts_config, "r", encoding="utf-8"
+            mocks["args"].tts_provider_config, "r", encoding="utf-8"
         )
         # Check if yaml.safe_load was called
         mock_yaml_load.assert_called_once()
@@ -680,7 +684,7 @@ class TestMain:
 
         # Setup additional mocks for the processing phase
         with (
-            # Mock file operations for tts_config.yaml
+            # Mock file operations for tts_provider_config.yaml
             patch("builtins.open", mock_open(read_data="some yaml data")),
             patch(
                 "yaml.safe_load",

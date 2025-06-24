@@ -13,7 +13,7 @@ def test_generate_prompt_file_txt(tmp_path: Path):
     # Arrange
     screenplay_path = tmp_path / "sample_screenplay.txt"
     screenplay_path.write_text("CHARACTER: Hello World\n")
-    config_path = tmp_path / "tts_config.yaml"
+    config_path = tmp_path / "tts_provider_config.yaml"
     config_path.write_text("provider: dummy\n")
 
     # Act
@@ -34,7 +34,7 @@ def test_generate_prompt_file_txt(tmp_path: Path):
 def test_generate_prompt_file_invalid_extension(tmp_path: Path):
     screenplay_path = tmp_path / "sample_screenplay.doc"
     screenplay_path.write_text("dummy")
-    config_path = tmp_path / "tts_config.yaml"
+    config_path = tmp_path / "tts_provider_config.yaml"
     config_path.write_text("provider: dummy\n")
 
     with pytest.raises(ValueError):

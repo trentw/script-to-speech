@@ -7,7 +7,7 @@ Script to Speech supports multiple execution modes to handle different stages of
 ### Default Mode (Full Generation)
 **Command**: No special flag needed
 ```bash
-uv run sts-generate-audio input/script.json --tts-config config.yaml
+uv run sts-generate-audio input/script.json config.yaml
 ```
 
 **Purpose**: Complete audio file generation
@@ -24,7 +24,7 @@ uv run sts-generate-audio input/script.json --tts-config config.yaml
 ### Dry Run Mode
 **Command**: `--dry-run`
 ```bash
-uv run sts-generate-audio input/script.json --tts-config config.yaml --dry-run
+uv run sts-generate-audio input/script.json config.yaml --dry-run
 ```
 
 **Purpose**: Configuration validation and planning
@@ -44,7 +44,7 @@ uv run sts-generate-audio input/script.json --tts-config config.yaml --dry-run
 ### Populate Cache Mode
 **Command**: `--populate-cache`
 ```bash
-uv run sts-generate-audio input/script.json --tts-config config.yaml --populate-cache
+uv run sts-generate-audio input/script.json config.yaml --populate-cache
 ```
 
 **Purpose**: Audio generation without final combination into audio file
@@ -166,7 +166,7 @@ uv run sts-generate-audio --populate-cache --cache-overrides custom_dir/
 ### Global Options
 ```bash
 uv run sts-generate-audio [input_json] \
-  --tts-config [config.yaml] \
+  [config.yaml] \
   [run_mode] \
   [additional_options]
 ```
@@ -270,10 +270,10 @@ Large projects in memory constrained situations may benefit from:
 ### Complete Quality Workflow
 ```bash
 # 1. Initial validation
-uv run sts-generate-audio script.json --tts-config config.yaml --dry-run
+uv run sts-generate-audio script.json config.yaml --dry-run
 
 # 2. Generate with quality checks
-uv run sts-generate-audio script.json --tts-config config.yaml \
+uv run sts-generate-audio script.json config.yaml \
   --populate-cache --check-silence -30
 
 # 3. Fix silent audio
@@ -281,9 +281,9 @@ uv run sts-generate-standalone-speech openai --voice echo \
   "Previously silent text 1 " "Previously silent text 2 "
 
 # 4. Apply fixes, after files in standalone_speech have been renamed to match cache
-uv run sts-generate-audio script.json --tts-config config.yaml \
+uv run sts-generate-audio script.json config.yaml \
   --populate-cache --cache-overrides --check-silence
 
 # 5. Final generation, once all clips are confirmed cast
-uv run sts-generate-audio script.json --tts-config config.yaml
+uv run sts-generate-audio script.json config.yaml
 ```

@@ -158,7 +158,7 @@ class TestDummyProviderOverride:
             args.check_silence = None
             args.cache_overrides = None
             args.optional_config = None
-            args.tts_config = sample_config_file
+            args.tts_provider_config = sample_config_file
             args.provider = None
             args.text_processor_configs = None
             args.ffmpeg_path = None

@@ -46,13 +46,13 @@ def parse_arguments() -> argparse.Namespace:
         "input_file", help="Path to the input JSON file containing dialogues."
     )
     parser.add_argument(
+        "tts_provider_config", help="Path to YAML configuration file for TTS provider."
+    )
+    parser.add_argument(
         "--gap",
         type=int,
         default=500,
         help="Gap duration between dialogues in milliseconds.",
-    )
-    parser.add_argument(
-        "--tts-config", help="Path to YAML configuration file for TTS provider."
     )
     parser.add_argument(
         "--text-processor-configs",
@@ -228,34 +228,29 @@ def main() -> None:
             raise FileNotFoundError(f"Input file not found: {args.input_file}")
 
         # Initialize Managers
-        tts_config_data_loaded = {}
-        if args.tts_config:
-            tts_config_path_obj = Path(args.tts_config)
-            if not tts_config_path_obj.exists():
-                raise FileNotFoundError(
-                    f"TTS configuration file not found: {tts_config_path_obj}"
-                )
+        tts_provider_config_data_loaded = {}
+        tts_provider_config_path_obj = Path(args.tts_provider_config)
+        if not tts_provider_config_path_obj.exists():
+            raise FileNotFoundError(
+                f"TTS provider configuration file not found: {tts_provider_config_path_obj}"
+            )
 
-            with open(tts_config_path_obj, "r", encoding="utf-8") as f:
-                tts_config_data_loaded = yaml.safe_load(f)
+        with open(tts_provider_config_path_obj, "r", encoding="utf-8") as f:
+            tts_provider_config_data_loaded = yaml.safe_load(f)
 
-            if not isinstance(tts_config_data_loaded, dict):
-                raise ValueError(
-                    f"Invalid YAML format in {tts_config_path_obj}: root must be a mapping (dictionary)."
-                )
-            if not tts_config_data_loaded:  # Check if the dictionary is empty
-                raise ValueError(
-                    f"TTS configuration file '{tts_config_path_obj}' is empty or provides no configuration data."
-                )
-        else:
-            # If no --tts-config is provided, we proceed with an empty dict.
-            # TTSProviderManager will handle this (e.g., error out if 'default' speaker is needed but not found).
-            logger.warning(
-                "No TTS configuration file specified. TTSProviderManager will be initialized with an empty configuration."
+        if not isinstance(tts_provider_config_data_loaded, dict):
+            raise ValueError(
+                f"Invalid YAML format in {tts_provider_config_path_obj}: "
+                "root must be a mapping (dictionary)."
+            )
+        if not tts_provider_config_data_loaded:  # Check if the dictionary is empty
+            raise ValueError(
+                f"TTS provider configuration file '{tts_provider_config_path_obj}' "
+                "is empty or provides no configuration data."
             )
 
         tts_manager = TTSProviderManager(
-            config_data=tts_config_data_loaded,
+            config_data=tts_provider_config_data_loaded,
             overall_provider=None,
             dummy_tts_provider_override=args.dummy_tts_provider_override,
         )

@@ -152,7 +152,7 @@ These tags will be added to the output .mp3 file, and are displayed in audio / a
 ```bash
 # Generate the audiobook
 uv run sts-generate-audio input/your_script/your_script.json \
-  --tts-config input/your_script/your_script_voice_config.yaml
+  input/your_script/your_script_voice_config.yaml
 ```
 
 Your audiobook will be output at: `output/your_script/your_script.mp3`
@@ -351,7 +351,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
-     --tts-config input/your_script/your_script_voice_config_populated.yaml \
+     input/your_script/your_script_voice_config_populated.yaml \
      --dry-run
    ```
 
@@ -366,7 +366,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
    9. **Populate cache with Silence Detection**
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
-     --tts-config input/your_script/your_script_voice_config_populated.yaml \
+     input/your_script/your_script_voice_config_populated.yaml \
      --populate-cache --check-silence
    ```
 
@@ -399,7 +399,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
-     --tts-config input/your_script/your_script_voice_config_populated.yaml \
+     input/your_script/your_script_voice_config_populated.yaml \
      --populate-cache --cache-overrides --check-silence
    ```
 
@@ -409,7 +409,7 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
    ```bash
    uv run sts-generate-audio input/your_script/your_script.json \
-     --tts-config input/your_script/your_script_voice_config_populated.yaml
+     input/your_script/your_script_voice_config_populated.yaml
    ```
 
    Combines all cached audio into the final audiobook

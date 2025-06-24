@@ -17,7 +17,7 @@ This guide helps resolve common issues when using Script to Speech.
 
 1. **Identify Silent Clips**
    ```bash
-   uv run sts-generate-audio script.json --tts-config config.yaml \
+   uv run sts-generate-audio script.json config.yaml \
      --populate-cache --check-silence
    ```
 
@@ -40,7 +40,7 @@ Running `sts-generate-audio` with the `--check-silence` flag will generate pre-p
 4. **Apply Overrides**
 This will move any cache-matching files from standalone_speech to the screenplay's cache directory
    ```bash
-   uv run sts-generate-audio script.json --tts-config config.yaml \
+   uv run sts-generate-audio script.json config.yaml \
      --populate-cache --cache-overrides
    ```
 
@@ -352,7 +352,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 3. **Alternative Approach**
    ```bash
    # If ElevenLabs issues persist, switch provider temporarily
-   uv run sts-generate-audio --tts-config backup_config.yaml
+   uv run sts-generate-audio backup_config.yaml
    ```
 
 **Prevention**:
@@ -494,7 +494,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 2. **Dry Run Validation**
    ```bash
    # Validate configuration without generation
-   uv run sts-generate-audio script.json --tts-config config.yaml --dry-run
+   uv run sts-generate-audio script.json config.yaml --dry-run
    ```
 
 3. **Configuration Validation**

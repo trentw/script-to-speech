@@ -251,7 +251,7 @@ If the following config was placed at `input/[screenplay_name]/[screenplay_name]
 The following call would use this custom config instead of the default (assuming the custom config is named `my_custom_config.yaml`)
 ```bash
 uv run sts-generate-audio /input/[screenplay_name]/[screenplay].json \
-   --tts-config /input/[screenplay_name]/[screenplay]_voice_config.yaml \
+   /input/[screenplay_name]/[screenplay]_voice_config.yaml \
    --text-processor-configs my_custom_config.yaml
 ```
 

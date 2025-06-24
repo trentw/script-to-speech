@@ -72,7 +72,7 @@ def generate_voice_casting_prompt_file(
     try:
         with open(tts_provider_config_path, "r", encoding="utf-8") as f:
             # We just need the text dump, not to parse it as YAML for this function
-            tts_config_content = f.read()
+            tts_provider_config_content = f.read()
     except Exception as e:
         raise yaml.YAMLError(
             f"Error reading TTS provider config file {tts_provider_config_path}: {e}"
@@ -119,7 +119,7 @@ def generate_voice_casting_prompt_file(
     output_content_parts = [
         prompt_content,
         "\n\n--- TTS PROVIDER CONFIG ---\n\n",
-        tts_config_content,
+        tts_provider_config_content,
         "\n\n--- SCREENPLAY TEXT ---\n\n",
         processed_screenplay_text,
     ]

@@ -83,7 +83,7 @@ def generate_standalone_speech(
         generation_text = f"{SPLIT_SENTENCE} {text}" if split_audio else text
 
         # Generate audio using TTSProviderManager
-        # "default" is the key used in _build_tts_config_data
+        # "default" is the key used in _build_tts_provider_config_data
         audio_data = tts_manager.generate_audio("default", generation_text)
 
         # Create timestamp for unique filenames
@@ -219,7 +219,7 @@ def json_or_str_type(value_str: str) -> Any:
 
 
 # Helper function to build config for TTSProviderManager
-def _build_tts_config_data(
+def _build_tts_provider_config_data(
     args: argparse.Namespace,
     provider_class: Type[Union[StatelessTTSProviderBase, StatefulTTSProviderBase]],
 ) -> Dict[str, Any]:
@@ -386,11 +386,13 @@ def main() -> int:
         final_provider_class = get_provider_class(args.provider)
 
         # Build the configuration data for TTSProviderManager
-        tts_config_data = _build_tts_config_data(args, final_provider_class)
+        tts_provider_config_data = _build_tts_provider_config_data(
+            args, final_provider_class
+        )
 
         # Instantiate TTSProviderManager
         tts_manager = TTSProviderManager(
-            config_data=tts_config_data,
+            config_data=tts_provider_config_data,
             overall_provider=None,
             dummy_tts_provider_override=False,  # Standalone utility typically doesn't use dummy override
         )

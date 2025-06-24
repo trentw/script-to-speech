@@ -7,16 +7,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from script_to_speech.utils.generate_standalone_speech import (
-    _build_tts_config_data,
+    _build_tts_provider_config_data,
     main,
 )
 
 
 class TestBuildTtsConfigDataWithStsId:
-    """Tests for _build_tts_config_data function with sts_id support."""
+    """Tests for _build_tts_provider_config_data function with sts_id support."""
 
-    def test_build_tts_config_data_with_sts_id(self):
-        """Test _build_tts_config_data when sts_id is provided."""
+    def test_build_tts_provider_config_data_with_sts_id(self):
+        """Test _build_tts_provider_config_data when sts_id is provided."""
         # Arrange
         mock_args = MagicMock()
         mock_args.sts_id = "test_voice_id"
@@ -32,7 +32,7 @@ class TestBuildTtsConfigDataWithStsId:
         mock_provider_class.get_optional_fields.return_value = ["speed", "custom_param"]
 
         # Act
-        result = _build_tts_config_data(mock_args, mock_provider_class)
+        result = _build_tts_provider_config_data(mock_args, mock_provider_class)
 
         # Assert
         expected = {
@@ -44,8 +44,8 @@ class TestBuildTtsConfigDataWithStsId:
         }
         assert result == expected
 
-    def test_build_tts_config_data_with_sts_id_no_overrides(self):
-        """Test _build_tts_config_data with sts_id but no override parameters."""
+    def test_build_tts_provider_config_data_with_sts_id_no_overrides(self):
+        """Test _build_tts_provider_config_data with sts_id but no override parameters."""
         # Arrange
         mock_args = MagicMock()
         mock_args.sts_id = "test_voice_id"
@@ -59,14 +59,14 @@ class TestBuildTtsConfigDataWithStsId:
         mock_provider_class.get_optional_fields.return_value = ["speed"]
 
         # Act
-        result = _build_tts_config_data(mock_args, mock_provider_class)
+        result = _build_tts_provider_config_data(mock_args, mock_provider_class)
 
         # Assert
         expected = {"default": {"provider": "test_provider", "sts_id": "test_voice_id"}}
         assert result == expected
 
-    def test_build_tts_config_data_with_sts_id_skip_provider_field(self):
-        """Test _build_tts_config_data with sts_id skips provider field in overrides."""
+    def test_build_tts_provider_config_data_with_sts_id_skip_provider_field(self):
+        """Test _build_tts_provider_config_data with sts_id skips provider field in overrides."""
         # Arrange
         mock_args = MagicMock()
         mock_args.sts_id = "test_voice_id"
@@ -78,7 +78,7 @@ class TestBuildTtsConfigDataWithStsId:
         mock_provider_class.get_optional_fields.return_value = []
 
         # Act
-        result = _build_tts_config_data(mock_args, mock_provider_class)
+        result = _build_tts_provider_config_data(mock_args, mock_provider_class)
 
         # Assert
         expected = {
@@ -91,8 +91,8 @@ class TestBuildTtsConfigDataWithStsId:
         assert result == expected
         # Provider should not be duplicated in the config
 
-    def test_build_tts_config_data_without_sts_id_normal_flow(self):
-        """Test _build_tts_config_data without sts_id follows normal validation flow."""
+    def test_build_tts_provider_config_data_without_sts_id_normal_flow(self):
+        """Test _build_tts_provider_config_data without sts_id follows normal validation flow."""
         # Arrange
         mock_args = MagicMock()
         mock_args.sts_id = None
@@ -106,7 +106,7 @@ class TestBuildTtsConfigDataWithStsId:
         mock_provider_class.get_optional_fields.return_value = ["speed"]
 
         # Act
-        result = _build_tts_config_data(mock_args, mock_provider_class)
+        result = _build_tts_provider_config_data(mock_args, mock_provider_class)
 
         # Assert
         expected = {
@@ -119,8 +119,8 @@ class TestBuildTtsConfigDataWithStsId:
         }
         assert result == expected
 
-    def test_build_tts_config_data_without_sts_id_missing_required(self):
-        """Test _build_tts_config_data without sts_id raises error for missing required fields."""
+    def test_build_tts_provider_config_data_without_sts_id_missing_required(self):
+        """Test _build_tts_provider_config_data without sts_id raises error for missing required fields."""
         # Arrange
         mock_args = MagicMock()
         mock_args.sts_id = None
@@ -135,7 +135,7 @@ class TestBuildTtsConfigDataWithStsId:
 
         # Act & Assert
         with pytest.raises(AttributeError):
-            _build_tts_config_data(mock_args, mock_provider_class)
+            _build_tts_provider_config_data(mock_args, mock_provider_class)
 
 
 class TestMainWithStsId:
