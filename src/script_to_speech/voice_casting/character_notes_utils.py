@@ -58,7 +58,7 @@ def generate_voice_casting_prompt_file(
     input_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine output file path
-    output_file_name = f"{screenplay_name}_voice_casting_prompt.txt"
+    output_file_name = f"{screenplay_name}_character_notes_prompt.txt"
     output_file_path = input_dir / output_file_name
 
     # 1. Read Prompt Content using shared function

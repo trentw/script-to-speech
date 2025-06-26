@@ -51,7 +51,7 @@ def test_cli_success(monkeypatch, tmp_path, capsys):
     screenplay_path.write_text("hi")
     config_path = tmp_path / "c.yaml"
     config_path.write_text("provider: dummy")
-    dummy_output = tmp_path / "input" / "s" / "s_voice_casting_prompt.txt"
+    dummy_output = tmp_path / "input" / "s" / "s_character_notes_prompt.txt"
     dummy_output.parent.mkdir(parents=True, exist_ok=True)
     dummy_output.write_text("content")
 
