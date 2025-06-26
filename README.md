@@ -33,7 +33,7 @@ See our [Privacy Policy](PRIVACY.md) for detailed information about data flows, 
 | --------------------------------- | ---------------------------------- |
 | `sts-parse-screenplay`            | Parse PDF/TXT to JSON chunks       |
 | `sts-generate-audio`              | Generate audiobook from JSON       |
-| `sts-generate-standalone-speech`  | Create individual audio clips      |
+| `sts-generate-standalone-speech`  | Create individual audio clips. See [Standalone Speech Generation](docs/STANDALONE_SPEECH.md) for more details. |
 | `sts-tts-provider-yaml`           | Generate/populate provider configs |
 | `sts-analyze-json`                | Analyze screenplay structure       |
 | `sts-apply-text-processors-json`  | Apply text transformations         |
@@ -446,6 +446,8 @@ uv run sts-generate-audio input/your_script/your_script.json \
   input/your_script/your_script_voice_config.yaml \
   --populate-cache --cache-overrides --check-silence
 ```
+
+See [Standalone Speech Generation](docs/STANDALONE_SPEECH.md) for more details and usage options
 
 **Final Generation**
 

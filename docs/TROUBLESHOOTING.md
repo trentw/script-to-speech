@@ -22,7 +22,7 @@ This guide helps resolve common issues when using Script to Speech.
    ```
 
 2. **Generate Replacements**
-Running `sts-generate-audio` with the `--check-silence` flag will generate pre-populated `sts-generate-standalone-speech` commands which just need to be copy and pasted
+Running `sts-generate-audio` with the `--check-silence` flag will generate pre-populated `sts-generate-standalone-speech` commands which just need to be copy and pasted. See the [Standalone Speech Generation Guide](STANDALONE_SPEECH.md) for more details.
    ```bash
    # Copy reported text exactly
    # -v flag controls how many generations versions of each clip to generate
