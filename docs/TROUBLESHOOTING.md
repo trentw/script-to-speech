@@ -439,11 +439,14 @@ Reducing the amount of concurrent downloads can help reduce memory usage
 - LLM returns invalid YAML
 - Missing speakers in LLM output
 - Configuration validation errors
+- Voice library IDs not recognized
 
 **Solutions**:
+
+#### For Character Notes Generation:
 1. **Try a different LLM**
-   - Certain LLM providers / models struggle with the task of adding .yaml comments with leaving the rest of the structure intact
-      - Claude Sonnet and Gemini Pro seem to work well
+   - Certain LLM providers / models struggle with the task of adding .yaml comments while leaving the rest of the structure intact
+   - Claude Sonnet and Gemini Pro seem to work well
 
 2. **Generate Proper Casting Prompt**
    ```bash
@@ -453,13 +456,7 @@ Reducing the amount of concurrent downloads can help reduce memory usage
      input/script/script_voice_config.yaml
    ```
 
-3. **Copy Prompt Easily**
-   ```bash
-   # Copy to clipboard for easy pasting into LLM
-   uv run sts-copy-to-clipboard input/script/script_voice_casting_prompt.txt
-   ```
-
-4. **Validate LLM Output**
+3. **Validate LLM Output**
    ```bash
    # Check for structural issues
    uv run sts-tts-provider-yaml validate input/script/script.json \
@@ -469,17 +466,36 @@ Reducing the amount of concurrent downloads can help reduce memory usage
    uv run sts-tts-provider-yaml validate input/script/script.json \
      input/script/script_voice_config.yaml --strict
    ```
+#### For Voice Library Casting:
+1. **Ensure Character Notes Exist**
+   - Voice library casting works best when character descriptions are present as YAML comments
+   - Either use character notes generation first, or manually add notes
 
-5. **Common LLM Output Issues**
-   - Missing speakers: LLM may not include all characters from the script
-   - Extra speakers: LLM may add characters not present in the script
-   - Invalid provider fields: LLM may use incorrect voice IDs or provider names
-   - YAML formatting errors: LLM may produce malformed YAML
+2. **Generate Voice Library Casting Prompt**
+   ```bash
+   # Include all providers you want to cast from
+   uv run sts-generate-voice-library-casting-prompt \
+     input/script/script_voice_config.yaml \
+     openai elevenlabs cartesia
+   ```
+
+3. **Validate Voice Library IDs**
+   - LLM must use valid `sts_id` values from the voice libraries
+   - Check that returned IDs exist in the provider's voice library
+   - Use `--strict` validation to catch invalid voice configurations
+
+4. **Common Voice Library Casting Issues**
+   - Invalid sts_id: LLM may invent voice IDs not in the library
+   - Missing sts_id: LLM may forget to add the sts_id field
+   - Wrong provider: LLM may assign voices from wrong provider's library
+   - Overwriting config: LLM may remove existing provider-specific fields
 
 **Prevention**:
-- Provide clear instructions to the LLM about maintaining all existing speakers. Consider using a custom prompt
-- Validate configuration before proceeding with audio generation
+- Use the two-step workflow: character notes first, then voice library casting
+- For privacy-conscious workflows, manually add character notes instead of using LLM
+- Always validate configuration before proceeding with audio generation
 - Keep backup of working configurations
+- Try a reasoning LLM model if voice casting is producing incorrect / sub-par results
 
 ## Debugging Tools
 

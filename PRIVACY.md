@@ -42,9 +42,9 @@ To convert your screenplay text into speech, Script to Speech sends individual d
 
 **Data sent**: Individual dialogue chunks (typically single lines of dialogue or scene descriptions) are sent one at a time to generate audio. Your screenplay is not sent as a complete document to TTS providers.
 
-### Voice Casting (Optional Feature)
+### Character Notes Creation (Optional Feature)
 
-If you choose to use the LLM-assisted voice casting feature (`sts-generate-character-notes-prompt`), this is entirely optional and can be skipped.
+If you choose to use the LLM-assisted character note creation feature (`sts-generate-character-notes-prompt`), this is entirely optional and can be skipped.
 
 **LLM Services (when you choose to use voice casting):**
 
@@ -54,6 +54,21 @@ If you choose to use the LLM-assisted voice casting feature (`sts-generate-chara
 - Instructions for voice casting analysis
 
 **Important**: This optional feature sends your ENTIRE screenplay to the LLM service. Only use this feature with LLM providers whose privacy policies you trust, or skip this feature entirely and configure voices manually.
+
+### Voice Library Casting (Optional Feature)
+
+If you choose to use the LLM-assisted voice library casting feature (`sts-generate-voice-library-casting-prompt`), this is entirely optional and can be skipped.
+
+**LLM Services (when you choose to use voice library casting):**
+
+**Data sent**: 
+- Your voice configuration including character names and any casting notes
+- Voice library data for the specified providers
+- Instructions for voice selection
+
+**Important**: This optional feature sends your character list and casting notes (but **NOT** your screenplay text) to the LLM service. This is more privacy-conscious than character notes generation, but still shares information about your project's characters.
+
+**Privacy-conscious approach**: For maximum privacy, manually configure voices without using either LLM-assisted feature. For moderate privacy, manually add casting notes to your configuration, then use only voice library casting (avoiding screenplay text sharing).
 
 ## What You Should Know About Third-Party Services
 
@@ -159,4 +174,4 @@ As a user of Script to Speech, you are responsible for:
 
 ---
 
-*Last updated: May 30, 2025*
+*Last updated: June 25, 2025*

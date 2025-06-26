@@ -13,7 +13,7 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 - **Multi-threaded downloads**: With separate queues per provider for faster generation
 - **Silence detection**: Identify and replace silent audio clips
 - **Cache system**: Resume interrupted generations and reuse audio. Change text / speaker assignments and only regenerte that specific audio
-- **Voice casting assistance**: Generate prompts for LLM-assisted voice casting and validation
+- **Voice casting assistance**: Generate prompts for LLM-assisted character notes and voice library casting
 
 ## Privacy & Data Handling
 
@@ -39,6 +39,7 @@ See our [Privacy Policy](PRIVACY.md) for detailed information about data flows, 
 | `sts-apply-text-processors-json`  | Apply text transformations         |
 | `sts-parse-regression-check-json` | Validate parser output             |
 | `sts-generate-character-notes-prompt` | Generate LLM casting prompts   |
+| `sts-generate-voice-library-casting-prompt` | Generate voice library casting prompts |
 | `sts-copy-to-clipboard`           | Copy file contents to clipboard    |
 
 ## Quick Start
@@ -159,260 +160,305 @@ Your audiobook will be output at: `output/your_script/your_script.mp3`
 
 ## Advanced Workflow
 
+The basic workflow will handle most screenplay-to-audiobook conversions, but Script to Speech offers many advanced features for complex projects, quality optimization, and fine-tuned control. This section covers advanced techniques you can use as needed:
+
+- **Advanced parsing** for non-standard screenplays
+- **Multi-provider setups** to optimize cost and voice variety
+- **LLM-assisted casting** for complex character rosters
+- **Custom text processing** for screenplay-specific formatting
+- **Iterative generation** to ensure quality before final output
+
+Each technique can be used independently based on your project's needs.
+
 ### Advanced Screenplay Parsing
 
-1. **Modifying screenplay .pdf to remove elements (dates / headers / footers / etc.)**
+Sometimes you'll need more control over the parsing process, especially when dealing with non-standard screenplay formats or PDFs with headers/footers that interfere with parsing.
 
-   ```bash
-   # Parse screenplay .pdf to text
-   uv run sts-parse-screenplay source_screenplays/your_script.pdf --text-only
-   ```
+**Modifying screenplay PDFs to remove unwanted elements:**
 
-   Manually edit `input/your_script/your_script.txt` to remove headers / footers / etc., then:
+```bash
+# Parse screenplay .pdf to text
+uv run sts-parse-screenplay source_screenplays/your_script.pdf --text-only
+```
 
-   ```bash
-   # Create JSON dialogue chunks from edited text
-   uv run sts-parse-screenplay input/your_script/your_script.txt
-   ```
+Manually edit `input/your_script/your_script.txt` to remove headers, footers, page numbers, or any other elements that shouldn't be part of the audio, then:
 
-2. **Analyze Screenplay**
+```bash
+# Create JSON dialogue chunks from edited text
+uv run sts-parse-screenplay input/your_script/your_script.txt
+```
 
-   ```bash
-   # Check speakers and dialogue types
-   uv run sts-analyze-json input/your_script/your_script.json
-   ```
+**Analyzing the parsed screenplay:**
 
-   This can be a useful sanity test to make sure the screenplay parsing worked as expected:
+After parsing, it's good practice to verify the results:
 
-   - Do the speakers look correct?
-   - Is there the right number of scene headers?
-   - Are there corresponding numbers of dual-dialogue headers and bodies?
-   - etc.
+```bash
+# Check speakers and dialogue types
+uv run sts-analyze-json input/your_script/your_script.json
+```
 
-### Advanced Text Processor / TTS-Provider Configuration
+This helps ensure the screenplay parsing worked as expected:
+- Do the speakers look correct?
+- Is there the right number of scene headers?
+- Are there corresponding numbers of dual-dialogue headers and bodies?
+- Are any characters being split incorrectly (e.g., "BOB" vs "BOB (O.S.)")?
 
-3. **Create Multi-Provider Configuration**
+### Multi-Provider Voice Configuration
 
-   ```bash
-   # Generate multi-provider configuration
-   uv run sts-tts-provider-yaml generate input/your_script/your_script.json
-   ```
+For larger projects, you may want to use different TTS providers for different characters to optimize cost, quality, or voice variety.
 
-   This creates a config with speaker statistics, and a field for each speaker at `input/your_script/your_script_voice_config_populated.yaml` which is meant to be populated with the intended TTS provider for each speaker
+**Generate a multi-provider template:**
 
-   ```yaml
-   # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialogue: 2082 characters
-   default:
-     provider:
+Start by generating a configuration file that shows statistics for each speaker:
 
-   # ALICE: 283 lines
-   # Total characters: 12181, Longest dialogue: 365 characters
-   ALICE:
-     provider:
+```bash
+# Generate multi-provider configuration
+uv run sts-tts-provider-yaml generate input/your_script/your_script.json
+```
 
-   # BOB: 120 lines
-   # Total characters: 9123, Longest dialogue: 253 characters
-   ALICE:
-     provider:
-   ```
+This creates a config with speaker statistics at `input/your_script/your_script_voice_config.yaml`:
 
-   Edit to assign TTS providers to each speaker. Note that if provider-specific fields are manually added, they will be persisted in the "populate" step (as seen in ALICE's case below). It is required that a provider be added for each speaker:
+```yaml
+# default: 1556 lines - Used for all non-dialogue pieces
+# Total characters: 104244, Longest dialogue: 2082 characters
+default:
+  provider:
 
-   ```yaml
-   # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialogue: 2082 characters
-   default:
-     provider: openai
+# ALICE: 283 lines
+# Total characters: 12181, Longest dialogue: 365 characters
+ALICE:
+  provider:
 
-   # ALICE: 283 lines
-   # Total characters: 12181, Longest dialogue: 365 characters
-   ALICE:
-     provider: openai
-     voice: alloy
+# BOB: 120 lines
+# Total characters: 9123, Longest dialogue: 253 characters
+BOB:
+  provider:
+```
 
-   # BOB: 120 lines
-   # Total characters: 9123, Longest dialogue: 253 characters
-   ALICE:
-     provider: elevenlab
-   ```
+**Assign providers to speakers:**
 
-   Populate provider-specific fields for each speaker:
+Edit the file to assign TTS providers based on character importance, line count, and voice requirements. You can also add provider-specific fields at this stage:
 
-   ```bash
-   uv run sts-tts-provider-yaml populate input/your_script/your_script.json \
-     input/your_script/your_script_voice_config.yaml
-   ```
+```yaml
+# default: 1556 lines - Used for all non-dialogue pieces
+# Total characters: 104244, Longest dialogue: 2082 characters
+default:
+  provider: openai
 
-   This creates `input/your_script/your_script_voice_config_populated.yaml` grouped by provider:
+# ALICE: 283 lines
+# Total characters: 12181, Longest dialogue: 365 characters
+ALICE:
+  provider: openai
+  voice: alloy
 
-   ```yaml
-   # default: 1556 lines - Used for all non-dialogue pieces
-   # Total characters: 104244, Longest dialogue: 2082 characters
-   default:
-     provider: openai
-     voice:
+# BOB: 120 lines
+# Total characters: 9123, Longest dialogue: 253 characters
+BOB:
+  provider: elevenlabs
+```
 
-   # ALICE: 283 lines
-   # Total characters: 12181, Longest dialogue: 365 characters
-   ALICE:
-     provider: openai
-     voice: alloy
+**Populate provider-specific fields:**
 
-   # BOB: 120 lines
-   # Total characters: 9123, Longest dialogue: 253 characters
-   ALICE:
-     provider: elevenlab
-     voice_id:
-   ```
+Once providers are assigned, populate the remaining provider-specific fields:
 
-   Fill in the provider-specific fields as in the single-provider case. For provider-specific instructions, including optional fields, see the instructions header at the top of each provider grouping. For more information, see the [detailed TTS Provider documentation](docs/TTS_PROVIDERS.md)
+```bash
+uv run sts-tts-provider-yaml populate input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml
+```
+
+This creates `input/your_script/your_script_voice_config_populated.yaml` with provider-specific fields grouped by provider. Fill in the required fields for each provider according to the instructions at the top of each section. For detailed provider information, see the [TTS Providers documentation](docs/TTS_PROVIDERS.md).
 
 ### (Optional) LLM-Assisted Voice Casting 
 
-> **⚠️ PRIVACY WARNING**: The `sts-generate-character-notes-prompt` command creates a prompt containing the **full text** of your screenplay. Before using any cloud-based LLM service:
+Script to Speech provides two LLM-assisted tools that work together to help cast voices for your screenplay characters:
+
+1. **Character Notes Generation** - Analyzes your screenplay to create casting notes for each character
+2. **Voice Library Casting** - Uses those notes to select specific voices from provider voice libraries
+
+> **⚠️ PRIVACY WARNING**: 
+> - `sts-generate-character-notes-prompt` creates a prompt containing the **full text** of your screenplay
+> - `sts-generate-voice-library-casting-prompt` creates a prompt containing your character list and any casting notes (but not the screenplay text)
+> 
+> Before using any cloud-based LLM service:
 > - Review their privacy policy and data usage practices
-> - Ensure you're comfortable sharing your screenplay content
+> - Ensure you're comfortable sharing your content
 > - Consider whether the LLM provider uses uploaded content for training
-> - For sensitive content, consider using local LLM solutions instead
+> - For sensitive content, consider using local LLM solutions or manually configuring voices
 > 
 > See our [Privacy Policy](PRIVACY.md) for detailed guidance on privacy-conscious usage.
 
-4. **Generate Voice Casting Prompt**
+#### Step 1: Generate Character Notes (Optional)
 
-   For complex scripts with many characters, you can use an LLM to generate casting notes (gender, vocal qualities, role summary, etc.) for each speaker in the screenplay:
+For complex scripts with many characters, you can use an LLM to generate casting notes (gender, vocal qualities, role summary, etc.) for each speaker:
 
-   ```bash
-   # Generate a prompt file for LLM-assisted voice casting
-   uv run sts-generate-character-notes-prompt \
-     source_screenplays/your_script.pdf \
-     input/your_script/your_script_voice_config.yaml
-   ```
+```bash
+# Generate a prompt file for LLM-assisted character analysis
+uv run sts-generate-character-notes-prompt \
+  source_screenplays/your_script.pdf \
+  input/your_script/your_script_voice_config.yaml
+```
 
-   This creates `input/your_script/your_script_voice_casting_prompt.txt` containing:
-   - Instructions for the LLM to provide casting notes for each character in the voice configuration
-   - Your current voice configuration
-   - The full screenplay text
+This creates `input/your_script/your_script_character_notes_prompt.txt` containing:
+- Instructions for the LLM to provide casting notes for each character
+- Your current voice configuration
+- The full screenplay text
 
-5. **Copy Prompt to Clipboard**
+#### Step 2: Copy Prompt to Clipboard
 
-   ```bash
-   # Copy the generated prompt to your clipboard for easy pasting into an LLM
-   uv run sts-copy-to-clipboard input/your_script/your_script_voice_casting_prompt.txt
-   ```
+```bash
+# Copy the generated prompt to your clipboard for easy pasting into an LLM
+uv run sts-copy-to-clipboard input/your_script/your_script_character_notes_prompt.txt
+```
 
-6. **Validate LLM Output**
+#### Step 3: Update Configuration with Character Notes
 
-   After receiving updated voice configuration from the LLM, validate it:
+After receiving the LLM's output with character notes added as YAML comments, save the updated configuration back to your voice config file.
 
-   ```bash
-   # Check for missing/extra/duplicate speakers and provider field issues
-   uv run sts-tts-provider-yaml validate input/your_script/your_script.json \
-     input/your_script/your_script_voice_config.yaml
-   ```
+#### Step 4: Cast Voices from Library (Optional)
 
-   Use the `--strict` flag to also validate provider-specific configuration fields:
+Once you have character notes (either from the LLM or manually added), you can use voice library casting to automatically select appropriate voices:
 
-   ```bash
-   # Strict validation including provider field validation
-   uv run sts-tts-provider-yaml validate input/your_script/your_script.json \
-     input/your_script/your_script_voice_config.yaml --strict
-   ```
+```bash
+# Generate a prompt for voice library casting
+uv run sts-generate-voice-library-casting-prompt \
+  input/your_script/your_script_voice_config.yaml \
+  openai elevenlabs
+```
+
+This creates `input/your_script/your_script_voice_config_voice_library_casting_prompt.txt` containing:
+- Instructions for the LLM to select voices from the specified provider libraries
+- Your voice configuration with character notes
+- Voice library data for the specified providers
+
+Note: You can specify multiple providers (e.g., `openai elevenlabs cartesia`) to cast from multiple voice libraries simultaneously.
+
+#### Step 5: Apply Voice Selections
+
+Copy the prompt to clipboard and paste into your LLM:
+
+```bash
+uv run sts-copy-to-clipboard input/your_script/your_script_voice_config_voice_library_casting_prompt.txt
+```
+
+The LLM will return your configuration with `sts_id` fields populated with specific voice selections from the libraries.
+
+#### Step 6: Validate Configuration
+
+After receiving updated voice configuration from the LLM, validate it:
+
+```bash
+# Check for missing/extra/duplicate speakers and provider field issues
+uv run sts-tts-provider-yaml validate input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml --strict
+```
+
+#### Privacy-Conscious Alternative Workflow
+
+For sensitive screenplays, you can skip character notes generation and manually add casting notes:
+
+1. Manually edit your voice configuration to add character descriptions as YAML comments
+2. Use only `sts-generate-voice-library-casting-prompt` (which doesn't include screenplay text)
+3. This way, only character names and your notes are shared with the LLM, not the screenplay content
 
 ### Custom Text Processing
 
-7. **Custom Text Processing**
+Script to Speech allows you to customize how text is processed before being sent to TTS providers. This is useful for expanding abbreviations, handling special formatting, or adjusting capitalization.
 
-   Custom text processor configurations can be created that will chain with the default configuration. By default, the program will look for an additional configuration file named the same as the .json dialogue chunk file, with `_text_processor_config.yaml` appended.
+Custom text processor configurations will chain with the default configuration. By default, the program looks for a file named after your dialogue chunk file with `_text_processor_config.yaml` appended.
 
-   So, to create a custom config, create `input/your_script/your_script_text_processor_config.yaml`:
+To create a custom config, create `input/your_script/your_script_text_processor_config.yaml`:
 
-   ```yaml
-   processors:
-     - name: text_substitution
-       config:
-         substitutions:
-           - from: "CU"
-             to: "close up"
-             fields:
-               - text
-           - from: "P.O.V"
-             to: "point of view"
-             fields:
-               - text
-   ```
+```yaml
+processors:
+  - name: text_substitution
+    config:
+      substitutions:
+        - from: "CU"
+          to: "close up"
+          fields:
+            - text
+        - from: "P.O.V"
+          to: "point of view"
+          fields:
+            - text
+```
 
-   For further information about text existing text processor transformations, or how to create your own, see [Text Processing Guide](docs/TEXT_PROCESSORS.md)
+For more information about text processor transformations and creating your own, see the [Text Processing Guide](docs/TEXT_PROCESSORS.md).
 
-### Iterative Audio Generation with Various Run Modes
-  Script to Speech supports a number of run modes to test and iteratively build dialogue clips before generating the final .mp3 output. For detailed information beyond what is listed below, see the [run modes documentation](docs/RUN_MODES.md)
+### Iterative Audio Generation with Run Modes
 
-   8. **Dry Run Testing**
+Script to Speech supports various run modes to test and iteratively refine your audiobook before generating the final output. This workflow is particularly useful for large projects where you want to ensure quality before committing to full generation.
 
-   ```bash
-   uv run sts-generate-audio input/your_script/your_script.json \
-     input/your_script/your_script_voice_config_populated.yaml \
-     --dry-run
-   ```
+**Dry Run Testing**
 
-   Validates configuration and shows which files would be generated without actual audio creation
-   
-  **Use Cases:**
+Start by validating your configuration without generating any audio:
 
-  - Validating configuration files are valid
-  - Determining which audio files will be generated (useful when a speaker / dialogue chunk has been modified, and you want to see which files will be regenerated)
-  - When used in combination with the `--check-silence` option described below to check for silent clips without attempting to regenerate them
+```bash
+uv run sts-generate-audio input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml \
+  --dry-run
+```
 
-   9. **Populate cache with Silence Detection**
-   ```bash
-   uv run sts-generate-audio input/your_script/your_script.json \
-     input/your_script/your_script_voice_config_populated.yaml \
-     --populate-cache --check-silence
-   ```
+Use cases:
+- Validating configuration files
+- Determining which audio files will be generated
+- Checking for potential issues before spending on API calls
 
-   Cache population will download clips without actually generating the .mp3 output file. Used in conjunction with the `--check-silence` flag, this can be a useful way to ensure that there aren't any problem files prior to generating the output .mp3
-   **Use Cases**
-   - Replacing silent clips prior to .mp3 output
-   - Quality checking important pieces of dialogue, and replacing them with better "takes" 
-   - Checkig price / quality / etc. before committing to full audio generation -- if the process is killed, it will resume downloading only new dialogues on next execution
-   - Applying the `--cache-overrides` option described below
+**Building the Audio Cache**
 
-   10. **Replace Silent Clips / "Re-Audition" Specific Clips**
-   Specific lines of dialogue can be generated with `sts-generate-standalone-speech`. Multiple lines can be supplied at once. The `-v` flag will determine how many "take" wil be generated for each line. These files will be output to the `standalone_speech` directory
+Generate all audio clips without creating the final MP3:
 
-   ```bash
-   # Generate replacement audio
-   uv run sts-generate-standalone-speech openai --voice echo \
-     "Replace this silent text number 1" \
-     "Replace this silent text number 2" \
-     -v 3 # (optional) generate 3 variations of each line
-   ```
+```bash
+uv run sts-generate-audio input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml \
+  --populate-cache --check-silence
+```
 
-  Rename generated file to match silent cache file name as reported in the console output, or in the log files at `output/your_script/logs`:
+This approach allows you to:
+- Check for silent or problematic clips before final generation
+- Build your cache incrementally (process can be resumed if interrupted)
+- Review individual clips for quality
+- Replace specific clips with better "takes"
 
-   ```bash
-   mv standalone_speech/generated_file.mp3 \
-     standalone_speech/[original_cache_filename].mp3
-   ```
+**Replacing Problem Audio**
 
-   11. **Apply Replacements**
+If silent clips are detected or you want to re-record specific lines:
 
-   ```bash
-   uv run sts-generate-audio input/your_script/your_script.json \
-     input/your_script/your_script_voice_config_populated.yaml \
-     --populate-cache --cache-overrides --check-silence
-   ```
+```bash
+# Generate replacement audio
+uv run sts-generate-standalone-speech openai --voice echo \
+  "Replace this silent text number 1" \
+  "Replace this silent text number 2" \
+  -v 3  # Generate 3 variations of each line
+```
 
-   Replaces silent clips with generated audio and continues downloading any missing audio files
+Rename the generated file to match the cache filename (as reported in console output or logs):
 
-   12. **Repeat** until all audio is cached, then generate final output:
+```bash
+mv standalone_speech/generated_file.mp3 \
+  standalone_speech/[original_cache_filename].mp3
+```
 
-   ```bash
-   uv run sts-generate-audio input/your_script/your_script.json \
-     input/your_script/your_script_voice_config_populated.yaml
-   ```
+Apply the replacements:
 
-   Combines all cached audio into the final audiobook
+```bash
+uv run sts-generate-audio input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml \
+  --populate-cache --cache-overrides --check-silence
+```
+
+**Final Generation**
+
+Once all audio is cached and verified:
+
+```bash
+uv run sts-generate-audio input/your_script/your_script.json \
+  input/your_script/your_script_voice_config.yaml
+```
+
+This combines all cached audio into the final audiobook with proper gaps and ID3 tags.
+
+For detailed information about all available run modes and options, see the [Run Modes documentation](docs/RUN_MODES.md).
 
 ## Directory Structure
 Script to Speech uses a number of default locations to simplify workflows. The following lists standard files you will likely encounter while running the program. Directories `input/[screenplay_name]` and `output/[screenplay_name]` will automatically be created when the screenplay is parsed. 
@@ -428,7 +474,8 @@ input/
     ├── [screenplay_name]_text_processor_config.yaml    # (optional) Custom text processors
     ├── [screenplay_name]_voice_config.yaml             # TTS provider config
     ├── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
-    └── [screenplay_name]_voice_casting_prompt.txt      # (optional) LLM casting prompt
+    ├── [screenplay_name]_character_notes_prompt.txt      # (optional) LLM character notes prompt
+    └── [screenplay_name]_voice_config_voice_library_casting_prompt.txt  # (optional) LLM voice library casting prompt
 
 output/
 └── [screenplay_name]/
