@@ -72,7 +72,9 @@ def generate_voice_library_casting_prompt_file(
         )
 
     # 3. Read Voice Library Schema
-    voice_library_data_dir = Path(__file__).parent.parent / "voice_library_data"
+    voice_library_data_dir = (
+        Path(__file__).parent.parent / "voice_library" / "voice_library_data"
+    )
     schema_file = voice_library_data_dir / "voice_library_schema.yaml"
 
     if not schema_file.is_file():

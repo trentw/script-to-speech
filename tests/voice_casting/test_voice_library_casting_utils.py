@@ -25,8 +25,8 @@ def test_generate_voice_library_casting_prompt_file_success(tmp_path: Path):
     prompt_file.write_text("This is the default prompt.")
 
     # Create voice library structure
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
 
     schema_file = voice_lib_dir / "voice_library_schema.yaml"
     schema_file.write_text("schema: voice_library\n")
@@ -79,8 +79,8 @@ def test_generate_voice_library_casting_prompt_file_custom_output_path(tmp_path:
     )
 
     # Create voice library structure
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
     (voice_lib_dir / "voice_library_schema.yaml").write_text("schema: test")
     openai_dir = voice_lib_dir / "openai"
     openai_dir.mkdir()
@@ -164,8 +164,8 @@ def test_generate_voice_library_casting_prompt_file_missing_provider_voices(
     utils_dir.mkdir()
     (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
 
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
     (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
 
     # Mock __file__ to point to our utils_dir
@@ -194,8 +194,8 @@ def test_generate_voice_library_casting_prompt_file_yaml_error(tmp_path: Path):
     utils_dir.mkdir()
     (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
 
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
     (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
 
     openai_dir = voice_lib_dir / "openai"
@@ -232,8 +232,8 @@ def test_generate_voice_library_casting_prompt_file_default_output_name(tmp_path
     utils_dir.mkdir()
     (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
 
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
     (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
 
     openai_dir = voice_lib_dir / "openai"
@@ -267,8 +267,8 @@ def test_generate_voice_library_casting_prompt_file_multiple_providers(tmp_path:
     utils_dir.mkdir()
     (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
 
-    voice_lib_dir = utils_dir.parent / "voice_library_data"
-    voice_lib_dir.mkdir()
+    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
+    voice_lib_dir.mkdir(parents=True)
     (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
 
     for provider in ["openai", "elevenlabs", "cartesia"]:

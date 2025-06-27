@@ -21,11 +21,11 @@ class VoiceLibrary:
 
         Args:
             library_root: Root directory of voice library data.
-                         Defaults to src/script_to_speech/voice_library_data
+                         Defaults to src/script_to_speech/voice_library/voice_library_data
         """
         if library_root is None:
-            # Default to voice_library_data in the same parent directory
-            module_dir = Path(__file__).parent.parent
+            # Default to voice_library_data subdirectory
+            module_dir = Path(__file__).parent
             library_root = module_dir / "voice_library_data"
 
         self.library_root = Path(library_root)

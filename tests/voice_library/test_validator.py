@@ -23,6 +23,7 @@ class TestVoiceLibraryValidator:
             Path(__file__).parent.parent.parent
             / "src"
             / "script_to_speech"
+            / "voice_library"
             / "voice_library_data"
         )
         # Use resolve() to handle any relative path differences

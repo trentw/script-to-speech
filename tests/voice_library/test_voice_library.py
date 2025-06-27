@@ -24,6 +24,7 @@ class TestVoiceLibrary:
             Path(__file__).parent.parent.parent
             / "src"
             / "script_to_speech"
+            / "voice_library"
             / "voice_library_data"
         )
         assert library.library_root.resolve() == expected_path.resolve()
