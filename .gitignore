@@ -166,6 +166,7 @@ cython_debug/
 
 # Coding assistant configurations
 CLAUDE.md
+GEMINI.md
 codemcp.toml
 .cursorrules
 .claude
