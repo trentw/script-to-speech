@@ -1,13 +1,61 @@
 """Utility functions for voice library casting prompt generation."""
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import yaml
 
+from ..voice_library.voice_library_config import get_conflicting_ids, load_config
 from .voice_casting_common import read_prompt_file
 
 DEFAULT_VOICE_LIBRARY_PROMPT_FILENAME = "default_voice_library_casting_prompt.txt"
+
+
+def _filter_provider_voices(
+    provider_name: str,
+    provider_data: Dict[str, Any],
+    config: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Filters the voice library data for a provider based on include/exclude rules."""
+    included_ids: Optional[List[str]] = config.get("included_sts_ids", {}).get(
+        provider_name
+    )
+    excluded_ids: Set[str] = set(
+        config.get("excluded_sts_ids", {}).get(provider_name, [])
+    )
+
+    voice_list = (
+        provider_data.get("voices", {})
+        if isinstance(provider_data, dict)
+        else provider_data
+    )
+    if not voice_list:
+        return {}
+
+    # Start with included voices, or all voices if no include list is specified
+    if included_ids is not None:
+        filtered_voices = {
+            sts_id: details
+            for sts_id, details in voice_list.items()
+            if sts_id in included_ids
+        }
+    else:
+        filtered_voices = voice_list.copy()
+
+    # Exclude voices from the result
+    if excluded_ids:
+        filtered_voices = {
+            sts_id: details
+            for sts_id, details in filtered_voices.items()
+            if sts_id not in excluded_ids
+        }
+
+    # Reconstruct the original structure if necessary
+    if isinstance(provider_data, dict) and "voices" in provider_data:
+        provider_data["voices"] = filtered_voices
+        return provider_data
+
+    return filtered_voices
 
 
 def generate_voice_library_casting_prompt_file(
@@ -24,7 +72,7 @@ def generate_voice_library_casting_prompt_file(
     1. A prompt description (either from the provided `prompt_file_path` or a default).
     2. A header and the voice library schema for reference.
     3. A header and the content of the `voice_config_path` YAML file.
-    4. Headers and voice library data for each specified provider.
+    4. Filtered voice library data for each specified provider based on `voice_library_config`.
 
     Args:
         voice_config_path: Path to the voice configuration YAML file.
@@ -39,9 +87,23 @@ def generate_voice_library_casting_prompt_file(
 
     Raises:
         FileNotFoundError: If any of the required input files are not found.
-        ValueError: If provider voice library files are not found or paths are invalid.
+        ValueError: If provider voice library files are not found or if there's a
+                    configuration conflict.
         yaml.YAMLError: If the voice config file is not valid YAML.
     """
+    # Load and validate voice library config
+    voice_lib_config = load_config()
+    conflicts = get_conflicting_ids(voice_lib_config)
+    if conflicts:
+        error_messages = [
+            f"Provider '{provider}': Conflicting ID(s) {', '.join(ids)}"
+            for provider, ids in conflicts.items()
+        ]
+        raise ValueError(
+            "Validation FAILED. Found conflicting IDs in include and exclude lists:\n"
+            + "\n".join(error_messages)
+        )
+
     # Validate input paths
     if not voice_config_path.is_file():
         raise FileNotFoundError(f"Voice config file not found: {voice_config_path}")
@@ -55,7 +117,7 @@ def generate_voice_library_casting_prompt_file(
         output_file_name = f"{config_name}_voice_library_casting_prompt.txt"
         output_file_path = output_dir / output_file_name
 
-    # 1. Read Prompt Content using shared function
+    # 1. Read Prompt Content
     prompt_content = read_prompt_file(
         prompt_file_path=prompt_file_path,
         default_filename=DEFAULT_VOICE_LIBRARY_PROMPT_FILENAME,
@@ -76,54 +138,49 @@ def generate_voice_library_casting_prompt_file(
         Path(__file__).parent.parent / "voice_library" / "voice_library_data"
     )
     schema_file = voice_library_data_dir / "voice_library_schema.yaml"
-
     if not schema_file.is_file():
         raise FileNotFoundError(f"Voice library schema file not found: {schema_file}")
-
     try:
         with open(schema_file, "r", encoding="utf-8") as f:
             schema_content = f.read()
     except Exception as e:
         raise ValueError(f"Error reading voice library schema file: {e}")
 
-    # 4. Read Voice Library Data for Each Provider
+    # 4. Read and Filter Voice Library Data for Each Provider
     provider_contents = {}
-
     for provider in providers:
         provider_voices_file = voice_library_data_dir / provider / "voices.yaml"
         if not provider_voices_file.is_file():
             raise FileNotFoundError(
                 f"Voice library file not found for provider '{provider}': {provider_voices_file}"
             )
-
         try:
             with open(provider_voices_file, "r", encoding="utf-8") as f:
-                provider_contents[provider] = f.read()
+                provider_data = yaml.safe_load(f)
+
+            filtered_data = _filter_provider_voices(
+                provider, provider_data, voice_lib_config
+            )
+            provider_contents[provider] = yaml.dump(
+                filtered_data, sort_keys=False, indent=2, width=1000
+            )
         except Exception as e:
             raise ValueError(
-                f"Error reading voice library file for provider '{provider}': {e}"
+                f"Error processing voice library file for provider '{provider}': {e}"
             )
 
     # 5. Assemble Output Content
-    output_content_parts = [prompt_content]
-
-    output_content_parts.extend(
-        [
-            "\n\n--- VOICE LIBRARY SCHEMA ---\n\n",
-            schema_content,
-            "\n\n--- VOICE CONFIGURATION ---\n\n",
-            voice_config_content,
-        ]
-    )
+    output_content_parts = [
+        prompt_content,
+        "\n\n--- VOICE LIBRARY SCHEMA ---\n\n",
+        schema_content,
+        "\n\n--- VOICE CONFIGURATION ---\n\n",
+        voice_config_content,
+    ]
 
     for provider in providers:
         provider_header = f"\n\n--- VOICE LIBRARY DATA ({provider.upper()}) ---\n\n"
-        output_content_parts.extend(
-            [
-                provider_header,
-                provider_contents[provider],
-            ]
-        )
+        output_content_parts.extend([provider_header, provider_contents[provider]])
 
     final_output_content = "".join(output_content_parts)
 

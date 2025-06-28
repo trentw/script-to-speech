@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from script_to_speech.voice_library.cli import main, validate_voice_libraries
+from script_to_speech.voice_library.cli_data import main, validate_voice_libraries
 
 
 class TestValidateVoiceLibraries:
@@ -19,7 +19,7 @@ class TestValidateVoiceLibraries:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.VoiceLibraryValidator",
+            "script_to_speech.voice_library.cli_data.VoiceLibraryValidator",
             return_value=mock_validator,
         ):
             with patch("builtins.print") as mock_print:
@@ -43,7 +43,7 @@ class TestValidateVoiceLibraries:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.VoiceLibraryValidator",
+            "script_to_speech.voice_library.cli_data.VoiceLibraryValidator",
             return_value=mock_validator,
         ):
             with patch("builtins.print") as mock_print:
@@ -68,7 +68,7 @@ class TestValidateVoiceLibraries:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.VoiceLibraryValidator",
+            "script_to_speech.voice_library.cli_data.VoiceLibraryValidator",
             return_value=mock_validator,
         ):
             with patch("builtins.print") as mock_print:
@@ -88,7 +88,7 @@ class TestValidateVoiceLibraries:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.VoiceLibraryValidator",
+            "script_to_speech.voice_library.cli_data.VoiceLibraryValidator",
             return_value=mock_validator,
         ):
             with patch("builtins.print") as mock_print:
@@ -110,7 +110,7 @@ class TestMain:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.validate_voice_libraries",
+            "script_to_speech.voice_library.cli_data.validate_voice_libraries",
             return_value=expected_exit_code,
         ) as mock_validate:
             with patch("sys.exit") as mock_exit:
@@ -127,7 +127,7 @@ class TestMain:
 
         # Act
         with patch(
-            "script_to_speech.voice_library.cli.validate_voice_libraries",
+            "script_to_speech.voice_library.cli_data.validate_voice_libraries",
             return_value=expected_exit_code,
         ) as mock_validate:
             with patch("sys.exit") as mock_exit:
