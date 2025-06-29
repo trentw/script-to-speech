@@ -8,6 +8,8 @@ import yaml
 
 from ..tts_providers.tts_provider_manager import TTSProviderManager
 from ..utils.logging import get_screenplay_logger
+from .constants import REPO_VOICE_LIBRARY_PATH, USER_VOICE_LIBRARY_PATH
+from .schema_utils import load_merged_schemas_for_providers
 
 logger = get_screenplay_logger("voice_library.validator")
 
@@ -15,21 +17,15 @@ logger = get_screenplay_logger("voice_library.validator")
 class VoiceLibraryValidator:
     """Validates voice library YAML files against schemas."""
 
-    def __init__(self, library_root: Optional[Path] = None):
+    def __init__(self, project_only: bool = False):
         """
         Initialize the validator.
 
         Args:
-            library_root: Root directory of voice library data.
-                         Defaults to src/script_to_speech/voice_library/voice_library_data
+            project_only: If True, validate only the project voice library.
+                         If False, validate both project and user voice libraries.
         """
-        if library_root is None:
-            # Default to voice_library_data subdirectory
-            module_dir = Path(__file__).parent
-            library_root = module_dir / "voice_library_data"
-
-        self.library_root = Path(library_root)
-        self.global_schema: Dict[str, Any] = {}
+        self.project_only = project_only
         self.validation_errors: List[str] = []
 
     def _load_yaml_file(
@@ -68,111 +64,133 @@ class VoiceLibraryValidator:
 
     def validate_all(self) -> Tuple[bool, List[str]]:
         """
-        Validate all voice libraries.
+        Validate voice libraries.
+
+        Validates project voice library and optionally user voice library
+        based on the project_only setting.
 
         Returns:
             Tuple of (is_valid, list_of_error_messages)
         """
         self.validation_errors = []
 
-        # Load global schema
-        global_schema_path = self.library_root / "voice_library_schema.yaml"
-        loaded_schema = self._load_yaml_file(global_schema_path, "Global schema")
-        if loaded_schema is None:
-            return False, self.validation_errors
-        self.global_schema = loaded_schema
+        # Validate project voice library
+        self._validate_library_directory(REPO_VOICE_LIBRARY_PATH, "project")
 
-        # Validate each provider directory
-        for provider_dir in self.library_root.iterdir():
-            if provider_dir.is_dir() and not provider_dir.name.startswith("."):
-                self._validate_provider_directory(provider_dir)
+        # Validate user voice library if not project-only mode
+        if not self.project_only:
+            self._validate_library_directory(USER_VOICE_LIBRARY_PATH, "user")
 
         return len(self.validation_errors) == 0, self.validation_errors
 
-    def _validate_provider_directory(self, provider_dir: Path) -> None:
-        """Validate all voice files in a provider directory."""
-        provider_name = provider_dir.name
-        logger.info(f"Validating provider: {provider_name}")
+    def _validate_library_directory(self, library_root: Path, source: str) -> None:
+        """
+        Validate all provider directories in a voice library directory.
 
-        # Load provider-specific schema if it exists
-        provider_schema_path = provider_dir / "provider_schema.yaml"
-        provider_schema: Dict[str, Any] = {}
-        if provider_schema_path.exists():
-            loaded_provider_schema = self._load_yaml_file(
-                provider_schema_path, f"{provider_name} provider schema"
-            )
-            if loaded_provider_schema is None:
-                return  # Error already logged
-            provider_schema = loaded_provider_schema
-
-        # Combine schemas
-        combined_schema = self._merge_schemas(self.global_schema, provider_schema)
-
-        # Validate each voice file
-        voice_files_found = False
-        for voice_file in provider_dir.glob("*.yaml"):
-            if voice_file.name != "provider_schema.yaml":
-                voice_files_found = True
-                self._validate_voice_file(voice_file, provider_name, combined_schema)
-
-        if not voice_files_found:
+        Args:
+            library_root: Root directory containing provider subdirectories
+            source: Source description ("project" or "user") for error messages
+        """
+        if not library_root.exists() or not library_root.is_dir():
+            # User directory might not exist, which is fine
+            if source == "user":
+                return
+            # Project directory should exist
             self.validation_errors.append(
-                f"No voice files found in {provider_name} directory"
+                f"Voice library directory not found: {library_root}"
+            )
+            return
+
+        # Validate each provider directory
+        for provider_dir in library_root.iterdir():
+            if provider_dir.is_dir() and not provider_dir.name.startswith("."):
+                self._validate_provider_directory(provider_dir, source)
+
+    def _validate_provider_directory(self, provider_dir: Path, source: str) -> None:
+        """
+        Validate all voice files in a provider directory.
+
+        Args:
+            provider_dir: Directory containing voice files for a provider
+            source: Source description ("project" or "user") for error messages
+        """
+        provider_name = provider_dir.name
+        logger.info(f"Validating {source} provider: {provider_name}")
+
+        # Load merged schema for this provider
+        try:
+            combined_schema = load_merged_schemas_for_providers([provider_name])
+        except ValueError as e:
+            self.validation_errors.append(f"Schema error for {provider_name}: {str(e)}")
+            return
+
+        # Validate each voice library file
+        voice_library_files_found = False
+        for voice_library_file in provider_dir.glob("*.yaml"):
+            if voice_library_file.name != "provider_schema.yaml":
+                voice_library_files_found = True
+                self._validate_voice_library_file(
+                    voice_library_file, provider_name, combined_schema, source
+                )
+
+        if not voice_library_files_found:
+            self.validation_errors.append(
+                f"No voice files found in {source} {provider_name} directory"
             )
 
-    def _merge_schemas(
-        self, global_schema: Dict[str, Any], provider_schema: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Merge global and provider-specific schemas."""
-        merged = global_schema.copy()
-
-        # Merge voice_properties if present in provider schema
-        if "voice_properties" in provider_schema:
-            if "voice_properties" not in merged:
-                merged["voice_properties"] = {}
-            merged["voice_properties"].update(provider_schema["voice_properties"])
-
-        # Add any provider-specific sections
-        for key, value in provider_schema.items():
-            if key not in merged:
-                merged[key] = value
-
-        return merged
-
-    def _validate_voice_file(
-        self, voice_file: Path, provider_name: str, schema: Dict[str, Any]
+    def _validate_voice_library_file(
+        self,
+        voice_library_file: Path,
+        provider_name: str,
+        schema: Dict[str, Any],
+        source: str,
     ) -> None:
-        """Validate a single voice library file."""
-        logger.info(f"  Validating file: {voice_file.name}")
+        """
+        Validate a single voice library file.
 
-        voice_data = self._load_yaml_file(voice_file, f"Voice file {voice_file.name}")
+        Args:
+            voice_library_file: Path to the voice library file
+            provider_name: Name of the provider
+            schema: Combined schema for validation
+            source: Source description ("project" or "user") for error messages
+        """
+        logger.info(f"  Validating {source} file: {voice_library_file.name}")
+
+        voice_data = self._load_yaml_file(
+            voice_library_file, f"Voice file {voice_library_file.name}"
+        )
         if voice_data is None:
             return  # Error already logged
 
         if not isinstance(voice_data, dict):
             self.validation_errors.append(
-                f"{provider_name}/{voice_file.name}: Root must be a dictionary"
+                f"{source} {provider_name}/{voice_library_file.name}: Root must be a dictionary"
             )
             return
 
         # Validate voices section
         if "voices" not in voice_data:
             self.validation_errors.append(
-                f"{provider_name}/{voice_file.name}: Missing 'voices' section"
+                f"{source} {provider_name}/{voice_library_file.name}: Missing 'voices' section"
             )
             return
 
         voices = voice_data["voices"]
         if not isinstance(voices, dict):
             self.validation_errors.append(
-                f"{provider_name}/{voice_file.name}: 'voices' must be a dictionary"
+                f"{source} {provider_name}/{voice_library_file.name}: 'voices' must be a dictionary"
             )
             return
 
         # Validate each voice
         for voice_id, voice_config in voices.items():
             self._validate_single_voice(
-                voice_file.name, voice_id, voice_config, provider_name, schema
+                voice_library_file.name,
+                voice_id,
+                voice_config,
+                provider_name,
+                schema,
+                source,
             )
 
     def _validate_single_voice(
@@ -182,9 +200,20 @@ class VoiceLibraryValidator:
         voice_config: Dict[str, Any],
         provider_name: str,
         schema: Dict[str, Any],
+        source: str,
     ) -> None:
-        """Validate a single voice configuration."""
-        voice_ref = f"{provider_name}/{file_name}[{voice_id}]"  # e.g., "openai/voices.yaml[onyx]"
+        """
+        Validate a single voice configuration.
+
+        Args:
+            file_name: Name of the voice file
+            voice_id: ID of the voice
+            voice_config: Configuration for the voice
+            provider_name: Name of the provider
+            schema: Combined schema for validation
+            source: Source description ("project" or "user") for error messages
+        """
+        voice_ref = f"{source} {provider_name}/{file_name}[{voice_id}]"  # e.g., "project openai/voices.yaml[onyx]"
 
         if not isinstance(voice_config, dict):
             self.validation_errors.append(

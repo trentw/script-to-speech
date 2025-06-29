@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional, Set
 
 import yaml
 
+from ..voice_library.schema_utils import load_merged_schemas_for_providers
+from ..voice_library.voice_library import VoiceLibrary
 from ..voice_library.voice_library_config import get_conflicting_ids, load_config
 from .voice_casting_common import read_prompt_file
 
@@ -133,40 +135,38 @@ def generate_voice_library_casting_prompt_file(
             f"Error reading voice config file {voice_config_path}: {e}"
         )
 
-    # 3. Read Voice Library Schema
-    voice_library_data_dir = (
-        Path(__file__).parent.parent / "voice_library" / "voice_library_data"
-    )
-    schema_file = voice_library_data_dir / "voice_library_schema.yaml"
-    if not schema_file.is_file():
-        raise FileNotFoundError(f"Voice library schema file not found: {schema_file}")
+    # 3. Load Merged Voice Library Schema (global + all provider schemas)
     try:
-        with open(schema_file, "r", encoding="utf-8") as f:
-            schema_content = f.read()
+        merged_schema = load_merged_schemas_for_providers(providers)
+        schema_content = yaml.dump(merged_schema, sort_keys=False, indent=2, width=1000)
+    except ValueError as e:
+        raise ValueError(f"Error loading voice library schema: {e}")
     except Exception as e:
-        raise ValueError(f"Error reading voice library schema file: {e}")
+        raise ValueError(f"Error processing voice library schema: {e}")
 
-    # 4. Read and Filter Voice Library Data for Each Provider
+    # 4. Load and Filter Voice Library Data for Each Provider using VoiceLibrary class
+    voice_library = VoiceLibrary()
     provider_contents = {}
     for provider in providers:
-        provider_voices_file = voice_library_data_dir / provider / "voices.yaml"
-        if not provider_voices_file.is_file():
-            raise FileNotFoundError(
-                f"Voice library file not found for provider '{provider}': {provider_voices_file}"
-            )
         try:
-            with open(provider_voices_file, "r", encoding="utf-8") as f:
-                provider_data = yaml.safe_load(f)
+            # Load merged voice data (project + user, with user overrides)
+            provider_voices = voice_library._load_provider_voices(provider)
 
+            # Reconstruct the provider data structure for filtering
+            provider_data = {"voices": provider_voices}
+
+            # Apply filtering based on voice library config
             filtered_data = _filter_provider_voices(
                 provider, provider_data, voice_lib_config
             )
+
+            # Convert to YAML for output
             provider_contents[provider] = yaml.dump(
                 filtered_data, sort_keys=False, indent=2, width=1000
             )
         except Exception as e:
             raise ValueError(
-                f"Error processing voice library file for provider '{provider}': {e}"
+                f"Error processing voice library data for provider '{provider}': {e}"
             )
 
     # 5. Assemble Output Content

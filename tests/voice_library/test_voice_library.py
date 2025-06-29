@@ -14,76 +14,73 @@ from script_to_speech.voice_library.voice_library import VoiceLibrary
 class TestVoiceLibrary:
     """Tests for the VoiceLibrary class."""
 
-    def test_init_with_default_library_root(self):
-        """Test VoiceLibrary initialization with default library root."""
+    def test_init(self):
+        """Test VoiceLibrary initialization."""
         # Arrange & Act
         library = VoiceLibrary()
 
         # Assert
-        expected_path = (
-            Path(__file__).parent.parent.parent
-            / "src"
-            / "script_to_speech"
-            / "voice_library"
-            / "voice_library_data"
-        )
-        assert library.library_root.resolve() == expected_path.resolve()
         assert library._voice_library_cache == {}
 
-    def test_init_with_custom_library_root(self):
-        """Test VoiceLibrary initialization with custom library root."""
+    @patch("script_to_speech.voice_library.voice_library.yaml.safe_load")
+    @patch("builtins.open", new_callable=mock_open)
+    @patch("script_to_speech.voice_library.voice_library.USER_VOICE_LIBRARY_PATH")
+    @patch("script_to_speech.voice_library.voice_library.REPO_VOICE_LIBRARY_PATH")
+    def test_load_provider_voices_success(
+        self, mock_repo_path, mock_user_path, mock_file, mock_yaml
+    ):
+        """Test _load_provider_voices with valid provider directories."""
         # Arrange
-        custom_root = Path("/custom/path")
+        library = VoiceLibrary()
 
-        # Act
-        library = VoiceLibrary(library_root=custom_root)
+        # Mock directory structure
+        project_dir = MagicMock()
+        user_dir = MagicMock()
 
-        # Assert
-        assert library.library_root == custom_root
-        assert library._voice_library_cache == {}
+        project_dir.exists.return_value = True
+        project_dir.is_dir.return_value = True
+        project_dir.glob.return_value = [Path("voices1.yaml")]
 
-    def test_load_provider_voices_success(self):
-        """Test _load_provider_voices with valid provider directory."""
-        # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        user_dir.exists.return_value = True
+        user_dir.is_dir.return_value = True
+        user_dir.glob.return_value = [Path("voices2.yaml")]
 
-            # Create voice files
-            voice_data1 = {
-                "voices": {
-                    "voice1": {"config": {"voice": "v1"}, "description": "Voice 1"},
-                    "voice2": {"config": {"voice": "v2"}, "description": "Voice 2"},
-                }
-            }
-            voice_data2 = {
-                "voices": {
-                    "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"}
-                }
-            }
+        mock_repo_path.__truediv__.return_value = project_dir
+        mock_user_path.__truediv__.return_value = user_dir
 
-            voice_file1 = provider_dir / "voices1.yaml"
-            voice_file2 = provider_dir / "voices2.yaml"
-
-            with open(voice_file1, "w") as f:
-                yaml.dump(voice_data1, f)
-            with open(voice_file2, "w") as f:
-                yaml.dump(voice_data2, f)
-
-            library = VoiceLibrary(library_root=temp_path)
-
-            # Act
-            result = library._load_provider_voices("test_provider")
-
-            # Assert
-            expected = {
+        # Mock YAML data
+        project_voices = {
+            "voices": {
                 "voice1": {"config": {"voice": "v1"}, "description": "Voice 1"},
                 "voice2": {"config": {"voice": "v2"}, "description": "Voice 2"},
+            }
+        }
+        user_voices = {
+            "voices": {
+                "voice2": {
+                    "config": {"voice": "v2_override"},
+                    "description": "Voice 2 Override",
+                },
                 "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"},
             }
-            assert result == expected
-            assert library._voice_library_cache["test_provider"] == expected
+        }
+
+        mock_yaml.side_effect = [project_voices, user_voices]
+
+        # Act
+        result = library._load_provider_voices("test_provider")
+
+        # Assert - user voice2 should override project voice2
+        expected = {
+            "voice1": {"config": {"voice": "v1"}, "description": "Voice 1"},
+            "voice2": {
+                "config": {"voice": "v2_override"},
+                "description": "Voice 2 Override",
+            },
+            "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"},
+        }
+        assert result == expected
+        assert library._voice_library_cache["test_provider"] == expected
 
     def test_load_provider_voices_cached(self):
         """Test _load_provider_voices returns cached data on second call."""
@@ -99,40 +96,55 @@ class TestVoiceLibrary:
         assert result == cached_data
         assert result is cached_data  # Should be the same object
 
-    def test_load_provider_voices_provider_not_found(self):
+    @patch("script_to_speech.voice_library.voice_library.USER_VOICE_LIBRARY_PATH")
+    @patch("script_to_speech.voice_library.voice_library.REPO_VOICE_LIBRARY_PATH")
+    def test_load_provider_voices_provider_not_found(
+        self, mock_repo_path, mock_user_path
+    ):
         """Test _load_provider_voices when provider directory doesn't exist."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            library = VoiceLibrary(library_root=Path(temp_dir))
+        library = VoiceLibrary()
 
-            # Act & Assert
-            with pytest.raises(
-                VoiceNotFoundError,
-                match="No voice library found for provider 'nonexistent'",
-            ):
-                library._load_provider_voices("nonexistent")
+        # Mock both directories as non-existent
+        project_dir = MagicMock()
+        user_dir = MagicMock()
+        project_dir.exists.return_value = False
+        user_dir.exists.return_value = False
+
+        mock_repo_path.__truediv__.return_value = project_dir
+        mock_user_path.__truediv__.return_value = user_dir
+
+        # Act & Assert
+        with pytest.raises(
+            VoiceNotFoundError,
+            match="No voice library found for provider 'nonexistent'",
+        ):
+            library._load_provider_voices("nonexistent")
 
     def test_load_provider_voices_skip_schema_files(self):
         """Test _load_provider_voices skips provider_schema.yaml files."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        voice_data = {"voices": {"voice1": {"config": {"voice": "v1"}}}}
+        schema_data = {"voice_properties": {"custom_prop": {"type": "text"}}}
 
-            # Create voice file and schema file
-            voice_data = {"voices": {"voice1": {"config": {"voice": "v1"}}}}
-            schema_data = {"voice_properties": {"custom_prop": {"type": "text"}}}
+        file_contents = {
+            "voices.yaml": yaml.dump(voice_data),
+            "provider_schema.yaml": yaml.dump(schema_data),
+        }
 
-            voice_file = provider_dir / "voices.yaml"
-            schema_file = provider_dir / "provider_schema.yaml"
+        def mock_glob(pattern):
+            return [Path(f) for f in file_contents.keys() if f.endswith(".yaml")]
 
-            with open(voice_file, "w") as f:
-                yaml.dump(voice_data, f)
-            with open(schema_file, "w") as f:
-                yaml.dump(schema_data, f)
+        def mock_open_func(file, mode="r"):
+            return mock_open(read_data=file_contents[Path(file).name])()
 
-            library = VoiceLibrary(library_root=temp_path)
+        with (
+            patch("pathlib.Path.glob", side_effect=mock_glob),
+            patch("builtins.open", side_effect=mock_open_func),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            library = VoiceLibrary()
 
             # Act
             result = library._load_provider_voices("test_provider")
@@ -144,55 +156,47 @@ class TestVoiceLibrary:
     def test_load_provider_voices_invalid_voices_section(self):
         """Test _load_provider_voices handles invalid voices section."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        invalid_data = {"voices": "not_a_dict"}
 
-            # Create file with invalid voices section
-            invalid_data = {"voices": "not_a_dict"}
+        with (
+            patch("pathlib.Path.glob", return_value=[Path("invalid.yaml")]),
+            patch("builtins.open", mock_open(read_data=yaml.dump(invalid_data))),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("script_to_speech.voice_library.voice_library.logger") as mock_logger,
+        ):
+            library = VoiceLibrary()
 
-            voice_file = provider_dir / "invalid.yaml"
-            with open(voice_file, "w") as f:
-                yaml.dump(invalid_data, f)
+            # Act & Assert
+            with pytest.raises(
+                VoiceNotFoundError,
+                match="No voice library found for provider 'test_provider'",
+            ):
+                library._load_provider_voices("test_provider")
 
-            library = VoiceLibrary(library_root=temp_path)
-
-            # Act
-            with patch(
-                "script_to_speech.voice_library.voice_library.logger"
-            ) as mock_logger:
-                result = library._load_provider_voices("test_provider")
-
-            # Assert
-            assert result == {}
-            mock_logger.warning.assert_called_once()
+            assert mock_logger.warning.call_count > 0
             assert "Invalid voices section" in mock_logger.warning.call_args[0][0]
 
     def test_load_provider_voices_file_load_error(self):
         """Test _load_provider_voices handles file loading errors."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        with (
+            patch("pathlib.Path.glob", return_value=[Path("error.yaml")]),
+            patch("builtins.open", side_effect=IOError("File read error")),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
+            patch("script_to_speech.voice_library.voice_library.logger") as mock_logger,
+        ):
+            library = VoiceLibrary()
 
-            # Create a file that will cause an error when loading
-            error_file = provider_dir / "error.yaml"
-            error_file.touch()
+            # Act & Assert
+            with pytest.raises(
+                VoiceNotFoundError,
+                match="No voice library found for provider 'test_provider'",
+            ):
+                library._load_provider_voices("test_provider")
 
-            library = VoiceLibrary(library_root=temp_path)
-
-            # Act
-            with patch("builtins.open", side_effect=IOError("File read error")):
-                with patch(
-                    "script_to_speech.voice_library.voice_library.logger"
-                ) as mock_logger:
-                    result = library._load_provider_voices("test_provider")
-
-            # Assert
-            assert result == {}
-            mock_logger.error.assert_called_once()
+            assert mock_logger.error.call_count > 0
             assert "Error loading" in mock_logger.error.call_args[0][0]
 
     def test_expand_config_success(self):
@@ -232,18 +236,28 @@ class TestVoiceLibrary:
         with pytest.raises(VoiceNotFoundError, match="Voice ID cannot be empty"):
             library.expand_config("test_provider", "")
 
-    def test_expand_config_provider_not_found(self):
+    @patch("script_to_speech.voice_library.voice_library.USER_VOICE_LIBRARY_PATH")
+    @patch("script_to_speech.voice_library.voice_library.REPO_VOICE_LIBRARY_PATH")
+    def test_expand_config_provider_not_found(self, mock_repo_path, mock_user_path):
         """Test expand_config when provider is not found."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            library = VoiceLibrary(library_root=Path(temp_dir))
+        library = VoiceLibrary()
 
-            # Act & Assert
-            with pytest.raises(
-                VoiceNotFoundError,
-                match="Cannot expand sts_id 'test_voice': provider 'nonexistent' not found",
-            ):
-                library.expand_config("nonexistent", "test_voice")
+        # Mock both directories as non-existent
+        project_dir = MagicMock()
+        user_dir = MagicMock()
+        project_dir.exists.return_value = False
+        user_dir.exists.return_value = False
+
+        mock_repo_path.__truediv__.return_value = project_dir
+        mock_user_path.__truediv__.return_value = user_dir
+
+        # Act & Assert
+        with pytest.raises(
+            VoiceNotFoundError,
+            match="Cannot expand sts_id 'test_voice': provider 'nonexistent' not found",
+        ):
+            library.expand_config("nonexistent", "test_voice")
 
     def test_expand_config_voice_not_found(self):
         """Test expand_config when voice is not found in provider."""
@@ -330,83 +344,79 @@ class TestVoiceLibrary:
     def test_load_provider_voices_no_voices_section(self):
         """Test _load_provider_voices handles files without voices section."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        no_voices_data = {"metadata": {"provider": "test"}}
 
-            # Create file without voices section
-            no_voices_data = {"metadata": {"provider": "test"}}
+        with (
+            patch("pathlib.Path.glob", return_value=[Path("no_voices.yaml")]),
+            patch("builtins.open", mock_open(read_data=yaml.dump(no_voices_data))),
+            patch("pathlib.Path.is_dir", return_value=True),
+        ):
+            library = VoiceLibrary()
 
-            voice_file = provider_dir / "no_voices.yaml"
-            with open(voice_file, "w") as f:
-                yaml.dump(no_voices_data, f)
-
-            library = VoiceLibrary(library_root=temp_path)
-
-            # Act
-            result = library._load_provider_voices("test_provider")
-
-            # Assert
-            assert result == {}
+            # Act & Assert
+            with pytest.raises(
+                VoiceNotFoundError,
+                match="No voice library found for provider 'test_provider'",
+            ):
+                library._load_provider_voices("test_provider")
 
     def test_load_provider_voices_empty_file(self):
         """Test _load_provider_voices handles empty YAML files."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
+        with (
+            patch("pathlib.Path.glob", return_value=[Path("empty.yaml")]),
+            patch("builtins.open", mock_open(read_data="")),
+            patch("pathlib.Path.is_dir", return_value=True),
+        ):
+            library = VoiceLibrary()
 
-            # Create empty file
-            empty_file = provider_dir / "empty.yaml"
-            empty_file.touch()
-
-            library = VoiceLibrary(library_root=temp_path)
-
-            # Act
-            result = library._load_provider_voices("test_provider")
-
-            # Assert
-            assert result == {}
+            # Act & Assert
+            with pytest.raises(
+                VoiceNotFoundError,
+                match="No voice library found for provider 'test_provider'",
+            ):
+                library._load_provider_voices("test_provider")
 
     def test_load_provider_voices_duplicate_voice_ids(self):
         """Test _load_provider_voices raises error on duplicate voice IDs across files."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
-
-            # Create two files with overlapping voice IDs
-            voice_data1 = {
-                "voices": {
-                    "voice1": {
-                        "config": {"voice": "v1"},
-                        "description": "Voice 1 from file 1",
-                    },
-                    "voice2": {"config": {"voice": "v2"}, "description": "Voice 2"},
-                }
+        voice_data1 = {
+            "voices": {
+                "voice1": {
+                    "config": {"voice": "v1"},
+                    "description": "Voice 1 from file 1",
+                },
+                "voice2": {"config": {"voice": "v2"}, "description": "Voice 2"},
             }
-            voice_data2 = {
-                "voices": {
-                    "voice1": {
-                        "config": {"voice": "v1_duplicate"},
-                        "description": "Voice 1 from file 2",
-                    },
-                    "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"},
-                }
+        }
+        voice_data2 = {
+            "voices": {
+                "voice1": {
+                    "config": {"voice": "v1_duplicate"},
+                    "description": "Voice 1 from file 2",
+                },
+                "voice3": {"config": {"voice": "v3"}, "description": "Voice 3"},
             }
+        }
 
-            voice_file1 = provider_dir / "voices1.yaml"
-            voice_file2 = provider_dir / "voices2.yaml"
+        file_contents = {
+            "voices1.yaml": yaml.dump(voice_data1),
+            "voices2.yaml": yaml.dump(voice_data2),
+        }
 
-            with open(voice_file1, "w") as f:
-                yaml.dump(voice_data1, f)
-            with open(voice_file2, "w") as f:
-                yaml.dump(voice_data2, f)
+        def mock_glob(pattern):
+            return [Path(f) for f in file_contents.keys()]
 
-            library = VoiceLibrary(library_root=temp_path)
+        def mock_open_func(file, mode="r"):
+            return mock_open(read_data=file_contents[Path(file).name])()
+
+        with (
+            patch("pathlib.Path.glob", side_effect=mock_glob),
+            patch("builtins.open", side_effect=mock_open_func),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            library = VoiceLibrary()
 
             # Act & Assert
             with pytest.raises(

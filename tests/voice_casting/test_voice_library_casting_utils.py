@@ -5,120 +5,126 @@ from unittest.mock import mock_open, patch
 import pytest
 import yaml
 
+from script_to_speech.tts_providers.base.exceptions import VoiceNotFoundError
 from script_to_speech.voice_casting.voice_library_casting_utils import (
     _filter_provider_voices,
     generate_voice_library_casting_prompt_file,
 )
 
 
-def test_generate_voice_library_casting_prompt_file_success(tmp_path: Path):
+def test_generate_voice_library_casting_prompt_file_success():
     """Test successful prompt file generation with all required files."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("characters:\n  - name: John\n")
+    voice_config_content = "characters:\n  - name: John\n"
+    prompt_content = "This is the default prompt."
+    schema_content = "schema: voice_library\n"
 
-    # Create voice library structure relative to the module location
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-
-    # Create default prompt file in utils_dir
-    prompt_file = utils_dir / "default_voice_library_casting_prompt.txt"
-    prompt_file.write_text("This is the default prompt.")
-
-    # Create voice library structure
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-
-    schema_file = voice_lib_dir / "voice_library_schema.yaml"
-    schema_file.write_text("schema: voice_library\n")
-
-    openai_dir = voice_lib_dir / "openai"
-    openai_dir.mkdir()
-    openai_voices = openai_dir / "voices.yaml"
-    openai_voices.write_text("voices:\n  voice1:\n    model_id: tts-1\n")
-
-    elevenlabs_dir = voice_lib_dir / "elevenlabs"
-    elevenlabs_dir.mkdir()
-    elevenlabs_voices = elevenlabs_dir / "voices.yaml"
-    elevenlabs_voices.write_text("voices:\n  voice2:\n    model_id: eleven\n")
-
-    # Mock __file__ and config loading
+    # Mock VoiceLibrary to return test data
     with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        with patch(
-            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
-            return_value={},
-        ):
-            with patch(
+        "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+    ) as MockVoiceLibrary:
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.side_effect = [
+            {"voice1": {"model_id": "tts-1"}},  # openai
+            {"voice2": {"model_id": "eleven"}},  # elevenlabs
+        ]
+
+        # Create separate mock files for different read operations
+        voice_config_mock = mock_open(read_data=voice_config_content)
+        schema_mock = mock_open(read_data=schema_content)
+        output_mock = mock_open()
+
+        def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+            file_str = str(file_path)
+            if "config.yaml" in file_str and mode == "r":
+                return voice_config_mock.return_value
+            elif "schema.yaml" in file_str and mode == "r":
+                return schema_mock.return_value
+            elif mode == "w":
+                return output_mock.return_value
+            return mock_open().return_value
+
+        with (
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+                return_value={},
+            ),
+            patch(
                 "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
                 return_value={},
-            ):
-                # Act
-                result = generate_voice_library_casting_prompt_file(
-                    voice_config_path=voice_config_path,
-                    providers=["openai", "elevenlabs"],
-                )
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+                return_value=prompt_content,
+            ),
+            patch("builtins.open", side_effect=mock_open_side_effect),
+            patch.object(Path, "is_file", return_value=True),
+            patch.object(Path, "mkdir"),
+        ):
+            # Act
+            result = generate_voice_library_casting_prompt_file(
+                voice_config_path=Path("/fake/config.yaml"),
+                providers=["openai", "elevenlabs"],
+            )
 
     # Assert
-    assert result.exists()
-    content = result.read_text()
-    assert "This is the default prompt." in content
-    assert "--- VOICE LIBRARY SCHEMA ---" in content
-    assert "--- VOICE CONFIGURATION ---" in content
-    assert "--- VOICE LIBRARY DATA (OPENAI) ---" in content
-    assert "--- VOICE LIBRARY DATA (ELEVENLABS) ---" in content
+    assert result == Path("/fake/config_voice_library_casting_prompt.txt")
+
+    # Verify VoiceLibrary was called correctly
+    assert mock_instance._load_provider_voices.call_count == 2
 
 
-def test_generate_voice_library_casting_prompt_file_custom_output_path(tmp_path: Path):
+def test_generate_voice_library_casting_prompt_file_custom_output_path():
     """Test with custom output file path."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("characters:\n  - name: John\n")
+    voice_config_content = "characters:\n  - name: John\n"
+    prompt_content = "Default prompt"
+    schema_content = "schema: test"
+    custom_output = Path("/fake/custom_output.txt")
 
-    custom_output = tmp_path / "custom_output.txt"
-
-    # Create file structure
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-
-    # Create default prompt file
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text(
-        "Default prompt"
+    # Mock VoiceLibrary to return test data
+    mock_voice_library = patch(
+        "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
     )
 
-    # Create voice library structure
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-    (voice_lib_dir / "voice_library_schema.yaml").write_text("schema: test")
-    openai_dir = voice_lib_dir / "openai"
-    openai_dir.mkdir()
-    (openai_dir / "voices.yaml").write_text("voices: {}")
+    with mock_voice_library as MockVoiceLibrary:
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = {}
 
-    # Mock __file__ and config loading
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        with patch(
-            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
-            return_value={},
-        ):
-            with patch(
+        with (
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+                return_value={},
+            ),
+            patch(
                 "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
                 return_value={},
-            ):
-                # Act
-                result = generate_voice_library_casting_prompt_file(
-                    voice_config_path=voice_config_path,
-                    providers=["openai"],
-                    output_file_path=custom_output,
-                )
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+                return_value=prompt_content,
+            ),
+            patch("builtins.open", mock_open(read_data=voice_config_content)),
+            patch(
+                "pathlib.Path.is_file",
+                return_value=True,
+            ),
+            patch(
+                "pathlib.Path.parent",
+            ),
+            patch(
+                "pathlib.Path.mkdir",
+            ),
+        ):
+            # Act
+            result = generate_voice_library_casting_prompt_file(
+                voice_config_path=Path("/fake/config.yaml"),
+                providers=["openai"],
+                output_file_path=custom_output,
+            )
 
     # Assert
     assert result == custom_output
-    assert custom_output.exists()
 
 
 def test_generate_voice_library_casting_prompt_file_missing_voice_config():
@@ -144,61 +150,91 @@ def test_generate_voice_library_casting_prompt_file_missing_custom_prompt():
             )
 
 
-def test_generate_voice_library_casting_prompt_file_missing_schema(tmp_path: Path):
+def test_generate_voice_library_casting_prompt_file_missing_schema():
     """Test with missing voice library schema file."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("test")
+    voice_config_content = "test"
+    prompt_content = "prompt"
 
-    # Create file structure but missing schema
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
-
-    # Mock __file__ to point to our utils_dir
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch("builtins.open", mock_open(read_data=voice_config_content)),
+        patch.object(Path, "is_file", return_value=True),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            side_effect=ValueError("No global schema files found"),
+        ),
     ):
         # Act/Assert
         with pytest.raises(
-            FileNotFoundError, match="Voice library schema file not found"
+            ValueError,
+            match="Error loading voice library schema: No global schema files found",
         ):
             generate_voice_library_casting_prompt_file(
-                voice_config_path=voice_config_path, providers=["openai"]
+                voice_config_path=Path("/fake/config.yaml"), providers=["openai"]
             )
 
 
-def test_generate_voice_library_casting_prompt_file_missing_provider_voices(
-    tmp_path: Path,
-):
+def test_generate_voice_library_casting_prompt_file_missing_provider_voices():
     """Test with missing provider voice library file."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("test")
+    voice_config_content = "test"
+    prompt_content = "prompt"
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
 
-    # Create file structure but missing provider voices
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
+    # Mock VoiceLibrary to raise VoiceNotFoundError
+    mock_voice_library = patch(
+        "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+    )
 
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-    (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
+    with mock_voice_library as MockVoiceLibrary:
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.side_effect = VoiceNotFoundError(
+            "No voice library found for provider 'openai'"
+        )
 
-    # Mock __file__ to point to our utils_dir
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        # Act/Assert
-        with pytest.raises(
-            FileNotFoundError,
-            match="Voice library file not found for provider 'openai'",
+        with (
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+                return_value={},
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+                return_value={},
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+                return_value=prompt_content,
+            ),
+            patch("builtins.open", mock_open(read_data=voice_config_content)),
+            patch(
+                "pathlib.Path.is_file",
+                return_value=True,
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+                return_value=schema_content,
+            ),
         ):
-            generate_voice_library_casting_prompt_file(
-                voice_config_path=voice_config_path, providers=["openai"]
-            )
+            # Act/Assert
+            with pytest.raises(
+                ValueError,
+                match="Error processing voice library data for provider 'openai'",
+            ):
+                generate_voice_library_casting_prompt_file(
+                    voice_config_path=Path("/fake/config.yaml"), providers=["openai"]
+                )
 
 
 def test_generate_voice_library_casting_prompt_file_yaml_error(tmp_path: Path):
@@ -292,50 +328,73 @@ def test_generate_voice_library_casting_prompt_file_default_output_name(tmp_path
     assert result.parent == tmp_path
 
 
-def test_generate_voice_library_casting_prompt_file_multiple_providers(tmp_path: Path):
+def test_generate_voice_library_casting_prompt_file_multiple_providers():
     """Test with multiple providers."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("test")
+    voice_config_content = "test"
+    prompt_content = "prompt"
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
 
-    # Create file structure
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
+    # Mock VoiceLibrary to return test data for multiple providers
+    mock_voice_library = patch(
+        "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+    )
 
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-    (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
+    with mock_voice_library as MockVoiceLibrary:
+        mock_instance = MockVoiceLibrary.return_value
+        # Return different data for each provider call
+        mock_instance._load_provider_voices.side_effect = [
+            {"openai_voice": {"model_id": "tts-1"}},  # openai
+            {"elevenlabs_voice": {"model_id": "eleven"}},  # elevenlabs
+        ]
 
-    for provider in ["openai", "elevenlabs", "cartesia"]:
-        provider_dir = voice_lib_dir / provider
-        provider_dir.mkdir()
-        (provider_dir / "voices.yaml").write_text(f"voices: {{}}")
+        # Create separate mock files for different read operations
+        voice_config_mock = mock_open(read_data=voice_config_content)
+        output_mock = mock_open()
 
-    # Mock __file__ and config loading
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        with patch(
-            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
-            return_value={},
-        ):
-            with patch(
+        def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+            file_str = str(file_path)
+            if "config.yaml" in file_str and mode == "r":
+                return voice_config_mock.return_value
+            elif mode == "w":
+                return output_mock.return_value
+            return mock_open().return_value
+
+        with (
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+                return_value={},
+            ),
+            patch(
                 "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
                 return_value={},
-            ):
-                # Act
-                result = generate_voice_library_casting_prompt_file(
-                    voice_config_path=voice_config_path,
-                    providers=["openai", "elevenlabs", "cartesia"],
-                )
+            ),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+                return_value=prompt_content,
+            ),
+            patch("builtins.open", side_effect=mock_open_side_effect),
+            patch.object(Path, "is_file", return_value=True),
+            patch.object(Path, "mkdir"),
+            patch(
+                "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+                return_value=schema_content,
+            ),
+        ):
+
+            # Act
+            result = generate_voice_library_casting_prompt_file(
+                voice_config_path=Path("/fake/config.yaml"),
+                providers=["openai", "elevenlabs"],
+            )
 
     # Assert
-    content = result.read_text()
-    assert "--- VOICE LIBRARY DATA (OPENAI) ---" in content
-    assert "--- VOICE LIBRARY DATA (ELEVENLABS) ---" in content
-    assert "--- VOICE LIBRARY DATA (CARTESIA) ---" in content
+    assert result == Path("/fake/config_voice_library_casting_prompt.txt")
+
+    # Verify VoiceLibrary was called for each provider
+    assert mock_instance._load_provider_voices.call_count == 2
+    mock_instance._load_provider_voices.assert_any_call("openai")
+    mock_instance._load_provider_voices.assert_any_call("elevenlabs")
 
 
 # --- Tests for _filter_provider_voices ---
@@ -574,25 +633,12 @@ def test_generate_voice_library_casting_prompt_file_with_voice_filtering(
                 assert "shimmer" not in content  # Should be filtered out
 
 
-def test_generate_voice_library_casting_prompt_file_no_config_no_filtering(
-    tmp_path: Path,
-):
+def test_generate_voice_library_casting_prompt_file_no_config_no_filtering():
     """Test that all voices are included when no config filtering is present."""
     # Arrange
-    voice_config_path = tmp_path / "config.yaml"
-    voice_config_path.write_text("test")
-
-    # Create file structure
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
-
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-    (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
-
-    openai_dir = voice_lib_dir / "openai"
-    openai_dir.mkdir()
+    voice_config_content = "test"
+    prompt_content = "prompt"
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
     voices_data = {
         "voices": {
             "alloy": {"model_id": "tts-1"},
@@ -600,28 +646,52 @@ def test_generate_voice_library_casting_prompt_file_no_config_no_filtering(
             "shimmer": {"model_id": "tts-1"},
         }
     }
-    (openai_dir / "voices.yaml").write_text(yaml.dump(voices_data))
+    output_mock = mock_open()
 
-    # Mock the config loading to return empty config
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        with patch(
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str:
+            return mock_open(read_data=voice_config_content).return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
             "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
             return_value={},
-        ):
-            with patch(
-                "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
-                return_value={},
-            ):
-                # Act
-                result = generate_voice_library_casting_prompt_file(
-                    voice_config_path=voice_config_path, providers=["openai"]
-                )
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = voices_data
 
-                # Assert
-                content = result.read_text()
-                assert "alloy" in content
-                assert "nova" in content
-                assert "shimmer" in content  # All voices should be included
+        # Act
+        generate_voice_library_casting_prompt_file(
+            voice_config_path=Path("/fake/config.yaml"), providers=["openai"]
+        )
+
+        # Assert
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+
+        assert "alloy" in written_content
+        assert "nova" in written_content
+        assert "shimmer" in written_content

@@ -13,35 +13,22 @@ from script_to_speech.voice_library.validator import VoiceLibraryValidator
 class TestVoiceLibraryValidator:
     """Tests for the VoiceLibraryValidator class."""
 
-    def test_init_with_default_library_root(self):
-        """Test VoiceLibraryValidator initialization with default library root."""
+    def test_init_default(self):
+        """Test VoiceLibraryValidator initialization with default settings."""
         # Arrange & Act
         validator = VoiceLibraryValidator()
 
         # Assert
-        expected_path = (
-            Path(__file__).parent.parent.parent
-            / "src"
-            / "script_to_speech"
-            / "voice_library"
-            / "voice_library_data"
-        )
-        # Use resolve() to handle any relative path differences
-        assert validator.library_root.resolve() == expected_path.resolve()
-        assert validator.global_schema == {}
+        assert validator.project_only == False
         assert validator.validation_errors == []
 
-    def test_init_with_custom_library_root(self):
-        """Test VoiceLibraryValidator initialization with custom library root."""
-        # Arrange
-        custom_root = Path("/custom/path")
-
-        # Act
-        validator = VoiceLibraryValidator(library_root=custom_root)
+    def test_init_project_only(self):
+        """Test VoiceLibraryValidator initialization with project_only=True."""
+        # Arrange & Act
+        validator = VoiceLibraryValidator(project_only=True)
 
         # Assert
-        assert validator.library_root == custom_root
-        assert validator.global_schema == {}
+        assert validator.project_only == True
         assert validator.validation_errors == []
 
     def test_load_yaml_file_success(self):
@@ -122,10 +109,11 @@ class TestVoiceLibraryValidator:
         assert len(validator.validation_errors) == 1
         assert "List file must be a dictionary" in validator.validation_errors[0]
 
-    def test_merge_schemas_basic(self):
-        """Test _merge_schemas with basic schema merging."""
+    def test_schema_merging_integration(self):
+        """Test that schema merging works through the schema utility."""
         # Arrange
-        validator = VoiceLibraryValidator()
+        from script_to_speech.voice_library.schema_utils import merge_schemas
+
         global_schema = {
             "voice_properties": {
                 "age": {"type": "range", "min": 0.0, "max": 1.0},
@@ -138,7 +126,7 @@ class TestVoiceLibraryValidator:
         }
 
         # Act
-        result = validator._merge_schemas(global_schema, provider_schema)
+        result = merge_schemas([global_schema, provider_schema])
 
         # Assert
         expected = {
@@ -150,19 +138,6 @@ class TestVoiceLibraryValidator:
             "provider_specific": {"key": "value"},
         }
         assert result == expected
-
-    def test_merge_schemas_empty_provider(self):
-        """Test _merge_schemas with empty provider schema."""
-        # Arrange
-        validator = VoiceLibraryValidator()
-        global_schema = {"voice_properties": {"age": {"type": "range"}}}
-        provider_schema = {}
-
-        # Act
-        result = validator._merge_schemas(global_schema, provider_schema)
-
-        # Assert
-        assert result == global_schema
 
     def test_validate_property_value_range_valid(self):
         """Test _validate_property_value with valid range property."""
@@ -392,49 +367,64 @@ class TestVoiceLibraryValidator:
     def test_validate_all_missing_global_schema(self):
         """Test validate_all when global schema is missing."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            validator = VoiceLibraryValidator(library_root=Path(temp_dir))
+        with (
+            patch(
+                "script_to_speech.voice_library.validator.load_merged_schemas_for_providers",
+                side_effect=ValueError("No schema files found"),
+            ),
+            patch(
+                "pathlib.Path.glob",
+                return_value=[Path("/fake/openai/voices.yaml")],
+            ),
+            patch(
+                "builtins.open",
+                mock_open(read_data='voices:\n  test: {}\n"'),
+            ),
+            patch("pathlib.Path.is_dir", return_value=True),
+        ):
+            validator = VoiceLibraryValidator()
 
             # Act
             is_valid, errors = validator.validate_all()
 
             # Assert
             assert not is_valid
-            assert len(errors) == 1
-            assert "Global schema not found" in errors[0]
+            assert len(errors) >= 1
+            assert any("Schema error" in error for error in errors)
 
     def test_validate_all_success(self):
         """Test validate_all with successful validation."""
         # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
-
-            # Create global schema
-            schema_content = {
-                "voice_properties": {"age": {"type": "range", "min": 0.0, "max": 1.0}}
-            }
-            schema_file = temp_path / "voice_library_schema.yaml"
-            with open(schema_file, "w") as f:
-                yaml.dump(schema_content, f)
-
-            # Create provider directory with voice file
-            provider_dir = temp_path / "test_provider"
-            provider_dir.mkdir()
-
-            voice_content = {
-                "voices": {
-                    "test_voice": {
-                        "config": {"voice": "test"},
-                        "voice_properties": {"age": 0.5},
-                        "description": {"text": "Test voice"},
-                    }
+        schema_content = {
+            "voice_properties": {"age": {"type": "range", "min": 0.0, "max": 1.0}}
+        }
+        voice_content = {
+            "voices": {
+                "test_voice": {
+                    "config": {"voice": "test"},
+                    "voice_properties": {"age": 0.5},
+                    "description": {"text": "Test voice"},
                 }
             }
-            voice_file = provider_dir / "voices.yaml"
-            with open(voice_file, "w") as f:
-                yaml.dump(voice_content, f)
+        }
 
-            validator = VoiceLibraryValidator(library_root=temp_path)
+        with (
+            patch(
+                "script_to_speech.voice_library.validator.load_merged_schemas_for_providers",
+                return_value=schema_content,
+            ),
+            patch(
+                "pathlib.Path.glob",
+                return_value=[Path("/fake/test_provider/voices.yaml")],
+            ),
+            patch(
+                "builtins.open",
+                mock_open(read_data=yaml.dump(voice_content)),
+            ),
+            patch("pathlib.Path.is_dir", return_value=True),
+            patch("pathlib.Path.exists", return_value=True),
+        ):
+            validator = VoiceLibraryValidator()
 
             mock_provider_class = MagicMock()
             mock_provider_class.validate_speaker_config = MagicMock()

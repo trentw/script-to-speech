@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Added user-configurable voice library directories, and merge logic, so that project-level voices can be modified / added to
 - Added `voice_library_config` concept on both project and user level, and added first use case: filtering sts_ids that are included in the voice casting prompt
 - Added new documentation for `sts-generate-standalone-speech` and `sts-batch-generate-standalone-speech`, including sample configuration for batch generation
 - Expanded elevenlabs voice library with additional voices

@@ -8,10 +8,7 @@ from typing import Any, Dict, List, Set, Union
 
 import yaml
 
-# Repo-level config, part of the git repo
-REPO_CONFIG_PATH = Path(__file__).parent / "voice_library_config"
-# User-level config, in .gitignore
-USER_CONFIG_PATH = Path.cwd() / "voice_library" / "voice_library_config"
+from .constants import REPO_CONFIG_PATH, USER_CONFIG_PATH
 
 
 def deep_merge_dicts(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:

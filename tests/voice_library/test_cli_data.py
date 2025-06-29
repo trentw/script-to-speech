@@ -109,15 +109,34 @@ class TestMain:
         expected_exit_code = 0
 
         # Act
-        with patch(
-            "script_to_speech.voice_library.cli_data.validate_voice_libraries",
-            return_value=expected_exit_code,
-        ) as mock_validate:
-            with patch("sys.exit") as mock_exit:
-                main()
+        with patch("sys.argv", ["sts-validate-voice-libraries"]):
+            with patch(
+                "script_to_speech.voice_library.cli_data.validate_voice_libraries",
+                return_value=expected_exit_code,
+            ) as mock_validate:
+                with patch("sys.exit") as mock_exit:
+                    main()
 
         # Assert
-        mock_validate.assert_called_once()
+        mock_validate.assert_called_once_with(project_only=False)
+        mock_exit.assert_called_once_with(expected_exit_code)
+
+    def test_main_with_project_only_flag(self):
+        """Test main function with --project-only flag."""
+        # Arrange
+        expected_exit_code = 0
+
+        # Act
+        with patch("sys.argv", ["sts-validate-voice-libraries", "--project-only"]):
+            with patch(
+                "script_to_speech.voice_library.cli_data.validate_voice_libraries",
+                return_value=expected_exit_code,
+            ) as mock_validate:
+                with patch("sys.exit") as mock_exit:
+                    main()
+
+        # Assert
+        mock_validate.assert_called_once_with(project_only=True)
         mock_exit.assert_called_once_with(expected_exit_code)
 
     def test_main_calls_sys_exit_with_error_code(self):
@@ -126,13 +145,32 @@ class TestMain:
         expected_exit_code = 1
 
         # Act
-        with patch(
-            "script_to_speech.voice_library.cli_data.validate_voice_libraries",
-            return_value=expected_exit_code,
-        ) as mock_validate:
-            with patch("sys.exit") as mock_exit:
-                main()
+        with patch("sys.argv", ["sts-validate-voice-libraries"]):
+            with patch(
+                "script_to_speech.voice_library.cli_data.validate_voice_libraries",
+                return_value=expected_exit_code,
+            ) as mock_validate:
+                with patch("sys.exit") as mock_exit:
+                    main()
 
         # Assert
-        mock_validate.assert_called_once()
+        mock_validate.assert_called_once_with(project_only=False)
+        mock_exit.assert_called_once_with(expected_exit_code)
+
+    def test_main_with_project_only_flag(self):
+        """Test main function with --project-only flag."""
+        # Arrange
+        expected_exit_code = 0
+
+        # Act
+        with patch("sys.argv", ["sts-validate-voice-libraries", "--project-only"]):
+            with patch(
+                "script_to_speech.voice_library.cli_data.validate_voice_libraries",
+                return_value=expected_exit_code,
+            ) as mock_validate:
+                with patch("sys.exit") as mock_exit:
+                    main()
+
+        # Assert
+        mock_validate.assert_called_once_with(project_only=True)
         mock_exit.assert_called_once_with(expected_exit_code)

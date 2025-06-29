@@ -32,7 +32,7 @@ repos:
         types: [python]
       - id: validate-voice-library-data
         name: validate-voice-library-data
-        entry: uv run sts-validate-voice-library-data
+        entry: uv run sts-validate-voice-library-data --project-only
         language: system
         pass_filenames: false
         always_run: false
