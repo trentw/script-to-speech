@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from ..utils.dict_utils import deep_merge
 from ..utils.logging import get_screenplay_logger
 from .constants import REPO_VOICE_LIBRARY_PATH, USER_VOICE_LIBRARY_PATH
 
@@ -58,66 +59,12 @@ def merge_schemas(schemas: List[Dict[str, Any]]) -> Dict[str, Any]:
     if not schemas:
         return {}
 
-    merged = {}
-
+    merged_schema: Dict[str, Any] = {}
     for schema in schemas:
-        if not schema:
-            continue
+        if schema:
+            merged_schema = deep_merge(merged_schema, schema)
 
-        # Deep merge each schema
-        for key, value in schema.items():
-            if key not in merged:
-                # New key, add directly
-                merged[key] = (
-                    _deep_copy_dict(value) if isinstance(value, dict) else value
-                )
-            elif isinstance(merged[key], dict) and isinstance(value, dict):
-                # Both are dicts, merge recursively
-                merged[key] = _deep_merge_dicts(merged[key], value)
-            else:
-                # Replace with new value (later schema takes precedence)
-                merged[key] = (
-                    _deep_copy_dict(value) if isinstance(value, dict) else value
-                )
-
-    return merged
-
-
-def _deep_copy_dict(d: Dict[str, Any]) -> Dict[str, Any]:
-    """Create a deep copy of a dictionary."""
-    result: Dict[str, Any] = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            result[key] = _deep_copy_dict(value)
-        elif isinstance(value, list):
-            result[key] = value.copy()
-        else:
-            result[key] = value
-    return result
-
-
-def _deep_merge_dicts(base: Dict[str, Any], overlay: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Deep merge two dictionaries with overlay taking precedence.
-
-    Args:
-        base: Base dictionary
-        overlay: Dictionary to merge on top, takes precedence
-
-    Returns:
-        Merged dictionary
-    """
-    result = _deep_copy_dict(base)
-
-    for key, value in overlay.items():
-        if key not in result:
-            result[key] = _deep_copy_dict(value) if isinstance(value, dict) else value
-        elif isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge_dicts(result[key], value)
-        else:
-            result[key] = _deep_copy_dict(value) if isinstance(value, dict) else value
-
-    return result
+    return merged_schema
 
 
 def load_merged_schemas_for_providers(providers: List[str]) -> Dict[str, Any]:

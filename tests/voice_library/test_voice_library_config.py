@@ -6,10 +6,8 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 import yaml
 
-from script_to_speech.voice_library.voice_library_config import (
-    deep_merge_dicts,
-    load_config,
-)
+from script_to_speech.utils.dict_utils import deep_merge
+from script_to_speech.voice_library.voice_library_config import load_config
 
 
 @pytest.fixture
@@ -71,7 +69,7 @@ def mock_yaml_files(mocker):
     mocker.patch("builtins.open", side_effect=open_side_effect)
 
 
-def test_deep_merge_dicts():
+def test_deep_merge():
     """Tests that dictionaries are merged correctly, especially lists."""
     # Arrange
     d1 = {
@@ -86,7 +84,7 @@ def test_deep_merge_dicts():
     }
 
     # Act
-    merged = deep_merge_dicts(d1, d2)
+    merged = deep_merge(d1, d2)
 
     # Assert
     assert sorted(merged["included_sts_ids"]["openai"]) == ["fable", "shimmer"]

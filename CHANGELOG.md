@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Changed `--tts_config` to be a required parameter for `sts-generate-audio`, and updated variable naming to `tts_provider_config` to be more consistent with rest of code
 
 ### Fixed
+- Fixing some dict merging edge cases with nested lists, and consolidating dict merging functionality in a `dict_utils.py` file
 - Added duplicate checking across voice library .yaml files for a given provider to ensure uniqueness
 - Fixed a couple parser issues where multi-line dialogue_modifiers were being terminated early, and where they were incorrectly being attributed as dialogues
 - Fixed parser issue where dialogue_modifiers weren't properly being terminated in some cases by adding tracking of last non-blank line, and checking for closed parenthesis

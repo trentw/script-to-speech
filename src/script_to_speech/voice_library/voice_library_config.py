@@ -8,28 +8,8 @@ from typing import Any, Dict, List, Set, Union
 
 import yaml
 
+from ..utils.dict_utils import deep_merge
 from .constants import REPO_CONFIG_PATH, USER_CONFIG_PATH
-
-
-def deep_merge_dicts(d1: Dict[str, Any], d2: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Recursively merges two dictionaries.
-
-    - For keys where both values are lists, it merges the lists and removes duplicates.
-    - For keys where both values are dictionaries, it merges them recursively.
-    - Otherwise, the value from the second dictionary (d2) overwrites the first (d1).
-    """
-    merged = d1.copy()
-    for key, value in d2.items():
-        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
-            merged[key] = deep_merge_dicts(merged[key], value)
-        elif (
-            key in merged and isinstance(merged[key], list) and isinstance(value, list)
-        ):
-            merged[key].extend(v for v in value if v not in merged[key])
-        else:
-            merged[key] = value
-    return merged
 
 
 def find_yaml_files(directory: Path) -> List[Path]:
@@ -60,7 +40,7 @@ def load_config() -> Dict[str, Any]:
             with open(file_path, "r") as f:
                 config_data = yaml.safe_load(f)
                 if config_data:  # Ensure file is not empty
-                    merged_config = deep_merge_dicts(merged_config, config_data)
+                    merged_config = deep_merge(merged_config, config_data)
         except yaml.YAMLError as e:
             print(f"Warning: Could not parse YAML file {file_path}. Error: {e}")
             continue
