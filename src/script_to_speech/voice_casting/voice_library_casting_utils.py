@@ -7,7 +7,11 @@ import yaml
 
 from ..voice_library.schema_utils import load_merged_schemas_for_providers
 from ..voice_library.voice_library import VoiceLibrary
-from ..voice_library.voice_library_config import get_conflicting_ids, load_config
+from ..voice_library.voice_library_config import (
+    get_additional_voice_casting_instructions,
+    get_conflicting_ids,
+    load_config,
+)
 from .voice_casting_common import read_prompt_file
 
 DEFAULT_VOICE_LIBRARY_PROMPT_FILENAME = "default_voice_library_casting_prompt.txt"
@@ -169,7 +173,12 @@ def generate_voice_library_casting_prompt_file(
                 f"Error processing voice library data for provider '{provider}': {e}"
             )
 
-    # 5. Assemble Output Content
+    # 5. Extract additional voice casting instructions
+    additional_instructions = get_additional_voice_casting_instructions(
+        voice_lib_config
+    )
+
+    # 6. Assemble Output Content
     output_content_parts = [
         prompt_content,
         "\n\n--- VOICE LIBRARY SCHEMA ---\n\n",
@@ -180,11 +189,21 @@ def generate_voice_library_casting_prompt_file(
 
     for provider in providers:
         provider_header = f"\n\n--- VOICE LIBRARY DATA ({provider.upper()}) ---\n\n"
-        output_content_parts.extend([provider_header, provider_contents[provider]])
+        output_content_parts.append(provider_header)
+
+        # Add additional instructions if they exist for this provider
+        if provider in additional_instructions:
+            instructions_text = f"When casting for this provider ({provider}), please abide by the following instructions. These instructions are only for this provider:\n\n"
+            for instruction in additional_instructions[provider]:
+                instructions_text += f"- {instruction}\n"
+            instructions_text += "\n"
+            output_content_parts.append(instructions_text)
+
+        output_content_parts.append(provider_contents[provider])
 
     final_output_content = "".join(output_content_parts)
 
-    # 6. Write Output File
+    # 7. Write Output File
     output_file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_file_path, "w", encoding="utf-8") as f:
         f.write(final_output_content)

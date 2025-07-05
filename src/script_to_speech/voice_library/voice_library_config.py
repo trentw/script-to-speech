@@ -87,3 +87,31 @@ def get_empty_include_lists(config: Dict[str, Any]) -> Dict[str, List[str]]:
             empty_lists[provider] = ids or []
 
     return empty_lists
+
+
+def get_additional_voice_casting_instructions(
+    config: Dict[str, Any],
+) -> Dict[str, List[str]]:
+    """
+    Extracts additional voice casting instructions for each provider from the config.
+
+    Args:
+        config: The merged voice library configuration
+
+    Returns:
+        Dictionary mapping provider names to lists of additional casting instructions
+    """
+    instructions = config.get("additional_voice_casting_instructions", {})
+
+    if not isinstance(instructions, dict):
+        return {}
+
+    result: Dict[str, List[str]] = {}
+    for provider, provider_instructions in instructions.items():
+        if isinstance(provider_instructions, list):
+            result[provider] = provider_instructions
+        elif provider_instructions is not None:
+            # Handle single string converted to list
+            result[provider] = [str(provider_instructions)]
+
+    return result

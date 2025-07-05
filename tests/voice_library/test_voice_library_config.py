@@ -7,7 +7,10 @@ import pytest
 import yaml
 
 from script_to_speech.utils.dict_utils import deep_merge
-from script_to_speech.voice_library.voice_library_config import load_config
+from script_to_speech.voice_library.voice_library_config import (
+    get_additional_voice_casting_instructions,
+    load_config,
+)
 
 
 @pytest.fixture
@@ -130,3 +133,136 @@ def test_load_config_calls_expected_functions(mocker):
     )  # Called for both REPO_CONFIG_PATH and USER_CONFIG_PATH
     assert isinstance(config, dict)
     assert config == {}  # Should be empty when no files are found
+
+
+def test_get_additional_voice_casting_instructions_basic():
+    """Test extracting additional voice casting instructions from config."""
+    # Arrange
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                "Use dramatic voices for action scenes",
+                "Prefer younger sounding voices",
+            ],
+            "elevenlabs": ["Use British accents when available"],
+        }
+    }
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert "openai" in instructions
+    assert "elevenlabs" in instructions
+    assert instructions["openai"] == [
+        "Use dramatic voices for action scenes",
+        "Prefer younger sounding voices",
+    ]
+    assert instructions["elevenlabs"] == ["Use British accents when available"]
+
+
+def test_get_additional_voice_casting_instructions_empty_config():
+    """Test with empty config returns empty dict."""
+    # Arrange
+    config = {}
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert instructions == {}
+
+
+def test_get_additional_voice_casting_instructions_missing_field():
+    """Test with config missing the additional_voice_casting_instructions field."""
+    # Arrange
+    config = {
+        "included_sts_ids": {"openai": ["alloy"]},
+        "excluded_sts_ids": {"elevenlabs": ["dave"]},
+    }
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert instructions == {}
+
+
+def test_get_additional_voice_casting_instructions_invalid_type():
+    """Test with invalid type for additional_voice_casting_instructions field."""
+    # Arrange
+    config = {"additional_voice_casting_instructions": "not a dict"}
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert instructions == {}
+
+
+def test_get_additional_voice_casting_instructions_single_string():
+    """Test with single string instruction gets converted to list."""
+    # Arrange
+    config = {
+        "additional_voice_casting_instructions": {"openai": "Use dramatic voices"}
+    }
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert instructions["openai"] == ["Use dramatic voices"]
+
+
+def test_get_additional_voice_casting_instructions_mixed_types():
+    """Test with mixed types of instructions."""
+    # Arrange
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": ["Use dramatic voices", "Prefer younger voices"],
+            "elevenlabs": "Use British accents",
+            "cartesia": None,
+            "invalid": 123,
+        }
+    }
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert instructions["openai"] == ["Use dramatic voices", "Prefer younger voices"]
+    assert instructions["elevenlabs"] == ["Use British accents"]
+    assert "cartesia" not in instructions
+    assert instructions["invalid"] == ["123"]
+
+
+def test_deep_merge_with_additional_instructions():
+    """Test that deep_merge correctly merges additional voice casting instructions."""
+    # Arrange
+    d1 = {
+        "additional_voice_casting_instructions": {
+            "openai": ["Use dramatic voices"],
+            "elevenlabs": ["Use British accents"],
+        }
+    }
+    d2 = {
+        "additional_voice_casting_instructions": {
+            "openai": ["Prefer younger voices"],
+            "cartesia": ["Use clear pronunciation"],
+        }
+    }
+
+    # Act
+    merged = deep_merge(d1, d2)
+
+    # Assert
+    assert "additional_voice_casting_instructions" in merged
+    openai_instructions = merged["additional_voice_casting_instructions"]["openai"]
+    assert "Use dramatic voices" in openai_instructions
+    assert "Prefer younger voices" in openai_instructions
+    assert merged["additional_voice_casting_instructions"]["elevenlabs"] == [
+        "Use British accents"
+    ]
+    assert merged["additional_voice_casting_instructions"]["cartesia"] == [
+        "Use clear pronunciation"
+    ]
