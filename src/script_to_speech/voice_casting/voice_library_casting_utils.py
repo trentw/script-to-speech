@@ -181,18 +181,34 @@ def generate_voice_library_casting_prompt_file(
     # 6. Assemble Output Content
     output_content_parts = [
         prompt_content,
-        "\n\n--- VOICE LIBRARY SCHEMA ---\n\n",
-        schema_content,
-        "\n\n--- VOICE CONFIGURATION ---\n\n",
-        voice_config_content,
     ]
+
+    # Add overall voice casting instructions if they exist
+    if "overall_voice_casting_prompt" in additional_instructions:
+        overall_instructions_text = "\n\nAdditionally, please abide by the following instructions when casting voices:\n\n"
+        for instruction in additional_instructions["overall_voice_casting_prompt"]:
+            overall_instructions_text += f"- {instruction}\n"
+        output_content_parts.append(overall_instructions_text)
+
+    output_content_parts.extend(
+        [
+            "\n\n--- VOICE LIBRARY SCHEMA ---\n\n",
+            schema_content,
+            "\n\n--- VOICE CONFIGURATION ---\n\n",
+            voice_config_content,
+        ]
+    )
 
     for provider in providers:
         provider_header = f"\n\n--- VOICE LIBRARY DATA ({provider.upper()}) ---\n\n"
         output_content_parts.append(provider_header)
 
         # Add additional instructions if they exist for this provider
-        if provider in additional_instructions:
+        # Skip the special "overall_voice_casting_prompt" key which is handled separately
+        if (
+            provider in additional_instructions
+            and provider != "overall_voice_casting_prompt"
+        ):
             instructions_text = f"When casting for this provider ({provider}), please abide by the following instructions. These instructions are only for this provider:\n\n"
             for instruction in additional_instructions[provider]:
                 instructions_text += f"- {instruction}\n"

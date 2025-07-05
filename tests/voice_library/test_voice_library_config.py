@@ -266,3 +266,66 @@ def test_deep_merge_with_additional_instructions():
     assert merged["additional_voice_casting_instructions"]["cartesia"] == [
         "Use clear pronunciation"
     ]
+
+
+def test_get_additional_voice_casting_instructions_with_overall_prompt():
+    """Test extracting additional voice casting instructions with overall_voice_casting_prompt key."""
+    # Arrange
+    config = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": [
+                "Focus on character emotional state",
+                "Maintain consistency across scenes",
+            ],
+            "openai": ["Use dramatic voices for action scenes"],
+            "elevenlabs": ["Use British accents when available"],
+        }
+    }
+
+    # Act
+    instructions = get_additional_voice_casting_instructions(config)
+
+    # Assert
+    assert "overall_voice_casting_prompt" in instructions
+    assert "openai" in instructions
+    assert "elevenlabs" in instructions
+    assert instructions["overall_voice_casting_prompt"] == [
+        "Focus on character emotional state",
+        "Maintain consistency across scenes",
+    ]
+    assert instructions["openai"] == ["Use dramatic voices for action scenes"]
+    assert instructions["elevenlabs"] == ["Use British accents when available"]
+
+
+def test_deep_merge_with_overall_voice_casting_prompt():
+    """Test that deep_merge correctly merges overall_voice_casting_prompt instructions."""
+    # Arrange
+    d1 = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": ["Focus on character emotional state"],
+            "openai": ["Use dramatic voices"],
+        }
+    }
+    d2 = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": ["Maintain consistency across scenes"],
+            "elevenlabs": ["Use British accents"],
+        }
+    }
+
+    # Act
+    merged = deep_merge(d1, d2)
+
+    # Assert
+    assert "additional_voice_casting_instructions" in merged
+    overall_instructions = merged["additional_voice_casting_instructions"][
+        "overall_voice_casting_prompt"
+    ]
+    assert "Focus on character emotional state" in overall_instructions
+    assert "Maintain consistency across scenes" in overall_instructions
+    assert merged["additional_voice_casting_instructions"]["openai"] == [
+        "Use dramatic voices"
+    ]
+    assert merged["additional_voice_casting_instructions"]["elevenlabs"] == [
+        "Use British accents"
+    ]

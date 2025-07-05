@@ -920,3 +920,276 @@ def test_generate_voice_library_casting_prompt_file_partial_additional_instructi
         assert "When casting for this provider (openai)" in written_content
         assert "Use dramatic voices for action scenes" in written_content
         assert "When casting for this provider (elevenlabs)" not in written_content
+
+
+def test_generate_voice_library_casting_prompt_file_with_overall_voice_casting_prompt():
+    """Test that overall_voice_casting_prompt is included in the initial prompt section."""
+    # Arrange
+    voice_config_content = "test"
+    prompt_content = "This is the initial prompt."
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
+    voices_data = {
+        "voices": {
+            "alloy": {"model_id": "tts-1"},
+        }
+    }
+
+    # Config with only overall instructions
+    config_with_overall = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": [
+                "Focus on character emotional state",
+                "Maintain consistency across scenes",
+            ]
+        }
+    }
+
+    output_mock = mock_open()
+
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str:
+            return mock_open(read_data=voice_config_content).return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+            return_value=config_with_overall,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = voices_data
+
+        # Act
+        generate_voice_library_casting_prompt_file(
+            voice_config_path=Path("/fake/config.yaml"), providers=["openai"]
+        )
+
+        # Assert
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+
+        # Check that overall instructions appear in the initial section
+        assert (
+            "Additionally, please abide by the following instructions when casting voices:"
+            in written_content
+        )
+        assert "Focus on character emotional state" in written_content
+        assert "Maintain consistency across scenes" in written_content
+
+        # Check that it appears before the voice library schema section
+        overall_pos = written_content.find(
+            "Additionally, please abide by the following instructions when casting voices:"
+        )
+        schema_pos = written_content.find("--- VOICE LIBRARY SCHEMA ---")
+        assert overall_pos < schema_pos
+
+        # Check that no provider-specific instructions appear
+        assert "When casting for this provider" not in written_content
+
+
+def test_generate_voice_library_casting_prompt_file_with_overall_and_provider_instructions():
+    """Test combination of overall and provider-specific instructions."""
+    # Arrange
+    voice_config_content = "test"
+    prompt_content = "This is the initial prompt."
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
+    voices_data = {
+        "voices": {
+            "alloy": {"model_id": "tts-1"},
+        }
+    }
+
+    # Config with both overall and provider-specific instructions
+    config_with_both = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": ["Focus on character emotional state"],
+            "openai": ["Use dramatic voices for action scenes"],
+            "elevenlabs": ["Use British accents when available"],
+        }
+    }
+
+    output_mock = mock_open()
+
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str:
+            return mock_open(read_data=voice_config_content).return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+            return_value=config_with_both,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.side_effect = [
+            voices_data,  # openai
+            voices_data,  # elevenlabs
+        ]
+
+        # Act
+        generate_voice_library_casting_prompt_file(
+            voice_config_path=Path("/fake/config.yaml"),
+            providers=["openai", "elevenlabs"],
+        )
+
+        # Assert
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+
+        # Check that overall instructions appear in the initial section
+        assert (
+            "Additionally, please abide by the following instructions when casting voices:"
+            in written_content
+        )
+        assert "Focus on character emotional state" in written_content
+
+        # Check that provider-specific instructions appear for openai but not overall_voice_casting_prompt
+        assert "When casting for this provider (openai)" in written_content
+        assert "Use dramatic voices for action scenes" in written_content
+
+        # Check that elevenlabs instructions appear
+        assert "When casting for this provider (elevenlabs)" in written_content
+        assert "Use British accents when available" in written_content
+
+        # Check positioning: overall comes before schema, provider instructions come after their headers
+        overall_pos = written_content.find(
+            "Additionally, please abide by the following instructions when casting voices:"
+        )
+        schema_pos = written_content.find("--- VOICE LIBRARY SCHEMA ---")
+        openai_provider_pos = written_content.find(
+            "When casting for this provider (openai)"
+        )
+        openai_header_pos = written_content.find("--- VOICE LIBRARY DATA (OPENAI) ---")
+
+        assert overall_pos < schema_pos
+        assert openai_header_pos < openai_provider_pos
+
+
+def test_generate_voice_library_casting_prompt_file_overall_voice_casting_prompt_not_in_provider_sections():
+    """Test that overall_voice_casting_prompt is not treated as a provider."""
+    # Arrange
+    voice_config_content = "test"
+    prompt_content = "This is the initial prompt."
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
+    voices_data = {
+        "voices": {
+            "alloy": {"model_id": "tts-1"},
+        }
+    }
+
+    # Config with overall_voice_casting_prompt that should not be treated as a provider
+    config_with_overall = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": ["Focus on character emotional state"]
+        }
+    }
+
+    output_mock = mock_open()
+
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str:
+            return mock_open(read_data=voice_config_content).return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+            return_value=config_with_overall,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = voices_data
+
+        # Act
+        # Pass "overall_voice_casting_prompt" as a provider to ensure it doesn't get processed as one
+        generate_voice_library_casting_prompt_file(
+            voice_config_path=Path("/fake/config.yaml"),
+            providers=["openai", "overall_voice_casting_prompt"],
+        )
+
+        # Assert
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+
+        # Check that overall instructions appear in the initial section
+        assert (
+            "Additionally, please abide by the following instructions when casting voices:"
+            in written_content
+        )
+        assert "Focus on character emotional state" in written_content
+
+        # Check that there's no provider section for "overall_voice_casting_prompt"
+        assert (
+            "--- VOICE LIBRARY DATA (OVERALL_VOICE_CASTING_PROMPT) ---"
+            in written_content
+        )
+        # But there should be no provider-specific instructions for it
+        assert (
+            "When casting for this provider (overall_voice_casting_prompt)"
+            not in written_content
+        )
