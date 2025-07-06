@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Adding `sts-voice-library-run-script` and corresponding `sts-validate-voice-library-scripts` scripts to load system / user defined voice library scripts + tests and documentation, as well initial `fetch_provider_voices` script
 - Added `overall_voice_casting_prompt` case to `additional_voice_casting_instructions` to add to overall casting prompt
 - Added `additional_voice_casting_instructions` field to voice_library_config to specific additional casting instructions for each provider
 - Added user-configurable voice library directories, and merge logic, so that project-level voices can be modified / added to

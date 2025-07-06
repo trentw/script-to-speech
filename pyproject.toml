@@ -57,6 +57,8 @@ sts-generate-voice-library-casting-prompt = "script_to_speech.voice_casting.voic
 sts-copy-to-clipboard = "script_to_speech.utils.clipboard_cli:main"
 sts-validate-voice-library-data = "script_to_speech.voice_library.cli_data:main"
 sts-validate-voice-library-config = "script_to_speech.voice_library.cli_config:main"
+sts-voice-library-run-script = "script_to_speech.voice_library.cli_run_script:main"
+sts-validate-voice-library-scripts = "script_to_speech.voice_library.cli_validate_scripts:main"
 
 
 [tool.hatch.build.targets.wheel]
