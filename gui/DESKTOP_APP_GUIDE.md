@@ -1,6 +1,6 @@
 # 🖥️ **Script to Speech Desktop Application Guide**
 
-*Last Updated: July 7, 2025*
+*Last Updated: July 8, 2025*
 
 ## 📋 **Project Overview**
 
@@ -23,6 +23,12 @@ We have successfully built a complete desktop application for the Script to Spee
 - Embedded React frontend in native window
 - Tauri 2.0 framework with Rust backend
 - Professional app with proper icons and window management
+
+### **Phase 3: Self-Contained Architecture (✅ Complete)**
+- **Unified Python Package**: Single `script_to_speech` package with optional `[gui]` dependencies
+- **Standalone Backend**: 24.9MB PyInstaller executable with all dependencies bundled
+- **No External Dependencies**: End users don't need Python, uv, or any technical setup
+- **Automatic Backend Startup**: Desktop app automatically starts FastAPI server in production
 
 ## 🚀 **Step-by-Step Testing Instructions**
 
@@ -54,8 +60,11 @@ Before testing, ensure you have:
 
 1. **Open Terminal 1 for Backend**
    ```bash
-   cd gui/backend
-   uv run python -m sts_gui_backend.main
+   # From project root (recommended)
+   make gui-server
+   
+   # Alternative: 
+   # uv run sts-gui-server
    ```
 
 2. **Verify Backend is Running**
@@ -63,18 +72,31 @@ Before testing, ensure you have:
    - Test health check: http://127.0.0.1:8000/health
    - View API docs: http://127.0.0.1:8000/docs
 
-### **Step 3: Launch Desktop Application**
+### **Step 3A: Launch Web Interface (Recommended for Development)**
+
+1. **Open Terminal 2 for Web Frontend**
+   ```bash
+   # From project root (recommended)
+   make gui-dev
+   
+   # Alternative:
+   # cd gui/frontend && npm run dev
+   ```
+
+2. **Open in Browser**
+   - Vite will start on `http://localhost:5173`
+   - Open this URL in your browser
+   - **Benefits**: Full browser DevTools, React Developer Tools, better debugging
+
+### **Step 3B: Launch Desktop Application (Alternative)**
 
 1. **Open Terminal 2 for Desktop App**
    ```bash
-   # Source Rust environment
-   source "$HOME/.cargo/env"
+   # From project root (recommended)
+   make gui-desktop
    
-   # Navigate to frontend directory
-   cd gui/frontend
-   
-   # Launch Tauri desktop application
-   npx tauri dev
+   # Alternative:
+   # cd gui/frontend && . "$HOME/.cargo/env" && npx tauri dev
    ```
 
 2. **Wait for Compilation** (First time only)
@@ -89,6 +111,12 @@ Before testing, ensure you have:
    - Contains your React TTS Playground interface
 
 ### **Step 4: Test TTS Playground Functionality**
+
+**💡 Pro Tip**: If using the web interface (Step 3A), open browser DevTools (F12) to:
+- Monitor API calls in Network tab
+- Check console for any errors
+- Use React DevTools extension for component debugging
+- Test responsive design with device simulation
 
 #### **4.1 Test Provider Discovery**
 1. **Check Provider Dropdown**
@@ -199,9 +227,9 @@ npx tauri dev
 # Check if backend is running
 curl http://127.0.0.1:8000/health
 
-# Restart backend
-cd gui/backend
-uv run python -m sts_gui_backend.main
+# Restart backend (from project root)
+make gui-server
+# Alternative: uv run sts-gui-server
 ```
 
 #### **No Providers Available**
@@ -230,11 +258,13 @@ npm install
 
 ```
 script-to-speech/
+├── src/
+│   └── script_to_speech/           # Unified package structure
+│       ├── gui_backend/            # FastAPI Backend (integrated)
+│       ├── tts_providers/          # TTS provider implementations
+│       ├── voice_library/          # Voice library system
+│       └── ...                     # Other core modules
 ├── gui/
-│   ├── backend/                    # FastAPI Backend
-│   │   ├── sts_gui_backend/
-│   │   ├── pyproject.toml
-│   │   └── test_server.py
 │   ├── frontend/                   # React Frontend + Tauri
 │   │   ├── src/                    # React components
 │   │   ├── src-tauri/              # Tauri Rust backend
@@ -243,10 +273,12 @@ script-to-speech/
 │   │   │   └── tauri.conf.json
 │   │   ├── package.json
 │   │   └── vite.config.ts
-│   ├── WEB_DEVELOPMENT_STATUS.md   # Web app progress
 │   ├── DESKTOP_APP_GUIDE.md        # This file
 │   └── start_test.sh               # Quick web app launcher
-└── src/                            # Core Script to Speech library
+├── build_backend.py                # PyInstaller build script
+├── dist/                           # Built executables
+│   └── sts-gui-backend             # Standalone backend (24.9MB)
+└── pyproject.toml                  # Unified project configuration
 ```
 
 ## 🎯 **Testing Checklist**
@@ -296,19 +328,27 @@ rm -rf dist/ src-tauri/target/
 npm install
 ```
 
-#### **Step 2: Build Production App**
+#### **Step 2: Build Self-Contained Production App**
 ```bash
-# Ensure Rust environment is available
-source "$HOME/.cargo/env"
+# From project root (recommended)
+make gui-build
 
-# Create production build
-npx tauri build
+# Alternative:
+# cd gui/frontend && . "$HOME/.cargo/env" && npx tauri build
 ```
 
-This will create:
-- **macOS**: `.app` bundle and `.dmg` installer
+**What this does:**
+1. **Builds React frontend** with `npm run build`
+2. **Creates standalone backend** with `uv run python build_backend.py` (24.9MB executable)
+3. **Bundles everything** into self-contained desktop app
+4. **No external dependencies** required for end users
+
+This will create **self-contained** applications with embedded backend:
+- **macOS**: `.app` bundle (~25MB) and `.dmg` installer
 - **Windows**: `.exe` and `.msi` installer (if on Windows)
 - **Linux**: `.AppImage` and `.deb` packages (if on Linux)
+
+**Key Feature**: Backend executable is bundled inside the app - no Python/uv installation required!
 
 #### **Step 3: Locate Build Artifacts**
 ```bash
@@ -523,18 +563,54 @@ The desktop application successfully provides:
 ## 📞 **Quick Start Commands**
 
 ### **Development Mode**
+
+#### **Web Interface (Recommended for Development)**
 **Terminal 1 (Backend):**
 ```bash
-cd gui/backend && uv run python -m sts_gui_backend.main
+# From project root
+make gui-server
+```
+
+**Terminal 2 (Web Frontend):**
+```bash
+# From project root  
+make gui-dev
+# Then open http://localhost:5173 in browser
+```
+
+**Why Web Development is Recommended:**
+- 🔍 **Better Debugging**: Full browser DevTools, console, network inspection
+- ⚛️ **React DevTools**: Component inspection, props, state debugging  
+- 🔄 **Fast Refresh**: Instant updates without Rust compilation
+- 📱 **Responsive Testing**: Easy device simulation and responsive design testing
+- 🌐 **CORS Testing**: Validate API calls and cross-origin requests
+
+#### **Desktop App (For Testing Native Features)**
+**Terminal 1 (Backend):**
+```bash
+# From project root
+make gui-server
 ```
 
 **Terminal 2 (Desktop App):**
 ```bash
-source "$HOME/.cargo/env" && cd gui/frontend && npx tauri dev
+# From project root
+make gui-desktop
 ```
 
-**One-Line Test (Web Version):**
+#### **Alternative Commands (Legacy)**
+If you prefer working directly in subdirectories:
 ```bash
+# Backend
+uv run sts-gui-server
+
+# Web frontend
+cd gui/frontend && npm run dev
+
+# Desktop app  
+cd gui/frontend && . "$HOME/.cargo/env" && npx tauri dev
+
+# Web version quick test
 ./gui/start_test.sh
 ```
 
@@ -562,14 +638,21 @@ ps aux | grep "sts_gui_backend" | grep -v grep
 
 ### **Production Build Commands**
 ```bash
-# Clean build for distribution
+# From project root (recommended)
+make gui-build
+
+# Alternative: Clean build for distribution
 cd gui/frontend
 rm -rf dist/ src-tauri/target/
-source "$HOME/.cargo/env"
+. "$HOME/.cargo/env"
 npx tauri build
 
-# Test production build
-open "src-tauri/target/release/bundle/macos/Script to Speech.app"
+# Test production build (self-contained, no backend needed)
+open "gui/frontend/src-tauri/target/release/bundle/macos/Script to Speech.app"
+
+# Manual backend build (if needed)
+make gui-build-backend
+# Creates: dist/sts-gui-backend (24.9MB standalone executable)
 ```
 
 ---

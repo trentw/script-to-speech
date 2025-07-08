@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
-use std::path::PathBuf;
 use tauri::{AppHandle, Manager, State};
+use std::fs;
 
 // Global state to track the backend process
 struct BackendProcess(Mutex<Option<std::process::Child>>);
@@ -30,55 +30,69 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
         }
     }
     
-    // Determine the correct working directory
-    let working_dir = if cfg!(debug_assertions) {
-        // In development: relative to frontend directory
-        std::path::PathBuf::from("../../../")
+    // Get the path to the bundled backend executable
+    let backend_executable = if cfg!(debug_assertions) {
+        // In development: use the development script
+        println!("Development mode: using uv run sts-gui-server");
+        
+        // Find the script-to-speech root directory
+        let working_dir = std::path::PathBuf::from("../../../");
+        println!("Using working directory: {:?}", working_dir);
+        
+        // Start the FastAPI backend using uv
+        let child = Command::new("uv")
+            .args(&["run", "sts-gui-server"])
+            .current_dir(&working_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| format!("Failed to start backend from {:?}: {}", working_dir, e))?;
+        
+        println!("Backend server started with PID: {}", child.id());
+        *process_guard = Some(child);
+        
+        return Ok("Backend started successfully (development)".to_string());
     } else {
-        // In production: resolve from app bundle to script-to-speech root
-        let app_dir = app_handle
+        // In production: use the bundled executable
+        let resource_dir = app_handle
             .path()
-            .app_data_dir()
-            .map_err(|e| format!("Failed to get app directory: {}", e))?;
+            .resource_dir()
+            .map_err(|e| format!("Failed to get resource directory: {}", e))?;
         
-        // For production, we need to find the script-to-speech root
-        // The app bundle is typically in: script-to-speech/gui/frontend/src-tauri/target/release/bundle/macos/
-        // So we need to go up several levels to reach script-to-speech root
-        let mut current = app_dir.clone();
+        let backend_path = resource_dir.join("sts-gui-backend");
         
-        // Try to find the script-to-speech directory by looking for pyproject.toml
-        for _ in 0..10 {  // Prevent infinite loop
-            current = match current.parent() {
-                Some(parent) => parent.to_path_buf(),
-                None => break,
-            };
-            
-            if current.join("pyproject.toml").exists() && 
-               current.join("src").exists() && 
-               current.join("gui").exists() {
-                println!("Found script-to-speech root at: {:?}", current);
-                break;
-            }
+        // Make sure the executable exists
+        if !backend_path.exists() {
+            return Err(format!("Backend executable not found at: {:?}", backend_path));
         }
         
-        current
+        // Make sure it's executable on Unix systems
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = fs::metadata(&backend_path)
+                .map_err(|e| format!("Failed to get permissions: {}", e))?
+                .permissions();
+            perms.set_mode(0o755);
+            fs::set_permissions(&backend_path, perms)
+                .map_err(|e| format!("Failed to set permissions: {}", e))?;
+        }
+        
+        println!("Using bundled backend executable: {:?}", backend_path);
+        backend_path
     };
     
-    println!("Using working directory: {:?}", working_dir);
-    
-    // Start the FastAPI backend using uv
-    let child = Command::new("uv")
-        .args(&["run", "python", "-m", "sts_gui_backend.main"])
-        .current_dir(&working_dir)
+    // Start the bundled backend executable
+    let child = Command::new(&backend_executable)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|e| format!("Failed to start backend from {:?}: {}", working_dir, e))?;
+        .map_err(|e| format!("Failed to start backend executable {:?}: {}", backend_executable, e))?;
     
     println!("Backend server started with PID: {}", child.id());
     *process_guard = Some(child);
     
-    Ok("Backend started successfully".to_string())
+    Ok("Backend started successfully (production)".to_string())
 }
 
 #[tauri::command]
