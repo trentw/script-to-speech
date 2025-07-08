@@ -9,12 +9,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-# Add the script-to-speech source to the Python path
-STS_SRC_PATH = Path(__file__).parent.parent.parent.parent / "src"
-sys.path.insert(0, str(STS_SRC_PATH))
-
-from .routers import providers, voice_library, generation, files
-from .config import settings
+from script_to_speech.gui_backend.routers import providers, voice_library, generation, files
+from script_to_speech.gui_backend.config import settings
 
 # Create FastAPI app
 app = FastAPI(
@@ -60,7 +56,7 @@ async def health() -> dict[str, str]:
 def main() -> None:
     """Run the FastAPI server."""
     uvicorn.run(
-        "sts_gui_backend.main:app",
+        "script_to_speech.gui_backend.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,

@@ -6,11 +6,11 @@ import os
 from pathlib import Path
 
 # Add the script-to-speech source to the Python path
-STS_SRC_PATH = Path(__file__).parent.parent.parent / "src"
+STS_SRC_PATH = Path(__file__).parent.parent.parent.parent / "src"
 sys.path.insert(0, str(STS_SRC_PATH))
 
-from sts_gui_backend.services.provider_service import provider_service
-from sts_gui_backend.services.voice_library_service import voice_library_service
+from script_to_speech.gui_backend.services.provider_service import provider_service
+from script_to_speech.gui_backend.services.voice_library_service import voice_library_service
 
 
 def test_provider_service():

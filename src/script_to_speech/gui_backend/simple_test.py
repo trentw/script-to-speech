@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Simple test script for the GUI backend without heavy dependencies."""
 
-from sts_gui_backend.models import ProviderField, FieldType, ProviderInfo
+from script_to_speech.gui_backend.models import ProviderField, FieldType, ProviderInfo
 
 
 def test_models():
@@ -33,7 +33,7 @@ def test_models():
 
 def test_config():
     """Test the configuration."""
-    from sts_gui_backend.config import settings
+    from script_to_speech.gui_backend.config import settings
     
     print(f"Host: {settings.HOST}")
     print(f"Port: {settings.PORT}")
