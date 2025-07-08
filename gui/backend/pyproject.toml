@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sts-gui-backend"
+version = "0.1.0"
+description = "FastAPI backend for Script-to-Speech GUI"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.1",
+    "python-dotenv>=1.0.0",
+    "audioop-lts>=0.2.1 ; python_full_version >= '3.13'",
+    "openai>=1.76.0",
+    "elevenlabs>=1.57.0",
+    "cartesia>=2.0.3",
+    "zyphra>=0.1.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.6.0",
+]
+
+[project.scripts]
+sts-gui-server = "sts_gui_backend.main:main"
+
+[tool.black]
+line-length = 88
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

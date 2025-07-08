@@ -1,0 +1,145 @@
+import type {
+  ProviderInfo,
+  VoiceEntry,
+  VoiceDetails,
+  GenerationRequest,
+  TaskResponse,
+  TaskStatusResponse,
+  ValidationResult,
+  ApiResponse
+} from '../types';
+
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+class ApiService {
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<ApiResponse<T>> {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+        ...options,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        return { error: errorData.detail || errorData.error || `HTTP ${response.status}` };
+      }
+
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Network error' };
+    }
+  }
+
+  // Provider endpoints
+  async getProviders(): Promise<ApiResponse<string[]>> {
+    return this.request<string[]>('/providers');
+  }
+
+  async getProvidersInfo(): Promise<ApiResponse<ProviderInfo[]>> {
+    return this.request<ProviderInfo[]>('/providers/info');
+  }
+
+  async getProviderInfo(provider: string): Promise<ApiResponse<ProviderInfo>> {
+    return this.request<ProviderInfo>(`/providers/${provider}`);
+  }
+
+  async validateProviderConfig(
+    provider: string,
+    config: Record<string, any>
+  ): Promise<ApiResponse<ValidationResult>> {
+    return this.request<ValidationResult>(`/providers/${provider}/validate`, {
+      method: 'POST',
+      body: JSON.stringify(config),
+    });
+  }
+
+  // Voice library endpoints
+  async getVoiceLibraryProviders(): Promise<ApiResponse<string[]>> {
+    return this.request<string[]>('/voice-library/providers');
+  }
+
+  async getProviderVoices(provider: string): Promise<ApiResponse<VoiceEntry[]>> {
+    return this.request<VoiceEntry[]>(`/voice-library/${provider}`);
+  }
+
+  async getVoiceDetails(provider: string, stsId: string): Promise<ApiResponse<VoiceDetails>> {
+    return this.request<VoiceDetails>(`/voice-library/${provider}/${stsId}`);
+  }
+
+  async searchVoices(params: {
+    query?: string;
+    provider?: string;
+    gender?: string;
+    tags?: string[];
+  }): Promise<ApiResponse<VoiceEntry[]>> {
+    const searchParams = new URLSearchParams();
+    if (params.query) searchParams.append('query', params.query);
+    if (params.provider) searchParams.append('provider', params.provider);
+    if (params.gender) searchParams.append('gender', params.gender);
+    if (params.tags) {
+      params.tags.forEach(tag => searchParams.append('tags', tag));
+    }
+
+    return this.request<VoiceEntry[]>(`/voice-library/search?${searchParams}`);
+  }
+
+  async getVoiceLibraryStats(): Promise<ApiResponse<any>> {
+    return this.request<any>('/voice-library/stats');
+  }
+
+  async expandStsId(provider: string, stsId: string): Promise<ApiResponse<Record<string, any>>> {
+    return this.request<Record<string, any>>(`/voice-library/${provider}/${stsId}/expand`, {
+      method: 'POST',
+    });
+  }
+
+  // Generation endpoints
+  async createGenerationTask(request: GenerationRequest): Promise<ApiResponse<TaskResponse>> {
+    return this.request<TaskResponse>('/generate', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  async getTaskStatus(taskId: string): Promise<ApiResponse<TaskStatusResponse>> {
+    return this.request<TaskStatusResponse>(`/generate/status/${taskId}`);
+  }
+
+  async getAllTasks(): Promise<ApiResponse<TaskStatusResponse[]>> {
+    return this.request<TaskStatusResponse[]>('/generate/tasks');
+  }
+
+  async cleanupOldTasks(maxAgeHours: number = 24): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/generate/cleanup?max_age_hours=${maxAgeHours}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // File endpoints
+  getAudioFile(filename: string): string {
+    return `${API_BASE_URL}/files/${filename}`;
+  }
+
+  async listAudioFiles(): Promise<ApiResponse<{ files: any[] }>> {
+    return this.request<{ files: any[] }>('/files');
+  }
+
+  // Utility methods
+  async healthCheck(): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+export const apiService = new ApiService();
