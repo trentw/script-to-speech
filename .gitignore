@@ -170,6 +170,7 @@ GEMINI.md
 codemcp.toml
 .cursorrules
 .claude
+.mcp.json
 
 # Project directories
 output/
