@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { ResultsPanel } from './components/ResultsPanel';
@@ -7,16 +7,23 @@ import { useProviders } from './hooks/queries/useProviders';
 import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
 import { useAllTasks } from './hooks/queries/useTaskStatus';
 import { useCreateTask } from './hooks/mutations/useTasks';
+import { useConfiguration, useUserInput, useUIState } from './stores/appStore';
 import type { VoiceEntry, GenerationRequest } from './types';
 
 function App() {
-  const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
-  const [selectedVoice, setSelectedVoice] = useState<VoiceEntry | undefined>();
-  const [currentConfig, setCurrentConfig] = useState<Record<string, any>>({});
-  const [text, setText] = useState<string>('');
-  const [error, setError] = useState<string | undefined>();
+  // Use Zustand store hooks for client state
+  const { 
+    selectedProvider, 
+    selectedVoice, 
+    currentConfig, 
+    setSelectedProvider, 
+    setSelectedVoice, 
+    setCurrentConfig 
+  } = useConfiguration();
+  const { text } = useUserInput();
+  const { setError, clearError } = useUIState();
 
-  // Use TanStack Query hooks
+  // Use TanStack Query hooks for server state
   const { data: backendStatus } = useBackendStatus();
   const { data: providers, isPending: providersLoading, error: providersError } = useProviders();
   const { data: voiceLibraryData } = useVoiceLibrary(selectedProvider || '');
@@ -32,7 +39,7 @@ function App() {
     if (providersError) {
       setError(providersError.message);
     }
-  }, [providersError]);
+  }, [providersError, setError]);
 
   const handleProviderChange = (provider: string) => {
     setSelectedProvider(provider);
@@ -49,14 +56,10 @@ function App() {
     setCurrentConfig(config);
   };
 
-  const handleTextChange = (text: string) => {
-    setText(text);
-  };
-
   const handleGenerate = async () => {
     if (!selectedProvider || !text.trim()) return;
 
-    setError(undefined);
+    clearError();
 
     const request: GenerationRequest = {
       provider: selectedProvider,
@@ -111,23 +114,16 @@ function App() {
           
           <ConfigurationPanel
             providers={providers || []}
-            selectedProvider={selectedProvider}
             voiceLibrary={voiceLibrary}
-            selectedVoice={selectedVoice}
-            currentConfig={currentConfig}
-            text={text}
             loading={createTaskMutation.isPending || providersLoading}
             onProviderChange={handleProviderChange}
             onVoiceSelect={handleVoiceSelect}
             onConfigChange={handleConfigChange}
-            onTextChange={handleTextChange}
             onGenerate={handleGenerate}
           />
 
           <ResultsPanel
             generationTasks={generationTasks}
-            error={error}
-            onDismissError={() => setError(undefined)}
           />
         </div>
       </div>

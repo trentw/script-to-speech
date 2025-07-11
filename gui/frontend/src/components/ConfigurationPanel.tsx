@@ -5,37 +5,31 @@ import {
   ConfigForm,
   TextInput,
 } from '.';
+import { useConfiguration, useUserInput } from '../stores/appStore';
 import type { ProviderInfo, VoiceEntry } from '../types';
 
 interface ConfigurationPanelProps {
   providers: ProviderInfo[];
-  selectedProvider?: string;
   voiceLibrary: Record<string, VoiceEntry[]>;
-  selectedVoice?: VoiceEntry;
-  currentConfig: Record<string, any>;
-  text: string;
   loading: boolean;
   onProviderChange: (provider: string) => void;
   onVoiceSelect: (voice: VoiceEntry) => void;
   onConfigChange: (config: Record<string, any>) => void;
-  onTextChange: (text: string) => void;
   onGenerate: () => void;
 }
 
 export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   providers,
-  selectedProvider,
   voiceLibrary,
-  selectedVoice,
-  currentConfig,
-  text,
   loading,
   onProviderChange,
   onVoiceSelect,
   onConfigChange,
-  onTextChange,
   onGenerate,
 }) => {
+  // Use store for client state
+  const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
+  const { text, setText } = useUserInput();
   return (
     <div className="lg:col-span-2 space-y-6">
       {/* Text Input */}
@@ -45,7 +39,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         </h2>
         <TextInput
           value={text}
-          onChange={onTextChange}
+          onChange={setText}
           placeholder="Enter the text you want to convert to speech..."
         />
       </div>

@@ -1,19 +1,17 @@
 import React from 'react';
 import { GenerationStatus } from './GenerationStatus';
 import { AudioPlayer } from './AudioPlayer';
+import { useUIState } from '../stores/appStore';
 import type { TaskStatusResponse } from '../types';
 
 interface ResultsPanelProps {
   generationTasks: TaskStatusResponse[];
-  error?: string;
-  onDismissError: () => void;
 }
 
 export const ResultsPanel: React.FC<ResultsPanelProps> = ({
   generationTasks,
-  error,
-  onDismissError
 }) => {
+  const { error, clearError } = useUIState();
   return (
     <div className="space-y-6">
       
@@ -40,7 +38,7 @@ export const ResultsPanel: React.FC<ResultsPanelProps> = ({
           <p className="text-red-600">{error}</p>
           <button
             className="btn-secondary mt-3"
-            onClick={onDismissError}
+            onClick={clearError}
           >
             Dismiss
           </button>
