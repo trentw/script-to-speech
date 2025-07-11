@@ -1,8 +1,9 @@
-.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-backend help
+.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-backend kill-server help
 
 help: ## Show available commands
 	@echo "Script-to-Speech GUI Commands:"
 	@echo "  make gui-server         - Start FastAPI backend server"
+	@echo "  make kill-server        - Stop FastAPI backend server"
 	@echo "  make gui-dev            - Start React frontend (web, recommended for development)"  
 	@echo "  make gui-desktop        - Start desktop app in development mode"
 	@echo "  make gui-build          - Build production desktop app with bundled backend"
@@ -15,8 +16,19 @@ help: ## Show available commands
 gui-server: ## Start FastAPI backend server
 	uv run sts-gui-server
 
+kill-server: ## Stop FastAPI backend server
+	@PIDS=$(lsof -t -i:8000); 
+	if [ -n "$PIDS" ]; then 
+		echo "Force-killing backend server process(es)..."; 
+		echo "$PIDS" | xargs kill -9; 
+		echo "Backend server process(es) killed."; 
+	else 
+		echo "Backend server is not running."; 
+	fi
+
 gui-dev: ## Start React frontend for web development
 	cd gui/frontend && npm run dev
+
 
 gui-desktop: ## Start desktop app in development mode  
 	cd gui/frontend && npx tauri dev
