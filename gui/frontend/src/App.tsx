@@ -2,30 +2,35 @@ import { useState, useEffect } from 'react';
 import { AppHeader } from './components/AppHeader';
 import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { ResultsPanel } from './components/ResultsPanel';
-import { useBackendStatus } from './hooks/useBackendStatus';
-import { useProviders } from './hooks/useProviders';
-import { useVoiceLibrary } from './hooks/useVoiceLibrary';
-import { useTaskPolling } from './hooks/useTaskPolling';
-import { apiService } from './services/api';
-import type { AppState, VoiceEntry, GenerationRequest } from './types';
+import { useBackendStatus } from './hooks/queries/useBackendStatus';
+import { useProviders } from './hooks/queries/useProviders';
+import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
+import { useAllTasks } from './hooks/queries/useTaskStatus';
+import { useCreateTask } from './hooks/mutations/useTasks';
+import type { VoiceEntry, GenerationRequest } from './types';
 
 function App() {
   const [selectedProvider, setSelectedProvider] = useState<string | undefined>();
   const [selectedVoice, setSelectedVoice] = useState<VoiceEntry | undefined>();
   const [currentConfig, setCurrentConfig] = useState<Record<string, any>>({});
   const [text, setText] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | undefined>();
 
-  // Use custom hooks
-  const { connectionStatus } = useBackendStatus();
-  const { providers, loading: providersLoading, error: providersError } = useProviders(connectionStatus);
-  const { voiceLibrary, loadVoiceLibrary } = useVoiceLibrary(connectionStatus, selectedProvider);
-  const { generationTasks, pollTaskStatus } = useTaskPolling();
+  // Use TanStack Query hooks
+  const { data: backendStatus } = useBackendStatus();
+  const { data: providers, isPending: providersLoading, error: providersError } = useProviders();
+  const { data: voiceLibraryData } = useVoiceLibrary(selectedProvider || '');
+  const { data: generationTasks = [] } = useAllTasks();
+  const createTaskMutation = useCreateTask();
+
+  // Adapt voice library data to expected format
+  const voiceLibrary: Record<string, VoiceEntry[]> = selectedProvider && voiceLibraryData 
+    ? { [selectedProvider]: voiceLibraryData }
+    : {};
 
   useEffect(() => {
     if (providersError) {
-      setError(providersError);
+      setError(providersError.message);
     }
   }, [providersError]);
 
@@ -40,7 +45,7 @@ function App() {
     setCurrentConfig({ ...voice.config, sts_id: voice.sts_id });
   };
 
-  const handleConfigChange = (config: Record<string, any>) => {
+  const handleConfigChange = (config: Record<string, unknown>) => {
     setCurrentConfig(config);
   };
 
@@ -51,7 +56,6 @@ function App() {
   const handleGenerate = async () => {
     if (!selectedProvider || !text.trim()) return;
 
-    setLoading(true);
     setError(undefined);
 
     const request: GenerationRequest = {
@@ -62,17 +66,14 @@ function App() {
       variants: 1,
     };
 
-    const response = await apiService.createGenerationTask(request);
-    
-    if (response.data) {
-      pollTaskStatus(response.data.task_id);
-    } else {
-      setError(response.error);
-    }
-    setLoading(false);
+    createTaskMutation.mutate(request, {
+      onError: (error) => {
+        setError(error.message);
+      },
+    });
   };
 
-  if (connectionStatus === 'checking') {
+  if (!backendStatus) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -83,7 +84,7 @@ function App() {
     );
   }
 
-  if (connectionStatus === 'disconnected') {
+  if (!backendStatus.connected) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -109,13 +110,13 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           <ConfigurationPanel
-            providers={providers}
+            providers={providers || []}
             selectedProvider={selectedProvider}
             voiceLibrary={voiceLibrary}
             selectedVoice={selectedVoice}
             currentConfig={currentConfig}
             text={text}
-            loading={loading || providersLoading}
+            loading={createTaskMutation.isPending || providersLoading}
             onProviderChange={handleProviderChange}
             onVoiceSelect={handleVoiceSelect}
             onConfigChange={handleConfigChange}

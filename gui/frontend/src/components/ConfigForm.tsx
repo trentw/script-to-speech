@@ -16,14 +16,14 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   config,
   onConfigChange
 }) => {
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [validation, setValidation] = useState<ValidationResult | undefined>(undefined);
   const [isValidating, setIsValidating] = useState(false);
 
   // Validate configuration when it changes
   useEffect(() => {
     const validateConfig = async () => {
       if (!provider || Object.keys(config).length === 0) {
-        setValidation(null);
+        setValidation(undefined);
         return;
       }
 
