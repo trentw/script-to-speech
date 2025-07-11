@@ -17,13 +17,13 @@ gui-server: ## Start FastAPI backend server
 	uv run sts-gui-server
 
 kill-server: ## Stop FastAPI backend server
-	@PIDS=$(lsof -t -i:8000); 
-	if [ -n "$PIDS" ]; then 
-		echo "Force-killing backend server process(es)..."; 
-		echo "$PIDS" | xargs kill -9; 
-		echo "Backend server process(es) killed."; 
-	else 
-		echo "Backend server is not running."; 
+	@PIDS=$$(lsof -t -i:8000); \
+	if [ -n "$$PIDS" ]; then \
+		echo "Force-killing backend server process(es)..."; \
+		echo "$$PIDS" | xargs kill -9; \
+		echo "Backend server process(es) killed."; \
+	else \
+		echo "Backend server is not running."; \
 	fi
 
 gui-dev: ## Start React frontend for web development
