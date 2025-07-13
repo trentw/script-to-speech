@@ -2,12 +2,12 @@ export * from "./AppHeader";
 export * from "./AudioPlayer";
 export * from "./BackendStatus";
 export * from "./ConfigForm";
-
-export * from "./GenerationStatus";
+export * from "./HistoryTab";
+export * from "./HistoryDetailsPanel";
 export * from "./ProviderSelector";
-export * from "./ResultsPanel";
 export * from "./TextInput";
 export * from "./VoiceSelector";
+export * from "./VoiceSelectionPanel";
 export * from "./form/BooleanField";
 export * from "./form/FieldRenderer";
 export * from "./form/JsonField";

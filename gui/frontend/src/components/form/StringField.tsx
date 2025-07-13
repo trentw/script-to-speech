@@ -1,4 +1,6 @@
 import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import type { ProviderField } from '../../types';
 
 interface StringFieldProps {
@@ -17,28 +19,28 @@ export const StringField: React.FC<StringFieldProps> = ({
   if (field.options && field.options.length > 0) {
     // Dropdown for string fields with options
     return (
-      <select
-        className={`select-field ${hasError ? 'border-red-500' : ''}`}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        <option value="">Select {field.name}...</option>
-        {field.options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className={hasError ? 'border-destructive' : ''}>
+          <SelectValue placeholder={`Select ${field.name}...`} />
+        </SelectTrigger>
+        <SelectContent>
+          {field.options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   } else {
     // Text input for regular strings
     return (
-      <input
+      <Input
         type="text"
-        className={`input-field ${hasError ? 'border-red-500' : ''}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={field.description || `Enter ${field.name}`}
+        className={hasError ? 'border-destructive' : ''}
       />
     );
   }

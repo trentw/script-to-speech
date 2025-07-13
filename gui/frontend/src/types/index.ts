@@ -103,6 +103,10 @@ export interface TaskStatusResponse {
   progress?: number;
   result?: GenerationResult;
   error?: string;
+  created_at?: string;
+  completed_at?: string;
+  audio_urls?: string[];
+  request?: GenerationRequest;
 }
 
 export interface GenerationResult {

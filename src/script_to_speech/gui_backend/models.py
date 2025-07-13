@@ -124,6 +124,10 @@ class TaskStatusResponse(BaseModel):
     progress: Optional[float] = Field(None, ge=0.0, le=1.0)
     result: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
+    audio_urls: Optional[List[str]] = None  # Full HTTP URLs for audio files
+    created_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    request: Optional[Dict[str, Any]] = None
 
 
 class GenerationResult(BaseModel):

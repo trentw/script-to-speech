@@ -26,6 +26,24 @@ from .voice_library_service import voice_library_service
 logger = logging.getLogger(__name__)
 
 
+def build_audio_url(filename: str, base_url: str = "http://localhost:8000") -> str:
+    """Build a full HTTP URL for an audio file.
+    
+    Args:
+        filename: Audio filename (e.g., "elevenlabs--voice--text--timestamp.mp3")
+        base_url: Base URL of the server (default: "http://localhost:8000")
+        
+    Returns:
+        Full HTTP URL (e.g., "http://localhost:8000/static/filename.mp3")
+    """
+    return f"{base_url}/static/{filename}"
+
+
+def build_audio_urls(filenames: List[str], base_url: str = "http://localhost:8000") -> List[str]:
+    """Build full HTTP URLs for a list of audio files."""
+    return [build_audio_url(filename, base_url) for filename in filenames]
+
+
 class GenerationTask:
     """Represents an audio generation task."""
     
@@ -77,8 +95,12 @@ class GenerationService:
             return None
         
         result_dict = None
+        audio_urls = None
+        
         if task.result:
             result_dict = task.result.dict()
+            # Build full HTTP URLs for audio files
+            audio_urls = build_audio_urls(task.result.files)
         
         return TaskStatusResponse(
             task_id=task_id,
@@ -86,7 +108,11 @@ class GenerationService:
             message=task.message,
             progress=task.progress,
             result=result_dict,
-            error=task.error
+            error=task.error,
+            audio_urls=audio_urls,
+            created_at=task.created_at.isoformat() if task.created_at else None,
+            completed_at=task.completed_at.isoformat() if task.completed_at else None,
+            request=task.request.dict() if task.request else None
         )
     
     def get_all_tasks(self) -> List[TaskStatusResponse]:
@@ -94,17 +120,30 @@ class GenerationService:
         with self._lock:
             tasks = list(self._tasks.values())
         
-        return [
-            TaskStatusResponse(
+        result_list = []
+        for task in tasks:
+            result_dict = None
+            audio_urls = None
+            
+            if task.result:
+                result_dict = task.result.dict()
+                # Build full HTTP URLs for audio files
+                audio_urls = build_audio_urls(task.result.files)
+            
+            result_list.append(TaskStatusResponse(
                 task_id=task.task_id,
                 status=task.status,
                 message=task.message,
                 progress=task.progress,
-                result=task.result.dict() if task.result else None,
-                error=task.error
-            )
-            for task in tasks
-        ]
+                result=result_dict,
+                error=task.error,
+                audio_urls=audio_urls,
+                created_at=task.created_at.isoformat() if task.created_at else None,
+                completed_at=task.completed_at.isoformat() if task.completed_at else None,
+                request=task.request.dict() if task.request else None
+            ))
+        
+        return result_list
     
     def cleanup_old_tasks(self, max_age_hours: int = 24) -> int:
         """Clean up old completed tasks."""

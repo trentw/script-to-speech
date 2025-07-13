@@ -36,8 +36,22 @@ interface UISlice {
   clearError: () => void
 }
 
+// Central Audio slice - manages the central audio player
+interface CentralAudioSlice {
+  audioUrl: string | undefined
+  primaryText: string | undefined
+  secondaryText: string | undefined
+  downloadFilename: string | undefined
+  loading: boolean
+  
+  // Actions
+  setAudioData: (audioUrl: string, primaryText: string, secondaryText?: string, downloadFilename?: string) => void
+  clearAudio: () => void
+  setLoading: (loading: boolean) => void
+}
+
 // Combined store type
-type AppStore = ConfigurationSlice & UserInputSlice & UISlice
+type AppStore = ConfigurationSlice & UserInputSlice & UISlice & CentralAudioSlice
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -98,6 +112,37 @@ const useAppStore = create<AppStore>()(
         clearError: () => {
           set({ error: undefined }, false, 'ui/clearError')
         },
+        
+        // Central Audio slice implementation
+        audioUrl: undefined,
+        primaryText: undefined,
+        secondaryText: undefined,
+        downloadFilename: undefined,
+        loading: false,
+        
+        setAudioData: (audioUrl, primaryText, secondaryText, downloadFilename) => {
+          set({ 
+            audioUrl,
+            primaryText,
+            secondaryText,
+            downloadFilename,
+            loading: false
+          }, false, 'centralAudio/setAudioData')
+        },
+        
+        clearAudio: () => {
+          set({ 
+            audioUrl: undefined,
+            primaryText: undefined,
+            secondaryText: undefined,
+            downloadFilename: undefined,
+            loading: false
+          }, false, 'centralAudio/clearAudio')
+        },
+        
+        setLoading: (loading) => {
+          set({ loading }, false, 'centralAudio/setLoading')
+        },
       }),
       {
         name: 'sts-app-store', // localStorage key
@@ -144,6 +189,19 @@ export const useUIState = () => useAppStore(
     error: state.error,
     setError: state.setError,
     clearError: state.clearError,
+  }))
+)
+
+export const useCentralAudio = () => useAppStore(
+  useShallow((state) => ({
+    audioUrl: state.audioUrl,
+    primaryText: state.primaryText,
+    secondaryText: state.secondaryText,
+    downloadFilename: state.downloadFilename,
+    loading: state.loading,
+    setAudioData: state.setAudioData,
+    clearAudio: state.clearAudio,
+    setLoading: state.setLoading,
   }))
 )
 

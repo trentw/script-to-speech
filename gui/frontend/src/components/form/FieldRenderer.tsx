@@ -3,6 +3,7 @@ import { StringField } from './StringField';
 import { NumberField } from './NumberField';
 import { BooleanField } from './BooleanField';
 import { JsonField } from './JsonField';
+import { Label } from '@/components/ui/label';
 import type { ProviderField, ValidationResult } from '../../types';
 import { FieldType } from '../../types';
 
@@ -85,25 +86,30 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
   };
 
   return (
-    <div className="form-group">
-      <label className="form-label">
-        {field.name}
-        {field.required && <span className="text-red-500 ml-1">*</span>}
-        {field.description && (
-          <span className="text-gray-500 font-normal ml-2">
-            - {field.description}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label className="text-sm font-medium text-foreground">
+          {field.name}
+          {field.required && <span className="text-destructive ml-1">*</span>}
+        </Label>
+        {field.default !== undefined && (
+          <span className="text-xs text-muted-foreground">
+            Default: {typeof field.default === 'string' ? field.default : JSON.stringify(field.default)}
           </span>
         )}
-      </label>
-      {renderField()}
-      {field.min_value !== undefined && field.max_value !== undefined && (
-        <p className="text-xs text-gray-500 mt-1">
-          Range: {field.min_value} - {field.max_value}
+      </div>
+      
+      {field.description && (
+        <p className="text-xs text-muted-foreground">
+          {field.description}
         </p>
       )}
-      {field.default !== undefined && (
-        <p className="text-xs text-gray-500 mt-1">
-          Default: {JSON.stringify(field.default)}
+      
+      {renderField()}
+      
+      {field.min_value !== undefined && field.max_value !== undefined && (
+        <p className="text-xs text-muted-foreground">
+          Range: {field.min_value} - {field.max_value}
         </p>
       )}
     </div>
