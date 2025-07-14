@@ -22,7 +22,7 @@ function App() {
   } = useConfiguration();
   const { text, setText } = useUserInput();
   const { error, setError, clearError } = useUIState();
-  const { audioUrl, primaryText, secondaryText, downloadFilename, loading: audioLoading, setAudioData, setLoading: setAudioLoading } = useCentralAudio();
+  const { audioUrl, primaryText, secondaryText, downloadFilename, loading: audioLoading, autoplay, setAudioData, setLoading: setAudioLoading } = useCentralAudio();
 
   // Use TanStack Query hooks for server state
   const { data: backendStatus } = useBackendStatus();
@@ -262,6 +262,7 @@ function App() {
                 secondaryText={secondaryText}
                 downloadFilename={downloadFilename}
                 loading={audioLoading || createTaskMutation.isPending}
+                autoplay={autoplay}
               />
             </div>
           </div>

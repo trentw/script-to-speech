@@ -25,6 +25,7 @@ export interface UseAudioReturn {
 export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAudioReturn {
   const audioRef = useRef<HTMLAudioElement | undefined>(undefined);
   const playPromiseRef = useRef<Promise<void> | null>(null);
+  const autoplayTriggeredRef = useRef<string | null>(null);
   
   // Audio states
   const [isReady, setIsReady] = useState(false);
@@ -38,6 +39,7 @@ export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAu
   if (!audioRef.current) {
     audioRef.current = new Audio();
     audioRef.current.preload = 'metadata';
+    audioRef.current.loop = false; // Ensure audio doesn't loop
   }
 
   // Action functions
@@ -101,6 +103,9 @@ export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAu
     // Cancel any ongoing playback
     audio.pause();
     setIsPlaying(false);
+
+    // Reset autoplay tracking for new source
+    autoplayTriggeredRef.current = null;
 
     // Load new source
     audio.src = newSrc;
@@ -193,10 +198,12 @@ export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAu
 
   // Handle autoplay separately to avoid reload loops
   useEffect(() => {
-    if (src && autoplay && isReady && !isPlaying) {
+    if (src && autoplay && isReady && autoplayTriggeredRef.current !== src) {
+      // Only autoplay once per src
+      autoplayTriggeredRef.current = src;
       play();
     }
-  }, [src, autoplay, isReady, isPlaying, play]);
+  }, [src, autoplay, isReady, play]);
 
   return {
     isReady,

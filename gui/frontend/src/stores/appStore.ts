@@ -43,9 +43,10 @@ interface CentralAudioSlice {
   secondaryText: string | undefined
   downloadFilename: string | undefined
   loading: boolean
+  autoplay: boolean
   
   // Actions
-  setAudioData: (audioUrl: string, primaryText: string, secondaryText?: string, downloadFilename?: string) => void
+  setAudioData: (audioUrl: string, primaryText: string, secondaryText?: string, downloadFilename?: string, autoplay?: boolean) => void
   clearAudio: () => void
   setLoading: (loading: boolean) => void
 }
@@ -119,14 +120,16 @@ const useAppStore = create<AppStore>()(
         secondaryText: undefined,
         downloadFilename: undefined,
         loading: false,
+        autoplay: false,
         
-        setAudioData: (audioUrl, primaryText, secondaryText, downloadFilename) => {
+        setAudioData: (audioUrl, primaryText, secondaryText, downloadFilename, autoplay = false) => {
           set({ 
             audioUrl,
             primaryText,
             secondaryText,
             downloadFilename,
-            loading: false
+            loading: false,
+            autoplay
           }, false, 'centralAudio/setAudioData')
         },
         
@@ -136,7 +139,8 @@ const useAppStore = create<AppStore>()(
             primaryText: undefined,
             secondaryText: undefined,
             downloadFilename: undefined,
-            loading: false
+            loading: false,
+            autoplay: false
           }, false, 'centralAudio/clearAudio')
         },
         
@@ -199,6 +203,7 @@ export const useCentralAudio = () => useAppStore(
     secondaryText: state.secondaryText,
     downloadFilename: state.downloadFilename,
     loading: state.loading,
+    autoplay: state.autoplay,
     setAudioData: state.setAudioData,
     clearAudio: state.clearAudio,
     setLoading: state.setLoading,

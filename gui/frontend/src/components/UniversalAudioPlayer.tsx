@@ -16,6 +16,8 @@ export interface AudioPlayerProps {
   downloadFilename?: string;
   /** Show loading state during generation */
   loading?: boolean;
+  /** Auto-play when new audio is loaded */
+  autoplay?: boolean;
   /** Callback when audio starts playing */
   onPlay?: () => void;
   /** Callback when audio ends */
@@ -34,6 +36,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   secondaryText,
   downloadFilename,
   loading = false,
+  autoplay = false,
   onPlay,
   onEnd,
 }) => {
@@ -49,6 +52,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
     seek 
   } = useAudio({ 
     src: audioUrl,
+    autoplay: autoplay,
   });
 
   const hasAudio = Boolean(audioUrl && !loading);

@@ -61,12 +61,13 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
     const provider = task.request?.provider || task.result?.provider;
     const voiceId = task.request?.sts_id || task.result?.voice_id;
     
-    // Load into central audio player
+    // Load into central audio player with autoplay
     setAudioData(
       audioUrl,
       displayText.length > 50 ? displayText.slice(0, 50) + '...' : displayText,
       [provider, voiceId].filter(Boolean).join(' • '),
-      getAudioFilename(task, index)
+      getAudioFilename(task, index),
+      true // autoplay
     );
   };
 

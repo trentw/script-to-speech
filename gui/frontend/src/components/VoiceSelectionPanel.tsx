@@ -26,12 +26,14 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
   const playPreview = (voice: VoiceEntry) => {
     if (!voice?.preview_url) return;
     
-    // Load the preview into the central audio player
+    // Load the preview into the central audio player with autoplay
     const voiceName = getVoiceDisplayName(voice);
     setAudioData(
       voice.preview_url,
       `Voice preview: ${voiceName}`,
-      `${provider} • ${voiceName}`
+      `${provider} • ${voiceName}`,
+      undefined, // no custom filename for previews
+      true // autoplay
     );
   };
 
