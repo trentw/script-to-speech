@@ -5,6 +5,7 @@ import { Slider } from './ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAudio } from '../hooks/useAudio';
 import { downloadAudio } from '../utils/audioUtils';
+import { appButtonVariants, semanticButtons } from './ui/button-variants';
 
 export interface AudioPlayerProps {
   /** Audio URL to play - if undefined, shows empty state */
@@ -128,15 +129,13 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
           <div className="flex items-center justify-center gap-3">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <button
+                    className={appButtonVariants({ variant: "audio-control", size: "icon-md" })}
                     onClick={() => seek(currentTime - 5)}
                     disabled={!canPlay}
-                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
                   >
                     <Rewind className="w-6 h-6" />
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Skip back 5 seconds</p>
@@ -145,12 +144,10 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
+                  <button
+                    className={appButtonVariants({ variant: "audio-play", size: "icon-xl" })}
                     onClick={handlePlayPause}
                     disabled={!canPlay}
-                    className="h-20 w-20 rounded-full flex-shrink-0 shadow-lg bg-black text-white hover:bg-gray-800 hover:shadow-xl border-2 border-black transition-all duration-200 data-[state=disabled]:bg-muted data-[state=disabled]:text-muted-foreground data-[state=disabled]:border-muted"
                   >
                     {showLoading ? (
                     <Loader2 className="w-9 h-9 animate-spin" />
@@ -159,7 +156,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
                     ) : (
                     <Play className="w-9 h-9 ml-1" />
                     )}
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{isPlaying ? 'Pause' : 'Play'} audio</p>
@@ -168,15 +165,13 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <button
+                    className={appButtonVariants({ variant: "audio-control", size: "icon-md" })}
                     onClick={() => seek(currentTime + 5)}
                     disabled={!canPlay}
-                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
                   >
                     <FastForward className="w-6 h-6" />
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Skip forward 5 seconds</p>
@@ -188,15 +183,13 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
           <div className="flex-1 flex items-center gap-4 justify-end">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
+                  <button
+                    className={appButtonVariants({ variant: "audio-control", size: "icon-md" })}
                     onClick={handleDownload}
                     disabled={!hasAudio}
-                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
                   >
                     <Download className="w-6 h-6" />
-                  </Button>
+                  </button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Download audio file</p>

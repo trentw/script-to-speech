@@ -8,6 +8,7 @@ import { useAllTasks } from './hooks/queries/useTaskStatus';
 import { useCreateTask } from './hooks/mutations/useTasks';
 import { useConfiguration, useUserInput, useUIState, useCentralAudio } from './stores/appStore';
 import { getAudioUrls, getAudioFilename } from './utils/audioUtils';
+import { appButtonVariants } from './components/ui/button-variants';
 import type { VoiceEntry, GenerationRequest } from './types';
 import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 
@@ -179,8 +180,8 @@ function App() {
                 </div>
               )}
               <button
+                className={appButtonVariants({ variant: "sidebar-toggle", size: "icon-sm" })}
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                className="p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
                 title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
                 {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
@@ -292,7 +293,7 @@ function App() {
                     )}
                   </div>
                   <button
-                    className="px-8 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-md"
+                    className={appButtonVariants({ variant: "primary", size: "lg" })}
                     onClick={handleGenerate}
                     disabled={!selectedProvider || !text.trim() || createTaskMutation.isPending}
                     title={`Generate Speech (${navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)`}
@@ -352,8 +353,8 @@ function App() {
                 <p className="text-sm text-destructive/80 mt-1">{error}</p>
               </div>
               <button
+                className={`${appButtonVariants({ variant: "list-action", size: "sm" })} text-destructive hover:text-destructive/80 border border-destructive/20 hover:bg-destructive/10`}
                 onClick={clearError}
-                className="text-destructive hover:text-destructive/80 text-sm px-2 py-1 border border-destructive/20 rounded hover:bg-destructive/10 transition-colors"
               >
                 Dismiss
               </button>

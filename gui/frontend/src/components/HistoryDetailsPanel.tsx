@@ -1,10 +1,10 @@
 import React from 'react';
 import { ArrowLeft, Play, Download, Copy, Clock, Settings, FileText, Volume2 } from 'lucide-react';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { useCentralAudio } from '../stores/appStore';
 import { downloadAudio, getAudioUrls, getAudioFilename } from '../utils/audioUtils';
+import { appButtonVariants } from './ui/button-variants';
 import type { TaskStatusResponse } from '../types';
 
 interface HistoryDetailsPanelProps {
@@ -79,14 +79,12 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
     <div className="h-full bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
+          className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
           onClick={onBack}
-          className="h-8 w-8 p-0 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
         >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
         <h3 className="font-medium">Generation Details</h3>
       </div>
 
@@ -175,15 +173,13 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                   <FileText className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm font-medium">Text Content</span>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  className={appButtonVariants({ variant: "list-action", size: "sm" })}
                   onClick={() => copyToClipboard(task.request!.text)}
-                  className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
                 >
                   <Copy className="w-3 h-3 mr-1" />
                   Copy
-                </Button>
+                </button>
               </div>
               
               <div className="text-sm bg-muted/30 rounded-lg p-3 whitespace-pre-wrap">
@@ -211,24 +207,20 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                       Variant {index + 1}
                     </span>
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
+                      <button
+                        className={appButtonVariants({ variant: "list-action", size: "sm" })}
                         onClick={() => handlePlayAudio(url, index)}
                       >
                         <Play className="w-3 h-3 mr-1" />
                         Play
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
+                      </button>
+                      <button
+                        className={appButtonVariants({ variant: "list-action", size: "sm" })}
                         onClick={() => handleDownloadAudio(url, index)}
                       >
                         <Download className="w-3 h-3 mr-1" />
                         Download
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 ))}

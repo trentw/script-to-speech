@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Search, Play } from 'lucide-react';
 import { useCentralAudio } from '../stores/appStore';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import type { VoiceEntry } from '../types';
 
 interface VoiceSelectionPanelProps {
@@ -63,14 +63,12 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
     <div className="h-full bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
+          className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
           onClick={onBack}
-          className="h-8 w-8 p-0"
         >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
         <h3 className="font-medium">Select a voice</h3>
       </div>
 
@@ -149,17 +147,15 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
 
                       {/* Play button */}
                       {voice.preview_url && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
+                        <button
+                          className={`${appButtonVariants({ variant: "list-action", size: "icon-sm" })} opacity-0 group-hover:opacity-100 transition-all duration-200`}
                           onClick={(e) => {
                             e.stopPropagation();
                             playPreview(voice);
                           }}
                         >
                           <Play className="w-4 h-4" />
-                        </Button>
+                        </button>
                       )}
                     </div>
                   </div>

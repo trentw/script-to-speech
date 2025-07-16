@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Clock, Play, Download, MoreHorizontal } from 'lucide-react';
-import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAllTasks } from '../hooks/queries/useTaskStatus';
 import { useCentralAudio } from '../stores/appStore';
 import { downloadAudio, getAudioUrls, getAudioFilename, hasAudioFiles } from '../utils/audioUtils';
+import { appButtonVariants } from './ui/button-variants';
 import type { TaskStatusResponse } from '../types';
 
 interface HistoryTabProps {
@@ -225,17 +225,15 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                           <>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+                                <button
+                                  className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handlePlayAudio(task);
                                   }}
                                 >
                                   <Play className="w-3 h-3" />
-                                </Button>
+                                </button>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Play audio</p>
@@ -243,17 +241,15 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                             </Tooltip>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 w-7 p-0 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+                                <button
+                                  className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleDownloadAudio(task);
                                   }}
                                 >
                                   <Download className="w-3 h-3" />
-                                </Button>
+                                </button>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>Download audio</p>
@@ -263,17 +259,15 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                         )}
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 w-7 p-0 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors cursor-pointer"
+                            <button
+                              className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onTaskSelect(task);
                               }}
                             >
                               <MoreHorizontal className="w-3 h-3" />
-                            </Button>
+                            </button>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>View details</p>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs';
+import { AnimatedTabs } from './ui/animated-tabs';
 import {
   VoiceSelector,
   ConfigForm,
@@ -8,6 +8,7 @@ import { VoiceSelectionPanel } from './VoiceSelectionPanel';
 import { HistoryTab } from './HistoryTab';
 import { HistoryDetailsPanel } from './HistoryDetailsPanel';
 import { useConfiguration } from '../stores/appStore';
+import { appButtonVariants } from './ui/button-variants';
 import type { ProviderInfo, VoiceEntry, TaskStatusResponse } from '../types';
 
 interface ConfigurationPanelProps {
@@ -74,19 +75,19 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
 
   return (
     <div className="h-full flex flex-col relative">
-      <Tabs defaultValue="settings" className="h-full flex flex-col">
-        <div className="p-4 border-b border-border shrink-0">
-          <TabsList className="w-full">
-            <TabsTrigger value="settings" className="flex-1">Settings</TabsTrigger>
-            <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
-          </TabsList>
+      <AnimatedTabs defaultValue="settings" className="h-full flex flex-col">
+        <div className="px-4 pt-4 pb-0 shrink-0">
+          <AnimatedTabs.List className="w-full">
+            <AnimatedTabs.Trigger value="settings">Settings</AnimatedTabs.Trigger>
+            <AnimatedTabs.Trigger value="history">History</AnimatedTabs.Trigger>
+          </AnimatedTabs.List>
         </div>
-
-        <TabsContent value="settings" className="flex-1 overflow-hidden min-h-0 relative">
-          <div className={`absolute inset-0 transition-transform duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-            <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-              showVoicePanel ? '-translate-x-full' : 'translate-x-0'
-            }`}>
+        
+        <AnimatedTabs.Content value="settings" className="flex-1 overflow-hidden min-h-0 relative">
+              <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
+                <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+                  showVoicePanel ? '-translate-x-full' : 'translate-x-0'
+                }`}>
               {/* Normal Settings Content */}
               <div className="p-4 space-y-6">
                 {/* Voice Selection */}
@@ -124,7 +125,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 {selectedProvider && (
                   <div className="pt-4 border-t border-border">
                     <button
-                      className="w-full px-3 py-2 text-sm border border-border rounded-md hover:bg-gray-100 dark:hover:bg-gray-700/50 hover:text-accent-foreground transition-colors cursor-pointer"
+                      className={`w-full ${appButtonVariants({ variant: "reset", size: "default" })}`}
                       onClick={() => onConfigChange({})}
                     >
                       Reset to defaults
@@ -149,10 +150,10 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               )}
             </div>
           </div>
-        </TabsContent>
+        </AnimatedTabs.Content>
 
-        <TabsContent value="history" className="flex-1 overflow-hidden min-h-0 relative">
-          <div className={`absolute inset-0 transition-transform duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
+        <AnimatedTabs.Content value="history" className="flex-1 overflow-hidden min-h-0 relative">
+          <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
             <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
               selectedHistoryTask ? '-translate-x-full' : 'translate-x-0'
             }`}>
@@ -171,8 +172,8 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               )}
             </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </AnimatedTabs.Content>
+      </AnimatedTabs>
     </div>
   );
 };
