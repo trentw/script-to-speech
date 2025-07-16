@@ -83,7 +83,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="h-8 w-8 p-0"
+          className="h-8 w-8 p-0 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -179,7 +179,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => copyToClipboard(task.request!.text)}
-                  className="h-7 px-2"
+                  className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
                 >
                   <Copy className="w-3 h-3 mr-1" />
                   Copy
@@ -214,7 +214,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2"
+                        className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
                         onClick={() => handlePlayAudio(url, index)}
                       >
                         <Play className="w-3 h-3 mr-1" />
@@ -223,7 +223,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2"
+                        className="h-7 px-2 hover:bg-gray-100/80 dark:hover:bg-gray-700/50"
                         onClick={() => handleDownloadAudio(url, index)}
                       >
                         <Download className="w-3 h-3 mr-1" />

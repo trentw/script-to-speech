@@ -1,7 +1,8 @@
 import React from 'react';
-import { Play, Pause, Download, Loader2 } from 'lucide-react';
+import { Play, Pause, Download, Loader2, Rewind, FastForward } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAudio } from '../hooks/useAudio';
 import { downloadAudio } from '../utils/audioUtils';
 
@@ -27,8 +28,6 @@ export interface AudioPlayerProps {
 /**
  * Universal AudioPlayer component that's always visible
  * Used for voice previews, generated speech, and history playback
- * 
- * Layout: [Audio Identification] [Playback Controls] [Download]
  */
 export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   audioUrl,
@@ -38,7 +37,6 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   loading = false,
   autoplay = false,
   onPlay,
-  onEnd,
 }) => {
   const { 
     isReady, 
@@ -57,7 +55,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
 
   const hasAudio = Boolean(audioUrl && !loading);
   const canPlay = hasAudio && isReady && !error;
-  const showLoading = loading || isLoading;
+  const showLoading = loading || (isLoading && !isReady);
 
   const handlePlayPause = async () => {
     if (isPlaying) {
@@ -79,112 +77,153 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds)) return '0:00';
-    
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+    if (!isFinite(seconds) || seconds < 0) return '0:00';
+    const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Determine display content based on state
   const getDisplayContent = () => {
-    if (loading) {
+    if (showLoading) {
       return {
         primary: 'Generating audio...',
-        secondary: 'Please wait',
+        secondary: 'Audio will appear here when generation completes',
       };
     }
-    
     if (error) {
       return {
-        primary: 'Audio error',
-        secondary: error,
+        primary: 'Audio Error',
+        secondary: 'Could not load audio file',
       };
     }
-    
     if (!hasAudio) {
       return {
-        primary: primaryText || 'Select audio for playback',
-        secondary: secondaryText || 'No audio selected',
+        primary: 'Text to Speech',
+        secondary: 'Generate audio or select from history to play',
       };
     }
-    
     return {
-      primary: primaryText || 'Audio ready',
-      secondary: secondaryText || 'Ready to play',
+      primary: primaryText || 'Audio Ready',
+      secondary: secondaryText || 'Ready for playback',
     };
   };
 
   const displayContent = getDisplayContent();
 
   return (
-    <div className="flex items-center gap-4 p-4 border border-border rounded-lg bg-background">
-      {/* Left: Audio Identification */}
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-foreground truncate">
-          {displayContent.primary}
-        </div>
-        <div className="text-sm text-muted-foreground truncate">
-          {displayContent.secondary}
-        </div>
-      </div>
+    <TooltipProvider>
+      <div className="flex flex-col gap-3 p-4 border border-border rounded-lg bg-background shadow-lg">
+        <div className="flex items-center gap-6">
+          {/* Left: Track Info */}
+          <div className="flex-1 flex flex-col gap-1 min-w-0">
+              <div className="font-semibold text-base text-foreground truncate" title={displayContent.primary}>
+                {displayContent.primary}
+              </div>
+              <div className="text-sm text-muted-foreground truncate" title={displayContent.secondary}>
+                {displayContent.secondary}
+              </div>
+          </div>
 
-      {/* Center: Playback Controls */}
-      <div className="flex flex-col items-center gap-2 w-32">
-        {/* Play/Pause Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handlePlayPause}
-          disabled={!canPlay}
-          className="h-10 w-10 p-0 rounded-full hover:bg-accent"
-        >
-          {showLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : isPlaying ? (
-            <Pause className="w-4 h-4" />
-          ) : (
-            <Play className="w-4 h-4 ml-0.5" />
-          )}
-        </Button>
+          {/* Center: Prominent Playback Controls */}
+          <div className="flex items-center justify-center gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => seek(currentTime - 5)}
+                    disabled={!canPlay}
+                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+                  >
+                    <Rewind className="w-6 h-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Skip back 5 seconds</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handlePlayPause}
+                    disabled={!canPlay}
+                    className="h-20 w-20 rounded-full flex-shrink-0 shadow-lg bg-black text-white hover:bg-gray-800 hover:shadow-xl border-2 border-black transition-all duration-200 data-[state=disabled]:bg-muted data-[state=disabled]:text-muted-foreground data-[state=disabled]:border-muted"
+                  >
+                    {showLoading ? (
+                    <Loader2 className="w-9 h-9 animate-spin" />
+                    ) : isPlaying ? (
+                    <Pause className="w-9 h-9" />
+                    ) : (
+                    <Play className="w-9 h-9 ml-1" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isPlaying ? 'Pause' : 'Play'} audio</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => seek(currentTime + 5)}
+                    disabled={!canPlay}
+                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+                  >
+                    <FastForward className="w-6 h-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Skip forward 5 seconds</p>
+                </TooltipContent>
+              </Tooltip>
+          </div>
 
-        {/* Progress Slider */}
-        {hasAudio && (
-          <>
+          {/* Right: Download */}
+          <div className="flex-1 flex items-center gap-4 justify-end">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDownload}
+                    disabled={!hasAudio}
+                    className="h-12 w-12 rounded-full hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white transition-colors"
+                  >
+                    <Download className="w-6 h-6" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Download audio file</p>
+                </TooltipContent>
+              </Tooltip>
+          </div>
+        </div>
+        {/* Bottom: Progress */}
+        <div className="flex items-center gap-4">
+            <span className="text-xs text-muted-foreground w-12 text-right font-mono">
+            {formatTime(currentTime)}
+            </span>
             <Slider
-              value={[currentTime]}
-              onValueChange={handleSeek}
-              max={duration || 0}
-              step={0.1}
-              disabled={!canPlay}
-              className="w-full h-2"
+            value={[currentTime]}
+            onValueChange={handleSeek}
+            max={duration || 100}
+            step={0.1}
+            disabled={!canPlay}
+            className="w-full [&_[data-slot=slider-track]]:bg-gray-300 [&_[data-slot=slider-track]]:dark:bg-gray-600 [&_[data-slot=slider-range]]:bg-black [&_[data-slot=slider-range]]:dark:bg-white [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:dark:bg-white [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-black [&_[data-slot=slider-thumb]]:dark:border-white [&_[data-slot=slider-thumb]]:shadow-md"
             />
-            <div className="flex justify-between text-xs text-muted-foreground w-full">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </>
-        )}
+            <span className="text-xs text-muted-foreground w-12 font-mono">
+            {formatTime(duration)}
+            </span>
+        </div>
       </div>
-
-      {/* Right: Download Button */}
-      <div className="flex items-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDownload}
-          disabled={!hasAudio}
-          className="h-8 w-8 p-0"
-          title="Download audio"
-        >
-          <Download className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 };
+
+export default UniversalAudioPlayer;

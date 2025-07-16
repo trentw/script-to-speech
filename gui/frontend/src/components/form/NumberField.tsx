@@ -25,7 +25,7 @@ export const NumberField: React.FC<NumberFieldProps> = ({
   
   // Determine if we should show a slider (when we have min/max range)
   const hasRange = field.min_value !== undefined && field.max_value !== undefined;
-  const showSlider = hasRange && (field.max_value - field.min_value) <= 100; // Only for reasonable ranges
+  const showSlider = hasRange && field.min_value !== undefined && field.max_value !== undefined && (field.max_value - field.min_value) <= 100; // Only for reasonable ranges
   
   const handleSliderChange = (values: number[]) => {
     const newValue = values[0];
@@ -56,19 +56,12 @@ export const NumberField: React.FC<NumberFieldProps> = ({
 
   if (showSlider) {
     return (
-      <div className="space-y-3">
-        {/* Slider with refined value display */}
+      <div className="space-y-4">
+        {/* Slider with ElevenLabs-style labels */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground font-mono">
-              {field.min_value}
-            </span>
-            <div className="px-2.5 py-1 bg-accent/50 rounded-md text-sm font-medium min-w-[50px] text-center border">
-              {displayValue || field.default || field.min_value}
-            </div>
-            <span className="text-xs text-muted-foreground font-mono">
-              {field.max_value}
-            </span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{field.min_value}</span>
+            <span>{field.max_value}</span>
           </div>
           
           <Slider
@@ -79,23 +72,40 @@ export const NumberField: React.FC<NumberFieldProps> = ({
             step={isFloat ? 0.01 : 1}
             className="w-full"
           />
+          
+          {/* Current value display */}
+          <div className="text-center">
+            <span className="text-sm font-medium text-foreground">
+              {displayValue || field.default || field.min_value}
+            </span>
+          </div>
         </div>
         
-        {/* Compact precise input */}
-        <Input
-          type="number"
-          step={isFloat ? "0.01" : "1"}
-          value={displayValue}
-          onChange={handleInputChange}
-          onFocus={() => setInputFocused(true)}
-          onBlur={() => setInputFocused(false)}
-          min={field.min_value}
-          max={field.max_value}
-          placeholder="Or enter precise value"
-          className={`text-sm ${hasError ? 'border-destructive' : ''} ${
-            inputFocused ? 'ring-2 ring-primary/20' : ''
-          }`}
-        />
+        {/* Optional precise input - smaller and less prominent */}
+        {inputFocused && (
+          <Input
+            type="number"
+            step={isFloat ? "0.01" : "1"}
+            value={displayValue}
+            onChange={handleInputChange}
+            onBlur={() => setInputFocused(false)}
+            min={field.min_value}
+            max={field.max_value}
+            placeholder="Enter precise value"
+            className={`text-sm ${hasError ? 'border-destructive' : ''}`}
+            autoFocus
+          />
+        )}
+        
+        {!inputFocused && (
+          <button
+            type="button"
+            onClick={() => setInputFocused(true)}
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Enter precise value
+          </button>
+        )}
       </div>
     );
   }

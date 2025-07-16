@@ -73,6 +73,24 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   const hasRequiredFields = providerInfo.required_fields.length > 0;
   const hasOptionalFields = providerInfo.optional_fields.length > 0;
 
+  const resetToDefaults = () => {
+    const defaultConfig: Record<string, any> = {};
+    
+    // Preserve sts_id if it exists
+    if (config.sts_id) {
+      defaultConfig.sts_id = config.sts_id;
+    }
+    
+    // Set default values for all fields
+    [...(providerInfo?.required_fields || []), ...(providerInfo?.optional_fields || [])].forEach(field => {
+      if (field.default !== undefined) {
+        defaultConfig[field.name] = field.default;
+      }
+    });
+    
+    onConfigChange(defaultConfig);
+  };
+
   return (
     <div className="space-y-6">
       {/* Voice Library Configuration Banner */}
@@ -88,32 +106,50 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
         </div>
       )}
 
-      {/* All Fields - Combined with better organization */}
+      {/* Fields - Organized by requirement level */}
       {(hasRequiredFields || hasOptionalFields) && (
-        <div className="space-y-4">
-          {/* Required fields first */}
-          {providerInfo.required_fields.map((field) => (
-            <div key={field.name} className="space-y-2">
-              <FieldRenderer
-                field={field}
-                value={config[field.name]}
-                validation={validation}
-                onChange={handleFieldChange}
-              />
+        <div className="space-y-6">
+          {/* Required fields section */}
+          {hasRequiredFields && (
+            <div className="space-y-4">
+              {hasOptionalFields && (
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  Required Settings
+                </div>
+              )}
+              {providerInfo.required_fields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <FieldRenderer
+                    field={field}
+                    value={config[field.name]}
+                    validation={validation}
+                    onChange={handleFieldChange}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
           
-          {/* Optional fields after */}
-          {providerInfo.optional_fields.map((field) => (
-            <div key={field.name} className="space-y-2">
-              <FieldRenderer
-                field={field}
-                value={config[field.name]}
-                validation={validation}
-                onChange={handleFieldChange}
-              />
+          {/* Optional fields section */}
+          {hasOptionalFields && (
+            <div className="space-y-4">
+              {hasRequiredFields && (
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider border-t border-border pt-4">
+                  Optional Settings
+                </div>
+              )}
+              {providerInfo.optional_fields.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <FieldRenderer
+                    field={field}
+                    value={config[field.name]}
+                    validation={validation}
+                    onChange={handleFieldChange}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -168,6 +204,22 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
               <p key={index} className="text-xs text-destructive">• {error}</p>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Reset button - ElevenLabs style */}
+      {(hasRequiredFields || hasOptionalFields) && (
+        <div className="pt-4 border-t border-border">
+          <button
+            type="button"
+            onClick={resetToDefaults}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reset values
+          </button>
         </div>
       )}
     </div>

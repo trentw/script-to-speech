@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { ConfigurationPanel } from './components/ConfigurationPanel';
 import { UniversalAudioPlayer } from './components/UniversalAudioPlayer';
 import { useBackendStatus } from './hooks/queries/useBackendStatus';
@@ -9,8 +9,12 @@ import { useCreateTask } from './hooks/mutations/useTasks';
 import { useConfiguration, useUserInput, useUIState, useCentralAudio } from './stores/appStore';
 import { getAudioUrls, getAudioFilename } from './utils/audioUtils';
 import type { VoiceEntry, GenerationRequest } from './types';
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 
 function App() {
+  // Local state for sidebar collapse
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   // Use Zustand store hooks for client state
   const { 
     selectedProvider, 
@@ -102,7 +106,7 @@ function App() {
 
     createTaskMutation.mutate(request, {
       onSuccess: () => {
-        setAudioLoading(false);
+        setAudioData('', 'Generating audio...', 'Please wait', '', true);
       },
       onError: (error) => {
         setError(error.message);
@@ -157,147 +161,202 @@ function App() {
   }
 
   return (
-    <div className="h-screen bg-background grid grid-cols-[240px_1fr_320px] overflow-hidden">
+    <div className="h-screen bg-background flex">
       {/* Left Sidebar - Navigation */}
-      <div className="border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex flex-col">
+      <div className={`border-r border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex flex-col transition-all duration-300 ease-in-out ${
+        sidebarCollapsed ? 'w-16' : 'w-64'
+      }`}>
         <div className="p-4 space-y-4">
           {/* Header */}
           <div className="space-y-2">
-            <h1 className="text-xl font-bold tracking-tight">Script to Speech</h1>
-            <p className="text-xs text-muted-foreground">
-              Multi-provider TTS
-            </p>
+            <div className="flex items-center justify-between">
+              {!sidebarCollapsed && (
+                <div>
+                  <h1 className="text-xl font-bold tracking-tight">Script to Speech</h1>
+                  <p className="text-xs text-muted-foreground">
+                    Multi-provider TTS
+                  </p>
+                </div>
+              )}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="p-1.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              </button>
+            </div>
           </div>
           
-          {/* Navigation items can go here in future */}
+          {/* Navigation items */}
           <div className="space-y-2">
-            <div className="px-3 py-2 rounded-md bg-accent text-accent-foreground text-sm">
-              Text to Speech
+            <div className={`px-3 py-2 rounded-md bg-accent text-accent-foreground text-sm flex items-center gap-2 ${
+              sidebarCollapsed ? 'justify-center' : ''
+            }`}>
+              <Menu size={16} />
+              {!sidebarCollapsed && <span>Text to Speech</span>}
             </div>
           </div>
         </div>
         
         {/* Backend Status at bottom */}
         <div className="p-4 border-t border-border mt-auto">
-          <div className="flex items-center gap-2 text-xs">
+          <div className={`flex items-center gap-2 text-xs ${sidebarCollapsed ? 'justify-center' : ''}`}>
             <div className={`w-2 h-2 rounded-full ${backendStatus?.connected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-muted-foreground">
-              Backend: {backendStatus?.connected ? 'Running' : 'Disconnected'}
-            </span>
+            {!sidebarCollapsed && (
+              <span className="text-muted-foreground">
+                Backend: {backendStatus?.connected ? 'Running' : 'Disconnected'}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex flex-col">
-        {/* Title Bar with Provider Dropdown */}
+      <div className="flex flex-col flex-1">
+        {/* Enhanced Header Bar */}
         <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="px-6 py-4 flex items-center space-x-4">
-            <h2 className="text-lg font-semibold">Text to Speech:</h2>
-            <select
-              className="px-3 py-1 border border-border rounded-md bg-background text-foreground"
-              value={selectedProvider || ''}
-              onChange={(e) => handleProviderChange(e.target.value)}
-            >
-              <option value="">Select Provider</option>
-              {providers?.map((provider) => (
-                <option key={provider.identifier} value={provider.identifier}>
-                  {provider.name}
-                </option>
-              ))}
-            </select>
+          <div className="px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <h2 className="text-lg font-semibold text-foreground">Text to Speech</h2>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-muted-foreground">Provider:</label>
+                <select
+                  className="px-3 py-2 border border-border rounded-lg bg-background text-foreground hover:border-accent transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  value={selectedProvider || ''}
+                  onChange={(e) => handleProviderChange(e.target.value)}
+                >
+                  <option value="" key="select-provider-placeholder">Select Provider</option>
+                  {providers?.map((provider) => (
+                    <option key={provider.identifier} value={provider.identifier}>
+                      {provider.name}
+                    </option>
+                  ))}
+                </select>
+                {selectedProvider && (
+                  <div className="text-xs text-muted-foreground bg-muted/30 px-2 py-1 rounded-md">
+                    {providers?.find(p => p.identifier === selectedProvider)?.description || 
+                     `${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} TTS`}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Header Actions */}
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 text-xs">
+                <div className={`w-2 h-2 rounded-full ${backendStatus?.connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                <span className="text-muted-foreground">
+                  {backendStatus?.connected ? 'Backend Connected' : 'Backend Disconnected'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Text Input Area */}
-          <div className="flex-1 p-6">
-            <div className="h-full flex flex-col">
-              <div className="flex-1 mb-6">
-                <textarea
-                  className="w-full h-full min-h-[400px] resize-none border border-border rounded-lg p-4 bg-background text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  placeholder="Write something to say..."
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
+        {/* Content - Main area with right panel */}
+        <div className="flex-1 flex">
+          {/* Main Text Input Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Text Input Area */}
+            <div className="flex-1 p-6">
+              <div className="h-full flex flex-col">
+                <div className="flex-1 mb-4 relative">
+                  <textarea
+                    className="w-full h-full min-h-[400px] resize-none border border-border rounded-lg p-4 pr-24 bg-background text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200"
+                    placeholder="Write something to say..."
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                  />
+                  
+                  {/* Character count overlay - positioned inside textarea */}
+                  <div className={`absolute bottom-3 right-3 text-xs px-3 py-1.5 rounded-md font-medium border transition-colors ${
+                    text.length > 4000 ? 'text-destructive bg-destructive/10 border-destructive/20' :
+                    text.length > 2000 ? 'text-amber-600 bg-amber-50 border-amber-200 dark:text-amber-400 dark:bg-amber-950 dark:border-amber-800' :
+                    'text-muted-foreground bg-background/90 border-border/50'
+                  } backdrop-blur-sm shadow-sm`}>
+                    {text.length.toLocaleString()} / 5,000
+                  </div>
+                </div>
+                
+                {/* Warning and Generate button */}
+                <div className="flex items-center justify-between pt-2">
+                  <div className="text-sm text-muted-foreground">
+                    {text.length > 1000 && (
+                      <span className="text-amber-600 flex items-center gap-1">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                        Long text may take more time to generate
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    className="px-8 py-3 bg-black text-white rounded-lg font-semibold hover:bg-gray-800 hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 shadow-md"
+                    onClick={handleGenerate}
+                    disabled={!selectedProvider || !text.trim() || createTaskMutation.isPending}
+                    title={`Generate Speech (${navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)`}
+                  >
+                    {createTaskMutation.isPending ? (
+                      <div className="flex items-center space-x-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        <span>Generating...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2">
+                        <span>Generate speech</span>
+                        <span className="text-xs opacity-75">{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Persistent Audio Player - always visible */}
+            <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="p-4">
+                <UniversalAudioPlayer
+                  audioUrl={audioUrl}
+                  primaryText={primaryText}
+                  secondaryText={secondaryText}
+                  downloadFilename={downloadFilename}
+                  loading={audioLoading || createTaskMutation.isPending}
+                  autoplay={autoplay}
                 />
               </div>
-              
-              {/* Character count and Generate button */}
-              <div className="flex items-center justify-between pt-4">
-                <div className="text-sm text-muted-foreground">
-                  {text.length} characters
-                  {text.length > 1000 && (
-                    <span className="ml-2 text-amber-600">• Long text may take more time</span>
-                  )}
-                </div>
-                <button
-                  className="px-8 py-3 bg-foreground text-background rounded-lg font-semibold hover:bg-foreground/90 hover:shadow-lg hover:cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                  onClick={handleGenerate}
-                  disabled={!selectedProvider || !text.trim() || createTaskMutation.isPending}
-                  title={`Generate Speech (${navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter)`}
-                >
-                  {createTaskMutation.isPending ? (
-                    <div className="flex items-center space-x-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                      <span>Generating...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      <span>Generate Speech</span>
-                      <span className="text-xs opacity-75">{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter</span>
-                    </div>
-                  )}
-                </button>
-              </div>
             </div>
           </div>
 
-          {/* Persistent Audio Player - always visible */}
-          <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="p-4">
-              <UniversalAudioPlayer
-                audioUrl={audioUrl}
-                primaryText={primaryText}
-                secondaryText={secondaryText}
-                downloadFilename={downloadFilename}
-                loading={audioLoading || createTaskMutation.isPending}
-                autoplay={autoplay}
-              />
-            </div>
+          {/* Right Panel - Configuration */}
+          <div className="w-80 border-l border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <ConfigurationPanel
+              providers={providers || []}
+              voiceLibrary={voiceLibrary}
+              loading={createTaskMutation.isPending || providersLoading}
+              onProviderChange={handleProviderChange}
+              onVoiceSelect={handleVoiceSelect}
+              onConfigChange={handleConfigChange}
+            />
           </div>
         </div>
       </div>
 
-      {/* Right Panel - Configuration */}
-      <div className="border-l border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-hidden">
-        <ConfigurationPanel
-          providers={providers || []}
-          voiceLibrary={voiceLibrary}
-          loading={createTaskMutation.isPending || providersLoading}
-          onProviderChange={handleProviderChange}
-          onVoiceSelect={handleVoiceSelect}
-          onConfigChange={handleConfigChange}
-        />
-      </div>
-
-      {/* Error Display - moved to main content area if needed */}
+      {/* Error Display - Fixed positioning */}
       {error && (
-        <div className="col-span-3 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="p-4">
-            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-destructive">Generation Error</h4>
-                  <p className="text-sm text-destructive/80 mt-1">{error}</p>
-                </div>
-                <button
-                  onClick={clearError}
-                  className="text-destructive hover:text-destructive/80 text-sm px-2 py-1 border border-destructive/20 rounded"
-                >
-                  Dismiss
-                </button>
+        <div className="absolute bottom-4 left-4 right-4 z-50">
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg backdrop-blur supports-[backdrop-filter]:bg-destructive/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-destructive">Generation Error</h4>
+                <p className="text-sm text-destructive/80 mt-1">{error}</p>
               </div>
+              <button
+                onClick={clearError}
+                className="text-destructive hover:text-destructive/80 text-sm px-2 py-1 border border-destructive/20 rounded hover:bg-destructive/10 transition-colors"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         </div>

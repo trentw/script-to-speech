@@ -108,8 +108,8 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
                     key={voice.sts_id}
                     className={`group relative rounded-lg border p-3 cursor-pointer transition-all duration-200 ${
                       selectedVoice?.sts_id === voice.sts_id 
-                        ? 'border-primary bg-accent text-accent-foreground' 
-                        : 'border-border hover:bg-accent hover:text-accent-foreground hover:border-accent'
+                        ? 'border-primary bg-accent text-accent-foreground shadow-sm' 
+                        : 'border-border hover:bg-accent hover:text-accent-foreground hover:border-accent hover:shadow-sm'
                     }`}
                     onClick={() => onVoiceSelect(voice)}
                   >
@@ -152,7 +152,7 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-gray-800 hover:text-white dark:hover:bg-gray-700 dark:hover:text-white cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             playPreview(voice);
