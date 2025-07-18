@@ -4,6 +4,8 @@ import {
   ConfigForm,
 } from '../';
 import { VoiceSelectionPanel } from '../VoiceSelectionPanel';
+import { ProviderSelectionSelector } from './ProviderSelectionSelector';
+import { ProviderSelectionPanel } from '../ProviderSelectionPanel';
 import { useConfiguration } from '../../stores/appStore';
 import { appButtonVariants } from '../ui/button-variants';
 import type { ProviderInfo, VoiceEntry } from '../../types';
@@ -11,24 +13,35 @@ import type { ProviderInfo, VoiceEntry } from '../../types';
 interface SettingsContentProps {
   providers: ProviderInfo[];
   voiceLibrary: Record<string, VoiceEntry[]>;
+  voiceCounts: Record<string, number>;
+  providerErrors: Record<string, boolean>;
   loading: boolean;
   onProviderChange: (provider: string) => void;
   onVoiceSelect: (voice: VoiceEntry) => void;
-  onConfigChange: (config: Record<string, any>) => void;
+  onConfigChange: (config: Record<string, unknown>) => void;
 }
 
 export const SettingsContent: React.FC<SettingsContentProps> = ({
   providers,
   voiceLibrary,
+  voiceCounts,
+  providerErrors,
+  onProviderChange,
   onVoiceSelect,
   onConfigChange,
 }) => {
   const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
   const [showVoicePanel, setShowVoicePanel] = useState(false);
+  const [showProviderPanel, setShowProviderPanel] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   const handleVoiceSelect = (voice: VoiceEntry) => {
     onVoiceSelect(voice);
+    handleBackToSettings();
+  };
+
+  const handleProviderSelect = (provider: string) => {
+    onProviderChange(provider);
     handleBackToSettings();
   };
 
@@ -40,10 +53,19 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
     }, 150);
   };
 
+  const handleShowProviderPanel = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setShowProviderPanel(true);
+      setIsTransitioning(false);
+    }, 150);
+  };
+
   const handleBackToSettings = () => {
     setIsTransitioning(true);
     setTimeout(() => {
       setShowVoicePanel(false);
+      setShowProviderPanel(false);
       setIsTransitioning(false);
     }, 150);
   };
@@ -52,10 +74,26 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
     <div className="h-full flex flex-col relative">
       <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
         <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-          showVoicePanel ? '-translate-x-full' : 'translate-x-0'
+          showVoicePanel || showProviderPanel ? '-translate-x-full' : 'translate-x-0'
         }`}>
           {/* Normal Settings Content */}
           <div className="p-4 space-y-6">
+            {/* Provider Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-foreground">Text to Speech Provider</label>
+              </div>
+              <ProviderSelectionSelector
+                providers={providers}
+                selectedProvider={selectedProvider}
+                voiceLibrary={voiceLibrary}
+                voiceCounts={voiceCounts}
+                providerErrors={providerErrors}
+                onProviderSelect={onProviderChange}
+                onOpenProviderPanel={handleShowProviderPanel}
+              />
+            </div>
+
             {/* Voice Selection */}
             {selectedProvider && (
               <div className="space-y-3">
@@ -101,10 +139,21 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
           </div>
         </div>
         
-        {/* Voice Selection Panel - slides in from the right */}
+        {/* Selection Panels - slide in from the right */}
         <div className={`absolute inset-0 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-          showVoicePanel ? 'translate-x-0' : 'translate-x-full'
+          showVoicePanel || showProviderPanel ? 'translate-x-0' : 'translate-x-full'
         }`}>
+          {showProviderPanel && (
+            <ProviderSelectionPanel
+              providers={providers}
+              selectedProvider={selectedProvider}
+              voiceLibrary={voiceLibrary}
+              voiceCounts={voiceCounts}
+              providerErrors={providerErrors}
+              onProviderSelect={handleProviderSelect}
+              onBack={handleBackToSettings}
+            />
+          )}
           {showVoicePanel && selectedProvider && (
             <VoiceSelectionPanel
               provider={selectedProvider}

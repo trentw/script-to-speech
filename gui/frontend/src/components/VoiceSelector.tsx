@@ -1,7 +1,6 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChevronRight, Volume2, User } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
+import { SelectorButton, SelectorDetailsView } from '@/components/ui/selector';
 import type { VoiceEntry } from '../types';
 
 interface VoiceSelectorProps {
@@ -31,6 +30,26 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
     return parts.join(' • ');
   };
 
+  const renderVoiceTags = (voice: VoiceEntry) => {
+    const tags: Array<{ label: string; variant: 'default' | 'secondary' | 'outline' }> = [];
+    
+    // Character types
+    if (voice.tags?.character_types) {
+      voice.tags.character_types.slice(0, 2).forEach(type => {
+        tags.push({ label: type, variant: 'secondary' as const });
+      });
+    }
+    
+    // Custom tags
+    if (voice.tags?.custom_tags) {
+      voice.tags.custom_tags.slice(0, 3).forEach(tag => {
+        tags.push({ label: tag, variant: 'outline' as const });
+      });
+    }
+    
+    return tags;
+  };
+
   if (!voices || voices.length === 0) {
     return (
       <div className="space-y-3">
@@ -49,69 +68,23 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
 
   return (
     <div className="space-y-3">
-      <Button
-        variant="outline"
-        className="w-full h-auto p-0 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-all duration-200 cursor-pointer"
+      <SelectorButton
+        selectedItem={selectedVoice}
+        placeholder="Select voice"
         onClick={onOpenVoicePanel}
-      >
-        <div className="flex items-center justify-between w-full p-3">
-          <div className="flex items-center gap-3">
-            {/* Voice avatar placeholder */}
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-              {selectedVoice ? (
-                getVoiceDisplayName(selectedVoice).charAt(0).toUpperCase()
-              ) : (
-                <User className="w-4 h-4" />
-              )}
-            </div>
-            
-            {/* Voice info */}
-            <div className="text-left flex-1 min-w-0">
-              <div className="font-medium text-sm truncate">
-                {selectedVoice ? getVoiceDisplayName(selectedVoice) : 'Select voice'}
-              </div>
-              {selectedVoice ? (
-                <div className="text-xs text-muted-foreground truncate">
-                  {getVoiceSubtext(selectedVoice) || selectedVoice.description?.custom_description?.slice(0, 35) + '...'}
-                </div>
-              ) : (
-                <div className="text-xs text-muted-foreground truncate">
-                  Choose from {voices.length} available voice{voices.length !== 1 ? 's' : ''}
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <ChevronRight className="h-4 w-4 opacity-70 shrink-0 text-muted-foreground" />
-        </div>
-      </Button>
+        renderPrimary={getVoiceDisplayName}
+        renderSecondary={(voice) => 
+          getVoiceSubtext(voice) || 
+          (voice.description?.custom_description?.slice(0, 35) + '...')
+        }
+        availableCount={voices.length}
+      />
 
-      {/* Enhanced voice details */}
-      {selectedVoice && (
-        <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-          {selectedVoice.description?.custom_description && (
-            <p className="text-xs text-muted-foreground">
-              {selectedVoice.description.custom_description}
-            </p>
-          )}
-          
-          {/* Character types and tags */}
-          {(selectedVoice.tags?.character_types || selectedVoice.tags?.custom_tags) && (
-            <div className="flex flex-wrap gap-1">
-              {selectedVoice.tags?.character_types?.slice(0, 2).map((type, index) => (
-                <Badge key={`char-${index}`} variant="secondary" className="text-xs px-1.5 py-0">
-                  {type}
-                </Badge>
-              ))}
-              {selectedVoice.tags?.custom_tags?.slice(0, 3).map((tag, index) => (
-                <Badge key={`tag-${index}`} variant="outline" className="text-xs px-1.5 py-0">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <SelectorDetailsView
+        selectedItem={selectedVoice}
+        renderDescription={(voice) => voice.description?.custom_description || ''}
+        renderTags={renderVoiceTags}
+      />
     </div>
   );
 };

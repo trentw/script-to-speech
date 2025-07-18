@@ -1,17 +1,21 @@
 
 import { ConfigurationPanel } from '../ConfigurationPanel';
-import type { VoiceEntry } from '../../types';
+import type { VoiceEntry, ProviderInfo } from '../../types';
 
 export const PanelContent = ({
   providers,
   voiceLibrary,
+  voiceCounts,
+  providerErrors,
   loading,
   onProviderChange,
   onVoiceSelect,
   onConfigChange,
 }: {
-  providers: any[];
+  providers: ProviderInfo[];
   voiceLibrary: Record<string, VoiceEntry[]>;
+  voiceCounts: Record<string, number>;
+  providerErrors: Record<string, boolean>;
   loading: boolean;
   onProviderChange: (provider: string) => void;
   onVoiceSelect: (voice: VoiceEntry) => void;
@@ -21,6 +25,8 @@ export const PanelContent = ({
     <ConfigurationPanel
       providers={providers || []}
       voiceLibrary={voiceLibrary}
+      voiceCounts={voiceCounts}
+      providerErrors={providerErrors}
       loading={loading}
       onProviderChange={onProviderChange}
       onVoiceSelect={onVoiceSelect}

@@ -5,6 +5,8 @@ import {
   ConfigForm,
 } from '.';
 import { VoiceSelectionPanel } from './VoiceSelectionPanel';
+import { ProviderSelectionSelector } from './app/ProviderSelectionSelector';
+import { ProviderSelectionPanel } from './ProviderSelectionPanel';
 import { HistoryTab } from './HistoryTab';
 import { HistoryDetailsPanel } from './HistoryDetailsPanel';
 import { useConfiguration } from '../stores/appStore';
@@ -14,6 +16,8 @@ import type { ProviderInfo, VoiceEntry, TaskStatusResponse } from '../types';
 interface ConfigurationPanelProps {
   providers: ProviderInfo[];
   voiceLibrary: Record<string, VoiceEntry[]>;
+  voiceCounts: Record<string, number>;
+  providerErrors: Record<string, boolean>;
   loading: boolean;
   onProviderChange: (provider: string) => void;
   onVoiceSelect: (voice: VoiceEntry) => void;
@@ -23,21 +27,27 @@ interface ConfigurationPanelProps {
 export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   providers,
   voiceLibrary,
-  // loading and onProviderChange are passed as props but not used directly in this component
-  // They are used by parent components or for future functionality
+  voiceCounts,
+  providerErrors,
   loading: _loading,
-  onProviderChange: _onProviderChange,
+  onProviderChange,
   onVoiceSelect,
   onConfigChange,
 }) => {
   // Use store for client state
   const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
   const [showVoicePanel, setShowVoicePanel] = useState(false);
+  const [showProviderPanel, setShowProviderPanel] = useState(false);
   const [selectedHistoryTask, setSelectedHistoryTask] = useState<TaskStatusResponse | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   
   const handleVoiceSelect = (voice: VoiceEntry) => {
     onVoiceSelect(voice);
+    handleBackToSettings();
+  };
+
+  const handleProviderSelect = (provider: string) => {
+    onProviderChange(provider);
     handleBackToSettings();
   };
 
@@ -49,10 +59,19 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
     }, 150);
   };
 
+  const handleShowProviderPanel = () => {
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setShowProviderPanel(true);
+      setIsTransitioning(false);
+    }, 150);
+  };
+
   const handleBackToSettings = () => {
     setIsTransitioning(true);
     setTimeout(() => {
       setShowVoicePanel(false);
+      setShowProviderPanel(false);
       setIsTransitioning(false);
     }, 150);
   };
@@ -86,10 +105,26 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
         <AnimatedTabs.Content value="settings" className="flex-1 overflow-hidden min-h-0 relative">
               <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
                 <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-                  showVoicePanel ? '-translate-x-full' : 'translate-x-0'
+                  showVoicePanel || showProviderPanel ? '-translate-x-full' : 'translate-x-0'
                 }`}>
               {/* Normal Settings Content */}
               <div className="px-4 py-4 space-y-6">
+                {/* Provider Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium text-foreground">Text to Speech Provider</label>
+                  </div>
+                  <ProviderSelectionSelector
+                    providers={providers}
+                    selectedProvider={selectedProvider}
+                    voiceLibrary={voiceLibrary}
+                    voiceCounts={voiceCounts}
+                    providerErrors={providerErrors}
+                    onProviderSelect={onProviderChange}
+                    onOpenProviderPanel={handleShowProviderPanel}
+                  />
+                </div>
+
                 {/* Voice Selection */}
                 {selectedProvider && (
                   <div className="space-y-3">
@@ -135,10 +170,21 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               </div>
             </div>
             
-            {/* Voice Selection Panel - slides in from the right */}
+            {/* Selection Panels - slide in from the right */}
             <div className={`absolute inset-0 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-              showVoicePanel ? 'translate-x-0' : 'translate-x-full'
+              showVoicePanel || showProviderPanel ? 'translate-x-0' : 'translate-x-full'
             }`}>
+              {showProviderPanel && (
+                <ProviderSelectionPanel
+                  providers={providers}
+                  selectedProvider={selectedProvider}
+                  voiceLibrary={voiceLibrary}
+                  voiceCounts={voiceCounts}
+                  providerErrors={providerErrors}
+                  onProviderSelect={handleProviderSelect}
+                  onBack={handleBackToSettings}
+                />
+              )}
               {showVoicePanel && selectedProvider && (
                 <VoiceSelectionPanel
                   provider={selectedProvider}

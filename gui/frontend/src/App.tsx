@@ -1,9 +1,10 @@
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback } from 'react';
 import { AppShell, AdaptiveNavigation, ResponsivePanel, MobileDrawer } from './components/layout';
 import { useViewportSize } from './hooks/useViewportSize';
 import { useBackendStatus } from './hooks/queries/useBackendStatus';
 import { useProviders } from './hooks/queries/useProviders';
 import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
+import { useAllVoiceCounts } from './hooks/queries/useAllVoiceCounts';
 import { useAllTasks } from './hooks/queries/useTaskStatus';
 import { useCreateTask } from './hooks/mutations/useTasks';
 import { useConfiguration, useUserInput, useUIState, useCentralAudio, useLayout } from './stores/appStore';
@@ -18,13 +19,12 @@ import { PanelContent } from './components/app/PanelContent';
 import { SettingsContent } from './components/app/SettingsContent';
 import { HistoryContent } from './components/app/HistoryContent';
 import { FooterContent } from './components/app/FooterContent';
-import { ProviderSelector } from './components/app/ProviderSelector';
 import { ErrorDisplay } from './components/app/ErrorDisplay';
 import { AppStatus, AppLoading } from './components/app/AppStatus';
 
 function App() {
   // Hooks
-  const { isMobile, isTablet } = useViewportSize();
+  const { isMobile } = useViewportSize();
   
   // Use Layout state for responsive behavior
   const { 
@@ -43,8 +43,8 @@ function App() {
     setSelectedVoice, 
     setCurrentConfig 
   } = useConfiguration();
-  const { text, setText } = useUserInput();
-  const { error, setError, clearError } = useUIState();
+  const { text } = useUserInput();
+  const { setError, clearError } = useUIState();
   const { audioUrl, setAudioData, setLoading: setAudioLoading } = useCentralAudio();
 
   // Use TanStack Query hooks for server state
@@ -54,10 +54,14 @@ function App() {
   const { data: generationTasks = [] } = useAllTasks();
   const createTaskMutation = useCreateTask();
 
+  // Get voice counts for all providers dynamically
+  const { voiceCounts, providerErrors } = useAllVoiceCounts(providers || []);
+
   // Adapt voice library data to expected format
   const voiceLibrary: Record<string, VoiceEntry[]> = selectedProvider && voiceLibraryData 
     ? { [selectedProvider]: voiceLibraryData }
     : {};
+
 
   // Navigation items (only core app navigation)
   const navigationItems = [
@@ -161,12 +165,6 @@ function App() {
     };
   }, [handleKeyDown]);
 
-  const memoizedProviderSelector = useCallback(() => (
-    <ProviderSelector
-      providers={providers || []}
-      handleProviderChange={handleProviderChange}
-    />
-  ), [providers, handleProviderChange]);
 
   if (!backendStatus) {
     return <AppLoading />;
@@ -187,7 +185,7 @@ function App() {
             onMobileMenuToggle={toggleSidebar}
           />
         }
-        header={<HeaderContent ProviderSelector={memoizedProviderSelector} />}
+        header={<HeaderContent />}
         main={<MainContent handleGenerate={handleGenerate} isGenerating={createTaskMutation.isPending} />}
         panel={
           !isMobile ? (
@@ -195,6 +193,8 @@ function App() {
               <PanelContent
                 providers={providers || []}
                 voiceLibrary={voiceLibrary}
+                voiceCounts={voiceCounts}
+                providerErrors={providerErrors}
                 loading={createTaskMutation.isPending || providersLoading}
                 onProviderChange={handleProviderChange}
                 onVoiceSelect={handleVoiceSelect}
@@ -217,6 +217,8 @@ function App() {
             <SettingsContent
               providers={providers || []}
               voiceLibrary={voiceLibrary}
+              voiceCounts={voiceCounts}
+              providerErrors={providerErrors}
               loading={createTaskMutation.isPending || providersLoading}
               onProviderChange={handleProviderChange}
               onVoiceSelect={handleVoiceSelect}

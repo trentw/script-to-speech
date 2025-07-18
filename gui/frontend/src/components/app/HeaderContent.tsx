@@ -3,12 +3,8 @@ import { AppHeader } from '../layout/AppHeader';
 import { useLayout } from '../../stores/appStore';
 import { useViewportSize } from '../../hooks/useViewportSize';
 
-export const HeaderContent = ({
-  ProviderSelector,
-}: {
-  ProviderSelector: React.FC;
-}) => {
-  const { isMobile, isTablet } = useViewportSize();
+export const HeaderContent = () => {
+  const { isMobile } = useViewportSize();
   const { toggleSidebar, setActiveModal } = useLayout();
 
   const showActionButtons = isMobile; // Only show on mobile when right panel is hidden
@@ -24,8 +20,6 @@ export const HeaderContent = ({
       onSettingsClick={showActionButtons ? () => setActiveModal('settings') : undefined}
       onHistoryClick={showActionButtons ? () => setActiveModal('history') : undefined}
       showActionButtons={showActionButtons}
-    >
-      <ProviderSelector />
-    </AppHeader>
+    />
   );
 };

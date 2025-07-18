@@ -4,7 +4,6 @@ export * from "./BackendStatus";
 export * from "./ConfigForm";
 export * from "./HistoryTab";
 export * from "./HistoryDetailsPanel";
-export * from "./ProviderSelector";
 export * from "./TextInput";
 export * from "./VoiceSelector";
 export * from "./VoiceSelectionPanel";
