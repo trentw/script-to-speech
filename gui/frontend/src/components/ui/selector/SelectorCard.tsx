@@ -23,7 +23,7 @@ export function SelectorCard<T>({
   return (
     <button
       onClick={() => onSelect(item)}
-      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 hover:border-accent hover:bg-accent/5 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
+      className={`w-full text-left p-3 rounded-lg border transition-all duration-200 cursor-pointer hover:border-accent hover:bg-accent/5 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent ${
         isSelected
           ? 'border-primary bg-primary/5 shadow-sm'
           : 'border-border bg-background'

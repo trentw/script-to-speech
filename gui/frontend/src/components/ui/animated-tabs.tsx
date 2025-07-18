@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Tabs, TabsList, TabsTrigger } from './tabs';
-import { cn } from '@/lib/utils';
+import React, { useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Tabs, TabsList, TabsTrigger } from "./tabs";
+import { cn } from "@/lib/utils";
 
 export interface AnimatedTabsProps {
   defaultValue?: string;
@@ -23,41 +23,44 @@ const TabsContext = React.createContext<{
   direction: number;
   setActiveTab: (value: string) => void;
 }>({
-  activeTab: '',
+  activeTab: "",
   direction: 0,
   setActiveTab: () => {},
 });
 
-export function AnimatedTabs({ 
-  defaultValue = '', 
-  value, 
-  onValueChange, 
-  className, 
-  children 
+export function AnimatedTabs({
+  defaultValue = "",
+  value,
+  onValueChange,
+  className,
+  children,
 }: AnimatedTabsProps) {
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [direction, setDirection] = useState(0);
-  
-  const activeTab = value !== undefined ? value : internalValue;
-  
-  // Extract tab order for direction calculation - use fixed order for Settings/History
-  const tabOrder = ['settings', 'history'];
 
-  const setActiveTab = useCallback((newValue: string) => {
-    const currentIndex = tabOrder.indexOf(activeTab);
-    const newIndex = tabOrder.indexOf(newValue);
-    setDirection(newIndex > currentIndex ? 1 : -1);
-    
-    if (value === undefined) {
-      setInternalValue(newValue);
-    }
-    onValueChange?.(newValue);
-  }, [activeTab, tabOrder, value, onValueChange]);
+  const activeTab = value !== undefined ? value : internalValue;
+
+  // Extract tab order for direction calculation - use fixed order for Settings/History
+  const tabOrder = ["settings", "history"];
+
+  const setActiveTab = useCallback(
+    (newValue: string) => {
+      const currentIndex = tabOrder.indexOf(activeTab);
+      const newIndex = tabOrder.indexOf(newValue);
+      setDirection(newIndex > currentIndex ? 1 : -1);
+
+      if (value === undefined) {
+        setInternalValue(newValue);
+      }
+      onValueChange?.(newValue);
+    },
+    [activeTab, tabOrder, value, onValueChange]
+  );
 
   return (
     <TabsContext.Provider value={{ activeTab, direction, setActiveTab }}>
-      <Tabs 
-        value={activeTab} 
+      <Tabs
+        value={activeTab}
         onValueChange={setActiveTab}
         className={cn("flex flex-col", className)}
       >
@@ -67,18 +70,18 @@ export function AnimatedTabs({
   );
 }
 
-export function AnimatedTabsList({ 
-  className, 
-  children, 
-  ...props 
+export function AnimatedTabsList({
+  className,
+  children,
+  ...props
 }: React.ComponentProps<typeof TabsList>) {
   return (
-    <TabsList 
+    <TabsList
       className={cn(
         // Ultra-clean styling with no border, exactly matching reference design
         "h-auto bg-transparent p-0 gap-6",
         className
-      )} 
+      )}
       {...props}
     >
       {children}
@@ -86,26 +89,28 @@ export function AnimatedTabsList({
   );
 }
 
-export function AnimatedTabsTrigger({ 
-  className, 
-  children, 
-  ...props 
+export function AnimatedTabsTrigger({
+  className,
+  children,
+  ...props
 }: React.ComponentProps<typeof TabsTrigger>) {
   return (
-    <TabsTrigger 
+    <TabsTrigger
       className={cn(
-        // Ultra-minimal styling exactly matching reference design
-        "relative bg-transparent border-0 rounded-none px-0 py-3 text-base font-normal",
-        // Much more greyed out inactive tabs, exactly like reference
-        "text-muted-foreground/30 hover:text-muted-foreground/60 transition-all duration-200",
-        // Active state with thick underline
-        "data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:font-medium",
-        "data-[state=active]:shadow-none",
-        // Thick dark underline for active state
+        // Minimal styling - clean design
+        "bg-transparent border-0 rounded-none px-0 py-3 text-base font-normal",
+        "shadow-none h-auto transition-all duration-200 cursor-pointer",
+        // Inactive tab styling - darker text for better readability
+        "[&:not([data-state=active])]:text-muted-foreground [&:not([data-state=active])]:opacity-50",
+        "[&:not([data-state=active])]:hover:opacity-75",
+        // Active tab styling
+        "data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:opacity-100",
+        // Underline for active state
         "border-b-2 border-transparent data-[state=active]:border-foreground",
-        "cursor-pointer select-none focus:outline-none",
+        // Focus styles for accessibility
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className
-      )} 
+      )}
       {...props}
     >
       {children}
@@ -113,10 +118,10 @@ export function AnimatedTabsTrigger({
   );
 }
 
-export function AnimatedTabsContent({ 
-  value, 
-  className, 
-  children 
+export function AnimatedTabsContent({
+  value,
+  className,
+  children,
 }: AnimatedTabsContentProps) {
   const { activeTab, direction } = React.useContext(TabsContext);
   const isActive = activeTab === value;

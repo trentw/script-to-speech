@@ -179,7 +179,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
             {groupedTasks.map(({ date, dateKey, tasks }) => (
               <div key={dateKey}>
                 {/* Date Header */}
-                <div className="px-4 py-2 sticky top-0 bg-background/95 backdrop-blur border-b border-border">
+                <div className="px-4 py-2 sticky top-0 bg-background/95 backdrop-blur border-b border-border mb-2">
                   <h3 className="text-sm font-medium text-foreground">
                     {getDateLabel(date)}
                   </h3>
