@@ -5,7 +5,7 @@ import { Slider } from './ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAudio } from '../hooks/useAudio';
 import { downloadAudio } from '../utils/audioUtils';
-import { appButtonVariants, semanticButtons } from './ui/button-variants';
+import { appButtonVariants, semanticButtons } from '@/components/ui/button-variants';
 
 export interface AudioPlayerProps {
   /** Audio URL to play - if undefined, shows empty state */

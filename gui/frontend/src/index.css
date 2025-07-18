@@ -65,6 +65,150 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "Roboto", sans-serif;
+  }
+}
+
+/* CSS Grid Layout System */
+@layer components {
+  .app-shell {
+    container-type: inline-size;
+    container-name: shell;
+  }
+
+  /* CSS Grid utilities for named grid areas */
+  .grid-area-nav {
+    grid-area: nav;
+  }
+
+  .grid-area-header {
+    grid-area: header;
+  }
+
+  .grid-area-main {
+    grid-area: main;
+  }
+
+  .grid-area-panel {
+    grid-area: panel;
+  }
+
+  .grid-area-footer {
+    grid-area: footer;
+  }
+
+  /* Responsive grid templates using container queries */
+  .app-shell {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: 100vh;
+    width: 100%;
+    /* Smooth grid layout transitions for responsive changes */
+    transition: grid-template-columns 300ms ease-in-out,
+      grid-template-areas 300ms ease-in-out;
+  }
+
+  /* Desktop: Full navigation + header + main + panel */
+  .app-shell.has-nav.has-panel {
+    grid-template-areas:
+      "nav header header"
+      "nav main panel"
+      "nav footer footer";
+    grid-template-columns: auto minmax(500px, 1fr) 500px;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* Desktop: Navigation + header + main only */
+  .app-shell.has-nav:not(.has-panel) {
+    grid-template-areas:
+      "nav header"
+      "nav main"
+      "nav footer";
+    grid-template-columns: auto minmax(500px, 1fr);
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* Desktop: Header + main + panel only */
+  .app-shell.has-panel:not(.has-nav) {
+    grid-template-areas:
+      "header header"
+      "main panel"
+      "footer footer";
+    grid-template-columns: minmax(500px, 1fr) 500px;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* Desktop: Header + main only */
+  .app-shell:not(.has-nav):not(.has-panel) {
+    grid-template-areas:
+      "header"
+      "main"
+      "footer";
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* Tablet breakpoint: Collapse navigation, keep panel */
+  @container shell (max-width: 1199px) {
+    .app-shell.has-panel {
+      grid-template-areas:
+        "header header"
+        "main panel"
+        "footer footer";
+      grid-template-columns: minmax(400px, 2fr) 500px;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .app-shell:not(.has-panel) {
+      grid-template-areas:
+        "header"
+        "main"
+        "footer";
+      grid-template-columns: minmax(400px, 1fr);
+      grid-template-rows: auto 1fr auto;
+    }
+  }
+
+  /* Mobile breakpoint: Single column, panel becomes modal */
+  @container shell (max-width: 767px) {
+    .app-shell {
+      grid-template-areas:
+        "header"
+        "main"
+        "footer";
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr auto;
+    }
+  }
+
+  /* Component-level container queries */
+  .responsive-panel {
+    container-type: inline-size;
+    container-name: panel;
+  }
+
+  .adaptive-navigation {
+    container-type: inline-size;
+    container-name: navigation;
+  }
+
+  /* Hide elements responsively */
+  @container shell (max-width: 767px) {
+    .hide-mobile {
+      display: none !important;
+    }
+  }
+
+  @container shell (min-width: 768px) {
+    .hide-desktop {
+      display: none !important;
+    }
+  }
+
+  @container shell (max-width: 1199px) {
+    .hide-tablet-down {
+      display: none !important;
+    }
   }
 }

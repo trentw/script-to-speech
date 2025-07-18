@@ -51,8 +51,25 @@ interface CentralAudioSlice {
   setLoading: (loading: boolean) => void
 }
 
+// Layout slice - handles responsive layout state
+interface LayoutSlice {
+  viewportSize: 'mobile' | 'tablet' | 'desktop'
+  sidebarExpanded: boolean
+  rightPanelExpanded: boolean
+  activeModal: 'settings' | 'history' | null
+  
+  // Actions
+  setViewportSize: (size: 'mobile' | 'tablet' | 'desktop') => void
+  setSidebarExpanded: (expanded: boolean) => void
+  toggleSidebar: () => void
+  setRightPanelExpanded: (expanded: boolean) => void
+  toggleRightPanel: () => void
+  setActiveModal: (modal: 'settings' | 'history' | null) => void
+  closeModal: () => void
+}
+
 // Combined store type
-type AppStore = ConfigurationSlice & UserInputSlice & UISlice & CentralAudioSlice
+type AppStore = ConfigurationSlice & UserInputSlice & UISlice & CentralAudioSlice & LayoutSlice
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -147,6 +164,40 @@ const useAppStore = create<AppStore>()(
         setLoading: (loading) => {
           set({ loading }, false, 'centralAudio/setLoading')
         },
+        
+        // Layout slice implementation
+        viewportSize: 'desktop',
+        sidebarExpanded: true,
+        rightPanelExpanded: true,
+        activeModal: null,
+        
+        setViewportSize: (size) => {
+          set({ viewportSize: size }, false, 'layout/setViewportSize')
+        },
+        
+        setSidebarExpanded: (expanded) => {
+          set({ sidebarExpanded: expanded }, false, 'layout/setSidebarExpanded')
+        },
+        
+        toggleSidebar: () => {
+          set((state) => ({ sidebarExpanded: !state.sidebarExpanded }), false, 'layout/toggleSidebar')
+        },
+        
+        setRightPanelExpanded: (expanded) => {
+          set({ rightPanelExpanded: expanded }, false, 'layout/setRightPanelExpanded')
+        },
+        
+        toggleRightPanel: () => {
+          set((state) => ({ rightPanelExpanded: !state.rightPanelExpanded }), false, 'layout/toggleRightPanel')
+        },
+        
+        setActiveModal: (modal) => {
+          set({ activeModal: modal }, false, 'layout/setActiveModal')
+        },
+        
+        closeModal: () => {
+          set({ activeModal: null }, false, 'layout/closeModal')
+        },
       }),
       {
         name: 'sts-app-store', // localStorage key
@@ -156,7 +207,9 @@ const useAppStore = create<AppStore>()(
           selectedProvider: state.selectedProvider,
           selectedVoice: state.selectedVoice,
           currentConfig: state.currentConfig,
-          // text, error are NOT persisted (ephemeral state)
+          sidebarExpanded: state.sidebarExpanded,
+          rightPanelExpanded: state.rightPanelExpanded,
+          // text, error, viewportSize, activeModal are NOT persisted (ephemeral state)
         }),
       }
     ),
@@ -207,6 +260,22 @@ export const useCentralAudio = () => useAppStore(
     setAudioData: state.setAudioData,
     clearAudio: state.clearAudio,
     setLoading: state.setLoading,
+  }))
+)
+
+export const useLayout = () => useAppStore(
+  useShallow((state) => ({
+    viewportSize: state.viewportSize,
+    sidebarExpanded: state.sidebarExpanded,
+    rightPanelExpanded: state.rightPanelExpanded,
+    activeModal: state.activeModal,
+    setViewportSize: state.setViewportSize,
+    setSidebarExpanded: state.setSidebarExpanded,
+    toggleSidebar: state.toggleSidebar,
+    setRightPanelExpanded: state.setRightPanelExpanded,
+    toggleRightPanel: state.toggleRightPanel,
+    setActiveModal: state.setActiveModal,
+    closeModal: state.closeModal,
   }))
 )
 

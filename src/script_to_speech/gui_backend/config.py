@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     
     # File paths
     STS_ROOT_DIR: Path = Path(__file__).parent.parent.parent.parent
-    AUDIO_OUTPUT_DIR: Path = STS_ROOT_DIR / "gui_audio_output"
+    AUDIO_OUTPUT_DIR: Path = STS_ROOT_DIR / "standalone_speech"
     
     # CORS settings
     ALLOWED_ORIGINS: List[str] = [

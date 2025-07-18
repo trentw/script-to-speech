@@ -66,23 +66,23 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
             </div>
             
             {/* Voice info */}
-            <div className="text-left">
-              <div className="font-medium text-sm">
+            <div className="text-left flex-1 min-w-0">
+              <div className="font-medium text-sm truncate">
                 {selectedVoice ? getVoiceDisplayName(selectedVoice) : 'Select voice'}
               </div>
               {selectedVoice ? (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground truncate">
                   {getVoiceSubtext(selectedVoice) || selectedVoice.description?.custom_description?.slice(0, 35) + '...'}
                 </div>
               ) : (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground truncate">
                   Choose from {voices.length} available voice{voices.length !== 1 ? 's' : ''}
                 </div>
               )}
             </div>
           </div>
           
-          <ChevronRight className="h-4 w-4 opacity-50 shrink-0" />
+          <ChevronRight className="h-4 w-4 opacity-70 shrink-0 text-muted-foreground" />
         </div>
       </Button>
 

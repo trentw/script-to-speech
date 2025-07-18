@@ -89,7 +89,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                   showVoicePanel ? '-translate-x-full' : 'translate-x-0'
                 }`}>
               {/* Normal Settings Content */}
-              <div className="p-4 space-y-6">
+              <div className="px-4 py-4 space-y-6">
                 {/* Voice Selection */}
                 {selectedProvider && (
                   <div className="space-y-3">
