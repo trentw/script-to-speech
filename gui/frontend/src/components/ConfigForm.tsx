@@ -176,7 +176,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
             ) : validation?.valid ? (
               <>
                 <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-xs text-green-600 dark:text-green-400">Valid configuration</span>
+                <span className="text-xs text-green-600">Valid configuration</span>
               </>
             ) : (
               <>
@@ -189,7 +189,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
           </div>
           
           {validation?.warnings && validation.warnings.length > 0 && (
-            <span className="text-xs text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-amber-600">
               {validation.warnings.length} warning{validation.warnings.length !== 1 ? 's' : ''}
             </span>
           )}

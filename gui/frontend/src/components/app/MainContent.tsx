@@ -44,7 +44,7 @@ export const MainContent = ({
               <div className="text-xs px-4 py-1.5 rounded-md font-medium border text-muted-foreground bg-background border-border min-w-[100px] text-center">
                 <span className={
                   text.length > 4000 ? 'text-destructive' :
-                  text.length > 2000 ? 'text-amber-600 dark:text-amber-400' :
+                  text.length > 2000 ? 'text-amber-600' :
                   'text-muted-foreground'
                 }>
                   {text.length.toLocaleString()} / 5,000

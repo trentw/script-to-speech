@@ -83,7 +83,7 @@ export function AdaptiveNavigation({
           "adaptive-navigation",
           "flex flex-col h-full border-r border-border",
           // On mobile/tablet when expanded, position as overlay with solid background
-          (isMobile || isTablet) && "fixed inset-y-0 left-0 z-50 w-64 shadow-lg bg-white dark:bg-gray-900 border-r border-border",
+          (isMobile || isTablet) && "fixed inset-y-0 left-0 z-50 w-64 shadow-lg bg-white border-r border-border",
           // Desktop background
           !(isMobile || isTablet) && "bg-background",
           className
@@ -94,7 +94,7 @@ export function AdaptiveNavigation({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border bg-white dark:bg-gray-900">
+        <div className="flex items-center justify-between p-4 border-b border-border bg-white">
           <h1 
             className={cn(
               "font-bold text-lg overflow-hidden whitespace-nowrap",
@@ -121,7 +121,7 @@ export function AdaptiveNavigation({
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 p-2 space-y-1 bg-white dark:bg-gray-900">
+        <div className="flex-1 p-2 space-y-1 bg-white">
           {items.map((item) => {
             const IconComponent = item.icon
             const button = (
@@ -164,7 +164,7 @@ export function AdaptiveNavigation({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border bg-white dark:bg-gray-900">
+        <div className="p-4 border-t border-border bg-white">
           <Separator className="mb-4" />
           <p 
             className={cn(

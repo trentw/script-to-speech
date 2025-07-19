@@ -209,7 +209,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
             max={duration || 100}
             step={0.1}
             disabled={!canPlay}
-            className="w-full [&_[data-slot=slider-track]]:bg-gray-300 [&_[data-slot=slider-track]]:dark:bg-gray-600 [&_[data-slot=slider-range]]:bg-black [&_[data-slot=slider-range]]:dark:bg-white [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:dark:bg-white [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-black [&_[data-slot=slider-thumb]]:dark:border-white [&_[data-slot=slider-thumb]]:shadow-md"
+            className="w-full [&_[data-slot=slider-track]]:bg-gray-300 [&_[data-slot=slider-range]]:bg-black [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-black [&_[data-slot=slider-thumb]]:shadow-md"
             />
             <span className="text-xs text-muted-foreground w-12 font-mono">
             {formatTime(duration)}

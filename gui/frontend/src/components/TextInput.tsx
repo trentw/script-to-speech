@@ -37,7 +37,7 @@ export const TextInput: React.FC<TextInputProps> = ({
           {value.length} characters
         </span>
         {value.length > 1000 && (
-          <span className="text-sm text-amber-600 dark:text-amber-500">
+          <span className="text-sm text-amber-600">
             Long text may take more time to generate
           </span>
         )}

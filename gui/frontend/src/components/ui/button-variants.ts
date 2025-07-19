@@ -25,28 +25,28 @@ export const appButtonVariants = cva(
     variants: {
       variant: {
         // Primary action button (generate speech) - inverted for prominence
-        primary: "bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg active:scale-95 active:shadow-inner shadow-md rounded-md dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200",
+        primary: "bg-gray-900 text-white hover:bg-gray-800 hover:shadow-lg active:scale-95 active:shadow-inner shadow-md rounded-md",
         
         // Secondary action button - standard colors
-        secondary: "bg-background text-foreground border border-border hover:bg-gray-100 hover:text-foreground hover:border-gray-300 active:scale-95 active:shadow-inner shadow-sm rounded-md dark:hover:bg-gray-800",
+        secondary: "bg-background text-foreground border border-border hover:bg-gray-100 hover:text-foreground hover:border-gray-300 active:scale-95 active:shadow-inner shadow-sm rounded-md",
         
         // Audio control buttons
-        "audio-control": "bg-transparent hover:bg-gray-100 hover:text-foreground rounded-full hover:shadow-md active:scale-95 active:shadow-inner dark:hover:bg-gray-800",
+        "audio-control": "bg-transparent hover:bg-gray-100 hover:text-foreground rounded-full hover:shadow-md active:scale-95 active:shadow-inner",
         
         // Audio play button (main) - CIRCULAR inverted button for prominence
-        "audio-play": "bg-gray-900 text-white hover:bg-gray-800 hover:shadow-xl active:scale-95 active:shadow-inner shadow-lg rounded-full border-2 border-gray-900 dark:bg-gray-100 dark:text-gray-900 dark:border-gray-100 dark:hover:bg-gray-200",
+        "audio-play": "bg-gray-900 text-white hover:bg-gray-800 hover:shadow-xl active:scale-95 active:shadow-inner shadow-lg rounded-full border-2 border-gray-900",
         
         // Action buttons in lists (play, download, more) - more prominent hover
-        "list-action": "bg-transparent hover:bg-gray-200 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner transition-all rounded-md dark:hover:bg-gray-700",
+        "list-action": "bg-transparent hover:bg-gray-200 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner transition-all rounded-md",
         
         // Reset/secondary buttons
-        "reset": "border border-border bg-background hover:bg-gray-100 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner rounded-md dark:hover:bg-gray-800",
+        "reset": "border border-border bg-background hover:bg-gray-100 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner rounded-md",
         
         // Sidebar toggle
-        "sidebar-toggle": "hover:bg-gray-100 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner rounded-md dark:hover:bg-gray-800",
+        "sidebar-toggle": "hover:bg-gray-100 hover:text-foreground hover:shadow-md active:scale-95 active:shadow-inner rounded-md",
         
         // Provider/voice selection
-        "selection": "border border-border bg-background hover:bg-gray-100 hover:text-foreground hover:border-gray-300 hover:shadow-md active:scale-95 active:shadow-inner rounded-md dark:hover:bg-gray-800",
+        "selection": "border border-border bg-background hover:bg-gray-100 hover:text-foreground hover:border-gray-300 hover:shadow-md active:scale-95 active:shadow-inner rounded-md",
       },
       size: {
         sm: "h-8 px-3 text-xs",
