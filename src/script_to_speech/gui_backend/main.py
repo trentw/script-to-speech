@@ -9,7 +9,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from script_to_speech.gui_backend.routers import providers, voice_library, generation, files
+from script_to_speech.gui_backend.routers import (
+    providers,
+    voice_library,
+    generation,
+    files,
+    screenplay,
+)
 from script_to_speech.gui_backend.config import settings
 
 # Create FastAPI app
@@ -35,10 +41,13 @@ app.include_router(providers.router, prefix="/api", tags=["providers"])
 app.include_router(voice_library.router, prefix="/api", tags=["voice-library"])
 app.include_router(generation.router, prefix="/api", tags=["generation"])
 app.include_router(files.router, prefix="/api", tags=["files"])
+app.include_router(screenplay.router, prefix="/api/screenplay", tags=["screenplay"])
 
 # Mount static files directory for generated audio
 if settings.AUDIO_OUTPUT_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(settings.AUDIO_OUTPUT_DIR)), name="static")
+    app.mount(
+        "/static", StaticFiles(directory=str(settings.AUDIO_OUTPUT_DIR)), name="static"
+    )
 
 
 @app.get("/")

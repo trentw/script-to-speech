@@ -14,25 +14,23 @@ async def get_audio_file(filename: str) -> FileResponse:
     """Serve generated audio files."""
     try:
         file_path = settings.AUDIO_OUTPUT_DIR / filename
-        
+
         if not file_path.exists():
             raise HTTPException(status_code=404, detail=f"File {filename} not found")
-        
+
         if not file_path.is_file():
             raise HTTPException(status_code=404, detail=f"{filename} is not a file")
-        
+
         # Security check: ensure file is within the audio output directory
         try:
             file_path.resolve().relative_to(settings.AUDIO_OUTPUT_DIR.resolve())
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
-        
+
         return FileResponse(
-            path=str(file_path),
-            media_type="audio/mpeg",
-            filename=filename
+            path=str(file_path), media_type="audio/mpeg", filename=filename
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -44,30 +42,32 @@ async def download_audio_file(filename: str) -> FileResponse:
     """Force download of generated audio files with proper headers."""
     try:
         file_path = settings.AUDIO_OUTPUT_DIR / filename
-        
+
         if not file_path.exists():
             raise HTTPException(status_code=404, detail=f"File {filename} not found")
-        
+
         if not file_path.is_file():
             raise HTTPException(status_code=404, detail=f"{filename} is not a file")
-        
+
         # Security check: ensure file is within the audio output directory
         try:
             file_path.resolve().relative_to(settings.AUDIO_OUTPUT_DIR.resolve())
         except ValueError:
             raise HTTPException(status_code=403, detail="Access denied")
-        
+
         return FileResponse(
             path=str(file_path),
             media_type="audio/mpeg",
             filename=filename,
-            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to download file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to download file: {str(e)}"
+        )
 
 
 @router.get("/files")
@@ -77,13 +77,15 @@ async def list_audio_files() -> dict:
         files = []
         for file_path in settings.AUDIO_OUTPUT_DIR.glob("*.mp3"):
             if file_path.is_file():
-                files.append({
-                    "filename": file_path.name,
-                    "size": file_path.stat().st_size,
-                    "modified": file_path.stat().st_mtime
-                })
-        
+                files.append(
+                    {
+                        "filename": file_path.name,
+                        "size": file_path.stat().st_size,
+                        "modified": file_path.stat().st_mtime,
+                    }
+                )
+
         return {"files": files}
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to list files: {str(e)}")

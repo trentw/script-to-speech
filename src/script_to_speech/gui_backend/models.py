@@ -8,14 +8,16 @@ from pydantic import BaseModel, Field
 
 class TaskStatus(str, Enum):
     """Task status enumeration."""
+
     PENDING = "pending"
-    PROCESSING = "processing" 
+    PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
 
 
 class FieldType(str, Enum):
     """Field type enumeration."""
+
     STRING = "string"
     INTEGER = "integer"
     FLOAT = "float"
@@ -26,6 +28,7 @@ class FieldType(str, Enum):
 
 class ProviderField(BaseModel):
     """Provider field definition."""
+
     name: str
     type: FieldType
     required: bool
@@ -38,6 +41,7 @@ class ProviderField(BaseModel):
 
 class ProviderInfo(BaseModel):
     """Provider information."""
+
     identifier: str
     name: str
     description: Optional[str] = None
@@ -48,6 +52,7 @@ class ProviderInfo(BaseModel):
 
 class VoiceProperties(BaseModel):
     """Voice properties from voice library."""
+
     accent: Optional[str] = None
     gender: Optional[str] = None
     age: Optional[float] = Field(None, ge=0.0, le=1.0)
@@ -62,6 +67,7 @@ class VoiceProperties(BaseModel):
 
 class VoiceDescription(BaseModel):
     """Voice description from voice library."""
+
     provider_name: Optional[str] = None
     provider_description: Optional[str] = None
     provider_use_cases: Optional[str] = None
@@ -71,6 +77,7 @@ class VoiceDescription(BaseModel):
 
 class VoiceTags(BaseModel):
     """Voice tags from voice library."""
+
     provider_use_cases: Optional[List[str]] = None
     custom_tags: Optional[List[str]] = None
     character_types: Optional[List[str]] = None
@@ -78,6 +85,7 @@ class VoiceTags(BaseModel):
 
 class VoiceEntry(BaseModel):
     """Voice library entry."""
+
     sts_id: str
     provider: str
     config: Dict[str, Any]
@@ -89,6 +97,7 @@ class VoiceEntry(BaseModel):
 
 class VoiceDetails(BaseModel):
     """Detailed voice information."""
+
     sts_id: str
     provider: str
     config: Dict[str, Any]
@@ -101,6 +110,7 @@ class VoiceDetails(BaseModel):
 
 class GenerationRequest(BaseModel):
     """Audio generation request."""
+
     provider: str
     config: Dict[str, Any]
     text: str
@@ -111,6 +121,7 @@ class GenerationRequest(BaseModel):
 
 class TaskResponse(BaseModel):
     """Task creation response."""
+
     task_id: str
     status: TaskStatus
     message: str
@@ -118,6 +129,7 @@ class TaskResponse(BaseModel):
 
 class TaskStatusResponse(BaseModel):
     """Task status response."""
+
     task_id: str
     status: TaskStatus
     message: str
@@ -132,6 +144,7 @@ class TaskStatusResponse(BaseModel):
 
 class GenerationResult(BaseModel):
     """Audio generation result."""
+
     files: List[str]
     provider: str
     voice_id: str
@@ -141,6 +154,7 @@ class GenerationResult(BaseModel):
 
 class ValidationResult(BaseModel):
     """Configuration validation result."""
+
     valid: bool
     errors: List[str] = []
     warnings: List[str] = []
@@ -148,6 +162,7 @@ class ValidationResult(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response."""
+
     error: str
     detail: Optional[str] = None
     code: Optional[str] = None
