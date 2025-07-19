@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Clock, Play, Download, MoreHorizontal } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { useAllTasks } from '../hooks/queries/useTaskStatus';
+import { useSmartTaskPolling } from '../hooks/queries/useSmartTaskPolling';
 import { useCentralAudio } from '../stores/appStore';
 import { downloadAudio, getAudioUrls, getAudioFilename, hasAudioFiles } from '../utils/audioUtils';
 import { appButtonVariants } from './ui/button-variants';
@@ -15,7 +15,7 @@ interface HistoryTabProps {
 export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
-  const { data: allTasks = [], isLoading } = useAllTasks();
+  const { data: allTasks = [], isLoading } = useSmartTaskPolling();
   const { setAudioData } = useCentralAudio();
   
   // Group tasks by date

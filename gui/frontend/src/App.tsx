@@ -5,10 +5,8 @@ import { useBackendStatus } from './hooks/queries/useBackendStatus';
 import { useProviders } from './hooks/queries/useProviders';
 import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
 import { useAllVoiceCounts } from './hooks/queries/useAllVoiceCounts';
-import { useAllTasks } from './hooks/queries/useTaskStatus';
-import { useCreateTask } from './hooks/mutations/useTasks';
-import { useConfiguration, useUserInput, useUIState, useCentralAudio, useLayout } from './stores/appStore';
-import { getAudioUrls, getAudioFilename } from './utils/audioUtils';
+import { useAudioGeneration } from './hooks/audio/useAudioGeneration';
+import { useConfiguration, useUserInput, useUIState, useLayout } from './stores/appStore';
 import type { VoiceEntry, GenerationRequest } from './types';
 import { Mic } from 'lucide-react';
 
@@ -45,14 +43,12 @@ function App() {
   } = useConfiguration();
   const { text } = useUserInput();
   const { setError, clearError } = useUIState();
-  const { audioUrl, setAudioData, setLoading: setAudioLoading } = useCentralAudio();
+  const { handleGenerate, isGenerating } = useAudioGeneration();
 
   // Use TanStack Query hooks for server state
   const { data: backendStatus } = useBackendStatus();
   const { data: providers, isPending: providersLoading, error: providersError } = useProviders();
   const { data: voiceLibraryData } = useVoiceLibrary(selectedProvider || '');
-  const { data: generationTasks = [] } = useAllTasks();
-  const createTaskMutation = useCreateTask();
 
   // Get voice counts for all providers dynamically
   const { voiceCounts, providerErrors } = useAllVoiceCounts(providers || []);
@@ -73,33 +69,7 @@ function App() {
     }
   ];
 
-  // Update central audio player when new tasks complete
-  useEffect(() => {
-    if (!audioUrl) { // Only auto-update if no audio is currently loaded
-      const completedTasks = generationTasks
-        .filter(task => task.status === 'completed')
-        .sort((a, b) => new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime());
-      
-      const latestTask = completedTasks[0];
-      if (!latestTask) return;
 
-      const audioUrls = getAudioUrls(latestTask);
-      if (audioUrls.length === 0) return;
-
-      // Use first audio file for single player
-      const taskAudioUrl = audioUrls[0];
-      const displayText = latestTask.request?.text || latestTask.result?.text_preview || 'Generated audio';
-      const provider = latestTask.request?.provider || latestTask.result?.provider;
-      const voiceId = latestTask.request?.sts_id || latestTask.result?.voice_id;
-      
-      setAudioData(
-        taskAudioUrl,
-        displayText.length > 50 ? displayText.slice(0, 50) + '...' : displayText,
-        [provider, voiceId].filter(Boolean).join(' • '),
-        getAudioFilename(latestTask, 0)
-      );
-    }
-  }, [generationTasks, audioUrl, setAudioData]);
 
   useEffect(() => {
     if (providersError) {
@@ -123,11 +93,10 @@ function App() {
     setCurrentConfig(config);
   };
 
-  const handleGenerate = useCallback(async () => {
+  const handleGenerateRequest = useCallback(async () => {
     if (!selectedProvider || !text.trim()) return;
 
     clearError();
-    setAudioLoading(true);
 
     const request: GenerationRequest = {
       provider: selectedProvider,
@@ -137,26 +106,23 @@ function App() {
       variants: 1,
     };
 
-    createTaskMutation.mutate(request, {
-      onSuccess: () => {
-        setAudioData('', 'Generating audio...', 'Please wait', '', true);
-      },
-      onError: (error) => {
-        setError(error.message);
-        setAudioLoading(false);
-      },
-    });
-  }, [selectedProvider, text, currentConfig, selectedVoice?.sts_id, createTaskMutation, clearError, setError, setAudioLoading, setAudioData]);
+    try {
+      await handleGenerate(request);
+    } catch (error) {
+      // Error is already handled by useAudioGeneration hook
+      console.error('Generation failed:', error);
+    }
+  }, [selectedProvider, text, currentConfig, selectedVoice?.sts_id, handleGenerate, clearError]);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
-      if (selectedProvider && text.trim() && !createTaskMutation.isPending) {
-        handleGenerate();
+      if (selectedProvider && text.trim() && !isGenerating) {
+        handleGenerateRequest();
       }
     }
-  }, [selectedProvider, text, createTaskMutation.isPending, handleGenerate]);
+  }, [selectedProvider, text, isGenerating, handleGenerateRequest]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -186,7 +152,7 @@ function App() {
           />
         }
         header={<HeaderContent />}
-        main={<MainContent handleGenerate={handleGenerate} isGenerating={createTaskMutation.isPending} />}
+        main={<MainContent handleGenerate={handleGenerateRequest} isGenerating={isGenerating} />}
         panel={
           !isMobile ? (
             <ResponsivePanel>
@@ -195,7 +161,7 @@ function App() {
                 voiceLibrary={voiceLibrary}
                 voiceCounts={voiceCounts}
                 providerErrors={providerErrors}
-                loading={createTaskMutation.isPending || providersLoading}
+                loading={isGenerating || providersLoading}
                 onProviderChange={handleProviderChange}
                 onVoiceSelect={handleVoiceSelect}
                 onConfigChange={handleConfigChange}
@@ -203,7 +169,7 @@ function App() {
             </ResponsivePanel>
           ) : undefined
         }
-        footer={<FooterContent isGenerating={createTaskMutation.isPending} />}
+        footer={<FooterContent isGenerating={isGenerating} />}
       />
 
       {/* Mobile Drawers */}
@@ -219,7 +185,7 @@ function App() {
               voiceLibrary={voiceLibrary}
               voiceCounts={voiceCounts}
               providerErrors={providerErrors}
-              loading={createTaskMutation.isPending || providersLoading}
+              loading={isGenerating || providersLoading}
               onProviderChange={handleProviderChange}
               onVoiceSelect={handleVoiceSelect}
               onConfigChange={handleConfigChange}

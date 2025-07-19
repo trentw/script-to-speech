@@ -85,27 +85,39 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   };
 
   const getDisplayContent = () => {
-    if (showLoading) {
+    // Always show actual content if available, even during loading
+    if (primaryText || secondaryText) {
       return {
-        primary: 'Generating audio...',
-        secondary: 'Audio will appear here when generation completes',
+        primary: primaryText || 'Audio Ready',
+        secondary: secondaryText || 'Ready for playback',
       };
     }
+    
     if (error) {
       return {
         primary: 'Audio Error',
         secondary: 'Could not load audio file',
       };
     }
+    
+    // Only show loading state when no content is available
+    if (showLoading) {
+      return {
+        primary: 'Loading audio...',
+        secondary: 'Please wait...',
+      };
+    }
+    
     if (!hasAudio) {
       return {
         primary: 'Text to Speech',
         secondary: 'Generate audio or select from history to play',
       };
     }
+    
     return {
-      primary: primaryText || 'Audio Ready',
-      secondary: secondaryText || 'Ready for playback',
+      primary: 'Audio Ready',
+      secondary: 'Ready for playback',
     };
   };
 

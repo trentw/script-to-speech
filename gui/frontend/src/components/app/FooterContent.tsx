@@ -2,7 +2,7 @@
 import { UniversalAudioPlayer } from '../UniversalAudioPlayer';
 import { useCentralAudio } from '../../stores/appStore';
 
-export const FooterContent = ({ isGenerating }: { isGenerating: boolean }) => {
+export const FooterContent = ({ isGenerating: _isGenerating }: { isGenerating: boolean }) => {
   const { audioUrl, primaryText, secondaryText, downloadFilename, loading: audioLoading, autoplay } = useCentralAudio();
 
   return (
@@ -13,7 +13,7 @@ export const FooterContent = ({ isGenerating }: { isGenerating: boolean }) => {
           primaryText={primaryText}
           secondaryText={secondaryText}
           downloadFilename={downloadFilename}
-          loading={audioLoading || isGenerating}
+          loading={audioLoading}
           autoplay={autoplay}
         />
       </div>

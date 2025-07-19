@@ -18,9 +18,9 @@ export const useCreateTask = () => {
       }
       return response.data!
     },
-    onSuccess: (data) => {
-      // Invalidate tasks list to show new task
-      queryClient.invalidateQueries({ queryKey: queryKeys.allTasks })
+    onSuccess: async (data) => {
+      // Invalidate tasks list to show new task - this already triggers refetch by default
+      await queryClient.invalidateQueries({ queryKey: queryKeys.allTasks })
       
       // Start polling for the new task by prefetching
       queryClient.prefetchQuery({
@@ -35,11 +35,8 @@ export const useCreateTask = () => {
     onError: (error) => {
       console.error('Task creation failed:', error)
     },
-    onSettled: (data) => {
+    onSettled: () => {
       // Additional cleanup or logging can go here
-      if (data) {
-        console.log('Task created successfully:', data.task_id)
-      }
     },
   })
 }

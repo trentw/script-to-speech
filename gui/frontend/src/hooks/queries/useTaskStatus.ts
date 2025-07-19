@@ -43,36 +43,3 @@ export const useTaskStatus = (taskId: string) => {
   })
 }
 
-/**
- * Query hook for fetching all tasks
- */
-export const useAllTasks = () => {
-  return useQuery({
-    queryKey: queryKeys.allTasks,
-    queryFn: async (): Promise<TaskStatusResponse[]> => {
-      const response = await apiService.getAllTasks()
-      if (response.error) {
-        throw new Error(response.error)
-      }
-      return response.data!
-    },
-    refetchInterval: 10000, // Refresh every 10 seconds
-    staleTime: 1000 * 5, // 5 seconds
-  })
-}
-
-/**
- * Hook for managing multiple task statuses
- * Useful for tracking multiple concurrent tasks
- * TODO: Implement with useQueries when needed
- */
-export const useMultipleTaskStatus = (taskIds: string[]) => {
-  // Note: This would require useQueries for multiple queries
-  // For now, return a placeholder that can be implemented later
-  console.log('Multiple task status tracking not yet implemented for:', taskIds)
-  return {
-    tasks: [],
-    isLoading: false,
-    error: null,
-  }
-}
