@@ -37,19 +37,31 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
     // Use voice library if available (when provider is selected), otherwise use voice counts
     const voiceCount = voiceLibrary[provider.identifier]?.length || voiceCounts[provider.identifier] || 0;
     if (voiceCount === 0) {
-      return 'No voices available';
+      return 'No preconfigured voices available';
     }
-    return `${voiceCount} voice${voiceCount !== 1 ? 's' : ''} available`;
+    return `${voiceCount} preconfigured voice${voiceCount !== 1 ? 's' : ''} available`;
   };
 
   const getProviderDescription = (provider: ProviderInfo) => {
+    const requiredFields = provider.required_fields || [];
     const optionalFields = provider.optional_fields || [];
-    if (optionalFields.length === 0) {
-      return provider.description || '';
+    
+    // Start with empty description to remove redundant "[name] TTS provider" text
+    let description = '';
+    
+    // Add required configuration section
+    if (requiredFields.length > 0) {
+      const requiredFieldNames = requiredFields.map(field => `**${field.name}**`).join(', ');
+      description += `Required configuration: ${requiredFieldNames}`;
     }
     
-    const fieldNames = optionalFields.map(field => field.name).join(', ');
-    return `Optional: ${fieldNames}`;
+    // Add optional configuration section
+    if (optionalFields.length > 0) {
+      const optionalFieldNames = optionalFields.map(field => `**${field.name}**`).join(', ');
+      description += (description ? '\n' : '') + `Optional configuration: ${optionalFieldNames}`;
+    }
+    
+    return description;
   };
 
   const getProviderAvatar = (provider: ProviderInfo) => {
@@ -60,13 +72,22 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
     onProviderSelect(provider.identifier);
   };
 
-  const filteredProviders = providers.filter(provider => {
-    if (!searchQuery) return true;
-    const name = provider.name.toLowerCase();
-    const description = (provider.description || '').toLowerCase();
-    return name.includes(searchQuery.toLowerCase()) || 
-           description.includes(searchQuery.toLowerCase());
-  });
+  const filteredProviders = providers
+    .filter(provider => {
+      if (!searchQuery) return true;
+      const name = provider.name.toLowerCase();
+      const description = (provider.description || '').toLowerCase();
+      return name.includes(searchQuery.toLowerCase()) || 
+             description.includes(searchQuery.toLowerCase());
+    })
+    .sort((a, b) => {
+      // Get voice counts for comparison
+      const voiceCountA = voiceLibrary[a.identifier]?.length || voiceCounts[a.identifier] || 0;
+      const voiceCountB = voiceLibrary[b.identifier]?.length || voiceCounts[b.identifier] || 0;
+      
+      // Sort by voice count (highest to lowest)
+      return voiceCountB - voiceCountA;
+    });
 
   return (
     <SelectorPanel

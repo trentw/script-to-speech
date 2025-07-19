@@ -5,8 +5,8 @@ import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { 
   Mic, 
-  ChevronLeft,
-  ChevronRight
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useViewportSize } from '@/hooks/useViewportSize'
@@ -112,9 +112,9 @@ export function AdaptiveNavigation({
               className="h-8 w-8 p-0 flex-shrink-0"
             >
               {isExpanded ? (
-                <ChevronLeft className="h-4 w-4" />
+                <PanelLeftClose className="h-4 w-4" />
               ) : (
-                <ChevronRight className="h-4 w-4" />
+                <PanelLeftOpen className="h-4 w-4" />
               )}
             </Button>
           )}

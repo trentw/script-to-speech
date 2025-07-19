@@ -57,7 +57,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
           <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/30 flex items-center justify-center">
             <Volume2 className="w-6 h-6 opacity-50" />
           </div>
-          <p className="text-sm font-medium">No voices available for {provider}</p>
+          <p className="text-sm font-medium">No preconfigured voices available for {provider}</p>
           <p className="text-xs mt-1 opacity-75">
             Check your API configuration or configure settings manually below
           </p>

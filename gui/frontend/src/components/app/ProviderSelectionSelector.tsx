@@ -35,9 +35,9 @@ export const ProviderSelectionSelector: React.FC<ProviderSelectionSelectorProps>
     // Use voice library if available (when provider is selected), otherwise use voice counts
     const voiceCount = voiceLibrary[provider.identifier]?.length || voiceCounts[provider.identifier] || 0;
     if (voiceCount === 0) {
-      return 'No voices available';
+      return 'No preconfigured voices available';
     }
-    return `${voiceCount} voice${voiceCount !== 1 ? 's' : ''} available`;
+    return `${voiceCount} preconfigured voice${voiceCount !== 1 ? 's' : ''} available`;
   };
 
   const getProviderAvatar = (provider: ProviderInfo) => {

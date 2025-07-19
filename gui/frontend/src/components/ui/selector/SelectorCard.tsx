@@ -50,8 +50,17 @@ export function SelectorCard<T>({
             </div>
           )}
           {renderDescription && (
-            <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-              {renderDescription(item)}
+            <div className="text-xs text-muted-foreground mt-1 line-clamp-2 whitespace-pre-line">
+              {renderDescription(item).split(/(\*\*[^*]+\*\*)/).map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                  return (
+                    <span key={index} className="font-mono">
+                      {part.slice(2, -2)}
+                    </span>
+                  );
+                }
+                return part;
+              })}
             </div>
           )}
         </div>

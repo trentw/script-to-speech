@@ -144,12 +144,6 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                   </div>
                 )}
                 
-                {task.request.variants && (
-                  <div>
-                    <span className="text-muted-foreground">Variants:</span>
-                    <span className="ml-2">{task.request.variants}</span>
-                  </div>
-                )}
                 
                 {task.request.config && Object.keys(task.request.config).length > 0 && (
                   <div>
@@ -200,10 +194,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
               
               <div className="space-y-2">
                 {getAudioUrls(task).map((url, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-muted/30 rounded">
-                    <span className="text-sm">
-                      Variant {index + 1}
-                    </span>
+                  <div key={index} className="flex items-center justify-end p-2 bg-muted/30 rounded">
                     <div className="flex items-center gap-1">
                       <button
                         className={appButtonVariants({ variant: "list-action", size: "sm" })}
@@ -216,7 +207,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                         url={url}
                         filename={getAudioFilename(task, index)}
                         {...DownloadButtonPresets.textButton}
-                        tooltip={`Download variant ${index + 1}`}
+                        tooltip={`Download audio ${index + 1}`}
                       />
                     </div>
                   </div>
