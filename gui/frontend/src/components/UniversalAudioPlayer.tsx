@@ -1,11 +1,10 @@
 import React from 'react';
-import { Play, Pause, Download, Loader2, Rewind, FastForward } from 'lucide-react';
-import { Button } from './ui/button';
+import { Play, Pause, Loader2, Rewind, FastForward } from 'lucide-react';
 import { Slider } from './ui/slider';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useAudio } from '../hooks/useAudio';
-import { downloadAudio } from '../utils/audioUtils';
-import { appButtonVariants, semanticButtons } from '@/components/ui/button-variants';
+import { DownloadButton, DownloadButtonPresets } from './ui/DownloadButton';
+import { appButtonVariants } from '@/components/ui/button-variants';
 
 export interface AudioPlayerProps {
   /** Audio URL to play - if undefined, shows empty state */
@@ -67,11 +66,6 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   };
 
-  const handleDownload = () => {
-    if (audioUrl) {
-      downloadAudio(audioUrl, downloadFilename);
-    }
-  };
 
   const handleSeek = (values: number[]) => {
     seek(values[0]);
@@ -193,20 +187,15 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
 
           {/* Right: Download */}
           <div className="flex-1 flex items-center gap-4 justify-end">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className={appButtonVariants({ variant: "audio-control", size: "icon-md" })}
-                    onClick={handleDownload}
-                    disabled={!hasAudio}
-                  >
-                    <Download className="w-6 h-6" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Download audio file</p>
-                </TooltipContent>
-              </Tooltip>
+              {hasAudio && audioUrl && (
+                <DownloadButton
+                  url={audioUrl}
+                  filename={downloadFilename}
+                  {...DownloadButtonPresets.audioControl}
+                  tooltip="Download audio file"
+                  disabled={!hasAudio}
+                />
+              )}
           </div>
         </div>
         {/* Bottom: Progress */}

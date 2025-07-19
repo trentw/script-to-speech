@@ -102,5 +102,5 @@ export const semanticButtons = {
   back: "icon-sm list-action",
 }
 
-export type AppButtonVariant = "primary" | "audio-control" | "audio-play" | "list-action" | "reset" | "sidebar-toggle" | "selection"
+export type AppButtonVariant = "primary" | "secondary" | "audio-control" | "audio-play" | "list-action" | "reset" | "sidebar-toggle" | "selection"
 export type AppButtonSize = "sm" | "default" | "lg" | "icon" | "icon-sm" | "icon-md" | "icon-lg" | "icon-xl"

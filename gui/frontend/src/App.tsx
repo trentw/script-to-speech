@@ -148,7 +148,6 @@ function App() {
             items={navigationItems}
             isExpanded={sidebarExpanded}
             onToggleExpanded={toggleSidebar}
-            onMobileMenuToggle={toggleSidebar}
           />
         }
         header={<HeaderContent />}

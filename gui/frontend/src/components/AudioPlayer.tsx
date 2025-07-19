@@ -3,7 +3,8 @@ import { Play, Pause, Square, Download, Volume2, MoreHorizontal } from 'lucide-r
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Slider } from './ui/slider';
-import { getAudioUrls, downloadAudio, getAudioFilename, hasAudioFiles } from '../utils/audioUtils';
+import { getAudioUrls, getAudioFilename, hasAudioFiles, downloadAudio } from '../utils/audioUtils';
+import { DownloadButton } from './ui/DownloadButton';
 import type { TaskStatusResponse } from '../types';
 
 interface AudioPlayerProps {
@@ -83,9 +84,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleDownloadAudio = (audioUrl: string, filename?: string) => {
-    downloadAudio(audioUrl, filename);
+  const handleBatchDownload = async () => {
+    for (const task of completedTasks) {
+      const audioItems = getAudioUrls(task);
+      for (let index = 0; index < audioItems.length; index++) {
+        const audioUrl = audioItems[index];
+        const filename = getAudioFilename(task, index);
+        try {
+          await downloadAudio(audioUrl, filename);
+          // Small delay between downloads to prevent overwhelming the browser
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (error) {
+          console.error(`Failed to download ${filename}:`, error);
+        }
+      }
+    }
   };
+
 
   if (completedTasks.length === 0) {
     return (
@@ -206,14 +221,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
                   </div>
 
                   <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
+                    <DownloadButton
+                      url={audioUrl}
+                      filename={getAudioFilename(task, fileIndex)}
+                      variant="secondary"
                       size="sm"
-                      onClick={() => handleDownloadAudio(audioUrl, getAudioFilename(task, fileIndex))}
+                      iconOnly={false}
                       className="h-7 px-2"
-                    >
-                      <Download className="w-3 h-3" />
-                    </Button>
+                    />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -242,14 +257,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                completedTasks.forEach(task => {
-                  const audioItems = getAudioUrls(task);
-                  audioItems.forEach((audioUrl, index) => 
-                    handleDownloadAudio(audioUrl, getAudioFilename(task, index))
-                  );
-                });
-              }}
+              onClick={handleBatchDownload}
             >
               <Download className="w-3 h-3 mr-1" />
               Download All

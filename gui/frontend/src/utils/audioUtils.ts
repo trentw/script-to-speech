@@ -60,33 +60,133 @@ export const playAudioUrl = async (url: string): Promise<void> => {
 };
 
 /**
- * Download an audio file with security validation
+ * Download an audio file with enhanced reliability and cross-platform support
  */
-export const downloadAudio = (url: string, filename?: string): void => {
+export const downloadAudio = async (url: string, filename?: string): Promise<void> => {
   // Validate URL to prevent security issues
   if (!/^https?:\/\//i.test(url)) {
     throw new Error('Invalid download URL: only HTTP/HTTPS protocols are allowed');
   }
 
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename || `audio-${Date.now()}.mp3`;
-    
-    // Temporarily add to DOM, click, then remove
-    document.body.appendChild(link);
+  const finalFilename = filename || `audio-${Date.now()}.mp3`;
+
+  // Check if running in Tauri desktop environment
+  if (typeof window !== 'undefined' && window.__TAURI__) {
     try {
+      console.log('[Tauri Debug] Attempting Tauri download for:', url, 'filename:', finalFilename);
+      
+      // Use completely dynamic string-based imports to bypass Vite static analysis
+      const pluginDialog = '@tauri-apps/plugin-dialog';
+      const apiPath = '@tauri-apps/api/path';
+      const pluginUpload = '@tauri-apps/plugin-upload';
+      
+      const [tauriDialog, tauriPath, tauriUpload] = await Promise.all([
+        new Function('return import(arguments[0])')(pluginDialog).catch(() => null),
+        new Function('return import(arguments[0])')(apiPath).catch(() => null),
+        new Function('return import(arguments[0])')(pluginUpload).catch(() => null)
+      ]);
+
+      console.log('[Tauri Debug] Plugins loaded:', {
+        dialog: !!tauriDialog,
+        path: !!tauriPath,
+        upload: !!tauriUpload
+      });
+
+      if (tauriDialog && tauriPath && tauriUpload) {
+        // Get default download directory
+        const downloadDir = await tauriPath.downloadDir();
+        console.log('[Tauri Debug] Download directory:', downloadDir);
+        
+        // Let user choose download location using the save dialog
+        const savePath = await tauriDialog.save({
+          defaultPath: `${downloadDir}/${finalFilename}`,
+          filters: [{
+            name: 'Audio Files',
+            extensions: ['mp3', 'wav', 'ogg']
+          }]
+        });
+
+        console.log('[Tauri Debug] User selected save path:', savePath);
+
+        if (savePath) {
+          // Use correct Tauri upload plugin download API signature
+          console.log('[Tauri Debug] Starting download...');
+          await tauriUpload.download(
+            url,
+            savePath,
+            (progress: number, total: number) => {
+              console.log(`[Tauri Debug] Download progress: ${progress}/${total} bytes`);
+            }
+          );
+          console.log('[Tauri Debug] Download completed successfully');
+        } else {
+          console.log('[Tauri Debug] User cancelled save dialog');
+        }
+        return;
+      } else {
+        console.warn('[Tauri Debug] Some required Tauri plugins are not available');
+      }
+    } catch (error) {
+      console.error('[Tauri Debug] Tauri download failed:', error);
+      // Continue to web fallback
+    }
+  }
+
+  // Convert static URL to download endpoint URL if needed
+  let downloadUrl = url;
+  if (url.includes('/static/')) {
+    // Convert /static/filename.mp3 to /api/files/filename/download
+    const filename = url.split('/static/')[1];
+    downloadUrl = url.replace(`/static/${filename}`, `/api/files/${filename}/download`);
+  }
+
+  try {
+    // Primary method: fetch + blob + URL.createObjectURL (modern, reliable)
+    const response = await fetch(downloadUrl);
+    
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const downloadUrl_blob = URL.createObjectURL(blob);
+
+    try {
+      const link = document.createElement('a');
+      link.href = downloadUrl_blob;
+      link.download = finalFilename;
+      
+      // Temporarily add to DOM, click, then remove
+      document.body.appendChild(link);
       link.click();
-    } finally {
       document.body.removeChild(link);
+    } finally {
+      // Clean up the blob URL to prevent memory leaks
+      URL.revokeObjectURL(downloadUrl_blob);
     }
   } catch (error) {
-    console.error('Error downloading audio:', error);
-    // Secure fallback: only open validated URLs
-    if (/^https?:\/\//i.test(url)) {
-      window.open(url, '_blank');
-    } else {
-      throw new Error('Download failed and URL is not secure for fallback');
+    console.error('Fetch + blob download failed, trying fallback:', error);
+    
+    try {
+      // Fallback method: direct <a download> (less reliable for cross-origin)
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = finalFilename;
+      
+      document.body.appendChild(link);
+      try {
+        link.click();
+      } finally {
+        document.body.removeChild(link);
+      }
+    } catch (fallbackError) {
+      console.error('All download methods failed:', fallbackError);
+      // Last resort: open in new tab
+      if (/^https?:\/\//i.test(downloadUrl)) {
+        window.open(downloadUrl, '_blank');
+      } else {
+        throw new Error('Download failed and URL is not secure for fallback');
+      }
     }
   }
 };

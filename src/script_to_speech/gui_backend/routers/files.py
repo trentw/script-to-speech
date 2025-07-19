@@ -39,6 +39,37 @@ async def get_audio_file(filename: str) -> FileResponse:
         raise HTTPException(status_code=500, detail=f"Failed to serve file: {str(e)}")
 
 
+@router.get("/files/{filename}/download")
+async def download_audio_file(filename: str) -> FileResponse:
+    """Force download of generated audio files with proper headers."""
+    try:
+        file_path = settings.AUDIO_OUTPUT_DIR / filename
+        
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail=f"File {filename} not found")
+        
+        if not file_path.is_file():
+            raise HTTPException(status_code=404, detail=f"{filename} is not a file")
+        
+        # Security check: ensure file is within the audio output directory
+        try:
+            file_path.resolve().relative_to(settings.AUDIO_OUTPUT_DIR.resolve())
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        return FileResponse(
+            path=str(file_path),
+            media_type="audio/mpeg",
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to download file: {str(e)}")
+
+
 @router.get("/files")
 async def list_audio_files() -> dict:
     """List available audio files."""

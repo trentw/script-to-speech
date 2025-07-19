@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Clock, Play, Download, MoreHorizontal } from 'lucide-react';
+import { Search, Clock, Play, MoreHorizontal } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { useSmartTaskPolling } from '../hooks/queries/useSmartTaskPolling';
 import { useCentralAudio } from '../stores/appStore';
-import { downloadAudio, getAudioUrls, getAudioFilename, hasAudioFiles } from '../utils/audioUtils';
+import { getAudioUrls, getAudioFilename, hasAudioFiles } from '../utils/audioUtils';
 import { appButtonVariants } from './ui/button-variants';
+import { DownloadButton, DownloadButtonPresets } from './ui/DownloadButton';
 import type { TaskStatusResponse } from '../types';
 
 interface HistoryTabProps {
@@ -120,15 +121,6 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
     );
   };
 
-  const handleDownloadAudio = (task: TaskStatusResponse) => {
-    const audioUrls = getAudioUrls(task);
-    if (audioUrls.length === 0) return;
-    
-    // Download all audio files for this task
-    audioUrls.forEach((audioUrl, index) => {
-      downloadAudio(audioUrl, getAudioFilename(task, index));
-    });
-  };
 
   if (isLoading) {
     return (
@@ -194,7 +186,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                       onClick={() => onTaskSelect(task)}
                     >
                       {/* Task Info - Full Width */}
-                      <div className="flex-1 min-w-0 group-hover:pr-24 transition-all duration-200">
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <div className={`w-2 h-2 rounded-full ${getStatusColor(task.status)}`} />
                           <span className="text-xs text-muted-foreground">
@@ -219,8 +211,8 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                         )}
                       </div>
                       
-                      {/* Actions - Positioned Absolutely */}
-                      <div className="absolute right-3 top-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* Actions - Positioned at Top Line */}
+                      <div className="absolute right-3 top-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {task.status === 'completed' && hasAudioFiles(task) && (
                           <>
                             <Tooltip>
@@ -239,22 +231,13 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
                                 <p>Play audio</p>
                               </TooltipContent>
                             </Tooltip>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <button
-                                  className={appButtonVariants({ variant: "list-action", size: "icon-sm" })}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDownloadAudio(task);
-                                  }}
-                                >
-                                  <Download className="w-3 h-3" />
-                                </button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Download audio</p>
-                              </TooltipContent>
-                            </Tooltip>
+                            {/* Download first audio file - for multiple files, user can see all in details panel */}
+                            <DownloadButton
+                              url={getAudioUrls(task)[0]}
+                              filename={getAudioFilename(task, 0)}
+                              {...DownloadButtonPresets.listItem}
+                              tooltip="Download audio"
+                            />
                           </>
                         )}
                         <Tooltip>

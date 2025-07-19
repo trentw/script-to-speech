@@ -1,9 +1,10 @@
 import React from 'react';
-import { ArrowLeft, Play, Download, Copy, Clock, Settings, FileText, Volume2 } from 'lucide-react';
+import { ArrowLeft, Play, Copy, Clock, Settings, FileText, Volume2 } from 'lucide-react';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { useCentralAudio } from '../stores/appStore';
-import { downloadAudio, getAudioUrls, getAudioFilename } from '../utils/audioUtils';
+import { getAudioUrls, getAudioFilename } from '../utils/audioUtils';
+import { DownloadButton, DownloadButtonPresets } from './ui/DownloadButton';
 import { appButtonVariants } from './ui/button-variants';
 import type { TaskStatusResponse } from '../types';
 
@@ -71,9 +72,6 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
     );
   };
 
-  const handleDownloadAudio = (audioUrl: string, index: number) => {
-    downloadAudio(audioUrl, getAudioFilename(task, index));
-  };
 
   return (
     <div className="h-full bg-background flex flex-col">
@@ -214,13 +212,12 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
                         <Play className="w-3 h-3 mr-1" />
                         Play
                       </button>
-                      <button
-                        className={appButtonVariants({ variant: "list-action", size: "sm" })}
-                        onClick={() => handleDownloadAudio(url, index)}
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Download
-                      </button>
+                      <DownloadButton
+                        url={url}
+                        filename={getAudioFilename(task, index)}
+                        {...DownloadButtonPresets.textButton}
+                        tooltip={`Download variant ${index + 1}`}
+                      />
                     </div>
                   </div>
                 ))}

@@ -4,10 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { 
-  Settings, 
-  History, 
   Mic, 
-  Menu,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
@@ -26,7 +23,6 @@ interface AdaptiveNavigationProps {
   items?: NavigationItem[]
   isExpanded?: boolean
   onToggleExpanded?: () => void
-  onMobileMenuToggle?: () => void
   className?: string
 }
 
@@ -43,7 +39,6 @@ export function AdaptiveNavigation({
   items = defaultItems,
   isExpanded = true,
   onToggleExpanded,
-  onMobileMenuToggle,
   className
 }: AdaptiveNavigationProps) {
   const { isMobile, isTablet } = useViewportSize()
@@ -82,8 +77,7 @@ export function AdaptiveNavigation({
         transition={{ 
           type: "spring", 
           damping: (isMobile || isTablet) ? 35 : 30, 
-          stiffness: (isMobile || isTablet) ? 180 : 200,
-          overshootClamping: true
+          stiffness: (isMobile || isTablet) ? 180 : 200
         }}
         className={cn(
           "adaptive-navigation",

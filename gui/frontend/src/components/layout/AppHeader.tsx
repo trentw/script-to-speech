@@ -1,5 +1,4 @@
 import React from 'react'
-import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Settings, History, Menu } from 'lucide-react'
@@ -7,7 +6,6 @@ import { cn } from '@/lib/utils'
 import { useViewportSize } from '@/hooks/useViewportSize'
 
 interface AppHeaderProps {
-  appName: string
   subAppName: string
   showNavToggle?: boolean
   onNavToggle?: () => void
@@ -18,15 +16,8 @@ interface AppHeaderProps {
   className?: string
 }
 
-const layoutTransition = {
-  type: "spring",
-  damping: 25,
-  stiffness: 300,
-  mass: 0.8
-}
 
 export function AppHeader({
-  appName,
   subAppName,
   showNavToggle = true,
   onNavToggle,
