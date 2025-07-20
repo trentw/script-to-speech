@@ -14,11 +14,22 @@ from .utils.logging_utils import setup_parser_logging
 logger = get_screenplay_logger("parser.analyze")
 
 
-def analyze_chunks(chunks: list) -> None:
-    """Analyze screenplay chunks and log statistics.
+def analyze_chunks(chunks: list, log_results: bool = True) -> Dict[str, any]:
+    """Analyze screenplay chunks and optionally log statistics.
 
     Args:
         chunks: List of screenplay chunks
+        log_results: Whether to log the results (default: True)
+
+    Returns:
+        Dictionary containing analysis results with the following structure:
+        {
+            "chunk_type_counts": {"dialogue": 100, "action": 50, ...},
+            "speaker_counts": {"ALICE": 25, "BOB": 30, ...},
+            "total_distinct_speakers": 5,
+            "speakers": ["ALICE", "BOB", ...],
+            "total_chunks": 150
+        }
     """
     # Count chunk types
     chunk_type_counts: Dict[str, int] = {}
@@ -41,29 +52,51 @@ def analyze_chunks(chunks: list) -> None:
         speakers.add(speaker)
         speaker_counts[speaker] = speaker_counts.get(speaker, 0) + 1
 
-    # Log results
-    logger.info("\n###########################")
-    logger.info("### Screenplay Analysis ###")
-    logger.info("###########################")
+    # Prepare results
+    results = {
+        "chunk_type_counts": dict(sorted(chunk_type_counts.items())),
+        "speaker_counts": dict(
+            sorted(speaker_counts.items(), key=lambda x: (-x[1], x[0]))
+        ),
+        "total_distinct_speakers": len(speakers),
+        "speakers": sorted(list(speakers)),
+        "total_chunks": len(chunks),
+    }
 
-    # Chunk type counts
-    logger.info("\nChunk Type Counts:")
-    for chunk_type, count in sorted(chunk_type_counts.items()):
-        logger.info(f"  {chunk_type}: {count}")
+    # Log results if requested
+    if log_results:
+        logger.info("\n###########################")
+        logger.info("### Screenplay Analysis ###")
+        logger.info("###########################")
 
-    # Speaker statistics
-    logger.info(f"\nTotal Distinct Speakers:\n  {len(speakers)}")
+        # Chunk type counts
+        logger.info("\nChunk Type Counts:")
+        for chunk_type, count in sorted(chunk_type_counts.items()):
+            logger.info(f"  {chunk_type}: {count}")
 
-    logger.info("\nSpeaker Line Counts:")
-    for speaker, count in sorted(speaker_counts.items(), key=lambda x: (-x[1], x[0])):
-        logger.info(f"  {speaker}: {count}")
+        # Speaker statistics
+        logger.info(f"\nTotal Distinct Speakers:\n  {len(speakers)}")
+
+        logger.info("\nSpeaker Line Counts:")
+        for speaker, count in sorted(
+            speaker_counts.items(), key=lambda x: (-x[1], x[0])
+        ):
+            logger.info(f"  {speaker}: {count}")
+
+    return results
 
 
-def analyze_screenplay_chunks(json_path: str) -> None:
+def analyze_screenplay_chunks(
+    json_path: str, log_results: bool = True
+) -> Dict[str, any]:
     """Analyze a screenplay chunks JSON file and output statistics.
 
     Args:
         json_path: Path to the JSON chunks file
+        log_results: Whether to log the results (default: True)
+
+    Returns:
+        Dictionary containing analysis results
     """
 
     # Use the unified create_output_folders function
@@ -77,8 +110,9 @@ def analyze_screenplay_chunks(json_path: str) -> None:
         logger.info(f"Analyzing screenplay chunks from {json_path}")
         with open(json_path, "r", encoding="utf-8") as f:
             chunks = json.load(f)
-        analyze_chunks(chunks)
+        results = analyze_chunks(chunks, log_results=log_results)
         logger.info("Analysis completed successfully")
+        return results
     except Exception as e:
         logger.error(f"Error analyzing screenplay chunks: {str(e)}", exc_info=True)
         raise

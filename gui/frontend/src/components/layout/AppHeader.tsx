@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useViewportSize } from '@/hooks/useViewportSize'
 
 interface AppHeaderProps {
+  appName: string
   subAppName: string
   showNavToggle?: boolean
   onNavToggle?: () => void
@@ -18,6 +19,7 @@ interface AppHeaderProps {
 
 
 export function AppHeader({
+  appName,
   subAppName,
   showNavToggle = true,
   onNavToggle,
@@ -53,7 +55,7 @@ export function AppHeader({
         
         <div className="flex items-center gap-2 min-w-0">
           <h1 className="font-bold tracking-tight text-foreground truncate text-lg">
-            Text to Speech
+            {appName}
           </h1>
           
           {!isMobile && (

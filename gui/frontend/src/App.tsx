@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { AppShell, AdaptiveNavigation, ResponsivePanel, MobileDrawer } from './components/layout';
 import { useViewportSize } from './hooks/useViewportSize';
 import { useBackendStatus } from './hooks/queries/useBackendStatus';
@@ -6,9 +6,9 @@ import { useProviders } from './hooks/queries/useProviders';
 import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
 import { useAllVoiceCounts } from './hooks/queries/useAllVoiceCounts';
 import { useAudioGeneration } from './hooks/audio/useAudioGeneration';
-import { useConfiguration, useUserInput, useUIState, useLayout } from './stores/appStore';
+import { useConfiguration, useUserInput, useUIState, useLayout, useScreenplay } from './stores/appStore';
 import type { VoiceEntry, GenerationRequest } from './types';
-import { Mic } from 'lucide-react';
+import { Mic, FileText } from 'lucide-react';
 
 // Import the new components
 import { MainContent } from './components/app/MainContent';
@@ -19,6 +19,7 @@ import { HistoryContent } from './components/app/HistoryContent';
 import { FooterContent } from './components/app/FooterContent';
 import { ErrorDisplay } from './components/app/ErrorDisplay';
 import { AppStatus, AppLoading } from './components/app/AppStatus';
+import { ScreenplayContent } from './components/screenplay/ScreenplayContent';
 
 function App() {
   // Hooks
@@ -31,6 +32,15 @@ function App() {
     toggleSidebar, 
     closeModal 
   } = useLayout();
+  
+  // Use Screenplay state
+  const { resetScreenplayState } = useScreenplay();
+  
+  // Local state for active view
+  const [activeView, setActiveView] = useState<'tts' | 'screenplay'>('tts');
+  
+  // State for screenplay-specific UI
+  const [screenplayViewMode, setScreenplayViewMode] = useState<'upload' | 'status' | 'result'>('upload');
 
   // Use Zustand store hooks for client state
   const { 
@@ -65,7 +75,15 @@ function App() {
       id: 'tts',
       label: 'Text to Speech',
       icon: Mic,
-      isActive: true
+      isActive: activeView === 'tts',
+      onClick: () => setActiveView('tts')
+    },
+    {
+      id: 'screenplay',
+      label: 'Screenplay Parser',
+      icon: FileText,
+      isActive: activeView === 'screenplay',
+      onClick: () => setActiveView('screenplay')
     }
   ];
 
@@ -91,6 +109,12 @@ function App() {
 
   const handleConfigChange = (config: Record<string, unknown>) => {
     setCurrentConfig(config);
+  };
+
+  // Handler for Parse New Screenplay button
+  const handleParseNew = () => {
+    setScreenplayViewMode('upload');
+    resetScreenplayState();
   };
 
   const handleGenerateRequest = useCallback(async () => {
@@ -150,10 +174,25 @@ function App() {
             onToggleExpanded={toggleSidebar}
           />
         }
-        header={<HeaderContent />}
-        main={<MainContent handleGenerate={handleGenerateRequest} isGenerating={isGenerating} />}
+        header={
+          <HeaderContent 
+            activeView={activeView} 
+            onParseNew={handleParseNew}
+            showParseNewButton={screenplayViewMode === 'result'}
+          />
+        }
+        main={
+          activeView === 'tts' ? (
+            <MainContent handleGenerate={handleGenerateRequest} isGenerating={isGenerating} />
+          ) : (
+            <ScreenplayContent 
+              viewMode={screenplayViewMode}
+              setViewMode={setScreenplayViewMode}
+            />
+          )
+        }
         panel={
-          !isMobile ? (
+          !isMobile && activeView === 'tts' ? (
             <ResponsivePanel>
               <PanelContent
                 providers={providers || []}
@@ -168,7 +207,7 @@ function App() {
             </ResponsivePanel>
           ) : undefined
         }
-        footer={<FooterContent isGenerating={isGenerating} />}
+        footer={activeView === 'tts' ? <FooterContent isGenerating={isGenerating} /> : undefined}
       />
 
       {/* Mobile Drawers */}

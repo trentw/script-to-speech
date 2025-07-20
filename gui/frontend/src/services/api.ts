@@ -127,8 +127,64 @@ class ApiService {
     return `${API_BASE_URL}/files/${filename}`;
   }
 
+  getScreenplayDownloadUrl(taskId: string, fileType: 'json' | 'text' | 'log'): string {
+    return `${API_BASE_URL}/screenplay/download/${taskId}/${fileType}`;
+  }
+
   async listAudioFiles(): Promise<ApiResponse<{ files: any[] }>> {
     return this.request<{ files: any[] }>('/files');
+  }
+
+  // Screenplay endpoints
+  async uploadScreenplay(file: File, textOnly: boolean = false): Promise<ApiResponse<TaskResponse>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('text_only', textOnly.toString());
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/screenplay/parse`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        return { error: errorData.detail || errorData.error || `HTTP ${response.status}` };
+      }
+
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Network error' };
+    }
+  }
+
+  async getScreenplayTaskStatus(taskId: string): Promise<ApiResponse<TaskStatusResponse>> {
+    return this.request<TaskStatusResponse>(`/screenplay/status/${taskId}`);
+  }
+
+  async getAllScreenplayTasks(): Promise<ApiResponse<TaskStatusResponse[]>> {
+    return this.request<TaskStatusResponse[]>('/screenplay/tasks');
+  }
+
+  async getScreenplayResult(taskId: string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/screenplay/result/${taskId}`);
+  }
+
+  async getRecentScreenplays(limit: number = 10): Promise<ApiResponse<any[]>> {
+    return this.request<any[]>(`/screenplay/recent?limit=${limit}`);
+  }
+
+  async deleteScreenplayTask(taskId: string, deleteFiles: boolean = false): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/screenplay/${taskId}?delete_files=${deleteFiles}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async cleanupOldScreenplayTasks(maxAgeHours: number = 24): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(`/screenplay/cleanup?max_age_hours=${maxAgeHours}`, {
+      method: 'DELETE',
+    });
   }
 
   // Utility methods

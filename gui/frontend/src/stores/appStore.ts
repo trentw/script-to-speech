@@ -68,8 +68,21 @@ interface LayoutSlice {
   closeModal: () => void
 }
 
+// Screenplay slice - handles screenplay parsing state
+interface ScreenplaySlice {
+  currentTaskId: string | undefined
+  selectedScreenplay: any | undefined
+  viewMode: 'upload' | 'status' | 'result'
+  
+  // Actions
+  setCurrentTaskId: (taskId: string | undefined) => void
+  setSelectedScreenplay: (screenplay: any | undefined) => void
+  setViewMode: (mode: 'upload' | 'status' | 'result') => void
+  resetScreenplayState: () => void
+}
+
 // Combined store type
-type AppStore = ConfigurationSlice & UserInputSlice & UISlice & CentralAudioSlice & LayoutSlice
+type AppStore = ConfigurationSlice & UserInputSlice & UISlice & CentralAudioSlice & LayoutSlice & ScreenplaySlice
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -198,6 +211,31 @@ const useAppStore = create<AppStore>()(
         closeModal: () => {
           set({ activeModal: null }, false, 'layout/closeModal')
         },
+        
+        // Screenplay slice implementation
+        currentTaskId: undefined,
+        selectedScreenplay: undefined,
+        viewMode: 'upload',
+        
+        setCurrentTaskId: (taskId) => {
+          set({ currentTaskId: taskId }, false, 'screenplay/setCurrentTaskId')
+        },
+        
+        setSelectedScreenplay: (screenplay) => {
+          set({ selectedScreenplay: screenplay }, false, 'screenplay/setSelectedScreenplay')
+        },
+        
+        setViewMode: (mode) => {
+          set({ viewMode: mode }, false, 'screenplay/setViewMode')
+        },
+        
+        resetScreenplayState: () => {
+          set({ 
+            currentTaskId: undefined,
+            selectedScreenplay: undefined,
+            viewMode: 'upload'
+          }, false, 'screenplay/reset')
+        },
       }),
       {
         name: 'sts-app-store', // localStorage key
@@ -276,6 +314,18 @@ export const useLayout = () => useAppStore(
     toggleRightPanel: state.toggleRightPanel,
     setActiveModal: state.setActiveModal,
     closeModal: state.closeModal,
+  }))
+)
+
+export const useScreenplay = () => useAppStore(
+  useShallow((state) => ({
+    currentTaskId: state.currentTaskId,
+    selectedScreenplay: state.selectedScreenplay,
+    viewMode: state.viewMode,
+    setCurrentTaskId: state.setCurrentTaskId,
+    setSelectedScreenplay: state.setSelectedScreenplay,
+    setViewMode: state.setViewMode,
+    resetScreenplayState: state.resetScreenplayState,
   }))
 )
 

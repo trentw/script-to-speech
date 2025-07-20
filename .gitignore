@@ -175,3 +175,4 @@ codemcp.toml
 # Project directories
 output/
 input/
+uploads/

@@ -160,3 +160,48 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
 }
+
+// Screenplay Types
+
+export interface ScreenplayAnalysis {
+  chunk_type_counts: Record<string, number>;
+  speaker_counts: Record<string, number>;
+  total_distinct_speakers: number;
+  speakers: string[];
+  total_chunks: number;
+}
+
+export interface ScreenplayFiles {
+  json?: string;
+  text?: string;
+}
+
+export interface ScreenplayResult {
+  files: ScreenplayFiles;
+  analysis?: ScreenplayAnalysis;
+  screenplay_name: string;
+  original_filename: string;
+  text_only: boolean;
+  log_file?: string;
+  chunks?: any[]; // JSON chunks from the parsed screenplay
+}
+
+export interface ScreenplayTaskStatus {
+  task_id: string;
+  status: TaskStatus;
+  message: string;
+  progress?: number;
+  result?: ScreenplayResult;
+  error?: string;
+  created_at?: string;
+  completed_at?: string;
+}
+
+export interface RecentScreenplay {
+  task_id: string;
+  filename: string;
+  screenplay_name: string;
+  created_at: string;
+  completed_at?: string;
+  analysis?: ScreenplayAnalysis;
+}
