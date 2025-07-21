@@ -586,51 +586,66 @@ def test_generate_voice_library_casting_prompt_file_with_voice_filtering(
     # Arrange
     voice_config_path = tmp_path / "config.yaml"
     voice_config_path.write_text("test")
-
-    # Create file structure
-    utils_dir = tmp_path / "utils_dir"
-    utils_dir.mkdir()
-    (utils_dir / "default_voice_library_casting_prompt.txt").write_text("prompt")
-
-    voice_lib_dir = utils_dir.parent / "voice_library" / "voice_library_data"
-    voice_lib_dir.mkdir(parents=True)
-    (voice_lib_dir / "voice_library_schema.yaml").write_text("schema")
-
-    openai_dir = voice_lib_dir / "openai"
-    openai_dir.mkdir()
-    # Create voices.yaml with multiple voices
+    prompt_content = "prompt"
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
+    
+    # Test voices data - this will be returned by the mocked VoiceLibrary
     voices_data = {
-        "voices": {
-            "alloy": {"model_id": "tts-1"},
-            "nova": {"model_id": "tts-1-hd"},
-            "shimmer": {"model_id": "tts-1"},
-        }
+        "alloy": {"model_id": "tts-1"},
+        "nova": {"model_id": "tts-1-hd"},
+        "shimmer": {"model_id": "tts-1"},
     }
-    (openai_dir / "voices.yaml").write_text(yaml.dump(voices_data))
 
-    # Mock the config loading to return filtering rules
-    with patch(
-        "script_to_speech.voice_casting.voice_library_casting_utils.__file__",
-        str(utils_dir / "voice_library_casting_utils.py"),
-    ):
-        with patch(
+    # Mock VoiceLibrary to return test data
+    output_mock = mock_open()
+    
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str and mode == "r":
+            return mock_open(read_data="test").return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
             "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
             return_value={"included_sts_ids": {"openai": ["alloy", "nova"]}},
-        ):
-            with patch(
-                "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
-                return_value={},
-            ):
-                # Act
-                result = generate_voice_library_casting_prompt_file(
-                    voice_config_path=voice_config_path, providers=["openai"]
-                )
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = voices_data
 
-                # Assert
-                content = result.read_text()
-                assert "alloy" in content
-                assert "nova" in content
-                assert "shimmer" not in content  # Should be filtered out
+        # Act
+        result = generate_voice_library_casting_prompt_file(
+            voice_config_path=voice_config_path, providers=["openai"]
+        )
+
+        # Assert - check the content that was written to the file
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+        
+        assert "alloy" in written_content
+        assert "nova" in written_content
+        assert "shimmer" not in written_content  # Should be filtered out
 
 
 def test_generate_voice_library_casting_prompt_file_no_config_no_filtering():

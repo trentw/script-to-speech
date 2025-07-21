@@ -43,6 +43,9 @@ async def upload_and_parse_screenplay(
 
         # Create parsing task
         return await screenplay_service.create_parsing_task(file, text_only)
+    except HTTPException:
+        # Re-raise HTTPExceptions with their original status codes
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to create parsing task: {str(e)}"
@@ -119,6 +122,25 @@ async def get_recent_screenplays(limit: int = 10):
         )
 
 
+@router.delete("/cleanup")
+async def cleanup_old_parsing_tasks(max_age_hours: int = 24) -> dict:
+    """Clean up old completed parsing tasks.
+
+    Args:
+        max_age_hours: Maximum age in hours for tasks to keep
+
+    Returns:
+        Number of tasks cleaned up
+    """
+    try:
+        removed_count = screenplay_service.cleanup_old_tasks(max_age_hours)
+        return {"message": f"Cleaned up {removed_count} old parsing tasks"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to cleanup tasks: {str(e)}"
+        )
+
+
 @router.delete("/{task_id}")
 async def delete_parsing_task(task_id: str, delete_files: bool = False) -> dict:
     """Delete a parsing task and optionally its associated files.
@@ -139,25 +161,6 @@ async def delete_parsing_task(task_id: str, delete_files: bool = False) -> dict:
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
-
-
-@router.delete("/cleanup")
-async def cleanup_old_parsing_tasks(max_age_hours: int = 24) -> dict:
-    """Clean up old completed parsing tasks.
-
-    Args:
-        max_age_hours: Maximum age in hours for tasks to keep
-
-    Returns:
-        Number of tasks cleaned up
-    """
-    try:
-        removed_count = screenplay_service.cleanup_old_tasks(max_age_hours)
-        return {"message": f"Cleaned up {removed_count} old parsing tasks"}
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to cleanup tasks: {str(e)}"
-        )
 
 
 @router.get("/download/{task_id}/{file_type}")

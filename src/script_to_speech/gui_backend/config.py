@@ -9,6 +9,8 @@ try:
 except ImportError:
     from pydantic import BaseSettings
 
+from pydantic import ConfigDict
+
 
 class Settings(BaseSettings):
     """Application settings."""
@@ -30,10 +32,11 @@ class Settings(BaseSettings):
         "tauri://localhost",  # Tauri app
     ]
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        extra = "ignore"  # Ignore extra environment variables like API keys
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore"  # Ignore extra environment variables like API keys
+    )
 
 
 # Create settings instance

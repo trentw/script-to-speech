@@ -7,7 +7,7 @@ import os
 import shutil
 import tempfile
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import threading
@@ -35,7 +35,7 @@ class ScreenplayParsingTask:
         self.message = "Task created"
         self.result: Optional[Dict[str, Any]] = None
         self.error: Optional[str] = None
-        self.created_at = datetime.utcnow()
+        self.created_at = datetime.now(UTC)
         self.started_at: Optional[datetime] = None
         self.completed_at: Optional[datetime] = None
         self.temp_file_path: Optional[str] = None
@@ -110,7 +110,7 @@ class ScreenplayService:
         """Process a screenplay parsing task in the background."""
         try:
             task.status = TaskStatus.PROCESSING
-            task.started_at = datetime.utcnow()
+            task.started_at = datetime.now(UTC)
             task.message = "Processing screenplay..."
             task.progress = 0.1
 
@@ -182,7 +182,7 @@ class ScreenplayService:
             task.progress = 0.9
 
             task.status = TaskStatus.COMPLETED
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(UTC)
             task.message = "Screenplay parsing completed successfully"
             task.progress = 1.0
 
@@ -194,7 +194,7 @@ class ScreenplayService:
             task.status = TaskStatus.FAILED
             task.error = str(e)
             task.message = f"Parsing failed: {str(e)}"
-            task.completed_at = datetime.utcnow()
+            task.completed_at = datetime.now(UTC)
         finally:
             # Clean up temporary file
             if task.temp_file_path and os.path.exists(task.temp_file_path):
@@ -344,7 +344,7 @@ class ScreenplayService:
 
     def cleanup_old_tasks(self, max_age_hours: int = 24) -> int:
         """Clean up old completed tasks."""
-        cutoff_time = datetime.utcnow().timestamp() - (max_age_hours * 3600)
+        cutoff_time = datetime.now(UTC).timestamp() - (max_age_hours * 3600)
         removed_count = 0
 
         with self._lock:
@@ -358,9 +358,24 @@ class ScreenplayService:
                 ):
                     task_ids_to_remove.append(task_id)
 
+            # Perform cleanup within the same lock to avoid deadlock
             for task_id in task_ids_to_remove:
-                if self.delete_task(task_id, delete_files=False):
-                    removed_count += 1
+                task = self._tasks.get(task_id)
+                if task:
+                    # Clean up files (same logic as delete_task but without lock)
+                    try:
+                        # Delete temporary file if it still exists
+                        if task.temp_file_path and os.path.exists(task.temp_file_path):
+                            try:
+                                os.unlink(task.temp_file_path)
+                            except Exception as e:
+                                logger.warning(f"Failed to delete temporary file: {e}")
+                        
+                        # Remove task from memory
+                        del self._tasks[task_id]
+                        removed_count += 1
+                    except Exception as e:
+                        logger.warning(f"Failed to cleanup task {task_id}: {e}")
 
         return removed_count
 
