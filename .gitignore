@@ -176,3 +176,33 @@ codemcp.toml
 output/
 input/
 uploads/
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend build outputs
+gui/frontend/dist/
+gui/frontend/dist-ssr/
+gui/frontend/*.local
+
+# Editor directories and files
+.vscode
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# pnpm
+pnpm-lock.yaml

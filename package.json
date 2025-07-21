@@ -1,0 +1,12 @@
+{
+  "name": "script-to-speech-monorepo",
+  "private": true,
+  "description": "Root workspace for Script-to-Speech",
+  "engines": {
+    "node": ">=20.11.0",
+    "pnpm": ">=8.0.0"
+  },
+  "devDependencies": {
+    "lint-staged": "^16.1.2"
+  }
+}

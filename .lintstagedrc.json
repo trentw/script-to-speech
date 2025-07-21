@@ -1,0 +1,9 @@
+{
+  "gui/frontend/**/*.{js,jsx,ts,tsx}": [
+    "prettier --write",
+    "eslint --fix"
+  ],
+  "gui/frontend/**/*.{json,css,md}": [
+    "prettier --write"
+  ]
+}

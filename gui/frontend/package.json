@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit",
+    "preview": "vite preview",
+    "test": "echo \"No tests yet\"",
+    "analyze": "vite build --mode analyze"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -55,10 +61,15 @@
     "@vitejs/plugin-react": "^4.5.2",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.29.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.2.0",
     "postcss": "^8.5.6",
+    "prettier": "3.6.2",
+    "prettier-plugin-tailwindcss": "0.6.14",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.0.0"
