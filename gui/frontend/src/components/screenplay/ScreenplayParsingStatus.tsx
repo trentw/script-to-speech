@@ -1,25 +1,28 @@
+import { AlertCircle, CheckCircle2, Loader2, XCircle } from 'lucide-react';
+
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Loader2, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import type { TaskStatusResponse } from '@/types';
 
 interface ScreenplayParsingStatusProps {
   status: TaskStatusResponse;
 }
 
-export function ScreenplayParsingStatus({ status }: ScreenplayParsingStatusProps) {
+export function ScreenplayParsingStatus({
+  status,
+}: ScreenplayParsingStatusProps) {
   const getStatusIcon = () => {
     switch (status.status) {
       case 'pending':
         return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
       case 'processing':
-        return <Loader2 className="h-5 w-5 animate-spin text-primary" />;
+        return <Loader2 className="text-primary h-5 w-5 animate-spin" />;
       case 'completed':
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       case 'failed':
-        return <XCircle className="h-5 w-5 text-destructive" />;
+        return <XCircle className="text-destructive h-5 w-5" />;
     }
   };
 
@@ -58,7 +61,7 @@ export function ScreenplayParsingStatus({ status }: ScreenplayParsingStatusProps
         {status.status === 'processing' && (
           <div className="space-y-2">
             <Progress value={progressPercentage} className="h-2" />
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {progressPercentage.toFixed(0)}% complete
             </p>
           </div>
@@ -77,7 +80,7 @@ export function ScreenplayParsingStatus({ status }: ScreenplayParsingStatusProps
         )}
 
         {/* Timestamps */}
-        <div className="text-xs text-muted-foreground space-y-1">
+        <div className="text-muted-foreground space-y-1 text-xs">
           {status.created_at && (
             <p>Started: {new Date(status.created_at).toLocaleString()}</p>
           )}

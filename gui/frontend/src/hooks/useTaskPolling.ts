@@ -1,25 +1,30 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+
 import { apiService } from '../services/api';
 import type { TaskStatusResponse } from '../types';
 
 interface UseTaskPollingReturn {
   generationTasks: TaskStatusResponse[];
-  setGenerationTasks: React.Dispatch<React.SetStateAction<TaskStatusResponse[]>>;
+  setGenerationTasks: React.Dispatch<
+    React.SetStateAction<TaskStatusResponse[]>
+  >;
   pollTaskStatus: (taskId: string) => void;
 }
 
 export const useTaskPolling = (): UseTaskPollingReturn => {
-  const [generationTasks, setGenerationTasks] = useState<TaskStatusResponse[]>([]);
+  const [generationTasks, setGenerationTasks] = useState<TaskStatusResponse[]>(
+    []
+  );
 
   const pollTaskStatus = useCallback((taskId: string) => {
     const pollInterval = setInterval(async () => {
       const response = await apiService.getTaskStatus(taskId);
-      
+
       if (response.data) {
         const task = response.data;
-        
-        setGenerationTasks(prev => [
-          ...prev.filter(t => t.task_id !== taskId),
+
+        setGenerationTasks((prev) => [
+          ...prev.filter((t) => t.task_id !== taskId),
           task,
         ]);
 

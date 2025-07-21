@@ -1,7 +1,9 @@
-import React, { useState, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsList, TabsTrigger } from "./tabs";
-import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from 'framer-motion';
+import React, { useCallback, useState } from 'react';
+
+import { cn } from '@/lib/utils';
+
+import { Tabs, TabsList, TabsTrigger } from './tabs';
 
 export interface AnimatedTabsProps {
   defaultValue?: string;
@@ -23,13 +25,13 @@ const TabsContext = React.createContext<{
   direction: number;
   setActiveTab: (value: string) => void;
 }>({
-  activeTab: "",
+  activeTab: '',
   direction: 0,
   setActiveTab: () => {},
 });
 
 export function AnimatedTabs({
-  defaultValue = "",
+  defaultValue = '',
   value,
   onValueChange,
   className,
@@ -41,7 +43,7 @@ export function AnimatedTabs({
   const activeTab = value !== undefined ? value : internalValue;
 
   // Extract tab order for direction calculation - use fixed order for Settings/History
-  const tabOrder = ["settings", "history"];
+  const tabOrder = ['settings', 'history'];
 
   const setActiveTab = useCallback(
     (newValue: string) => {
@@ -62,7 +64,7 @@ export function AnimatedTabs({
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
-        className={cn("flex flex-col", className)}
+        className={cn('flex flex-col', className)}
       >
         {children}
       </Tabs>
@@ -79,7 +81,7 @@ export function AnimatedTabsList({
     <TabsList
       className={cn(
         // Ultra-clean styling with no border, exactly matching reference design
-        "h-auto bg-transparent p-0 gap-6",
+        'h-auto gap-6 bg-transparent p-0',
         className
       )}
       {...props}
@@ -98,17 +100,17 @@ export function AnimatedTabsTrigger({
     <TabsTrigger
       className={cn(
         // Minimal styling - clean design
-        "bg-transparent border-0 rounded-none px-0 py-3 text-base font-normal",
-        "shadow-none h-auto transition-all duration-200 cursor-pointer",
+        'rounded-none border-0 bg-transparent px-0 py-3 text-base font-normal',
+        'h-auto cursor-pointer shadow-none transition-all duration-200',
         // Inactive tab styling - darker text for better readability
-        "[&:not([data-state=active])]:text-muted-foreground [&:not([data-state=active])]:opacity-50",
-        "[&:not([data-state=active])]:hover:opacity-75",
+        '[&:not([data-state=active])]:text-muted-foreground [&:not([data-state=active])]:opacity-50',
+        '[&:not([data-state=active])]:hover:opacity-75',
         // Active tab styling
-        "data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:opacity-100",
+        'data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:opacity-100',
         // Underline for active state
-        "border-b-2 border-transparent data-[state=active]:border-foreground",
+        'data-[state=active]:border-foreground border-b-2 border-transparent',
         // Focus styles for accessibility
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
         className
       )}
       {...props}
@@ -129,7 +131,7 @@ export function AnimatedTabsContent({
   if (!isActive) return null;
 
   return (
-    <div className={cn("flex-1 overflow-hidden min-h-0 relative", className)}>
+    <div className={cn('relative min-h-0 flex-1 overflow-hidden', className)}>
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={value}

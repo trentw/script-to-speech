@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { FieldRenderer } from './form/FieldRenderer';
-import type { ProviderInfo, ValidationResult } from '../types';
+import React, { useEffect, useState } from 'react';
+
 import { apiService } from '../services/api';
+import type { ProviderInfo, ValidationResult } from '../types';
+import { FieldRenderer } from './form/FieldRenderer';
 
 interface ConfigFormProps {
   provider: string;
@@ -14,9 +15,11 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   provider,
   providerInfo,
   config,
-  onConfigChange
+  onConfigChange,
 }) => {
-  const [validation, setValidation] = useState<ValidationResult | undefined>(undefined);
+  const [validation, setValidation] = useState<ValidationResult | undefined>(
+    undefined
+  );
   const [isValidating, setIsValidating] = useState(false);
 
   // Validate configuration when it changes
@@ -28,7 +31,10 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
       }
 
       setIsValidating(true);
-      const response = await apiService.validateProviderConfig(provider, config);
+      const response = await apiService.validateProviderConfig(
+        provider,
+        config
+      );
       setIsValidating(false);
 
       if (response.data) {
@@ -37,7 +43,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
         setValidation({
           valid: false,
           errors: [response.error || 'Validation failed'],
-          warnings: []
+          warnings: [],
         });
       }
     };
@@ -48,13 +54,13 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
   const updateField = (fieldName: string, value: any) => {
     const newConfig = { ...config };
-    
+
     if (value === '' || value === null || value === undefined) {
       delete newConfig[fieldName];
     } else {
       newConfig[fieldName] = value;
     }
-    
+
     onConfigChange(newConfig);
   };
 
@@ -64,7 +70,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
   if (!providerInfo) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
+      <div className="text-muted-foreground py-8 text-center">
         <p>Loading provider configuration...</p>
       </div>
     );
@@ -75,19 +81,22 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
   const resetToDefaults = () => {
     const defaultConfig: Record<string, any> = {};
-    
+
     // Preserve sts_id if it exists
     if (config.sts_id) {
       defaultConfig.sts_id = config.sts_id;
     }
-    
+
     // Set default values for all fields
-    [...(providerInfo?.required_fields || []), ...(providerInfo?.optional_fields || [])].forEach(field => {
+    [
+      ...(providerInfo?.required_fields || []),
+      ...(providerInfo?.optional_fields || []),
+    ].forEach((field) => {
       if (field.default !== undefined) {
         defaultConfig[field.name] = field.default;
       }
     });
-    
+
     onConfigChange(defaultConfig);
   };
 
@@ -95,12 +104,14 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
     <div className="space-y-6">
       {/* Voice Library Configuration Banner */}
       {config.sts_id && (
-        <div className="px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+        <div className="bg-primary/5 border-primary/20 rounded-lg border px-3 py-2">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary" />
-            <span className="text-sm font-medium text-foreground">Voice: {config.sts_id}</span>
+            <div className="bg-primary h-2 w-2 rounded-full" />
+            <span className="text-foreground text-sm font-medium">
+              Voice: {config.sts_id}
+            </span>
           </div>
-          <p className="text-xs text-muted-foreground mt-1 pl-4">
+          <p className="text-muted-foreground mt-1 pl-4 text-xs">
             Parameters populated from voice library
           </p>
         </div>
@@ -113,7 +124,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
           {hasRequiredFields && (
             <div className="space-y-4">
               {hasOptionalFields && (
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="text-muted-foreground text-xs font-medium tracking-wider uppercase">
                   Required Settings
                 </div>
               )}
@@ -129,12 +140,12 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
               ))}
             </div>
           )}
-          
+
           {/* Optional fields section */}
           {hasOptionalFields && (
             <div className="space-y-4">
               {hasRequiredFields && (
-                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider border-t border-border pt-4">
+                <div className="text-muted-foreground border-border border-t pt-4 text-xs font-medium tracking-wider uppercase">
                   Optional Settings
                 </div>
               )}
@@ -155,42 +166,50 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
       {/* No fields message */}
       {!hasRequiredFields && !hasOptionalFields && (
-        <div className="text-center py-8 text-muted-foreground">
-          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+        <div className="text-muted-foreground py-8 text-center">
+          <div className="bg-muted mx-auto mb-3 flex h-8 w-8 items-center justify-center rounded-full">
             <span className="text-lg">⚙️</span>
           </div>
           <p className="text-sm">No additional settings</p>
-          <p className="text-xs mt-1 opacity-75">This provider is ready to use</p>
+          <p className="mt-1 text-xs opacity-75">
+            This provider is ready to use
+          </p>
         </div>
       )}
 
       {/* Compact Status Indicator */}
       {(validation || isValidating) && (
-        <div className="flex items-center justify-between pt-3 border-t border-border">
+        <div className="border-border flex items-center justify-between border-t pt-3">
           <div className="flex items-center gap-2">
             {isValidating ? (
               <>
-                <div className="w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-muted-foreground">Validating...</span>
+                <div className="border-primary h-3 w-3 animate-spin rounded-full border border-t-transparent" />
+                <span className="text-muted-foreground text-xs">
+                  Validating...
+                </span>
               </>
             ) : validation?.valid ? (
               <>
-                <div className="w-3 h-3 rounded-full bg-green-500" />
-                <span className="text-xs text-green-600">Valid configuration</span>
+                <div className="h-3 w-3 rounded-full bg-green-500" />
+                <span className="text-xs text-green-600">
+                  Valid configuration
+                </span>
               </>
             ) : (
               <>
-                <div className="w-3 h-3 rounded-full bg-destructive" />
-                <span className="text-xs text-destructive">
-                  {validation?.errors.length || 0} error{validation?.errors.length !== 1 ? 's' : ''}
+                <div className="bg-destructive h-3 w-3 rounded-full" />
+                <span className="text-destructive text-xs">
+                  {validation?.errors.length || 0} error
+                  {validation?.errors.length !== 1 ? 's' : ''}
                 </span>
               </>
             )}
           </div>
-          
+
           {validation?.warnings && validation.warnings.length > 0 && (
             <span className="text-xs text-amber-600">
-              {validation.warnings.length} warning{validation.warnings.length !== 1 ? 's' : ''}
+              {validation.warnings.length} warning
+              {validation.warnings.length !== 1 ? 's' : ''}
             </span>
           )}
         </div>
@@ -198,10 +217,12 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
       {/* Detailed error display when needed */}
       {validation && !validation.valid && validation.errors.length > 0 && (
-        <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg">
+        <div className="bg-destructive/5 border-destructive/20 rounded-lg border p-3">
           <div className="space-y-1">
             {validation.errors.map((error, index) => (
-              <p key={index} className="text-xs text-destructive">• {error}</p>
+              <p key={index} className="text-destructive text-xs">
+                • {error}
+              </p>
             ))}
           </div>
         </div>
@@ -209,14 +230,24 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
 
       {/* Reset button - ElevenLabs style */}
       {(hasRequiredFields || hasOptionalFields) && (
-        <div className="pt-4 border-t border-border">
+        <div className="border-border border-t pt-4">
           <button
             type="button"
             onClick={resetToDefaults}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center gap-2 text-sm transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
             Reset values
           </button>

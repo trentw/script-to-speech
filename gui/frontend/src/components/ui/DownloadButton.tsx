@@ -1,9 +1,10 @@
+import { AlertCircle, Download, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
-import { Download, Loader2, AlertCircle } from 'lucide-react';
+
 import { downloadAudio } from '../../utils/audioUtils';
+import type { AppButtonSize, AppButtonVariant } from './button-variants';
 import { appButtonVariants } from './button-variants';
 import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
-import type { AppButtonVariant, AppButtonSize } from './button-variants';
 
 interface DownloadButtonProps {
   /** The URL to download */
@@ -33,22 +34,22 @@ interface DownloadButtonProps {
 export const DownloadButton: React.FC<DownloadButtonProps> = ({
   url,
   filename,
-  variant = "list-action",
-  size = "icon-sm",
+  variant = 'list-action',
+  size = 'icon-sm',
   iconOnly = true,
   disabled = false,
-  tooltip = "Download audio",
+  tooltip = 'Download audio',
   onSuccess,
   onError,
-  className = "",
-  onClick
+  className = '',
+  onClick,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     // Call parent onClick if provided
     if (onClick) {
       onClick(e);
@@ -63,7 +64,8 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       await downloadAudio(url, filename);
       onSuccess?.();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Download failed';
+      const errorMessage =
+        err instanceof Error ? err.message : 'Download failed';
       setError(errorMessage);
       onError?.(errorMessage);
       console.error('Download error:', err);
@@ -74,12 +76,12 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
   const getIcon = () => {
     if (isDownloading) {
-      return <Loader2 className={iconOnly ? "w-3 h-3" : "w-3 h-3 mr-1"} />;
+      return <Loader2 className={iconOnly ? 'h-3 w-3' : 'mr-1 h-3 w-3'} />;
     }
     if (error) {
-      return <AlertCircle className={iconOnly ? "w-3 h-3" : "w-3 h-3 mr-1"} />;
+      return <AlertCircle className={iconOnly ? 'h-3 w-3' : 'mr-1 h-3 w-3'} />;
     }
-    return <Download className={iconOnly ? "w-3 h-3" : "w-3 h-3 mr-1"} />;
+    return <Download className={iconOnly ? 'h-3 w-3' : 'mr-1 h-3 w-3'} />;
   };
 
   const buttonContent = (
@@ -102,12 +104,14 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   if (iconOnly) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          {buttonContent}
-        </TooltipTrigger>
+        <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
         <TooltipContent>
           <p>
-            {isDownloading ? 'Downloading...' : error ? `Error: ${error}` : tooltip}
+            {isDownloading
+              ? 'Downloading...'
+              : error
+                ? `Error: ${error}`
+                : tooltip}
           </p>
         </TooltipContent>
       </Tooltip>
@@ -121,26 +125,26 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 export const DownloadButtonPresets = {
   /** Small icon button for list items */
   listItem: {
-    variant: "list-action" as const,
-    size: "icon-sm" as const,
+    variant: 'list-action' as const,
+    size: 'icon-sm' as const,
     iconOnly: true,
   },
   /** Medium icon button for audio controls */
   audioControl: {
-    variant: "audio-control" as const,
-    size: "icon-md" as const,
+    variant: 'audio-control' as const,
+    size: 'icon-md' as const,
     iconOnly: true,
   },
   /** Text button with icon */
   textButton: {
-    variant: "secondary" as const,
-    size: "sm" as const,
+    variant: 'secondary' as const,
+    size: 'sm' as const,
     iconOnly: false,
   },
   /** Primary action button */
   primary: {
-    variant: "primary" as const,
-    size: "default" as const,
+    variant: 'primary' as const,
+    size: 'default' as const,
     iconOnly: false,
   },
 } as const;

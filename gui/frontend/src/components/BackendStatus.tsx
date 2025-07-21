@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Check if we're running in Tauri
 const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__;
@@ -8,7 +8,7 @@ const invokeCommand = async (command: string) => {
   if (!isTauri) {
     throw new Error('Tauri commands not available in web mode');
   }
-  
+
   const { invoke } = await import('@tauri-apps/api/core');
   return invoke(command);
 };
@@ -17,7 +17,9 @@ interface BackendStatusProps {
   onStatusChange?: (isRunning: boolean) => void;
 }
 
-export const BackendStatus: React.FC<BackendStatusProps> = ({ onStatusChange }) => {
+export const BackendStatus: React.FC<BackendStatusProps> = ({
+  onStatusChange,
+}) => {
   const [isRunning, setIsRunning] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +44,12 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({ onStatusChange }) 
   const startBackend = async () => {
     setIsStarting(true);
     setError(null);
-    
+
     try {
       if (isTauri) {
         // Use Tauri command to start backend
         await invokeCommand('start_backend');
-        
+
         // Wait a moment for the server to start, then check status
         setTimeout(async () => {
           await checkBackendStatus();
@@ -55,7 +57,9 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({ onStatusChange }) 
         }, 3000);
       } else {
         // In web mode, just assume the backend should be started manually
-        setError('Please start the backend manually: cd gui/backend && uv run sts-gui-server');
+        setError(
+          'Please start the backend manually: cd gui/backend && uv run sts-gui-server'
+        );
         setIsStarting(false);
       }
     } catch (err) {
@@ -78,30 +82,29 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({ onStatusChange }) 
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
-      <div className={`w-3 h-3 rounded-full ${
-        isRunning ? 'bg-green-500' : 
-        isStarting ? 'bg-yellow-500 animate-pulse' : 
-        'bg-red-500'
-      }`} />
-      
+    <div className="flex items-center gap-3 rounded-lg border bg-gray-50 p-3">
+      <div
+        className={`h-3 w-3 rounded-full ${
+          isRunning
+            ? 'bg-green-500'
+            : isStarting
+              ? 'animate-pulse bg-yellow-500'
+              : 'bg-red-500'
+        }`}
+      />
+
       <div className="flex-1">
         <div className="text-sm font-medium">
-          Backend Status: {
-            isStarting ? 'Starting...' :
-            isRunning ? 'Running' : 
-            'Stopped'
-          }
+          Backend Status:{' '}
+          {isStarting ? 'Starting...' : isRunning ? 'Running' : 'Stopped'}
           {isTauri && (
-            <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+            <span className="ml-2 rounded bg-blue-100 px-2 py-1 text-xs text-blue-800">
               Desktop
             </span>
           )}
         </div>
         {error && (
-          <div className="text-xs text-red-600 mt-1">
-            Error: {error}
-          </div>
+          <div className="mt-1 text-xs text-red-600">Error: {error}</div>
         )}
       </div>
 
@@ -109,24 +112,24 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({ onStatusChange }) 
         {isTauri && !isRunning && !isStarting && (
           <button
             onClick={startBackend}
-            className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700"
           >
             Start Backend
           </button>
         )}
-        
+
         {isTauri && isRunning && (
           <button
             onClick={stopBackend}
-            className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+            className="rounded bg-red-600 px-3 py-1 text-xs text-white hover:bg-red-700"
           >
             Stop Backend
           </button>
         )}
-        
+
         <button
           onClick={checkBackendStatus}
-          className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+          className="rounded bg-gray-600 px-3 py-1 text-xs text-white hover:bg-gray-700"
         >
           Refresh
         </button>

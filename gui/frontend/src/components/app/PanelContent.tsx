@@ -1,6 +1,5 @@
-
+import type { ProviderInfo, VoiceEntry } from '../../types';
 import { ConfigurationPanel } from '../ConfigurationPanel';
-import type { VoiceEntry, ProviderInfo } from '../../types';
 
 export const PanelContent = ({
   providers,

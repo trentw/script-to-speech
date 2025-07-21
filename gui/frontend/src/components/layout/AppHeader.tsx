@@ -1,22 +1,22 @@
-import React from 'react'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { Settings, History, Menu } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { useViewportSize } from '@/hooks/useViewportSize'
+import { History, Menu, Settings } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useViewportSize } from '@/hooks/useViewportSize';
+import { cn } from '@/lib/utils';
 
 interface AppHeaderProps {
-  appName: string
-  subAppName: string
-  showNavToggle?: boolean
-  onNavToggle?: () => void
-  onSettingsClick?: () => void
-  onHistoryClick?: () => void
-  showActionButtons?: boolean
-  children?: React.ReactNode
-  className?: string
+  appName: string;
+  subAppName: string;
+  showNavToggle?: boolean;
+  onNavToggle?: () => void;
+  onSettingsClick?: () => void;
+  onHistoryClick?: () => void;
+  showActionButtons?: boolean;
+  children?: React.ReactNode;
+  className?: string;
 }
-
 
 export function AppHeader({
   appName,
@@ -27,20 +27,20 @@ export function AppHeader({
   onHistoryClick,
   showActionButtons = true,
   children,
-  className
+  className,
 }: AppHeaderProps) {
-  const { isMobile, isTablet } = useViewportSize()
+  const { isMobile, isTablet } = useViewportSize();
 
   return (
     <header
       className={cn(
-        "h-16 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-        "flex items-center justify-between px-4",
+        'border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 h-16 border-b backdrop-blur',
+        'flex items-center justify-between px-4',
         className
       )}
     >
       {/* Left Section: App Name + Nav Toggle */}
-      <div className="flex items-center gap-3 min-w-0 flex-1 max-w-[60%]">
+      <div className="flex max-w-[60%] min-w-0 flex-1 items-center gap-3">
         {showNavToggle && (isMobile || isTablet) && (
           <Button
             variant="ghost"
@@ -52,16 +52,16 @@ export function AppHeader({
             <span className="sr-only">Toggle navigation</span>
           </Button>
         )}
-        
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="font-bold tracking-tight text-foreground truncate text-lg">
+
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="text-foreground truncate text-lg font-bold tracking-tight">
             {appName}
           </h1>
-          
+
           {!isMobile && (
             <>
               <Separator orientation="vertical" className="h-6" />
-              <span className="text-sm text-muted-foreground font-medium">
+              <span className="text-muted-foreground text-sm font-medium">
                 {subAppName}
               </span>
             </>
@@ -70,22 +70,20 @@ export function AppHeader({
       </div>
 
       {/* Center Section: Provider Selector and Sub-app (Responsive) */}
-      <div className={cn(
-          "flex items-center gap-4",
-          isMobile && "hidden" // Hide on mobile to save space
-        )}>
-        {children && (
-          <div className="flex items-center gap-2">
-            {children}
-          </div>
+      <div
+        className={cn(
+          'flex items-center gap-4',
+          isMobile && 'hidden' // Hide on mobile to save space
         )}
+      >
+        {children && <div className="flex items-center gap-2">{children}</div>}
       </div>
 
       {/* Right Section: Action Buttons */}
       <div className="flex items-center gap-2">
         {/* Backend Status Indicator */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="h-2 w-2 rounded-full bg-green-500" />
           {!isMobile && <span>Connected</span>}
         </div>
 
@@ -110,7 +108,7 @@ export function AppHeader({
             {/* History Button */}
             {onHistoryClick && (
               <Button
-                variant="ghost"  
+                variant="ghost"
                 size="sm"
                 onClick={onHistoryClick}
                 className="h-9 w-9 p-0"
@@ -124,7 +122,7 @@ export function AppHeader({
         )}
       </div>
     </header>
-  )
+  );
 }
 
-export default AppHeader
+export default AppHeader;

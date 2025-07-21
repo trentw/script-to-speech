@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
-import { AnimatedTabs } from './ui/animated-tabs';
-import {
-  VoiceSelector,
-  ConfigForm,
-} from '.';
-import { VoiceSelectionPanel } from './VoiceSelectionPanel';
-import { ProviderSelectionSelector } from './app/ProviderSelectionSelector';
-import { ProviderSelectionPanel } from './ProviderSelectionPanel';
-import { HistoryTab } from './HistoryTab';
-import { HistoryDetailsPanel } from './HistoryDetailsPanel';
+
 import { useConfiguration } from '../stores/appStore';
+import type { ProviderInfo, TaskStatusResponse, VoiceEntry } from '../types';
+import { ConfigForm, VoiceSelector } from '.';
+import { ProviderSelectionSelector } from './app/ProviderSelectionSelector';
+import { HistoryDetailsPanel } from './HistoryDetailsPanel';
+import { HistoryTab } from './HistoryTab';
+import { ProviderSelectionPanel } from './ProviderSelectionPanel';
+import { AnimatedTabs } from './ui/animated-tabs';
 import { appButtonVariants } from './ui/button-variants';
-import type { ProviderInfo, VoiceEntry, TaskStatusResponse } from '../types';
+import { VoiceSelectionPanel } from './VoiceSelectionPanel';
 
 interface ConfigurationPanelProps {
   providers: ProviderInfo[];
@@ -29,7 +27,7 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   voiceLibrary,
   voiceCounts,
   providerErrors,
-  loading: _loading,
+  loading,
   onProviderChange,
   onVoiceSelect,
   onConfigChange,
@@ -38,9 +36,10 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
   const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [showProviderPanel, setShowProviderPanel] = useState(false);
-  const [selectedHistoryTask, setSelectedHistoryTask] = useState<TaskStatusResponse | null>(null);
+  const [selectedHistoryTask, setSelectedHistoryTask] =
+    useState<TaskStatusResponse | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
+
   const handleVoiceSelect = (voice: VoiceEntry) => {
     onVoiceSelect(voice);
     handleBackToSettings();
@@ -93,51 +92,70 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col relative">
-      <AnimatedTabs defaultValue="settings" className="h-full flex flex-col">
-        <div className="px-4 pt-4 pb-0 shrink-0">
+    <div className="relative flex h-full flex-col">
+      <AnimatedTabs defaultValue="settings" className="flex h-full flex-col">
+        <div className="shrink-0 px-4 pt-4 pb-0">
           <AnimatedTabs.List className="w-full">
-            <AnimatedTabs.Trigger value="settings">Settings</AnimatedTabs.Trigger>
+            <AnimatedTabs.Trigger value="settings">
+              Settings
+            </AnimatedTabs.Trigger>
             <AnimatedTabs.Trigger value="history">History</AnimatedTabs.Trigger>
           </AnimatedTabs.List>
         </div>
-        
-        <AnimatedTabs.Content value="settings" className="flex-1 overflow-hidden min-h-0 relative">
-              <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-                <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-                  showVoicePanel || showProviderPanel ? '-translate-x-full' : 'translate-x-0'
-                }`}>
+
+        <AnimatedTabs.Content
+          value="settings"
+          className="relative min-h-0 flex-1 overflow-hidden"
+        >
+          <div
+            className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
+          >
+            <div
+              className={`h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+                showVoicePanel || showProviderPanel
+                  ? '-translate-x-full'
+                  : 'translate-x-0'
+              }`}
+            >
               {/* Normal Settings Content */}
-              <div className="px-4 py-4 space-y-6">
+              <div className="space-y-6 px-4 py-4">
                 {/* Provider Selection */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-foreground">Text to Speech Provider</label>
+                    <label htmlFor="provider-selector" className="text-foreground text-sm font-medium">
+                      Text to Speech Provider
+                    </label>
                   </div>
-                  <ProviderSelectionSelector
-                    providers={providers}
-                    selectedProvider={selectedProvider}
-                    voiceLibrary={voiceLibrary}
-                    voiceCounts={voiceCounts}
-                    providerErrors={providerErrors}
-                    onProviderSelect={onProviderChange}
-                    onOpenProviderPanel={handleShowProviderPanel}
-                  />
+                  <div id="provider-selector">
+                    <ProviderSelectionSelector
+                      providers={providers}
+                      selectedProvider={selectedProvider}
+                      voiceLibrary={voiceLibrary}
+                      voiceCounts={voiceCounts}
+                      providerErrors={providerErrors}
+                      onProviderSelect={onProviderChange}
+                      onOpenProviderPanel={handleShowProviderPanel}
+                    />
+                  </div>
                 </div>
 
                 {/* Voice Selection */}
                 {selectedProvider && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-foreground">Voice</label>
+                      <label htmlFor="voice-selector" className="text-foreground text-sm font-medium">
+                        Voice
+                      </label>
                     </div>
-                    <VoiceSelector
-                      provider={selectedProvider}
-                      voices={voiceLibrary[selectedProvider] || []}
-                      selectedVoice={selectedVoice}
-                      onVoiceSelect={onVoiceSelect}
-                      onOpenVoicePanel={handleShowVoicePanel}
-                    />
+                    <div id="voice-selector">
+                      <VoiceSelector
+                        provider={selectedProvider}
+                        voices={voiceLibrary[selectedProvider] || []}
+                        selectedVoice={selectedVoice}
+                        onVoiceSelect={onVoiceSelect}
+                        onOpenVoicePanel={handleShowVoicePanel}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -145,22 +163,28 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 {selectedProvider && (
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium text-foreground">Parameters</label>
+                      <label htmlFor="config-form" className="text-foreground text-sm font-medium">
+                        Parameters
+                      </label>
                     </div>
-                    <ConfigForm
-                      provider={selectedProvider}
-                      providerInfo={providers.find((p) => p.identifier === selectedProvider)}
-                      config={currentConfig}
-                      onConfigChange={onConfigChange}
-                    />
+                    <div id="config-form">
+                      <ConfigForm
+                        provider={selectedProvider}
+                        providerInfo={providers.find(
+                          (p) => p.identifier === selectedProvider
+                        )}
+                        config={currentConfig}
+                        onConfigChange={onConfigChange}
+                      />
+                    </div>
                   </div>
                 )}
 
                 {/* Reset Button */}
                 {selectedProvider && (
-                  <div className="pt-4 border-t border-border">
+                  <div className="border-border border-t pt-4">
                     <button
-                      className={`w-full ${appButtonVariants({ variant: "reset", size: "default" })}`}
+                      className={`w-full ${appButtonVariants({ variant: 'reset', size: 'default' })}`}
                       onClick={() => onConfigChange({})}
                     >
                       Reset to defaults
@@ -169,11 +193,15 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
                 )}
               </div>
             </div>
-            
+
             {/* Selection Panels - slide in from the right */}
-            <div className={`absolute inset-0 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-              showVoicePanel || showProviderPanel ? 'translate-x-0' : 'translate-x-full'
-            }`}>
+            <div
+              className={`absolute inset-0 h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+                showVoicePanel || showProviderPanel
+                  ? 'translate-x-0'
+                  : 'translate-x-full'
+              }`}
+            >
               {showProviderPanel && (
                 <ProviderSelectionPanel
                   providers={providers}
@@ -198,18 +226,27 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
           </div>
         </AnimatedTabs.Content>
 
-        <AnimatedTabs.Content value="history" className="flex-1 overflow-hidden min-h-0 relative">
-          <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-            <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-              selectedHistoryTask ? '-translate-x-full' : 'translate-x-0'
-            }`}>
+        <AnimatedTabs.Content
+          value="history"
+          className="relative min-h-0 flex-1 overflow-hidden"
+        >
+          <div
+            className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
+          >
+            <div
+              className={`h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+                selectedHistoryTask ? '-translate-x-full' : 'translate-x-0'
+              }`}
+            >
               <HistoryTab onTaskSelect={handleShowHistoryDetails} />
             </div>
-            
+
             {/* History Details Panel - slides in from the right */}
-            <div className={`absolute inset-0 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-              selectedHistoryTask ? 'translate-x-0' : 'translate-x-full'
-            }`}>
+            <div
+              className={`absolute inset-0 h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+                selectedHistoryTask ? 'translate-x-0' : 'translate-x-full'
+              }`}
+            >
               {selectedHistoryTask && (
                 <HistoryDetailsPanel
                   task={selectedHistoryTask}

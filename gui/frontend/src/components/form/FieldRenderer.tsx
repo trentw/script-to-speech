@@ -1,11 +1,13 @@
 import React from 'react';
-import { StringField } from './StringField';
-import { NumberField } from './NumberField';
-import { BooleanField } from './BooleanField';
-import { JsonField } from './JsonField';
+
 import { Label } from '@/components/ui/label';
+
 import type { ProviderField, ValidationResult } from '../../types';
 import { FieldType } from '../../types';
+import { BooleanField } from './BooleanField';
+import { JsonField } from './JsonField';
+import { NumberField } from './NumberField';
+import { StringField } from './StringField';
 
 interface FieldRendererProps {
   field: ProviderField;
@@ -18,12 +20,13 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
   field,
   value,
   validation,
-  onChange
+  onChange,
 }) => {
   const fieldValue = value || '';
-  const hasError = validation?.errors.some(error => 
-    error.toLowerCase().includes(field.name.toLowerCase())
-  ) || false;
+  const hasError =
+    validation?.errors.some((error) =>
+      error.toLowerCase().includes(field.name.toLowerCase())
+    ) || false;
 
   const handleChange = (newValue: any) => {
     onChange(field.name, newValue);
@@ -88,27 +91,28 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium text-foreground">
+        <Label className="text-foreground text-sm font-medium">
           {field.name}
           {field.required && <span className="text-destructive ml-1">*</span>}
         </Label>
         {field.default !== undefined && (
-          <span className="text-xs text-muted-foreground">
-            Default: {typeof field.default === 'string' ? field.default : JSON.stringify(field.default)}
+          <span className="text-muted-foreground text-xs">
+            Default:{' '}
+            {typeof field.default === 'string'
+              ? field.default
+              : JSON.stringify(field.default)}
           </span>
         )}
       </div>
-      
+
       {field.description && (
-        <p className="text-xs text-muted-foreground">
-          {field.description}
-        </p>
+        <p className="text-muted-foreground text-xs">{field.description}</p>
       )}
-      
+
       {renderField()}
-      
+
       {field.min_value !== undefined && field.max_value !== undefined && (
-        <p className="text-xs text-muted-foreground">
+        <p className="text-muted-foreground text-xs">
           Range: {field.min_value} - {field.max_value}
         </p>
       )}

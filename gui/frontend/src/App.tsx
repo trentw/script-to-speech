@@ -1,55 +1,64 @@
-import { useEffect, useCallback, useState } from 'react';
-import { AppShell, AdaptiveNavigation, ResponsivePanel, MobileDrawer } from './components/layout';
-import { useViewportSize } from './hooks/useViewportSize';
+import { FileText, Mic } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
+import { AppLoading, AppStatus } from './components/app/AppStatus';
+import { ErrorDisplay } from './components/app/ErrorDisplay';
+import { FooterContent } from './components/app/FooterContent';
+import { HeaderContent } from './components/app/HeaderContent';
+import { HistoryContent } from './components/app/HistoryContent';
+// Import the new components
+import { MainContent } from './components/app/MainContent';
+import { PanelContent } from './components/app/PanelContent';
+import { SettingsContent } from './components/app/SettingsContent';
+import {
+  AdaptiveNavigation,
+  AppShell,
+  MobileDrawer,
+  ResponsivePanel,
+} from './components/layout';
+import { ScreenplayContent } from './components/screenplay/ScreenplayContent';
+import { useAudioGeneration } from './hooks/audio/useAudioGeneration';
+import { useAllVoiceCounts } from './hooks/queries/useAllVoiceCounts';
 import { useBackendStatus } from './hooks/queries/useBackendStatus';
 import { useProviders } from './hooks/queries/useProviders';
 import { useVoiceLibrary } from './hooks/queries/useVoiceLibrary';
-import { useAllVoiceCounts } from './hooks/queries/useAllVoiceCounts';
-import { useAudioGeneration } from './hooks/audio/useAudioGeneration';
-import { useConfiguration, useUserInput, useUIState, useLayout, useScreenplay } from './stores/appStore';
-import type { VoiceEntry, GenerationRequest } from './types';
-import { Mic, FileText } from 'lucide-react';
-
-// Import the new components
-import { MainContent } from './components/app/MainContent';
-import { HeaderContent } from './components/app/HeaderContent';
-import { PanelContent } from './components/app/PanelContent';
-import { SettingsContent } from './components/app/SettingsContent';
-import { HistoryContent } from './components/app/HistoryContent';
-import { FooterContent } from './components/app/FooterContent';
-import { ErrorDisplay } from './components/app/ErrorDisplay';
-import { AppStatus, AppLoading } from './components/app/AppStatus';
-import { ScreenplayContent } from './components/screenplay/ScreenplayContent';
+import { useViewportSize } from './hooks/useViewportSize';
+import {
+  useConfiguration,
+  useLayout,
+  useScreenplay,
+  useUIState,
+  useUserInput,
+} from './stores/appStore';
+import type { GenerationRequest, VoiceEntry } from './types';
 
 function App() {
   // Hooks
   const { isMobile } = useViewportSize();
-  
+
   // Use Layout state for responsive behavior
-  const { 
-    sidebarExpanded, 
-    activeModal, 
-    toggleSidebar, 
-    closeModal 
-  } = useLayout();
-  
+  const { sidebarExpanded, activeModal, toggleSidebar, closeModal } =
+    useLayout();
+
   // Use Screenplay state
   const { resetScreenplayState } = useScreenplay();
-  
+
   // Local state for active view
   const [activeView, setActiveView] = useState<'tts' | 'screenplay'>('tts');
-  
+
   // State for screenplay-specific UI
-  const [screenplayViewMode, setScreenplayViewMode] = useState<'upload' | 'status' | 'result'>('upload');
+  const [screenplayViewMode, setScreenplayViewMode] = useState<
+    'upload' | 'status' | 'result'
+  >('upload');
 
   // Use Zustand store hooks for client state
-  const { 
-    selectedProvider, 
-    selectedVoice, 
-    currentConfig, 
-    setSelectedProvider, 
-    setSelectedVoice, 
-    setCurrentConfig 
+  const {
+    selectedProvider,
+    selectedVoice,
+    currentConfig,
+    setSelectedProvider,
+    setSelectedVoice,
+    setCurrentConfig,
   } = useConfiguration();
   const { text } = useUserInput();
   const { setError, clearError } = useUIState();
@@ -57,17 +66,21 @@ function App() {
 
   // Use TanStack Query hooks for server state
   const { data: backendStatus } = useBackendStatus();
-  const { data: providers, isPending: providersLoading, error: providersError } = useProviders();
+  const {
+    data: providers,
+    isPending: providersLoading,
+    error: providersError,
+  } = useProviders();
   const { data: voiceLibraryData } = useVoiceLibrary(selectedProvider || '');
 
   // Get voice counts for all providers dynamically
   const { voiceCounts, providerErrors } = useAllVoiceCounts(providers || []);
 
   // Adapt voice library data to expected format
-  const voiceLibrary: Record<string, VoiceEntry[]> = selectedProvider && voiceLibraryData 
-    ? { [selectedProvider]: voiceLibraryData }
-    : {};
-
+  const voiceLibrary: Record<string, VoiceEntry[]> =
+    selectedProvider && voiceLibraryData
+      ? { [selectedProvider]: voiceLibraryData }
+      : {};
 
   // Navigation items (only core app navigation)
   const navigationItems = [
@@ -76,18 +89,16 @@ function App() {
       label: 'Text to Speech',
       icon: Mic,
       isActive: activeView === 'tts',
-      onClick: () => setActiveView('tts')
+      onClick: () => setActiveView('tts'),
     },
     {
       id: 'screenplay',
       label: 'Screenplay Parser',
       icon: FileText,
       isActive: activeView === 'screenplay',
-      onClick: () => setActiveView('screenplay')
-    }
+      onClick: () => setActiveView('screenplay'),
+    },
   ];
-
-
 
   useEffect(() => {
     if (providersError) {
@@ -136,17 +147,27 @@ function App() {
       // Error is already handled by useAudioGeneration hook
       console.error('Generation failed:', error);
     }
-  }, [selectedProvider, text, currentConfig, selectedVoice?.sts_id, handleGenerate, clearError]);
+  }, [
+    selectedProvider,
+    text,
+    currentConfig,
+    selectedVoice?.sts_id,
+    handleGenerate,
+    clearError,
+  ]);
 
   // Keyboard shortcuts
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-      event.preventDefault();
-      if (selectedProvider && text.trim() && !isGenerating) {
-        handleGenerateRequest();
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (selectedProvider && text.trim() && !isGenerating) {
+          handleGenerateRequest();
+        }
       }
-    }
-  }, [selectedProvider, text, isGenerating, handleGenerateRequest]);
+    },
+    [selectedProvider, text, isGenerating, handleGenerateRequest]
+  );
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -154,7 +175,6 @@ function App() {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);
-
 
   if (!backendStatus) {
     return <AppLoading />;
@@ -175,17 +195,20 @@ function App() {
           />
         }
         header={
-          <HeaderContent 
-            activeView={activeView} 
+          <HeaderContent
+            activeView={activeView}
             onParseNew={handleParseNew}
             showParseNewButton={screenplayViewMode === 'result'}
           />
         }
         main={
           activeView === 'tts' ? (
-            <MainContent handleGenerate={handleGenerateRequest} isGenerating={isGenerating} />
+            <MainContent
+              handleGenerate={handleGenerateRequest}
+              isGenerating={isGenerating}
+            />
           ) : (
-            <ScreenplayContent 
+            <ScreenplayContent
               viewMode={screenplayViewMode}
               setViewMode={setScreenplayViewMode}
             />
@@ -207,7 +230,11 @@ function App() {
             </ResponsivePanel>
           ) : undefined
         }
-        footer={activeView === 'tts' ? <FooterContent isGenerating={isGenerating} /> : undefined}
+        footer={
+          activeView === 'tts' ? (
+            <FooterContent />
+          ) : undefined
+        }
       />
 
       {/* Mobile Drawers */}

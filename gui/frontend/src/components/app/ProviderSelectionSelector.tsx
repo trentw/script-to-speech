@@ -1,6 +1,8 @@
-import React from 'react';
 import { Settings } from 'lucide-react';
+import React from 'react';
+
 import { SelectorButton } from '@/components/ui/selector';
+
 import type { ProviderInfo, VoiceEntry } from '../../types';
 
 interface ProviderSelectionSelectorProps {
@@ -13,14 +15,16 @@ interface ProviderSelectionSelectorProps {
   onOpenProviderPanel: () => void;
 }
 
-export const ProviderSelectionSelector: React.FC<ProviderSelectionSelectorProps> = ({
+export const ProviderSelectionSelector: React.FC<
+  ProviderSelectionSelectorProps
+> = ({
   providers,
   selectedProvider,
   voiceLibrary,
   voiceCounts,
   providerErrors,
-  onProviderSelect: _onProviderSelect, // Not used directly in this component
-  onOpenProviderPanel
+  onProviderSelect,
+  onOpenProviderPanel,
 }) => {
   const getProviderDisplayName = (provider: ProviderInfo) => {
     return provider.name;
@@ -31,9 +35,12 @@ export const ProviderSelectionSelector: React.FC<ProviderSelectionSelectorProps>
     if (providerErrors[provider.identifier]) {
       return 'Error loading voices';
     }
-    
+
     // Use voice library if available (when provider is selected), otherwise use voice counts
-    const voiceCount = voiceLibrary[provider.identifier]?.length || voiceCounts[provider.identifier] || 0;
+    const voiceCount =
+      voiceLibrary[provider.identifier]?.length ||
+      voiceCounts[provider.identifier] ||
+      0;
     if (voiceCount === 0) {
       return 'No preconfigured voices available';
     }
@@ -44,18 +51,19 @@ export const ProviderSelectionSelector: React.FC<ProviderSelectionSelectorProps>
     return provider.name.charAt(0).toUpperCase();
   };
 
-
-  const selectedProviderInfo = providers.find(p => p.identifier === selectedProvider);
+  const selectedProviderInfo = providers.find(
+    (p) => p.identifier === selectedProvider
+  );
 
   if (!providers || providers.length === 0) {
     return (
       <div className="space-y-3">
-        <div className="text-center py-8 text-muted-foreground">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted/30 flex items-center justify-center">
-            <Settings className="w-6 h-6 opacity-50" />
+        <div className="text-muted-foreground py-8 text-center">
+          <div className="bg-muted/30 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+            <Settings className="h-6 w-6 opacity-50" />
           </div>
           <p className="text-sm font-medium">No providers available</p>
-          <p className="text-xs mt-1 opacity-75">
+          <p className="mt-1 text-xs opacity-75">
             Check your API configuration
           </p>
         </div>
@@ -74,7 +82,6 @@ export const ProviderSelectionSelector: React.FC<ProviderSelectionSelectorProps>
         renderSecondary={getProviderSubtext}
         availableCount={providers.length}
       />
-
     </div>
   );
 };

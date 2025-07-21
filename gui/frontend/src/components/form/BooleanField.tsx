@@ -1,6 +1,8 @@
 import React from 'react';
-import { Switch } from '@/components/ui/switch';
+
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+
 import type { ProviderField } from '../../types';
 
 interface BooleanFieldProps {
@@ -12,16 +14,16 @@ interface BooleanFieldProps {
 export const BooleanField: React.FC<BooleanFieldProps> = ({
   field,
   value,
-  onChange
+  onChange,
 }) => {
   return (
     <div className="flex items-center justify-between">
       <div className="space-y-0.5">
-        <Label className="text-sm font-medium text-foreground">
+        <Label className="text-foreground text-sm font-medium">
           {field.description || field.name}
         </Label>
         {field.description && field.description !== field.name && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Toggle to {value ? 'disable' : 'enable'} this feature
           </p>
         )}

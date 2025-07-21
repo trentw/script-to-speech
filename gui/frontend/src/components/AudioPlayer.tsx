@@ -1,11 +1,24 @@
-import React, { useState, useRef } from 'react';
-import { Play, Pause, Square, Download, Volume2, MoreHorizontal } from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Slider } from './ui/slider';
-import { getAudioUrls, getAudioFilename, hasAudioFiles, downloadAudio } from '../utils/audioUtils';
-import { DownloadButton } from './ui/DownloadButton';
+import {
+  Download,
+  MoreHorizontal,
+  Pause,
+  Play,
+  Square,
+  Volume2,
+} from 'lucide-react';
+import React, { useRef, useState } from 'react';
+
 import type { TaskStatusResponse } from '../types';
+import {
+  downloadAudio,
+  getAudioFilename,
+  getAudioUrls,
+  hasAudioFiles,
+} from '../utils/audioUtils';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { DownloadButton } from './ui/DownloadButton';
+import { Slider } from './ui/slider';
 
 interface AudioPlayerProps {
   tasks: TaskStatusResponse[];
@@ -18,8 +31,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const completedTasks = tasks.filter(task => 
-    task.status === 'completed' && hasAudioFiles(task)
+  const completedTasks = tasks.filter(
+    (task) => task.status === 'completed' && hasAudioFiles(task)
   );
 
   const playAudio = async (audioUrl: string) => {
@@ -93,7 +106,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
         try {
           await downloadAudio(audioUrl, filename);
           // Small delay between downloads to prevent overwhelming the browser
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
         } catch (error) {
           console.error(`Failed to download ${filename}:`, error);
         }
@@ -101,13 +114,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
     }
   };
 
-
   if (completedTasks.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        <Volume2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <div className="text-muted-foreground py-8 text-center">
+        <Volume2 className="mx-auto mb-2 h-8 w-8 opacity-50" />
         <p className="text-sm">No audio files ready</p>
-        <p className="text-xs mt-1">Generate speech to see audio player</p>
+        <p className="mt-1 text-xs">Generate speech to see audio player</p>
       </div>
     );
   }
@@ -120,14 +132,16 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-      />
+      >
+        <track kind="captions" />
+      </audio>
 
       {/* Current track player */}
       {currentTrack && (
-        <div className="p-4 bg-accent/30 border border-accent rounded-lg">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-accent/30 border-accent rounded-lg border p-4">
+          <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Volume2 className="w-4 h-4" />
+              <Volume2 className="h-4 w-4" />
               <span className="font-medium">Now Playing</span>
             </div>
             <Button
@@ -136,7 +150,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
               onClick={stopAudio}
               className="h-7 px-2"
             >
-              <Square className="w-3 h-3 mr-1" />
+              <Square className="mr-1 h-3 w-3" />
               Stop
             </Button>
           </div>
@@ -150,7 +164,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
               step={0.1}
               className="w-full"
             />
-            <div className="flex justify-between text-xs text-muted-foreground">
+            <div className="text-muted-foreground flex justify-between text-xs">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -163,17 +177,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
         {completedTasks.map((task) => {
           // Use shared utility to get audio URLs
           const audioItems = getAudioUrls(task);
-          
+
           return audioItems.map((audioUrl, fileIndex) => {
             const isCurrentTrack = currentTrack === audioUrl;
             const isPlayingThis = isCurrentTrack && isPlaying;
-            
+
             // Get display text from different possible sources
-            const displayText = task.request?.text || 
-                               task.result?.text_preview || 
-                               'Generated audio';
-            const truncatedText = displayText.length > 60 ? 
-              displayText.slice(0, 60) + '...' : displayText;
+            const displayText =
+              task.request?.text ||
+              task.result?.text_preview ||
+              'Generated audio';
+            const truncatedText =
+              displayText.length > 60
+                ? displayText.slice(0, 60) + '...'
+                : displayText;
 
             // Get provider and voice info
             const provider = task.request?.provider || task.result?.provider;
@@ -182,7 +199,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
             return (
               <div
                 key={`${task.task_id}-${fileIndex}`}
-                className={`p-3 border rounded-lg transition-all duration-200 ${
+                className={`rounded-lg border p-3 transition-all duration-200 ${
                   isCurrentTrack
                     ? 'border-primary bg-accent'
                     : 'border-border hover:border-accent hover:bg-accent/50'
@@ -194,27 +211,25 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
                       variant="ghost"
                       size="sm"
                       onClick={() => playAudio(audioUrl)}
-                      className="h-8 w-8 p-0 rounded-full"
+                      className="h-8 w-8 rounded-full p-0"
                     >
                       {isPlayingThis ? (
-                        <Pause className="w-4 h-4" />
+                        <Pause className="h-4 w-4" />
                       ) : (
-                        <Play className="w-4 h-4" />
+                        <Play className="h-4 w-4" />
                       )}
                     </Button>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground">
+
+                    <div className="min-w-0 flex-1">
+                      <div className="text-foreground font-medium">
                         {provider && (
                           <Badge variant="outline" className="mr-2 text-xs">
                             {provider}
                           </Badge>
                         )}
-                        {voiceId && (
-                          <span className="text-sm">{voiceId}</span>
-                        )}
+                        {voiceId && <span className="text-sm">{voiceId}</span>}
                       </div>
-                      <div className="text-sm text-muted-foreground italic truncate">
+                      <div className="text-muted-foreground truncate text-sm italic">
                         "{truncatedText}"
                       </div>
                     </div>
@@ -229,12 +244,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
                       iconOnly={false}
                       className="h-7 px-2"
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 w-7 p-0"
-                    >
-                      <MoreHorizontal className="w-3 h-3" />
+                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                      <MoreHorizontal className="h-3 w-3" />
                     </Button>
                   </div>
                 </div>
@@ -246,20 +257,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ tasks }) => {
 
       {/* Batch actions */}
       {completedTasks.length > 1 && (
-        <div className="border-t border-border pt-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
+        <div className="border-border border-t pt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">
               {completedTasks.reduce((sum, task) => {
                 const audioItems = getAudioUrls(task);
                 return sum + audioItems.length;
-              }, 0)} audio files
+              }, 0)}{' '}
+              audio files
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBatchDownload}
-            >
-              <Download className="w-3 h-3 mr-1" />
+            <Button variant="outline" size="sm" onClick={handleBatchDownload}>
+              <Download className="mr-1 h-3 w-3" />
               Download All
             </Button>
           </div>

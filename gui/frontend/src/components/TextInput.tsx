@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -13,9 +14,9 @@ interface TextInputProps {
 export const TextInput: React.FC<TextInputProps> = ({
   value,
   onChange,
-  placeholder = "Enter text to convert to speech...",
+  placeholder = 'Enter text to convert to speech...',
   label,
-  id = "text-input"
+  id = 'text-input',
 }) => {
   return (
     <div className="space-y-2">
@@ -32,8 +33,8 @@ export const TextInput: React.FC<TextInputProps> = ({
         placeholder={placeholder}
         className="resize-none"
       />
-      <div className="flex justify-between items-center">
-        <span className="text-sm text-muted-foreground">
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground text-sm">
           {value.length} characters
         </span>
         {value.length > 1000 && (

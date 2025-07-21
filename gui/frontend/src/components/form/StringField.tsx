@@ -1,6 +1,14 @@
 import React from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 import type { ProviderField } from '../../types';
 
 interface StringFieldProps {
@@ -14,7 +22,7 @@ export const StringField: React.FC<StringFieldProps> = ({
   field,
   value,
   hasError,
-  onChange
+  onChange,
 }) => {
   if (field.options && field.options.length > 0) {
     // Dropdown for string fields with options

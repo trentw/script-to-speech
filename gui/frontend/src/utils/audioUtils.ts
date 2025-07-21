@@ -8,12 +8,12 @@ export const getAudioUrls = (task: TaskStatusResponse): string[] => {
   if (task.audio_urls && task.audio_urls.length > 0) {
     return task.audio_urls;
   }
-  
+
   // Legacy format: result.files array
   if (task.result && task.result.files && task.result.files.length > 0) {
     return task.result.files;
   }
-  
+
   return [];
 };
 
@@ -27,7 +27,7 @@ export const playAudioUrl = async (url: string): Promise<void> => {
   }
 
   const audio = new Audio(url);
-  
+
   // Wait for metadata to be loaded before attempting playback
   await new Promise<void>((resolve, reject) => {
     const timeoutId = setTimeout(() => {
@@ -62,10 +62,15 @@ export const playAudioUrl = async (url: string): Promise<void> => {
 /**
  * Download an audio file with enhanced reliability and cross-platform support
  */
-export const downloadAudio = async (url: string, filename?: string): Promise<void> => {
+export const downloadAudio = async (
+  url: string,
+  filename?: string
+): Promise<void> => {
   // Validate URL to prevent security issues
   if (!/^https?:\/\//i.test(url)) {
-    throw new Error('Invalid download URL: only HTTP/HTTPS protocols are allowed');
+    throw new Error(
+      'Invalid download URL: only HTTP/HTTPS protocols are allowed'
+    );
   }
 
   const finalFilename = filename || `audio-${Date.now()}.mp3`;
@@ -73,37 +78,48 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
   // Check if running in Tauri desktop environment
   if (typeof window !== 'undefined' && window.__TAURI__) {
     try {
-      console.log('[Tauri Debug] Attempting Tauri download for:', url, 'filename:', finalFilename);
-      
+      console.log(
+        '[Tauri Debug] Attempting Tauri download for:',
+        url,
+        'filename:',
+        finalFilename
+      );
+
       // Use completely dynamic string-based imports to bypass Vite static analysis
       const pluginDialog = '@tauri-apps/plugin-dialog';
       const apiPath = '@tauri-apps/api/path';
       const pluginUpload = '@tauri-apps/plugin-upload';
-      
+
       const [tauriDialog, tauriPath, tauriUpload] = await Promise.all([
-        new Function('return import(arguments[0])')(pluginDialog).catch(() => null),
+        new Function('return import(arguments[0])')(pluginDialog).catch(
+          () => null
+        ),
         new Function('return import(arguments[0])')(apiPath).catch(() => null),
-        new Function('return import(arguments[0])')(pluginUpload).catch(() => null)
+        new Function('return import(arguments[0])')(pluginUpload).catch(
+          () => null
+        ),
       ]);
 
       console.log('[Tauri Debug] Plugins loaded:', {
         dialog: !!tauriDialog,
         path: !!tauriPath,
-        upload: !!tauriUpload
+        upload: !!tauriUpload,
       });
 
       if (tauriDialog && tauriPath && tauriUpload) {
         // Get default download directory
         const downloadDir = await tauriPath.downloadDir();
         console.log('[Tauri Debug] Download directory:', downloadDir);
-        
+
         // Let user choose download location using the save dialog
         const savePath = await tauriDialog.save({
           defaultPath: `${downloadDir}/${finalFilename}`,
-          filters: [{
-            name: 'Audio Files',
-            extensions: ['mp3', 'wav', 'ogg']
-          }]
+          filters: [
+            {
+              name: 'Audio Files',
+              extensions: ['mp3', 'wav', 'ogg'],
+            },
+          ],
         });
 
         console.log('[Tauri Debug] User selected save path:', savePath);
@@ -115,7 +131,9 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
             url,
             savePath,
             (progress: number, total: number) => {
-              console.log(`[Tauri Debug] Download progress: ${progress}/${total} bytes`);
+              console.log(
+                `[Tauri Debug] Download progress: ${progress}/${total} bytes`
+              );
             }
           );
           console.log('[Tauri Debug] Download completed successfully');
@@ -124,7 +142,9 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
         }
         return;
       } else {
-        console.warn('[Tauri Debug] Some required Tauri plugins are not available');
+        console.warn(
+          '[Tauri Debug] Some required Tauri plugins are not available'
+        );
       }
     } catch (error) {
       console.error('[Tauri Debug] Tauri download failed:', error);
@@ -137,15 +157,20 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
   if (url.includes('/static/')) {
     // Convert /static/filename.mp3 to /api/files/filename/download
     const filename = url.split('/static/')[1];
-    downloadUrl = url.replace(`/static/${filename}`, `/api/files/${filename}/download`);
+    downloadUrl = url.replace(
+      `/static/${filename}`,
+      `/api/files/${filename}/download`
+    );
   }
 
   try {
     // Primary method: fetch + blob + URL.createObjectURL (modern, reliable)
     const response = await fetch(downloadUrl);
-    
+
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Download failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const blob = await response.blob();
@@ -155,7 +180,7 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
       const link = document.createElement('a');
       link.href = downloadUrl_blob;
       link.download = finalFilename;
-      
+
       // Temporarily add to DOM, click, then remove
       document.body.appendChild(link);
       link.click();
@@ -166,13 +191,13 @@ export const downloadAudio = async (url: string, filename?: string): Promise<voi
     }
   } catch (error) {
     console.error('Fetch + blob download failed, trying fallback:', error);
-    
+
     try {
       // Fallback method: direct <a download> (less reliable for cross-origin)
       const link = document.createElement('a');
       link.href = downloadUrl;
       link.download = finalFilename;
-      
+
       document.body.appendChild(link);
       try {
         link.click();
@@ -202,13 +227,13 @@ export const hasAudioFiles = (task: TaskStatusResponse): boolean => {
  * Get a descriptive filename for an audio file based on task data
  */
 export const getAudioFilename = (
-  task: TaskStatusResponse, 
-  index: number = 0, 
+  task: TaskStatusResponse,
+  index: number = 0,
   extension: string = 'mp3'
 ): string => {
   const provider = task.request?.provider || task.result?.provider || 'unknown';
   const voiceId = task.request?.sts_id || task.result?.voice_id || 'voice';
   const taskId = task.task_id.slice(0, 8);
-  
+
   return `${provider}-${voiceId}-${taskId}-${index}.${extension}`;
 };

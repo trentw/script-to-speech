@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface UseAudioOptions {
   src?: string;
@@ -22,11 +22,14 @@ export interface UseAudioReturn {
  * Modern audio hook based on HTML5 Audio API best practices
  * Follows the pattern recommended by Zen research for React audio management
  */
-export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAudioReturn {
+export function useAudio({
+  src,
+  autoplay = false,
+}: UseAudioOptions = {}): UseAudioReturn {
   const audioRef = useRef<HTMLAudioElement | undefined>(undefined);
   const playPromiseRef = useRef<Promise<void> | null>(null);
   const autoplayTriggeredRef = useRef<string | null>(null);
-  
+
   // Audio states
   const [isReady, setIsReady] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -140,9 +143,9 @@ export function useAudio({ src, autoplay = false }: UseAudioOptions = {}): UseAu
     };
 
     const onError = () => {
-      const errorMsg = audio.error ? 
-        `Audio error (${audio.error.code}): ${audio.error.message}` : 
-        'Unknown audio error';
+      const errorMsg = audio.error
+        ? `Audio error (${audio.error.code}): ${audio.error.message}`
+        : 'Unknown audio error';
       console.error('Audio error:', errorMsg);
       setError(errorMsg);
       setIsLoading(false);

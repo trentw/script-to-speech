@@ -1,13 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
+
 import { apiService } from '@/services/api';
 import type { TaskStatusResponse } from '@/types';
 
-export function useScreenplayStatus(taskId: string | undefined, enabled = true) {
+export function useScreenplayStatus(
+  taskId: string | undefined,
+  enabled = true
+) {
   return useQuery({
     queryKey: ['screenplay-status', taskId],
     queryFn: async () => {
       if (!taskId) throw new Error('No task ID provided');
-      
+
       const response = await apiService.getScreenplayTaskStatus(taskId);
       if (response.error) {
         throw new Error(response.error);

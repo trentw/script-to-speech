@@ -1,12 +1,12 @@
 import type {
-  ProviderInfo,
-  VoiceEntry,
-  VoiceDetails,
+  ApiResponse,
   GenerationRequest,
+  ProviderInfo,
   TaskResponse,
   TaskStatusResponse,
   ValidationResult,
-  ApiResponse
+  VoiceDetails,
+  VoiceEntry,
 } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
@@ -26,14 +26,21 @@ class ApiService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        return { error: errorData.detail || errorData.error || `HTTP ${response.status}` };
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        return {
+          error:
+            errorData.detail || errorData.error || `HTTP ${response.status}`,
+        };
       }
 
       const data = await response.json();
       return { data };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Network error' };
+      return {
+        error: error instanceof Error ? error.message : 'Network error',
+      };
     }
   }
 
@@ -65,11 +72,16 @@ class ApiService {
     return this.request<string[]>('/voice-library/providers');
   }
 
-  async getProviderVoices(provider: string): Promise<ApiResponse<VoiceEntry[]>> {
+  async getProviderVoices(
+    provider: string
+  ): Promise<ApiResponse<VoiceEntry[]>> {
     return this.request<VoiceEntry[]>(`/voice-library/${provider}`);
   }
 
-  async getVoiceDetails(provider: string, stsId: string): Promise<ApiResponse<VoiceDetails>> {
+  async getVoiceDetails(
+    provider: string,
+    stsId: string
+  ): Promise<ApiResponse<VoiceDetails>> {
     return this.request<VoiceDetails>(`/voice-library/${provider}/${stsId}`);
   }
 
@@ -84,7 +96,7 @@ class ApiService {
     if (params.provider) searchParams.append('provider', params.provider);
     if (params.gender) searchParams.append('gender', params.gender);
     if (params.tags) {
-      params.tags.forEach(tag => searchParams.append('tags', tag));
+      params.tags.forEach((tag) => searchParams.append('tags', tag));
     }
 
     return this.request<VoiceEntry[]>(`/voice-library/search?${searchParams}`);
@@ -94,21 +106,31 @@ class ApiService {
     return this.request<any>('/voice-library/stats');
   }
 
-  async expandStsId(provider: string, stsId: string): Promise<ApiResponse<Record<string, any>>> {
-    return this.request<Record<string, any>>(`/voice-library/${provider}/${stsId}/expand`, {
-      method: 'POST',
-    });
+  async expandStsId(
+    provider: string,
+    stsId: string
+  ): Promise<ApiResponse<Record<string, any>>> {
+    return this.request<Record<string, any>>(
+      `/voice-library/${provider}/${stsId}/expand`,
+      {
+        method: 'POST',
+      }
+    );
   }
 
   // Generation endpoints
-  async createGenerationTask(request: GenerationRequest): Promise<ApiResponse<TaskResponse>> {
+  async createGenerationTask(
+    request: GenerationRequest
+  ): Promise<ApiResponse<TaskResponse>> {
     return this.request<TaskResponse>('/generate', {
       method: 'POST',
       body: JSON.stringify(request),
     });
   }
 
-  async getTaskStatus(taskId: string): Promise<ApiResponse<TaskStatusResponse>> {
+  async getTaskStatus(
+    taskId: string
+  ): Promise<ApiResponse<TaskStatusResponse>> {
     return this.request<TaskStatusResponse>(`/generate/status/${taskId}`);
   }
 
@@ -116,10 +138,15 @@ class ApiService {
     return this.request<TaskStatusResponse[]>('/generate/tasks');
   }
 
-  async cleanupOldTasks(maxAgeHours: number = 24): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>(`/generate/cleanup?max_age_hours=${maxAgeHours}`, {
-      method: 'DELETE',
-    });
+  async cleanupOldTasks(
+    maxAgeHours: number = 24
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/generate/cleanup?max_age_hours=${maxAgeHours}`,
+      {
+        method: 'DELETE',
+      }
+    );
   }
 
   // File endpoints
@@ -127,7 +154,10 @@ class ApiService {
     return `${API_BASE_URL}/files/${filename}`;
   }
 
-  getScreenplayDownloadUrl(taskId: string, fileType: 'json' | 'text' | 'log'): string {
+  getScreenplayDownloadUrl(
+    taskId: string,
+    fileType: 'json' | 'text' | 'log'
+  ): string {
     return `${API_BASE_URL}/screenplay/download/${taskId}/${fileType}`;
   }
 
@@ -136,7 +166,10 @@ class ApiService {
   }
 
   // Screenplay endpoints
-  async uploadScreenplay(file: File, textOnly: boolean = false): Promise<ApiResponse<TaskResponse>> {
+  async uploadScreenplay(
+    file: File,
+    textOnly: boolean = false
+  ): Promise<ApiResponse<TaskResponse>> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('text_only', textOnly.toString());
@@ -148,18 +181,27 @@ class ApiService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        return { error: errorData.detail || errorData.error || `HTTP ${response.status}` };
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        return {
+          error:
+            errorData.detail || errorData.error || `HTTP ${response.status}`,
+        };
       }
 
       const data = await response.json();
       return { data };
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Network error' };
+      return {
+        error: error instanceof Error ? error.message : 'Network error',
+      };
     }
   }
 
-  async getScreenplayTaskStatus(taskId: string): Promise<ApiResponse<TaskStatusResponse>> {
+  async getScreenplayTaskStatus(
+    taskId: string
+  ): Promise<ApiResponse<TaskStatusResponse>> {
     return this.request<TaskStatusResponse>(`/screenplay/status/${taskId}`);
   }
 
@@ -175,22 +217,35 @@ class ApiService {
     return this.request<any[]>(`/screenplay/recent?limit=${limit}`);
   }
 
-  async deleteScreenplayTask(taskId: string, deleteFiles: boolean = false): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>(`/screenplay/${taskId}?delete_files=${deleteFiles}`, {
-      method: 'DELETE',
-    });
+  async deleteScreenplayTask(
+    taskId: string,
+    deleteFiles: boolean = false
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/screenplay/${taskId}?delete_files=${deleteFiles}`,
+      {
+        method: 'DELETE',
+      }
+    );
   }
 
-  async cleanupOldScreenplayTasks(maxAgeHours: number = 24): Promise<ApiResponse<{ message: string }>> {
-    return this.request<{ message: string }>(`/screenplay/cleanup?max_age_hours=${maxAgeHours}`, {
-      method: 'DELETE',
-    });
+  async cleanupOldScreenplayTasks(
+    maxAgeHours: number = 24
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/screenplay/cleanup?max_age_hours=${maxAgeHours}`,
+      {
+        method: 'DELETE',
+      }
+    );
   }
 
   // Utility methods
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(`${API_BASE_URL.replace('/api', '')}/health`);
+      const response = await fetch(
+        `${API_BASE_URL.replace('/api', '')}/health`
+      );
       return response.ok;
     } catch {
       return false;

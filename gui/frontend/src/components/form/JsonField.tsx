@@ -1,4 +1,5 @@
 import React from 'react';
+
 import type { ProviderField } from '../../types';
 import { FieldType } from '../../types';
 
@@ -13,14 +14,14 @@ export const JsonField: React.FC<JsonFieldProps> = ({
   field,
   value,
   hasError,
-  onChange
+  onChange,
 }) => {
   const isList = field.type === FieldType.LIST;
   const rows = isList ? 3 : 4;
-  const placeholder = isList 
+  const placeholder = isList
     ? `Enter ${field.name} as JSON array`
     : `Enter ${field.name} as JSON object`;
-  const exampleText = isList 
+  const exampleText = isList
     ? 'Enter as JSON array, e.g., ["item1", "item2"]'
     : 'Enter as JSON object, e.g., {"key": "value"}';
 
@@ -52,9 +53,7 @@ export const JsonField: React.FC<JsonFieldProps> = ({
         onChange={(e) => handleChange(e.target.value)}
         placeholder={field.description || placeholder}
       />
-      <p className="text-xs text-gray-500 mt-1">
-        {exampleText}
-      </p>
+      <p className="mt-1 text-xs text-gray-500">{exampleText}</p>
     </div>
   );
 };

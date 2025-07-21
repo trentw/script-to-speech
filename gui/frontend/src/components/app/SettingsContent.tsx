@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import {
-  VoiceSelector,
-  ConfigForm,
-} from '../';
+
+import { useConfiguration } from '../../stores/appStore';
+import type { ProviderInfo, VoiceEntry } from '../../types';
+import { ConfigForm, VoiceSelector } from '../';
+import { ProviderSelectionPanel } from '../ProviderSelectionPanel';
+import { appButtonVariants } from '../ui/button-variants';
 import { VoiceSelectionPanel } from '../VoiceSelectionPanel';
 import { ProviderSelectionSelector } from './ProviderSelectionSelector';
-import { ProviderSelectionPanel } from '../ProviderSelectionPanel';
-import { useConfiguration } from '../../stores/appStore';
-import { appButtonVariants } from '../ui/button-variants';
-import type { ProviderInfo, VoiceEntry } from '../../types';
 
 interface SettingsContentProps {
   providers: ProviderInfo[];
@@ -34,7 +32,7 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
   const [showVoicePanel, setShowVoicePanel] = useState(false);
   const [showProviderPanel, setShowProviderPanel] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  
+
   const handleVoiceSelect = (voice: VoiceEntry) => {
     onVoiceSelect(voice);
     handleBackToSettings();
@@ -71,42 +69,56 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
   };
 
   return (
-    <div className="h-full flex flex-col relative">
-      <div className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}>
-        <div className={`h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-          showVoicePanel || showProviderPanel ? '-translate-x-full' : 'translate-x-0'
-        }`}>
+    <div className="relative flex h-full flex-col">
+      <div
+        className={`absolute inset-0 transition-all duration-300 ease-in-out ${isTransitioning ? 'opacity-50' : 'opacity-100'}`}
+      >
+        <div
+          className={`h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+            showVoicePanel || showProviderPanel
+              ? '-translate-x-full'
+              : 'translate-x-0'
+          }`}
+        >
           {/* Normal Settings Content */}
-          <div className="p-4 space-y-6">
+          <div className="space-y-6 p-4">
             {/* Provider Selection */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-foreground">Text to Speech Provider</label>
+                <label htmlFor="provider-selector" className="text-foreground text-sm font-medium">
+                  Text to Speech Provider
+                </label>
               </div>
-              <ProviderSelectionSelector
-                providers={providers}
-                selectedProvider={selectedProvider}
-                voiceLibrary={voiceLibrary}
-                voiceCounts={voiceCounts}
-                providerErrors={providerErrors}
-                onProviderSelect={onProviderChange}
-                onOpenProviderPanel={handleShowProviderPanel}
-              />
+              <div id="provider-selector">
+                <ProviderSelectionSelector
+                  providers={providers}
+                  selectedProvider={selectedProvider}
+                  voiceLibrary={voiceLibrary}
+                  voiceCounts={voiceCounts}
+                  providerErrors={providerErrors}
+                  onProviderSelect={onProviderChange}
+                  onOpenProviderPanel={handleShowProviderPanel}
+                />
+              </div>
             </div>
 
             {/* Voice Selection */}
             {selectedProvider && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Voice</label>
+                  <label htmlFor="voice-selector" className="text-foreground text-sm font-medium">
+                    Voice
+                  </label>
                 </div>
-                <VoiceSelector
-                  provider={selectedProvider}
-                  voices={voiceLibrary[selectedProvider] || []}
-                  selectedVoice={selectedVoice}
-                  onVoiceSelect={onVoiceSelect}
-                  onOpenVoicePanel={handleShowVoicePanel}
-                />
+                <div id="voice-selector">
+                  <VoiceSelector
+                    provider={selectedProvider}
+                    voices={voiceLibrary[selectedProvider] || []}
+                    selectedVoice={selectedVoice}
+                    onVoiceSelect={onVoiceSelect}
+                    onOpenVoicePanel={handleShowVoicePanel}
+                  />
+                </div>
               </div>
             )}
 
@@ -114,22 +126,28 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             {selectedProvider && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium text-foreground">Parameters</label>
+                  <label htmlFor="config-form" className="text-foreground text-sm font-medium">
+                    Parameters
+                  </label>
                 </div>
-                <ConfigForm
-                  provider={selectedProvider}
-                  providerInfo={providers.find((p) => p.identifier === selectedProvider)}
-                  config={currentConfig}
-                  onConfigChange={onConfigChange}
-                />
+                <div id="config-form">
+                  <ConfigForm
+                    provider={selectedProvider}
+                    providerInfo={providers.find(
+                      (p) => p.identifier === selectedProvider
+                    )}
+                    config={currentConfig}
+                    onConfigChange={onConfigChange}
+                  />
+                </div>
               </div>
             )}
 
             {/* Reset Button */}
             {selectedProvider && (
-              <div className="pt-4 border-t border-border">
+              <div className="border-border border-t pt-4">
                 <button
-                  className={`w-full ${appButtonVariants({ variant: "reset", size: "default" })}`}
+                  className={`w-full ${appButtonVariants({ variant: 'reset', size: 'default' })}`}
                   onClick={() => onConfigChange({})}
                 >
                   Reset to defaults
@@ -138,11 +156,15 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             )}
           </div>
         </div>
-        
+
         {/* Selection Panels - slide in from the right */}
-        <div className={`absolute inset-0 h-full overflow-y-auto transform transition-transform duration-300 ease-in-out ${
-          showVoicePanel || showProviderPanel ? 'translate-x-0' : 'translate-x-full'
-        }`}>
+        <div
+          className={`absolute inset-0 h-full transform overflow-y-auto transition-transform duration-300 ease-in-out ${
+            showVoicePanel || showProviderPanel
+              ? 'translate-x-0'
+              : 'translate-x-full'
+          }`}
+        >
           {showProviderPanel && (
             <ProviderSelectionPanel
               providers={providers}

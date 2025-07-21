@@ -4,10 +4,10 @@ export const TaskStatus = {
   PENDING: 'pending',
   PROCESSING: 'processing',
   COMPLETED: 'completed',
-  FAILED: 'failed'
+  FAILED: 'failed',
 } as const;
 
-export type TaskStatus = typeof TaskStatus[keyof typeof TaskStatus];
+export type TaskStatus = (typeof TaskStatus)[keyof typeof TaskStatus];
 
 export const FieldType = {
   STRING: 'string',
@@ -15,10 +15,10 @@ export const FieldType = {
   FLOAT: 'float',
   BOOLEAN: 'boolean',
   LIST: 'list',
-  DICT: 'dict'
+  DICT: 'dict',
 } as const;
 
-export type FieldType = typeof FieldType[keyof typeof FieldType];
+export type FieldType = (typeof FieldType)[keyof typeof FieldType];
 
 export interface ProviderField {
   name: string;
