@@ -3,22 +3,26 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import { devtools } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 
-import type { VoiceEntry } from '../types';
+import type { ScreenplayResult, VoiceEntry } from '../types';
+
+// Type for configuration values matching VoiceEntry config structure
+type ConfigValue = string | number | boolean | string[];
+type Config = Record<string, ConfigValue>;
 
 // Configuration slice - handles TTS provider/voice settings
 interface ConfigurationSlice {
   selectedProvider: string | undefined;
   selectedVoice: VoiceEntry | undefined;
-  currentConfig: Record<string, any>;
+  currentConfig: Config;
 
   // Actions
   setSelectedProvider: (provider: string | undefined) => void;
   setSelectedVoice: (voice: VoiceEntry | undefined) => void;
-  setCurrentConfig: (config: Record<string, any>) => void;
+  setCurrentConfig: (config: Config) => void;
   setConfiguration: (
     provider: string,
     voice: VoiceEntry | undefined,
-    config: Record<string, any>
+    config: Config
   ) => void;
   resetConfiguration: () => void;
 }
@@ -82,12 +86,12 @@ interface LayoutSlice {
 // Screenplay slice - handles screenplay parsing state
 interface ScreenplaySlice {
   currentTaskId: string | undefined;
-  selectedScreenplay: any | undefined;
+  selectedScreenplay: ScreenplayResult | undefined;
   viewMode: 'upload' | 'status' | 'result';
 
   // Actions
   setCurrentTaskId: (taskId: string | undefined) => void;
-  setSelectedScreenplay: (screenplay: any | undefined) => void;
+  setSelectedScreenplay: (screenplay: ScreenplayResult | undefined) => void;
   setViewMode: (mode: 'upload' | 'status' | 'result') => void;
   resetScreenplayState: () => void;
 }

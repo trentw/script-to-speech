@@ -5,9 +5,9 @@ import { FieldType } from '../../types';
 
 interface JsonFieldProps {
   field: ProviderField;
-  value: any;
+  value: string | string[] | Record<string, unknown> | null | undefined;
   hasError: boolean;
-  onChange: (value: any) => void;
+  onChange: (value: string | string[] | Record<string, unknown>) => void;
 }
 
 export const JsonField: React.FC<JsonFieldProps> = ({

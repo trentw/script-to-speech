@@ -17,7 +17,7 @@ export const useValidateProviderConfig = () => {
       config,
     }: {
       provider: string;
-      config: Record<string, any>;
+      config: Record<string, string | number | boolean | string[]>;
     }): Promise<ValidationResult> => {
       const response = await apiService.validateProviderConfig(
         provider,
@@ -56,7 +56,7 @@ export const useExpandStsId = () => {
     }: {
       provider: string;
       stsId: string;
-    }): Promise<Record<string, any>> => {
+    }): Promise<Record<string, string | number | boolean | string[]>> => {
       const response = await apiService.expandStsId(provider, stsId);
       if (response.error) {
         throw new Error(response.error);

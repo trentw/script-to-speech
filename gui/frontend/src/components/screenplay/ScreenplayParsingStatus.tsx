@@ -52,7 +52,15 @@ export function ScreenplayParsingStatus({
             {getStatusIcon()}
             <h3 className="text-lg font-semibold">Parsing Status</h3>
           </div>
-          <Badge variant={getStatusBadgeVariant() as any}>
+          <Badge
+            variant={
+              getStatusBadgeVariant() as
+                | 'secondary'
+                | 'default'
+                | 'destructive'
+                | 'success'
+            }
+          >
             {status.status}
           </Badge>
         </div>

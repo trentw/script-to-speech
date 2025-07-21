@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -euo pipefail
 
 FRONTEND_DIR="gui/frontend"
 FRONTEND_PACKAGE_NAME="frontend"
@@ -23,14 +23,14 @@ CMD="$1"
 shift
 
 # Transform file paths by removing the frontend directory prefix
-ARGS=""
+TRANSFORMED_ARGS=()
 for arg in "$@"; do
   # If the argument starts with gui/frontend/, remove that prefix
   if echo "$arg" | grep -q "^gui/frontend/"; then
     arg=$(echo "$arg" | sed 's|^gui/frontend/||')
   fi
-  ARGS="$ARGS $arg"
+  TRANSFORMED_ARGS+=("$arg")
 done
 
 # Execute using workspace filter with transformed arguments
-exec pnpm --filter "${FRONTEND_PACKAGE_NAME}" exec -- "$CMD" $ARGS
+exec pnpm --filter "${FRONTEND_PACKAGE_NAME}" exec -- "$CMD" "${TRANSFORMED_ARGS[@]}"

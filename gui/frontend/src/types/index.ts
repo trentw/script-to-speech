@@ -25,7 +25,7 @@ export interface ProviderField {
   type: FieldType;
   required: boolean;
   description?: string;
-  default?: any;
+  default?: string | number | boolean | string[] | Record<string, unknown>;
   options?: string[];
   min_value?: number;
   max_value?: number;
@@ -70,7 +70,7 @@ export interface VoiceTags {
 export interface VoiceEntry {
   sts_id: string;
   provider: string;
-  config: Record<string, any>;
+  config: Record<string, string | number | boolean | string[]>;
   voice_properties?: VoiceProperties;
   description?: VoiceDescription;
   tags?: VoiceTags;
@@ -78,12 +78,12 @@ export interface VoiceEntry {
 }
 
 export interface VoiceDetails extends VoiceEntry {
-  expanded_config: Record<string, any>;
+  expanded_config: Record<string, string | number | boolean | string[]>;
 }
 
 export interface GenerationRequest {
   provider: string;
-  config: Record<string, any>;
+  config: Record<string, string | number | boolean | string[]>;
   text: string;
   sts_id?: string;
   variants?: number;
@@ -136,7 +136,7 @@ export interface FormField {
   label: string;
   type: FieldType;
   required: boolean;
-  value: any;
+  value: string | number | boolean | string[] | Record<string, unknown>;
   error?: string;
   description?: string;
   options?: string[];
@@ -148,7 +148,7 @@ export interface AppState {
   selectedProvider?: string;
   providers: ProviderInfo[];
   voiceLibrary: Record<string, VoiceEntry[]>;
-  currentConfig: Record<string, any>;
+  currentConfig: Record<string, string | number | boolean | string[]>;
   selectedVoice?: VoiceEntry;
   text: string;
   generationTasks: TaskStatusResponse[];
@@ -159,6 +159,35 @@ export interface AppState {
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+}
+
+// Voice Library Types
+
+export interface VoiceLibraryStats {
+  total_voices: number;
+  providers: Record<string, number>;
+  gender_distribution: Record<string, number>;
+  tag_counts: Record<string, number>;
+}
+
+export interface ExpandedStsIdResponse {
+  provider: string;
+  sts_id: string;
+  expanded_config: Record<string, string | number | boolean | string[]>;
+  voice_properties?: VoiceProperties;
+}
+
+// File Types
+
+export interface AudioFile {
+  filename: string;
+  size: number;
+  created_at: string;
+  duration_ms?: number;
+}
+
+export interface AudioFilesResponse {
+  files: AudioFile[];
 }
 
 // Screenplay Types
@@ -176,6 +205,16 @@ export interface ScreenplayFiles {
   text?: string;
 }
 
+export interface ScreenplayChunk {
+  chunk_id: number;
+  chunk_type: string;
+  speaker?: string;
+  dialogue?: string;
+  parenthetical?: string;
+  action?: string;
+  metadata?: Record<string, string | number | boolean>;
+}
+
 export interface ScreenplayResult {
   files: ScreenplayFiles;
   analysis?: ScreenplayAnalysis;
@@ -183,7 +222,7 @@ export interface ScreenplayResult {
   original_filename: string;
   text_only: boolean;
   log_file?: string;
-  chunks?: any[]; // JSON chunks from the parsed screenplay
+  chunks?: ScreenplayChunk[]; // JSON chunks from the parsed screenplay
 }
 
 export interface ScreenplayTaskStatus {

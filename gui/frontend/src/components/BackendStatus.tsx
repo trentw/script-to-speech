@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 
 // Check if we're running in Tauri
-const isTauri = typeof window !== 'undefined' && (window as any).__TAURI__;
+interface TauriWindow extends Window {
+  __TAURI__?: unknown;
+}
+
+const isTauri =
+  typeof window !== 'undefined' && (window as TauriWindow).__TAURI__;
 
 // Dynamically import Tauri API only when needed
 const invokeCommand = async (command: string) => {

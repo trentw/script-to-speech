@@ -11,9 +11,19 @@ import { StringField } from './StringField';
 
 interface FieldRendererProps {
   field: ProviderField;
-  value: any;
+  value:
+    | string
+    | number
+    | boolean
+    | string[]
+    | Record<string, unknown>
+    | null
+    | undefined;
   validation?: ValidationResult;
-  onChange: (fieldName: string, value: any) => void;
+  onChange: (
+    fieldName: string,
+    value: string | number | boolean | string[] | Record<string, unknown>
+  ) => void;
 }
 
 export const FieldRenderer: React.FC<FieldRendererProps> = ({
@@ -28,7 +38,9 @@ export const FieldRenderer: React.FC<FieldRendererProps> = ({
       error.toLowerCase().includes(field.name.toLowerCase())
     ) || false;
 
-  const handleChange = (newValue: any) => {
+  const handleChange = (
+    newValue: string | number | boolean | string[] | Record<string, unknown>
+  ) => {
     onChange(field.name, newValue);
   };
 

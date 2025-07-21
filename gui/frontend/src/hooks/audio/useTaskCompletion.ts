@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 
+import type { TaskStatusResponse } from '../../types';
 import { getAudioFilename, getAudioUrls } from '../../utils/audioUtils';
 import { useSmartTaskPolling } from '../queries/useSmartTaskPolling';
 import { useAudioEvents } from './useAudioEvents';
@@ -69,7 +70,7 @@ export const useTaskCompletion = (
  * Useful for general task monitoring and UI updates
  */
 export const useAnyTaskCompletion = (
-  onTaskCompleted?: (taskId: string, task: any) => void
+  onTaskCompleted?: (taskId: string, task: TaskStatusResponse) => void
 ) => {
   const { data: tasks } = useSmartTaskPolling();
   const processedTaskIds = useRef(new Set<string>());

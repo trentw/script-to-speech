@@ -230,11 +230,7 @@ function App() {
             </ResponsivePanel>
           ) : undefined
         }
-        footer={
-          activeView === 'tts' ? (
-            <FooterContent />
-          ) : undefined
-        }
+        footer={activeView === 'tts' ? <FooterContent /> : undefined}
       />
 
       {/* Mobile Drawers */}

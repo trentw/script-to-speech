@@ -2,10 +2,11 @@ import { FileText, MessageSquare, Users } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import type { RecentScreenplay } from '@/types';
 
 interface ScreenplayHistoryListProps {
-  screenplays: any[];
-  onSelect: (screenplay: any) => void;
+  screenplays: RecentScreenplay[];
+  onSelect: (screenplay: RecentScreenplay) => void;
   selectedId?: string;
 }
 

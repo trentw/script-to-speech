@@ -4,9 +4,10 @@ import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiService } from '@/services/api';
+import type { ScreenplayResult } from '@/types';
 
 interface ScreenplayResultViewerProps {
-  result: any;
+  result: ScreenplayResult | null;
   taskId?: string;
   onDownload?: (type: 'json' | 'text') => void;
 }

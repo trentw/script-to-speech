@@ -17,7 +17,7 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   provider,
   voices,
   selectedVoice,
-  onVoiceSelect,
+  onVoiceSelect: _onVoiceSelect,
   onOpenVoicePanel,
 }) => {
   const getVoiceDisplayName = (voice: VoiceEntry) => {

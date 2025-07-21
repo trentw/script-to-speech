@@ -1,12 +1,17 @@
 import type {
   ApiResponse,
+  AudioFilesResponse,
+  ExpandedStsIdResponse,
   GenerationRequest,
   ProviderInfo,
+  RecentScreenplay,
+  ScreenplayResult,
   TaskResponse,
   TaskStatusResponse,
   ValidationResult,
   VoiceDetails,
   VoiceEntry,
+  VoiceLibraryStats,
 } from '../types';
 
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
@@ -59,7 +64,7 @@ class ApiService {
 
   async validateProviderConfig(
     provider: string,
-    config: Record<string, any>
+    config: Record<string, string | number | boolean | string[]>
   ): Promise<ApiResponse<ValidationResult>> {
     return this.request<ValidationResult>(`/providers/${provider}/validate`, {
       method: 'POST',
@@ -102,15 +107,15 @@ class ApiService {
     return this.request<VoiceEntry[]>(`/voice-library/search?${searchParams}`);
   }
 
-  async getVoiceLibraryStats(): Promise<ApiResponse<any>> {
-    return this.request<any>('/voice-library/stats');
+  async getVoiceLibraryStats(): Promise<ApiResponse<VoiceLibraryStats>> {
+    return this.request<VoiceLibraryStats>('/voice-library/stats');
   }
 
   async expandStsId(
     provider: string,
     stsId: string
-  ): Promise<ApiResponse<Record<string, any>>> {
-    return this.request<Record<string, any>>(
+  ): Promise<ApiResponse<ExpandedStsIdResponse>> {
+    return this.request<ExpandedStsIdResponse>(
       `/voice-library/${provider}/${stsId}/expand`,
       {
         method: 'POST',
@@ -161,8 +166,8 @@ class ApiService {
     return `${API_BASE_URL}/screenplay/download/${taskId}/${fileType}`;
   }
 
-  async listAudioFiles(): Promise<ApiResponse<{ files: any[] }>> {
-    return this.request<{ files: any[] }>('/files');
+  async listAudioFiles(): Promise<ApiResponse<AudioFilesResponse>> {
+    return this.request<AudioFilesResponse>('/files');
   }
 
   // Screenplay endpoints
@@ -209,12 +214,18 @@ class ApiService {
     return this.request<TaskStatusResponse[]>('/screenplay/tasks');
   }
 
-  async getScreenplayResult(taskId: string): Promise<ApiResponse<any>> {
-    return this.request<any>(`/screenplay/result/${taskId}`);
+  async getScreenplayResult(
+    taskId: string
+  ): Promise<ApiResponse<ScreenplayResult>> {
+    return this.request<ScreenplayResult>(`/screenplay/result/${taskId}`);
   }
 
-  async getRecentScreenplays(limit: number = 10): Promise<ApiResponse<any[]>> {
-    return this.request<any[]>(`/screenplay/recent?limit=${limit}`);
+  async getRecentScreenplays(
+    limit: number = 10
+  ): Promise<ApiResponse<RecentScreenplay[]>> {
+    return this.request<RecentScreenplay[]>(
+      `/screenplay/recent?limit=${limit}`
+    );
   }
 
   async deleteScreenplayTask(

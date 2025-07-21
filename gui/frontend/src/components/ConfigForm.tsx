@@ -4,11 +4,15 @@ import { apiService } from '../services/api';
 import type { ProviderInfo, ValidationResult } from '../types';
 import { FieldRenderer } from './form/FieldRenderer';
 
+// Import Config type from appStore
+type ConfigValue = string | number | boolean | string[];
+type Config = Record<string, ConfigValue>;
+
 interface ConfigFormProps {
   provider: string;
   providerInfo?: ProviderInfo;
-  config: Record<string, any>;
-  onConfigChange: (config: Record<string, any>) => void;
+  config: Config;
+  onConfigChange: (config: Config) => void;
 }
 
 export const ConfigForm: React.FC<ConfigFormProps> = ({
@@ -52,7 +56,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
     return () => clearTimeout(debounceTimeout);
   }, [provider, config]);
 
-  const updateField = (fieldName: string, value: any) => {
+  const updateField = (fieldName: string, value: ConfigValue) => {
     const newConfig = { ...config };
 
     if (value === '' || value === null || value === undefined) {
@@ -64,7 +68,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
     onConfigChange(newConfig);
   };
 
-  const handleFieldChange = (fieldName: string, value: any) => {
+  const handleFieldChange = (fieldName: string, value: ConfigValue) => {
     updateField(fieldName, value);
   };
 
@@ -80,7 +84,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
   const hasOptionalFields = providerInfo.optional_fields.length > 0;
 
   const resetToDefaults = () => {
-    const defaultConfig: Record<string, any> = {};
+    const defaultConfig: Config = {};
 
     // Preserve sts_id if it exists
     if (config.sts_id) {

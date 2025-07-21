@@ -85,7 +85,10 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             {/* Provider Selection */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label htmlFor="provider-selector" className="text-foreground text-sm font-medium">
+                <label
+                  htmlFor="provider-selector"
+                  className="text-foreground text-sm font-medium"
+                >
                   Text to Speech Provider
                 </label>
               </div>
@@ -106,7 +109,10 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             {selectedProvider && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="voice-selector" className="text-foreground text-sm font-medium">
+                  <label
+                    htmlFor="voice-selector"
+                    className="text-foreground text-sm font-medium"
+                  >
                     Voice
                   </label>
                 </div>
@@ -126,7 +132,10 @@ export const SettingsContent: React.FC<SettingsContentProps> = ({
             {selectedProvider && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="config-form" className="text-foreground text-sm font-medium">
+                  <label
+                    htmlFor="config-form"
+                    className="text-foreground text-sm font-medium"
+                  >
                     Parameters
                   </label>
                 </div>

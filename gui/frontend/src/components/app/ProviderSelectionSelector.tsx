@@ -23,7 +23,7 @@ export const ProviderSelectionSelector: React.FC<
   voiceLibrary,
   voiceCounts,
   providerErrors,
-  onProviderSelect,
+  onProviderSelect: _onProviderSelect,
   onOpenProviderPanel,
 }) => {
   const getProviderDisplayName = (provider: ProviderInfo) => {
