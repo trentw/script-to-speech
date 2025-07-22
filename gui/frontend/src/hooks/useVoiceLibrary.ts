@@ -23,12 +23,17 @@ export const useVoiceLibrary = (
       // Avoid refetching if already loaded
       if (voiceLibrary[provider]) return;
 
-      const response = await apiService.getProviderVoices(provider);
-      if (response.data) {
-        setVoiceLibrary((prev) => ({
-          ...prev,
-          [provider]: response.data!,
-        }));
+      try {
+        const response = await apiService.getProviderVoices(provider);
+        if (response.data) {
+          setVoiceLibrary((prev) => ({
+            ...prev,
+            [provider]: response.data!,
+          }));
+        }
+      } catch (error) {
+        // Silently handle errors - could add error state if needed
+        console.error('Failed to load voice library:', error);
       }
     },
     [connectionStatus, voiceLibrary]

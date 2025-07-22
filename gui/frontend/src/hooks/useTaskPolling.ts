@@ -18,22 +18,28 @@ export const useTaskPolling = (): UseTaskPollingReturn => {
 
   const pollTaskStatus = useCallback((taskId: string) => {
     const pollInterval = setInterval(async () => {
-      const response = await apiService.getTaskStatus(taskId);
+      try {
+        const response = await apiService.getTaskStatus(taskId);
 
-      if (response.data) {
-        const task = response.data;
+        if (response.data) {
+          const task = response.data;
 
-        setGenerationTasks((prev) => [
-          ...prev.filter((t) => t.task_id !== taskId),
-          task,
-        ]);
+          setGenerationTasks((prev) => [
+            ...prev.filter((t) => t.task_id !== taskId),
+            task,
+          ]);
 
-        if (task.status === 'completed' || task.status === 'failed') {
+          if (task.status === 'completed' || task.status === 'failed') {
+            clearInterval(pollInterval);
+          }
+        } else {
           clearInterval(pollInterval);
+          // Could add error handling here if needed
         }
-      } else {
+      } catch (error) {
+        // Stop polling on error
         clearInterval(pollInterval);
-        // Could add error handling here if needed
+        console.error('Failed to poll task status:', error);
       }
     }, 1000);
 

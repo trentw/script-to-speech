@@ -1,18 +1,14 @@
 /// <reference types="vitest" />
-import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { defineConfig, mergeConfig } from 'vite';
 
 import viteConfig from './vite.config';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export default defineConfig(({ mode }) => {
+  // Get the base vite config by calling it with the mode
+  const baseConfig = typeof viteConfig === 'function' ? viteConfig({ mode }) : viteConfig;
 
-export default mergeConfig(
-  viteConfig,
-  defineConfig({
-    plugins: [tailwindcss(), react()],
+  // Define vitest-specific config
+  const vitestConfig = defineConfig({
     test: {
       environment: 'jsdom',
       globals: true,
@@ -40,10 +36,8 @@ export default mergeConfig(
         },
       },
     },
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src'),
-      },
-    },
-  })
-);
+  });
+
+  // Merge the configs - baseConfig already includes all necessary plugins and resolve aliases
+  return mergeConfig(baseConfig, vitestConfig);
+});
