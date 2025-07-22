@@ -1,2 +1,5 @@
 packages:
-  - 'gui/frontend'
+  - gui/frontend
+
+ignoredBuiltDependencies:
+  - canvas

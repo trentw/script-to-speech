@@ -47,3 +47,10 @@ repos:
         entry: scripts/pre-commit-entry.sh eslint --fix
         language: script
         files: ^gui/frontend/.*\.(js|jsx|ts|tsx)$
+      - id: frontend-tests
+        name: frontend-tests
+        entry: scripts/pre-commit-entry.sh vitest run --silent
+        language: script
+        pass_filenames: false
+        files: ^gui/frontend/.*\.(js|jsx|ts|tsx)$
+        types_or: [javascript, jsx, ts, tsx]

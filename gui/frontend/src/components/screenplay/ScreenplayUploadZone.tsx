@@ -1,6 +1,6 @@
 import { AlertCircle, FileText, Loader2, Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
-import { FileRejection, useDropzone } from 'react-dropzone';
+import { useDropzone } from 'react-dropzone';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
@@ -23,11 +23,11 @@ export function ScreenplayUploadZone({
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
+    (acceptedFiles: File[], fileRejections: Array<{file: File; errors: Array<{code: string; message: string}>}>) => {
       setError(null);
 
-      if (rejectedFiles.length > 0) {
-        const fileTooBig = rejectedFiles.some((rejected: FileRejection) =>
+      if (fileRejections.length > 0) {
+        const fileTooBig = fileRejections.some((rejected) =>
           rejected.errors?.some((error) => error.code === 'file-too-large')
         );
         if (fileTooBig) {
