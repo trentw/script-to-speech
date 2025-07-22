@@ -1,25 +1,62 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [tailwindcss(), react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const isAnalyze = mode === 'analyze';
+
+  return {
+    plugins: [
+      tailwindcss(),
+      react(),
+      // Bundle analyzer plugin - only enabled in analyze mode
+      isAnalyze &&
+        visualizer({
+          filename: './dist/stats.html',
+          open: true,
+          gzipSize: true,
+          brotliSize: true,
+          template: 'treemap', // or 'sunburst', 'network', 'raw-data'
+        }),
+    ].filter(Boolean),
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+      },
     },
-  },
-  css: {
-    devSourcemap: true,
-  },
-  server: {
-    hmr: {
-      overlay: true,
+    css: {
+      devSourcemap: true,
     },
-  },
+    server: {
+      hmr: {
+        overlay: true,
+      },
+    },
+    build: {
+      // Performance budgets
+      chunkSizeWarningLimit: 50, // 50KB per chunk warning
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // Group vendor chunks to optimize caching
+            'react-vendor': ['react', 'react-dom'],
+            'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+            'query-vendor': ['@tanstack/react-query'],
+          },
+        },
+      },
+      // Target modern browsers for smaller bundles
+      target: 'es2020',
+      // Enable minification
+      minify: 'terser',
+      // Report compressed size
+      reportCompressedSize: true,
+    },
+  };
 });
