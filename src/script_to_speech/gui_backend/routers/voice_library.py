@@ -1,9 +1,10 @@
 """Voice library API routes."""
 
 from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, Query
 
-from ..models import VoiceEntry, VoiceDetails
+from ..models import VoiceDetails, VoiceEntry
 from ..services.voice_library_service import voice_library_service
 
 router = APIRouter()

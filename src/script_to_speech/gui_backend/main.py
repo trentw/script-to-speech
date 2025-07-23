@@ -9,14 +9,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from script_to_speech.gui_backend.routers import (
-    providers,
-    voice_library,
-    generation,
-    files,
-    screenplay,
-)
 from script_to_speech.gui_backend.config import settings
+from script_to_speech.gui_backend.routers import (
+    files,
+    generation,
+    providers,
+    screenplay,
+    voice_library,
+)
 
 # Create FastAPI app
 app = FastAPI(

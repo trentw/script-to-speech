@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from script_to_speech.gui_backend.models import (
     TaskResponse,
     TaskStatus,
-    TaskStatusResponse
+    TaskStatusResponse,
 )
 
 
@@ -38,14 +38,10 @@ class TestTaskResponse:
         task_id = str(uuid.uuid4())
         status = TaskStatus.PENDING
         message = "Task created successfully"
-        
+
         # Act
-        response = TaskResponse(
-            task_id=task_id,
-            status=status,
-            message=message
-        )
-        
+        response = TaskResponse(task_id=task_id, status=status, message=message)
+
         # Assert
         assert response.task_id == task_id
         assert response.status == status
@@ -56,14 +52,12 @@ class TestTaskResponse:
         # Arrange
         task_id = str(uuid.uuid4())
         response = TaskResponse(
-            task_id=task_id,
-            status=TaskStatus.PROCESSING,
-            message="Processing..."
+            task_id=task_id, status=TaskStatus.PROCESSING, message="Processing..."
         )
-        
+
         # Act
         response_dict = response.model_dump()
-        
+
         # Assert
         assert response_dict["task_id"] == task_id
         assert response_dict["status"] == TaskStatus.PROCESSING
@@ -74,14 +68,12 @@ class TestTaskResponse:
         # Arrange
         task_id = str(uuid.uuid4())
         response = TaskResponse(
-            task_id=task_id,
-            status=TaskStatus.COMPLETED,
-            message="Completed"
+            task_id=task_id, status=TaskStatus.COMPLETED, message="Completed"
         )
-        
+
         # Act
         json_str = response.model_dump_json()
-        
+
         # Assert
         assert task_id in json_str
         assert "completed" in json_str
@@ -91,15 +83,15 @@ class TestTaskResponse:
         """Test TaskResponse with invalid status."""
         # Arrange
         task_id = str(uuid.uuid4())
-        
+
         # Act & Assert
         with pytest.raises(ValidationError) as exc_info:
             TaskResponse(
                 task_id=task_id,
                 status="invalid_status",  # Invalid status
-                message="Test message"
+                message="Test message",
             )
-        
+
         assert "Input should be" in str(exc_info.value)
 
     def test_task_response_missing_required_fields(self):
@@ -107,7 +99,7 @@ class TestTaskResponse:
         # Act & Assert
         with pytest.raises(ValidationError) as exc_info:
             TaskResponse()  # Missing all required fields
-        
+
         errors = exc_info.value.errors()
         required_fields = {error["loc"][0] for error in errors}
         assert "task_id" in required_fields
@@ -120,9 +112,9 @@ class TestTaskResponse:
         response = TaskResponse(
             task_id="",  # Empty string allowed
             status=TaskStatus.PENDING,
-            message=""  # Empty string allowed
+            message="",  # Empty string allowed
         )
-        
+
         # Assert
         assert response.task_id == ""
         assert response.message == ""
@@ -135,15 +127,15 @@ class TestTaskStatusResponse:
         """Test creating TaskStatusResponse with minimal required data."""
         # Arrange
         task_id = str(uuid.uuid4())
-        
+
         # Act
         response = TaskStatusResponse(
             task_id=task_id,
             status=TaskStatus.PENDING,
             message="Task created",
-            progress=0.0
+            progress=0.0,
         )
-        
+
         # Assert
         assert response.task_id == task_id
         assert response.status == TaskStatus.PENDING
@@ -160,11 +152,11 @@ class TestTaskStatusResponse:
         task_id = str(uuid.uuid4())
         result = {
             "files": {"json": "/path/to/file.json"},
-            "analysis": {"total_chunks": 10}
+            "analysis": {"total_chunks": 10},
         }
         created_at = "2023-01-01T12:00:00"
         completed_at = "2023-01-01T12:01:00"
-        
+
         # Act
         response = TaskStatusResponse(
             task_id=task_id,
@@ -174,9 +166,9 @@ class TestTaskStatusResponse:
             result=result,
             error=None,
             created_at=created_at,
-            completed_at=completed_at
+            completed_at=completed_at,
         )
-        
+
         # Assert
         assert response.task_id == task_id
         assert response.status == TaskStatus.COMPLETED
@@ -192,16 +184,16 @@ class TestTaskStatusResponse:
         # Arrange
         task_id = str(uuid.uuid4())
         error_message = "File processing failed"
-        
+
         # Act
         response = TaskStatusResponse(
             task_id=task_id,
             status=TaskStatus.FAILED,
             message="Task failed",
             progress=0.5,
-            error=error_message
+            error=error_message,
         )
-        
+
         # Assert
         assert response.status == TaskStatus.FAILED
         assert response.error == error_message
@@ -210,30 +202,30 @@ class TestTaskStatusResponse:
     def test_task_status_response_progress_validation(self):
         """Test progress field validation."""
         task_id = str(uuid.uuid4())
-        
+
         # Valid progress values
         for progress in [0.0, 0.5, 1.0]:
             response = TaskStatusResponse(
                 task_id=task_id,
                 status=TaskStatus.PROCESSING,
                 message="Processing",
-                progress=progress
+                progress=progress,
             )
             assert response.progress == progress
-        
+
         # Invalid progress values should be rejected (progress has constraints)
         with pytest.raises(ValidationError):
             TaskStatusResponse(
                 task_id=task_id,
                 status=TaskStatus.PROCESSING,
                 message="Processing",
-                progress=1.5  # Over 100% - should fail validation
+                progress=1.5,  # Over 100% - should fail validation
             )
 
     def test_task_status_response_result_dict_structure(self):
         """Test that result field accepts various dict structures."""
         task_id = str(uuid.uuid4())
-        
+
         # Simple result
         simple_result = {"status": "ok"}
         response = TaskStatusResponse(
@@ -241,31 +233,25 @@ class TestTaskStatusResponse:
             status=TaskStatus.COMPLETED,
             message="Done",
             progress=1.0,
-            result=simple_result
+            result=simple_result,
         )
         assert response.result == simple_result
-        
+
         # Complex nested result
         complex_result = {
-            "files": {
-                "json": "/path/to/file.json",
-                "text": "/path/to/file.txt"
-            },
+            "files": {"json": "/path/to/file.json", "text": "/path/to/file.txt"},
             "analysis": {
                 "total_chunks": 100,
                 "characters": ["Alice", "Bob"],
-                "metadata": {
-                    "duration": "30 minutes",
-                    "pages": 50
-                }
-            }
+                "metadata": {"duration": "30 minutes", "pages": 50},
+            },
         }
         response = TaskStatusResponse(
             task_id=task_id,
             status=TaskStatus.COMPLETED,
             message="Done",
             progress=1.0,
-            result=complex_result
+            result=complex_result,
         )
         assert response.result == complex_result
 
@@ -279,12 +265,12 @@ class TestTaskStatusResponse:
             message="Success",
             progress=1.0,
             result={"data": "test"},
-            created_at="2023-01-01T12:00:00"
+            created_at="2023-01-01T12:00:00",
         )
-        
+
         # Act
         json_str = response.model_dump_json()
-        
+
         # Assert
         assert task_id in json_str
         assert "completed" in json_str
@@ -303,12 +289,12 @@ class TestTaskStatusResponse:
             "result": None,
             "error": None,
             "created_at": "2023-01-01T12:00:00",
-            "completed_at": None
+            "completed_at": None,
         }
-        
+
         # Act
         response = TaskStatusResponse(**data)
-        
+
         # Assert
         assert response.task_id == task_id
         assert response.status == TaskStatus.PROCESSING
@@ -317,7 +303,7 @@ class TestTaskStatusResponse:
     def test_task_status_response_invalid_datetime_string(self):
         """Test TaskStatusResponse with invalid datetime strings."""
         task_id = str(uuid.uuid4())
-        
+
         # Note: The model expects string datetime, not datetime objects
         # Invalid datetime format should still be accepted as string
         response = TaskStatusResponse(
@@ -325,7 +311,7 @@ class TestTaskStatusResponse:
             status=TaskStatus.PENDING,
             message="Test",
             progress=0.0,
-            created_at="invalid-datetime"
+            created_at="invalid-datetime",
         )
         assert response.created_at == "invalid-datetime"
 
@@ -333,7 +319,7 @@ class TestTaskStatusResponse:
         """Test TaskStatusResponse with None values for optional fields."""
         # Arrange
         task_id = str(uuid.uuid4())
-        
+
         # Act
         response = TaskStatusResponse(
             task_id=task_id,
@@ -343,9 +329,9 @@ class TestTaskStatusResponse:
             result=None,
             error=None,
             created_at=None,
-            completed_at=None
+            completed_at=None,
         )
-        
+
         # Assert
         assert response.result is None
         assert response.error is None
@@ -357,7 +343,7 @@ class TestTaskStatusResponse:
         # Act & Assert
         with pytest.raises(ValidationError) as exc_info:
             TaskStatusResponse()
-        
+
         errors = exc_info.value.errors()
         required_fields = {error["loc"][0] for error in errors}
         assert "task_id" in required_fields
@@ -369,21 +355,21 @@ class TestTaskStatusResponse:
     def test_task_status_response_invalid_types(self):
         """Test TaskStatusResponse with invalid field types."""
         task_id = str(uuid.uuid4())
-        
+
         # Invalid progress type
         with pytest.raises(ValidationError):
             TaskStatusResponse(
                 task_id=task_id,
                 status=TaskStatus.PENDING,
                 message="Test",
-                progress="invalid"  # Should be float
+                progress="invalid",  # Should be float
             )
-        
+
         # Invalid task_id type
         with pytest.raises(ValidationError):
             TaskStatusResponse(
                 task_id=123,  # Should be string
                 status=TaskStatus.PENDING,
                 message="Test",
-                progress=0.0
+                progress=0.0,
             )

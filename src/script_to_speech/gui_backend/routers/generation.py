@@ -1,6 +1,7 @@
 """Audio generation API routes."""
 
 from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 
 from ..models import GenerationRequest, TaskResponse, TaskStatusResponse

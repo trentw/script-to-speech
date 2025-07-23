@@ -6,14 +6,14 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from pathvalidate import sanitize_filename
 
 from ..utils.file_system_utils import (
+    PathSecurityValidator,
     create_output_folders,
     sanitize_name,
-    PathSecurityValidator,
 )
 from ..utils.logging import get_screenplay_logger
 from ..utils.optional_config_generation import generate_optional_config

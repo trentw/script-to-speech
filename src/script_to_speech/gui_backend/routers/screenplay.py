@@ -1,9 +1,10 @@
 """Screenplay parsing API routes."""
 
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
-from fastapi.responses import JSONResponse, FileResponse
 from pathlib import Path
+from typing import List, Optional
+
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 
 from ..models import TaskResponse, TaskStatusResponse
 from ..services.screenplay_service import screenplay_service
@@ -178,12 +179,14 @@ async def download_screenplay_file(task_id: str, file_type: str) -> FileResponse
         # Get the parsing result to find file paths
         result = screenplay_service.get_parsing_result(task_id)
         if not result:
-            raise HTTPException(status_code=404, detail=f"Task {task_id} not found or not completed")
+            raise HTTPException(
+                status_code=404, detail=f"Task {task_id} not found or not completed"
+            )
 
         # Determine the file path based on file type
         file_path = None
         filename = None
-        
+
         if file_type == "json" and result.get("files", {}).get("json"):
             file_path = result["files"]["json"]
             filename = f"{result.get('screenplay_name', 'screenplay')}.json"
@@ -194,7 +197,10 @@ async def download_screenplay_file(task_id: str, file_type: str) -> FileResponse
             file_path = result["log_file"]
             filename = f"{result.get('screenplay_name', 'screenplay')}_log.txt"
         else:
-            raise HTTPException(status_code=404, detail=f"File type '{file_type}' not found for task {task_id}")
+            raise HTTPException(
+                status_code=404,
+                detail=f"File type '{file_type}' not found for task {task_id}",
+            )
 
         # Verify file exists
         path_obj = Path(file_path)
@@ -203,11 +209,9 @@ async def download_screenplay_file(task_id: str, file_type: str) -> FileResponse
 
         # Return the file
         return FileResponse(
-            path=file_path,
-            filename=filename,
-            media_type='application/octet-stream'
+            path=file_path, filename=filename, media_type="application/octet-stream"
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:

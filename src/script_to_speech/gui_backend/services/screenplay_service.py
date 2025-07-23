@@ -6,18 +6,18 @@ import logging
 import os
 import shutil
 import tempfile
-import uuid
-from datetime import datetime, UTC
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 import threading
+import uuid
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from fastapi import UploadFile
 
 from script_to_speech.utils.file_system_utils import sanitize_name
 
-from ..models import TaskResponse, TaskStatus, TaskStatusResponse
 from ..config import settings
+from ..models import TaskResponse, TaskStatus, TaskStatusResponse
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,11 @@ class ScreenplayService:
             if task.output_dir:
                 logs_dir = Path(task.output_dir) / "logs"
                 if logs_dir.exists():
-                    log_files = sorted(logs_dir.glob("*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+                    log_files = sorted(
+                        logs_dir.glob("*.txt"),
+                        key=lambda p: p.stat().st_mtime,
+                        reverse=True,
+                    )
                     if log_files:
                         log_file_path = str(log_files[0])
 
@@ -269,15 +273,19 @@ class ScreenplayService:
             logs_dir = None
             if task.output_dir:
                 logs_dir = Path(task.output_dir) / "logs"
-            
+
             # If task.output_dir doesn't work, try standard output path structure
             if not logs_dir or not logs_dir.exists():
                 screenplay_name = result.get("screenplay_name", "unknown")
                 potential_output_dir = Path.cwd() / "output" / screenplay_name
                 logs_dir = potential_output_dir / "logs"
-            
+
             if logs_dir and logs_dir.exists():
-                log_files = sorted(logs_dir.glob("*.txt"), key=lambda p: p.stat().st_mtime, reverse=True)
+                log_files = sorted(
+                    logs_dir.glob("*.txt"),
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
+                )
                 if log_files:
                     result["log_file"] = str(log_files[0])
 
@@ -370,7 +378,7 @@ class ScreenplayService:
                                 os.unlink(task.temp_file_path)
                             except Exception as e:
                                 logger.warning(f"Failed to delete temporary file: {e}")
-                        
+
                         # Remove task from memory
                         del self._tasks[task_id]
                         removed_count += 1

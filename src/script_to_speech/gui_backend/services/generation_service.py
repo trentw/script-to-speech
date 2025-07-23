@@ -2,28 +2,28 @@
 
 import asyncio
 import logging
+import threading
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-import threading
-import time
+from typing import Any, Dict, List, Optional
 
 from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 from script_to_speech.utils.generate_standalone_speech import (
-    generate_standalone_speech,
     _build_tts_provider_config_data,
+    generate_standalone_speech,
     get_provider_class,
 )
 
+from ..config import settings
 from ..models import (
     GenerationRequest,
+    GenerationResult,
     TaskResponse,
     TaskStatus,
     TaskStatusResponse,
-    GenerationResult,
 )
-from ..config import settings
 from .voice_library_service import voice_library_service
 
 logger = logging.getLogger(__name__)
@@ -321,8 +321,9 @@ class GenerationService:
         """Find the generated audio file."""
         try:
             # Build expected filename similar to generate_standalone_speech
-            from script_to_speech.utils.generate_standalone_speech import clean_filename
             from datetime import datetime
+
+            from script_to_speech.utils.generate_standalone_speech import clean_filename
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             text_preview = clean_filename(request.text[:30])

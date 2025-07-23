@@ -6,16 +6,16 @@ import uuid
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import UploadFile
 
-from script_to_speech.gui_backend.services.screenplay_service import (
-    ScreenplayService,
-    ScreenplayParsingTask
-)
 from script_to_speech.gui_backend.models import TaskStatus
+from script_to_speech.gui_backend.services.screenplay_service import (
+    ScreenplayParsingTask,
+    ScreenplayService,
+)
 
 
 class TestScreenplayParsingTask:
@@ -26,10 +26,10 @@ class TestScreenplayParsingTask:
         # Arrange
         task_id = str(uuid.uuid4())
         filename = "test.pdf"
-        
+
         # Act
         task = ScreenplayParsingTask(task_id, filename)
-        
+
         # Assert
         assert task.task_id == task_id
         assert task.filename == filename
@@ -49,10 +49,10 @@ class TestScreenplayParsingTask:
         # Arrange
         task_id = str(uuid.uuid4())
         filename = "test.pdf"
-        
+
         # Act
         task = ScreenplayParsingTask(task_id, filename, text_only=True)
-        
+
         # Assert
         assert task.text_only is True
 
@@ -74,16 +74,18 @@ class TestScreenplayService:
         return upload_file
 
     @pytest.mark.asyncio
-    async def test_create_parsing_task_success(self, service, mock_upload_file, mock_file_system, mock_asyncio_create_task):
+    async def test_create_parsing_task_success(
+        self, service, mock_upload_file, mock_file_system, mock_asyncio_create_task
+    ):
         """Test successful creation of a parsing task."""
         # Act
         response = await service.create_parsing_task(mock_upload_file, text_only=False)
-        
+
         # Assert
         assert response.status == TaskStatus.PENDING
         assert response.message == "Parsing task created"
         assert response.task_id is not None
-        
+
         # Verify task was stored
         assert response.task_id in service._tasks
         task = service._tasks[response.task_id]
@@ -91,23 +93,27 @@ class TestScreenplayService:
         assert task.text_only is False
 
     @pytest.mark.asyncio
-    async def test_create_parsing_task_with_text_only(self, service, mock_upload_file, mock_file_system, mock_asyncio_create_task):
+    async def test_create_parsing_task_with_text_only(
+        self, service, mock_upload_file, mock_file_system, mock_asyncio_create_task
+    ):
         """Test creating a parsing task with text_only flag."""
         # Act
         response = await service.create_parsing_task(mock_upload_file, text_only=True)
-        
+
         # Assert
         assert response.status == TaskStatus.PENDING
         task = service._tasks[response.task_id]
         assert task.text_only is True
 
     @pytest.mark.asyncio
-    async def test_create_parsing_task_file_write_error(self, service, mock_upload_file, mock_asyncio_create_task):
+    async def test_create_parsing_task_file_write_error(
+        self, service, mock_upload_file, mock_asyncio_create_task
+    ):
         """Test handling of file write errors during task creation."""
         # Arrange
-        with patch('tempfile.NamedTemporaryFile') as mock_temp:
+        with patch("tempfile.NamedTemporaryFile") as mock_temp:
             mock_temp.side_effect = OSError("Disk full")
-            
+
             # Act & Assert
             with pytest.raises(OSError, match="Disk full"):
                 await service.create_parsing_task(mock_upload_file)
@@ -118,10 +124,10 @@ class TestScreenplayService:
         task_id = str(uuid.uuid4())
         task = ScreenplayParsingTask(task_id, "test.pdf")
         service._tasks[task_id] = task
-        
+
         # Act
         status = service.get_task_status(task_id)
-        
+
         # Assert
         assert status is not None
         assert status.task_id == task_id
@@ -133,10 +139,10 @@ class TestScreenplayService:
         """Test getting status of a non-existent task."""
         # Arrange
         task_id = "non-existent-task"
-        
+
         # Act
         status = service.get_task_status(task_id)
-        
+
         # Assert
         assert status is None
 
@@ -149,10 +155,10 @@ class TestScreenplayService:
         task2 = ScreenplayParsingTask(task2_id, "test2.pdf")
         service._tasks[task1_id] = task1
         service._tasks[task2_id] = task2
-        
+
         # Act
         all_tasks = service.get_all_tasks()
-        
+
         # Assert
         assert len(all_tasks) == 2
         task_ids = [task.task_id for task in all_tasks]
@@ -163,7 +169,7 @@ class TestScreenplayService:
         """Test getting all tasks when no tasks exist."""
         # Act
         all_tasks = service.get_all_tasks()
-        
+
         # Assert
         assert all_tasks == []
 
@@ -176,16 +182,16 @@ class TestScreenplayService:
         task.result = {
             "files": {"json": "/fake/path/test.json"},
             "screenplay_name": "test",
-            "analysis": {"total_chunks": 5}
+            "analysis": {"total_chunks": 5},
         }
         service._tasks[task_id] = task
-        
+
         # Mock file reading
         mock_chunks = [{"speaker": "JOHN", "text": "Hello world"}]
-        with patch('builtins.open', mock_open_json(mock_chunks)):
+        with patch("builtins.open", mock_open_json(mock_chunks)):
             # Act
             result = service.get_parsing_result(task_id)
-        
+
         # Assert
         assert result is not None
         assert "chunks" in result
@@ -199,10 +205,10 @@ class TestScreenplayService:
         task = ScreenplayParsingTask(task_id, "test.pdf")
         task.status = TaskStatus.PROCESSING
         service._tasks[task_id] = task
-        
+
         # Act
         result = service.get_parsing_result(task_id)
-        
+
         # Assert
         assert result is None
 
@@ -210,7 +216,7 @@ class TestScreenplayService:
         """Test getting parsing result for non-existent task."""
         # Act
         result = service.get_parsing_result("non-existent-task")
-        
+
         # Assert
         assert result is None
 
@@ -219,26 +225,26 @@ class TestScreenplayService:
         # Arrange
         task1_id = str(uuid.uuid4())
         task2_id = str(uuid.uuid4())
-        
+
         # Create completed tasks
         task1 = ScreenplayParsingTask(task1_id, "old.pdf")
         task1.status = TaskStatus.COMPLETED
         task1.created_at = datetime(2023, 1, 1, 10, 0, 0)
         task1.completed_at = datetime(2023, 1, 1, 10, 1, 0)
         task1.result = {"screenplay_name": "old_screenplay", "analysis": {}}
-        
+
         task2 = ScreenplayParsingTask(task2_id, "new.pdf")
         task2.status = TaskStatus.COMPLETED
         task2.created_at = datetime(2023, 1, 1, 11, 0, 0)
         task2.completed_at = datetime(2023, 1, 1, 11, 1, 0)
         task2.result = {"screenplay_name": "new_screenplay", "analysis": {}}
-        
+
         service._tasks[task1_id] = task1
         service._tasks[task2_id] = task2
-        
+
         # Act
         recent = service.get_recent_screenplays(limit=2)
-        
+
         # Assert
         assert len(recent) == 2
         # Should be ordered by creation time, most recent first
@@ -256,10 +262,10 @@ class TestScreenplayService:
             task.completed_at = datetime(2023, 1, 1, 10, i, 1)
             task.result = {"screenplay_name": f"screenplay{i}", "analysis": {}}
             service._tasks[task_id] = task
-        
+
         # Act
         recent = service.get_recent_screenplays(limit=1)
-        
+
         # Assert
         assert len(recent) == 1
 
@@ -268,20 +274,20 @@ class TestScreenplayService:
         # Arrange
         completed_task_id = str(uuid.uuid4())
         pending_task_id = str(uuid.uuid4())
-        
+
         completed_task = ScreenplayParsingTask(completed_task_id, "completed.pdf")
         completed_task.status = TaskStatus.COMPLETED
         completed_task.result = {"screenplay_name": "completed", "analysis": {}}
-        
+
         pending_task = ScreenplayParsingTask(pending_task_id, "pending.pdf")
         pending_task.status = TaskStatus.PENDING
-        
+
         service._tasks[completed_task_id] = completed_task
         service._tasks[pending_task_id] = pending_task
-        
+
         # Act
         recent = service.get_recent_screenplays()
-        
+
         # Assert
         assert len(recent) == 1
         assert recent[0]["screenplay_name"] == "completed"
@@ -294,10 +300,10 @@ class TestScreenplayService:
         task.output_dir = "/fake/output/dir"
         task.temp_file_path = "/fake/temp/file.pdf"
         service._tasks[task_id] = task
-        
+
         # Act
         result = service.delete_task(task_id, delete_files=False)
-        
+
         # Assert
         assert result is True
         assert task_id not in service._tasks
@@ -309,13 +315,15 @@ class TestScreenplayService:
         task = ScreenplayParsingTask(task_id, "test.pdf")
         task.output_dir = "/fake/output/dir"
         service._tasks[task_id] = task
-        
-        with patch('shutil.rmtree') as mock_rmtree, \
-             patch('os.path.exists', return_value=True):
-            
+
+        with (
+            patch("shutil.rmtree") as mock_rmtree,
+            patch("os.path.exists", return_value=True),
+        ):
+
             # Act
             result = service.delete_task(task_id, delete_files=True)
-            
+
             # Assert
             assert result is True
             mock_rmtree.assert_called_once_with("/fake/output/dir")
@@ -324,7 +332,7 @@ class TestScreenplayService:
         """Test deleting a non-existent task."""
         # Act
         result = service.delete_task("non-existent-task")
-        
+
         # Assert
         assert result is False
 
@@ -333,23 +341,23 @@ class TestScreenplayService:
         # Arrange
         old_task_id = str(uuid.uuid4())
         recent_task_id = str(uuid.uuid4())
-        
+
         # Create old completed task
         old_task = ScreenplayParsingTask(old_task_id, "old.pdf")
         old_task.status = TaskStatus.COMPLETED
         old_task.completed_at = datetime(2022, 1, 1, 10, 0, 0)  # Very old
-        
+
         # Create recent completed task
         recent_task = ScreenplayParsingTask(recent_task_id, "recent.pdf")
         recent_task.status = TaskStatus.COMPLETED
         recent_task.completed_at = datetime.now()  # Recent
-        
+
         service._tasks[old_task_id] = old_task
         service._tasks[recent_task_id] = recent_task
-        
+
         # Act
         removed_count = service.cleanup_old_tasks(max_age_hours=24)
-        
+
         # Assert
         assert removed_count == 1
         assert old_task_id not in service._tasks
@@ -362,10 +370,10 @@ class TestScreenplayService:
         task = ScreenplayParsingTask(task_id, "pending.pdf")
         task.status = TaskStatus.PENDING
         service._tasks[task_id] = task
-        
+
         # Act
         removed_count = service.cleanup_old_tasks(max_age_hours=24)
-        
+
         # Assert
         assert removed_count == 0
         assert task_id in service._tasks
@@ -387,10 +395,10 @@ class TestProcessingTask:
         task = ScreenplayParsingTask(task_id, "test.pdf")
         task.temp_file_path = "/fake/temp/file.pdf"
         service._tasks[task_id] = task
-        
+
         # Act
         await service._process_parsing_task(task)
-        
+
         # Assert
         assert task.status == TaskStatus.COMPLETED
         assert task.progress == 1.0
@@ -407,13 +415,15 @@ class TestProcessingTask:
         task = ScreenplayParsingTask(task_id, "test.pdf")
         task.temp_file_path = "/fake/temp/file.pdf"
         service._tasks[task_id] = task
-        
-        with patch('script_to_speech.parser.process.process_screenplay') as mock_process:
+
+        with patch(
+            "script_to_speech.parser.process.process_screenplay"
+        ) as mock_process:
             mock_process.side_effect = Exception("Processing failed")
-            
+
             # Act
             await service._process_parsing_task(task)
-        
+
         # Assert
         assert task.status == TaskStatus.FAILED
         assert task.error == "Processing failed"
@@ -421,38 +431,46 @@ class TestProcessingTask:
         assert task.completed_at is not None
 
     @pytest.mark.asyncio
-    async def test_process_parsing_task_sanitizes_filename(self, service, mock_process_screenplay):
+    async def test_process_parsing_task_sanitizes_filename(
+        self, service, mock_process_screenplay
+    ):
         """Test that filenames are properly sanitized during processing."""
         # Arrange
         task_id = str(uuid.uuid4())
         task = ScreenplayParsingTask(task_id, "My Script!@#$%^&*().pdf")
         task.temp_file_path = "/fake/temp/file.pdf"
         service._tasks[task_id] = task
-        
-        with patch('script_to_speech.gui_backend.services.screenplay_service.sanitize_name') as mock_sanitize:
+
+        with patch(
+            "script_to_speech.gui_backend.services.screenplay_service.sanitize_name"
+        ) as mock_sanitize:
             mock_sanitize.return_value = "My_Script"
-            
+
             # Act
             await service._process_parsing_task(task)
-        
+
         # Assert
         mock_sanitize.assert_called_once_with("My Script!@#$%^&*()")
 
     @pytest.mark.asyncio
-    async def test_process_parsing_task_cleans_temp_file(self, service, mock_process_screenplay):
+    async def test_process_parsing_task_cleans_temp_file(
+        self, service, mock_process_screenplay
+    ):
         """Test that temporary files are cleaned up after processing."""
         # Arrange
         task_id = str(uuid.uuid4())
         task = ScreenplayParsingTask(task_id, "test.pdf")
         task.temp_file_path = "/fake/temp/file.pdf"
         service._tasks[task_id] = task
-        
-        with patch('os.path.exists', return_value=True), \
-             patch('os.unlink') as mock_unlink:
-            
+
+        with (
+            patch("os.path.exists", return_value=True),
+            patch("os.unlink") as mock_unlink,
+        ):
+
             # Act
             await service._process_parsing_task(task)
-        
+
         # Assert
         mock_unlink.assert_called_once_with("/fake/temp/file.pdf")
 
@@ -460,4 +478,5 @@ class TestProcessingTask:
 def mock_open_json(data):
     """Helper to mock opening JSON files."""
     from unittest.mock import mock_open
+
     return mock_open(read_data=json.dumps(data))

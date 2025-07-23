@@ -1,15 +1,15 @@
 """Voice library integration service."""
 
 import logging
-from typing import Dict, List, Optional, Any
+from typing import Any, Dict, List, Optional
 
 from script_to_speech.voice_library.voice_library import VoiceLibrary
 
 from ..models import (
-    VoiceEntry,
-    VoiceDetails,
-    VoiceProperties,
     VoiceDescription,
+    VoiceDetails,
+    VoiceEntry,
+    VoiceProperties,
     VoiceTags,
 )
 

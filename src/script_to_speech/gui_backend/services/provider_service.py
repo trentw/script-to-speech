@@ -2,18 +2,18 @@
 
 import json
 import logging
-from typing import Dict, List, Any, Union, Type
+from typing import Any, Dict, List, Type, Union
 
-from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
-from script_to_speech.tts_providers.base.stateless_tts_provider import (
-    StatelessTTSProviderBase,
-)
 from script_to_speech.tts_providers.base.stateful_tts_provider import (
     StatefulTTSProviderBase,
 )
+from script_to_speech.tts_providers.base.stateless_tts_provider import (
+    StatelessTTSProviderBase,
+)
+from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 from script_to_speech.utils.generate_standalone_speech import get_provider_class
 
-from ..models import ProviderInfo, ProviderField, FieldType, ValidationResult
+from ..models import FieldType, ProviderField, ProviderInfo, ValidationResult
 
 logger = logging.getLogger(__name__)
 

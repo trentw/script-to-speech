@@ -588,7 +588,7 @@ def test_generate_voice_library_casting_prompt_file_with_voice_filtering(
     voice_config_path.write_text("test")
     prompt_content = "prompt"
     schema_content = {"voice_properties": {"age": {"type": "range"}}}
-    
+
     # Test voices data - this will be returned by the mocked VoiceLibrary
     voices_data = {
         "alloy": {"model_id": "tts-1"},
@@ -598,7 +598,7 @@ def test_generate_voice_library_casting_prompt_file_with_voice_filtering(
 
     # Mock VoiceLibrary to return test data
     output_mock = mock_open()
-    
+
     def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
         file_str = str(file_path)
         if "config.yaml" in file_str and mode == "r":
@@ -642,7 +642,7 @@ def test_generate_voice_library_casting_prompt_file_with_voice_filtering(
         # Assert - check the content that was written to the file
         output_mock().write.assert_called_once()
         written_content = output_mock().write.call_args[0][0]
-        
+
         assert "alloy" in written_content
         assert "nova" in written_content
         assert "shimmer" not in written_content  # Should be filtered out

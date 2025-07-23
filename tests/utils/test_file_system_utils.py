@@ -8,9 +8,9 @@ from unittest.mock import patch
 import pytest
 
 from script_to_speech.utils.file_system_utils import (
+    PathSecurityValidator,
     create_output_folders,
     sanitize_name,
-    PathSecurityValidator,
 )
 
 
@@ -71,7 +71,7 @@ class TestCreateOutputFolders:
         for call in mock_mkdir.call_args_list:
             args, kwargs = call
             assert kwargs == {"parents": True, "exist_ok": True}
-        
+
         # Verify security: all paths should be absolute and within a safe base
         assert main_output_folder.is_absolute()
         assert cache_folder.is_absolute()
@@ -192,7 +192,7 @@ class TestCreateOutputFolders:
         assert test_base in cache_folder.parents
         assert test_base in logs_folder.parents
         assert test_base in log_file.parents
-        
+
         # Verify path structure is maintained
         assert main_output_folder.name == "test_screenplay"
         assert cache_folder.name == "cache"
@@ -212,7 +212,7 @@ class TestPathSecurityValidator:
         """Test joining simple path components."""
         base_path = Path("/tmp/test_base")
         validator = PathSecurityValidator(base_path)
-        
+
         result = validator.validate_and_join("subfolder", "file.txt")
         expected = base_path / "subfolder" / "file.txt"
         assert result == expected.resolve()
@@ -221,7 +221,7 @@ class TestPathSecurityValidator:
         """Test handling empty path parts."""
         base_path = Path("/tmp/test_base")
         validator = PathSecurityValidator(base_path)
-        
+
         result = validator.validate_and_join("", "folder", "", "file.txt")
         expected = base_path / "folder" / "file.txt"
         assert result == expected.resolve()
@@ -230,7 +230,7 @@ class TestPathSecurityValidator:
         """Test that no parts returns base path."""
         base_path = Path("/tmp/test_base")
         validator = PathSecurityValidator(base_path)
-        
+
         result = validator.validate_and_join()
         assert result == base_path.resolve()
 
@@ -238,7 +238,7 @@ class TestPathSecurityValidator:
         """Test that path parts are sanitized using pathvalidate."""
         base_path = Path("/tmp/test_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # Test with invalid filename characters
         result = validator.validate_and_join("my folder!", "file<name>.txt")
         # pathvalidate should remove/replace invalid characters
@@ -251,14 +251,14 @@ class TestPathSecurityValidator:
         """Test prevention of directory traversal attacks."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # These should all raise ValueError due to directory traversal attempts
         with pytest.raises(ValueError, match="resolves outside base path"):
             validator.validate_and_join("..", "etc", "passwd")
-            
+
         with pytest.raises(ValueError, match="resolves outside base path"):
             validator.validate_and_join("subfolder", "..", "..", "etc")
-            
+
         # This one gets sanitized to a safe filename, so it doesn't raise
         result3 = validator.validate_and_join("../../../etc/passwd")
         assert base_path.resolve() in result3.parents or result3 == base_path.resolve()
@@ -267,7 +267,7 @@ class TestPathSecurityValidator:
         """Test prevention of absolute path injection."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # Absolute paths should be sanitized by pathvalidate
         # and result should still be within base path
         result = validator.validate_and_join("folder", "/etc/passwd")
@@ -277,7 +277,7 @@ class TestPathSecurityValidator:
         """Test validating an existing path within base."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         valid_path = base_path / "subfolder" / "file.txt"
         result = validator.validate_existing_path(valid_path)
         assert result == valid_path.resolve()
@@ -286,7 +286,7 @@ class TestPathSecurityValidator:
         """Test that paths outside base raise ValueError."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         outside_path = Path("/etc/passwd")
         with pytest.raises(ValueError, match="outside the allowed base path"):
             validator.validate_existing_path(outside_path)
@@ -295,7 +295,7 @@ class TestPathSecurityValidator:
         """Test that the base path itself is valid."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         result = validator.validate_existing_path(base_path)
         assert result == base_path.resolve()
 
@@ -303,7 +303,7 @@ class TestPathSecurityValidator:
         """Test prevention of symlink-based attacks."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # Even if we try to create a path that could be a symlink,
         # the resolver should catch it if it points outside
         # This is handled by Path.resolve() in the validator
@@ -314,11 +314,11 @@ class TestPathSecurityValidator:
         """Test handling of unicode characters in filenames."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # Test with unicode characters
         result = validator.validate_and_join("folder", "файл.txt")
         assert base_path.resolve() in result.parents
-        
+
         # Test with emoji (pathvalidate should handle this)
         result = validator.validate_and_join("folder", "file_😀.txt")
         assert base_path.resolve() in result.parents
@@ -327,7 +327,7 @@ class TestPathSecurityValidator:
         """Test handling of very long paths."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         # Create a long path
         long_folder_name = "a" * 100
         result = validator.validate_and_join(long_folder_name, "file.txt")
@@ -337,7 +337,7 @@ class TestPathSecurityValidator:
         """Test that case sensitivity is preserved."""
         base_path = Path("/tmp/secure_base")
         validator = PathSecurityValidator(base_path)
-        
+
         result = validator.validate_and_join("MyFolder", "MyFile.TXT")
         assert "MyFolder" in str(result)
         assert "MyFile" in str(result)

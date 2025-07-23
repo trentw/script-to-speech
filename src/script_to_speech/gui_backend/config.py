@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     model_config = ConfigDict(
         env_file=".env",
         case_sensitive=True,
-        extra="ignore"  # Ignore extra environment variables like API keys
+        extra="ignore",  # Ignore extra environment variables like API keys
     )
 
 
