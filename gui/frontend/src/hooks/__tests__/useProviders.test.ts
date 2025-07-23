@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { server } from '@/test/setup';
 import { createWrapper } from '@/test/utils/render';
 import { TEST_PROVIDERS } from '@/test/utils/test-data';
+import type { ProviderInfo } from '@/types';
 
 import { useProviders } from '../queries/useProviders';
 
@@ -50,7 +51,7 @@ describe('useProviders Hook', () => {
 
     it('should handle empty providers list', async () => {
       // Arrange
-      const emptyProviders: any[] = [];
+      const emptyProviders: ProviderInfo[] = [];
 
       server.use(
         http.get('http://127.0.0.1:8000/api/providers/info', () => {

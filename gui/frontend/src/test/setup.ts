@@ -100,11 +100,17 @@ class MockAudio extends EventTarget {
   }
 }
 
+// Extend global types for test utilities
+declare global {
+  var MockAudio: typeof MockAudio;
+  var getAudioMockInstance: (element: HTMLAudioElement) => MockAudio | undefined;
+}
+
 // Make MockAudio available globally for tests
-(global as any).MockAudio = MockAudio;
+global.MockAudio = MockAudio;
 
 // Set global Audio to use our mock
-global.Audio = MockAudio as any;
+global.Audio = MockAudio as unknown as typeof Audio;
 
 // Store references to instances for test access
 const audioInstances = new WeakMap<HTMLAudioElement, MockAudio>();
@@ -185,7 +191,7 @@ Object.defineProperty(HTMLMediaElement.prototype, 'ended', {
 });
 
 // Make mock instances accessible to tests
-(global as any).getAudioMockInstance = (element: HTMLAudioElement) => {
+global.getAudioMockInstance = (element: HTMLAudioElement) => {
   return audioInstances.get(element);
 };
 
@@ -226,7 +232,7 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 // Suppress console errors during tests (optional, can be removed if you want to see errors)
 const originalError = console.error;
 beforeAll(() => {
-  console.error = (...args: any[]) => {
+  console.error = (...args: unknown[]) => {
     // Filter out known React 18/19 act warnings
     if (
       typeof args[0] === 'string' &&

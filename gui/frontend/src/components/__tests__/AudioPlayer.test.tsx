@@ -342,7 +342,7 @@ describe('AudioPlayer', () => {
       expect(audioElement).toBeTruthy();
 
       // Get the mock instance for this element
-      const mockInstance = (global as any).getAudioMockInstance(audioElement);
+      const mockInstance = global.getAudioMockInstance(audioElement);
       expect(mockInstance).toBeTruthy();
 
       // Simulate time update
@@ -400,7 +400,7 @@ describe('AudioPlayer', () => {
       const audioElement = document.querySelector('audio') as HTMLAudioElement;
       expect(audioElement).toBeTruthy();
 
-      const mockInstance = (global as any).getAudioMockInstance(audioElement);
+      const mockInstance = global.getAudioMockInstance(audioElement);
       expect(mockInstance).toBeTruthy();
 
       // Simulate track ending

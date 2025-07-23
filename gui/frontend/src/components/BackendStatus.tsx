@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // Check if we're running in Tauri
 interface TauriWindow extends Window {
@@ -29,12 +29,7 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({
   const [isStarting, setIsStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Check initial status by trying to connect to the health endpoint
-    checkBackendStatus();
-  }, []);
-
-  const checkBackendStatus = async () => {
+  const checkBackendStatus = useCallback(async () => {
     try {
       const response = await fetch('http://127.0.0.1:8000/health');
       const running = response.ok;
@@ -44,7 +39,12 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({
       setIsRunning(false);
       onStatusChange?.(false);
     }
-  };
+  }, [onStatusChange]);
+
+  useEffect(() => {
+    // Check initial status by trying to connect to the health endpoint
+    checkBackendStatus();
+  }, [checkBackendStatus]);
 
   const startBackend = async () => {
     setIsStarting(true);

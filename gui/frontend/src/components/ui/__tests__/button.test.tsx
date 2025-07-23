@@ -12,6 +12,7 @@ describe('Button Component', () => {
     // The test fails with: "Error: Not implemented: HTMLCanvasElement.prototype.getContext"
     // This is a known issue with jsdom and axe-core's color contrast checking
     // Options: 1) Install canvas package with native deps, 2) Use browser mode, 3) Mock canvas
+    // eslint-disable-next-line vitest/no-disabled-tests
     it.skip('should not have accessibility violations', async () => {
       // Arrange
       const { container } = render(<Button>Click me</Button>);

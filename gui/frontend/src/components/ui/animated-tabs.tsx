@@ -42,11 +42,10 @@ export function AnimatedTabs({
 
   const activeTab = value !== undefined ? value : internalValue;
 
-  // Extract tab order for direction calculation - use fixed order for Settings/History
-  const tabOrder = ['settings', 'history'];
-
   const setActiveTab = useCallback(
     (newValue: string) => {
+      // Extract tab order for direction calculation - use fixed order for Settings/History
+      const tabOrder = ['settings', 'history'];
       const currentIndex = tabOrder.indexOf(activeTab);
       const newIndex = tabOrder.indexOf(newValue);
       setDirection(newIndex > currentIndex ? 1 : -1);
@@ -56,7 +55,7 @@ export function AnimatedTabs({
       }
       onValueChange?.(newValue);
     },
-    [activeTab, tabOrder, value, onValueChange]
+    [activeTab, value, onValueChange]
   );
 
   return (
