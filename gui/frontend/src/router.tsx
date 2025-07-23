@@ -1,25 +1,25 @@
-import { QueryClient } from '@tanstack/react-query'
-import { createHashHistory, createRouter } from '@tanstack/react-router'
+import { QueryClient } from '@tanstack/react-query';
+import { createHashHistory, createRouter } from '@tanstack/react-router';
 
-import { routeTree } from './routeTree.gen'
+import { routeTree } from './routeTree.gen';
 
 export interface RouterContext {
-  queryClient: QueryClient
+  queryClient: QueryClient;
   // Add specific configuration for QueryClient if needed
   queryDefaults?: {
     queries?: {
-      staleTime?: number
-      gcTime?: number
-      refetchOnWindowFocus?: boolean
-    }
+      staleTime?: number;
+      gcTime?: number;
+      refetchOnWindowFocus?: boolean;
+    };
     mutations?: {
-      retry?: number
-    }
-  }
+      retry?: number;
+    };
+  };
 }
 
 // Create a single history instance to prevent recreation
-const hashHistory = createHashHistory()
+const hashHistory = createHashHistory();
 
 export function createAppRouter(queryClient: QueryClient) {
   // Use hash-based routing for Tauri desktop compatibility
@@ -35,14 +35,14 @@ export function createAppRouter(queryClient: QueryClient) {
     context: {
       queryClient,
     },
-  })
+  });
 
-  return router
+  return router;
 }
 
 // Register the router instance in your TypeScript types
 declare module '@tanstack/react-router' {
   interface Register {
-    router: ReturnType<typeof createAppRouter>
+    router: ReturnType<typeof createAppRouter>;
   }
 }

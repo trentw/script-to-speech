@@ -27,8 +27,12 @@ export function ScreenplayContent({
   onTaskCreated,
 }: ScreenplayContentProps) {
   const navigate = useNavigate();
-  const { currentTaskId, setCurrentTaskId, setSelectedScreenplay, setViewMode: setStoreViewMode } =
-    useScreenplay();
+  const {
+    currentTaskId,
+    setCurrentTaskId,
+    setSelectedScreenplay,
+    setViewMode: setStoreViewMode,
+  } = useScreenplay();
 
   const { setError, clearError } = useUIState();
 
@@ -58,7 +62,10 @@ export function ScreenplayContent({
     setSelectedScreenplay(screenplay);
     setCurrentTaskId(screenplay.task_id);
     // Navigate to the task route
-    navigate({ to: '/screenplay/$taskId', params: { taskId: screenplay.task_id } });
+    navigate({
+      to: '/screenplay/$taskId',
+      params: { taskId: screenplay.task_id },
+    });
   };
 
   // Update view mode based on task status
@@ -67,7 +74,8 @@ export function ScreenplayContent({
       // Navigate to task page when task actually starts processing (from upload page)
       if (
         onTaskCreated &&
-        (taskStatus.status === 'pending' || taskStatus.status === 'processing') &&
+        (taskStatus.status === 'pending' ||
+          taskStatus.status === 'processing') &&
         viewMode === 'upload'
       ) {
         onTaskCreated(currentTaskId!);
@@ -90,7 +98,14 @@ export function ScreenplayContent({
         setStoreViewMode('status');
       }
     }
-  }, [taskStatus?.status, viewMode, setViewMode, setStoreViewMode, onTaskCreated, currentTaskId]);
+  }, [
+    taskStatus?.status,
+    viewMode,
+    setViewMode,
+    setStoreViewMode,
+    onTaskCreated,
+    currentTaskId,
+  ]);
 
   // Reset to upload mode when no task is selected
   useEffect(() => {

@@ -5,7 +5,8 @@ import viteConfig from './vite.config';
 
 export default defineConfig(({ mode }) => {
   // Get the base vite config by calling it with the mode
-  const baseConfig = typeof viteConfig === 'function' ? viteConfig({ mode }) : viteConfig;
+  const baseConfig =
+    typeof viteConfig === 'function' ? viteConfig({ mode }) : viteConfig;
 
   // Define vitest-specific config
   const vitestConfig = defineConfig({
@@ -14,6 +15,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: './src/test/setup.ts',
       pool: 'forks', // Better isolation for Zustand stores
+      exclude: ['**/node_modules/**', '**/docs/**', '**/*.spec.ts', '**/*.spec.tsx'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

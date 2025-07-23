@@ -23,7 +23,13 @@ export function ScreenplayUploadZone({
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[], fileRejections: Array<{file: File; errors: Array<{code: string; message: string}>}>) => {
+    (
+      acceptedFiles: File[],
+      fileRejections: Array<{
+        file: File;
+        errors: Array<{ code: string; message: string }>;
+      }>
+    ) => {
       setError(null);
 
       if (fileRejections.length > 0) {

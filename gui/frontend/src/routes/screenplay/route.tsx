@@ -2,6 +2,7 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { FileText } from 'lucide-react';
 
 import { RouteError } from '@/components/errors';
+
 import type { RouteStaticData } from '../../types/route-metadata';
 
 export const Route = createFileRoute('/screenplay')({
@@ -10,7 +11,8 @@ export const Route = createFileRoute('/screenplay')({
   staticData: {
     title: 'Screenplay Parser',
     icon: FileText,
-    description: 'Parse screenplay PDFs into structured JSON for multi-voice audio generation',
+    description:
+      'Parse screenplay PDFs into structured JSON for multi-voice audio generation',
     navigation: {
       order: 2,
       showInNav: true,

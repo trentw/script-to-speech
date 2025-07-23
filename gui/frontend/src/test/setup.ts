@@ -48,25 +48,25 @@ class MockAudio extends EventTarget {
   volume = 1;
   muted = false;
   playbackRate = 1;
-  
+
   constructor(src?: string) {
     super();
     if (src) this.src = src;
   }
-  
+
   get currentTime() {
     return this._currentTime;
   }
-  
+
   set currentTime(value: number) {
     this._currentTime = Math.max(0, Math.min(value, this._duration));
     this.dispatchEvent(new Event('timeupdate'));
   }
-  
+
   get duration() {
     return this._duration;
   }
-  
+
   play = vi.fn().mockImplementation(() => {
     this.paused = false;
     this.ended = false;
@@ -74,18 +74,18 @@ class MockAudio extends EventTarget {
     this.dispatchEvent(new Event('loadedmetadata'));
     return Promise.resolve();
   });
-  
+
   pause = vi.fn().mockImplementation(() => {
     this.paused = true;
   });
-  
+
   load = vi.fn();
-  
+
   // Helper method for tests to simulate time progression
   advanceTime(seconds: number) {
     if (!this.paused && !this.ended) {
       this.currentTime = Math.min(this.currentTime + seconds, this.duration);
-      
+
       if (this.currentTime >= this.duration) {
         this.ended = true;
         this.paused = true;
@@ -93,7 +93,7 @@ class MockAudio extends EventTarget {
       }
     }
   }
-  
+
   // Helper to set current time directly
   setCurrentTime(time: number) {
     this.currentTime = time;
@@ -110,27 +110,31 @@ global.Audio = MockAudio as any;
 const audioInstances = new WeakMap<HTMLAudioElement, MockAudio>();
 
 // Mock HTMLMediaElement prototype for <audio> elements
-const originalPlay = HTMLMediaElement.prototype.play;
-const originalPause = HTMLMediaElement.prototype.pause;
+const _originalPlay = HTMLMediaElement.prototype.play;
+const _originalPause = HTMLMediaElement.prototype.pause;
 
 // Create a proper mock for play method
-HTMLMediaElement.prototype.play = vi.fn().mockImplementation(function(this: HTMLAudioElement) {
+HTMLMediaElement.prototype.play = vi.fn().mockImplementation(function (
+  this: HTMLAudioElement
+) {
   // Get or create mock instance
   let mockInstance = audioInstances.get(this);
   if (!mockInstance) {
     mockInstance = new MockAudio();
     audioInstances.set(this, mockInstance);
   }
-  
+
   // Fire loadedmetadata immediately so duration is available
   setTimeout(() => {
     this.dispatchEvent(new Event('loadedmetadata'));
   }, 0);
-  
+
   return mockInstance.play();
 });
 
-HTMLMediaElement.prototype.pause = vi.fn().mockImplementation(function(this: HTMLAudioElement) {
+HTMLMediaElement.prototype.pause = vi.fn().mockImplementation(function (
+  this: HTMLAudioElement
+) {
   let mockInstance = audioInstances.get(this);
   if (!mockInstance) {
     mockInstance = new MockAudio();
@@ -142,7 +146,7 @@ HTMLMediaElement.prototype.pause = vi.fn().mockImplementation(function(this: HTM
 // Mock properties with getters/setters
 Object.defineProperty(HTMLMediaElement.prototype, 'duration', {
   configurable: true,
-  get() { 
+  get() {
     const mockInstance = audioInstances.get(this as HTMLAudioElement);
     return mockInstance ? mockInstance.duration : 120;
   },
@@ -150,11 +154,11 @@ Object.defineProperty(HTMLMediaElement.prototype, 'duration', {
 
 Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
   configurable: true,
-  get() { 
+  get() {
     const mockInstance = audioInstances.get(this as HTMLAudioElement);
     return mockInstance ? mockInstance.currentTime : 0;
   },
-  set(value: number) { 
+  set(value: number) {
     let mockInstance = audioInstances.get(this as HTMLAudioElement);
     if (!mockInstance) {
       mockInstance = new MockAudio();
@@ -166,7 +170,7 @@ Object.defineProperty(HTMLMediaElement.prototype, 'currentTime', {
 
 Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
   configurable: true,
-  get() { 
+  get() {
     const mockInstance = audioInstances.get(this as HTMLAudioElement);
     return mockInstance ? mockInstance.paused : true;
   },
@@ -174,7 +178,7 @@ Object.defineProperty(HTMLMediaElement.prototype, 'paused', {
 
 Object.defineProperty(HTMLMediaElement.prototype, 'ended', {
   configurable: true,
-  get() { 
+  get() {
     const mockInstance = audioInstances.get(this as HTMLAudioElement);
     return mockInstance ? mockInstance.ended : false;
   },

@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
+import { useMemo } from 'react';
 
 import { createAppRouter } from './router';
 

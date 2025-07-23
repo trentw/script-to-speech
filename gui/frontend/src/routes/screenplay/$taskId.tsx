@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
-import { ScreenplayContent } from '../../components/screenplay/ScreenplayContent';
 import { RouteError } from '@/components/errors';
+
+import { ScreenplayContent } from '../../components/screenplay/ScreenplayContent';
 import { useScreenplay } from '../../stores/appStore';
 import type { RouteStaticData } from '../../types/route-metadata';
 
@@ -18,7 +19,11 @@ export const Route = createFileRoute('/screenplay/$taskId')({
 function ScreenplayTaskView() {
   const { taskId } = Route.useParams();
   const navigate = useNavigate({ from: '/screenplay/$taskId' });
-  const { setCurrentTaskId, setViewMode: setStoreViewMode, viewMode } = useScreenplay();
+  const {
+    setCurrentTaskId,
+    setViewMode: setStoreViewMode,
+    viewMode,
+  } = useScreenplay();
 
   // Set the task ID in the store when this route loads
   useEffect(() => {

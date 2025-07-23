@@ -1,16 +1,17 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest';
 
-import { render, screen } from '@/test/utils/render'
+import { render, screen } from '@/test/utils/render';
 
-import { 
-  Select, 
-  SelectContent, 
+import {
+  Select,
+  SelectContent,
   SelectGroup,
-  SelectItem, 
+  SelectItem,
   SelectLabel,
-  SelectSeparator, 
-  SelectTrigger, 
-  SelectValue} from '../select'
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from '../select';
 
 describe('Select Component', () => {
   describe('Basic Rendering', () => {
@@ -26,12 +27,12 @@ describe('Select Component', () => {
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      expect(screen.getByText('Select an option')).toBeInTheDocument()
-      expect(screen.getByRole('combobox')).toBeInTheDocument()
-    })
+      expect(screen.getByText('Select an option')).toBeInTheDocument();
+      expect(screen.getByRole('combobox')).toBeInTheDocument();
+    });
 
     it('should display selected value', () => {
       // Arrange & Act
@@ -45,15 +46,15 @@ describe('Select Component', () => {
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      expect(screen.getByRole('combobox')).toHaveTextContent('Option 2')
-    })
+      expect(screen.getByRole('combobox')).toHaveTextContent('Option 2');
+    });
 
     it('should handle controlled value changes', () => {
       // Arrange
-      const handleChange = vi.fn()
+      const handleChange = vi.fn();
       const { rerender } = render(
         <Select value="option1" onValueChange={handleChange}>
           <SelectTrigger>
@@ -64,10 +65,10 @@ describe('Select Component', () => {
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert initial value
-      expect(screen.getByRole('combobox')).toHaveTextContent('Option 1')
+      expect(screen.getByRole('combobox')).toHaveTextContent('Option 1');
 
       // Act - update value
       rerender(
@@ -80,12 +81,12 @@ describe('Select Component', () => {
             <SelectItem value="option2">Option 2</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert updated value
-      expect(screen.getByRole('combobox')).toHaveTextContent('Option 2')
-    })
-  })
+      expect(screen.getByRole('combobox')).toHaveTextContent('Option 2');
+    });
+  });
 
   describe('Trigger Behavior', () => {
     it('should render trigger with correct attributes', () => {
@@ -99,15 +100,15 @@ describe('Select Component', () => {
             <SelectItem value="apple">Apple</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveAttribute('aria-label', 'Select a fruit')
-      expect(trigger).toHaveAttribute('aria-expanded', 'false')
-      expect(trigger).toHaveAttribute('type', 'button')
-      expect(trigger).toHaveAttribute('data-state', 'closed')
-    })
+      const trigger = screen.getByRole('combobox');
+      expect(trigger).toHaveAttribute('aria-label', 'Select a fruit');
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      expect(trigger).toHaveAttribute('type', 'button');
+      expect(trigger).toHaveAttribute('data-state', 'closed');
+    });
 
     it('should show chevron icon', () => {
       // Arrange & Act
@@ -120,14 +121,14 @@ describe('Select Component', () => {
             <SelectItem value="item">Item</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      const chevron = screen.getByRole('combobox').querySelector('svg')
-      expect(chevron).toBeInTheDocument()
-      expect(chevron).toHaveClass('lucide-chevron-down')
-    })
-  })
+      const chevron = screen.getByRole('combobox').querySelector('svg');
+      expect(chevron).toBeInTheDocument();
+      expect(chevron).toHaveClass('lucide-chevron-down');
+    });
+  });
 
   describe('Disabled State', () => {
     it('should handle disabled state', () => {
@@ -141,15 +142,15 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveAttribute('data-disabled')
-      expect(trigger).toHaveClass('disabled:cursor-not-allowed')
-      expect(trigger).toHaveClass('disabled:opacity-50')
-    })
-  })
+      const trigger = screen.getByRole('combobox');
+      expect(trigger).toHaveAttribute('data-disabled');
+      expect(trigger).toHaveClass('disabled:cursor-not-allowed');
+      expect(trigger).toHaveClass('disabled:opacity-50');
+    });
+  });
 
   describe('Sizes', () => {
     it('should render different sizes', () => {
@@ -163,10 +164,10 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert small
-      expect(screen.getByRole('combobox')).toHaveAttribute('data-size', 'sm')
+      expect(screen.getByRole('combobox')).toHaveAttribute('data-size', 'sm');
 
       // Act - rerender with default size
       rerender(
@@ -178,12 +179,15 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert default
-      expect(screen.getByRole('combobox')).toHaveAttribute('data-size', 'default')
-    })
-  })
+      expect(screen.getByRole('combobox')).toHaveAttribute(
+        'data-size',
+        'default'
+      );
+    });
+  });
 
   describe('Custom Classes', () => {
     it('should apply custom classes to trigger', () => {
@@ -197,12 +201,12 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      expect(screen.getByRole('combobox')).toHaveClass('custom-trigger-class')
-    })
-  })
+      expect(screen.getByRole('combobox')).toHaveClass('custom-trigger-class');
+    });
+  });
 
   describe('Select Content Structure', () => {
     it('should render with groups and labels structure', () => {
@@ -225,15 +229,15 @@ describe('Select Component', () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert - check that trigger renders with correct attributes
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toBeInTheDocument()
-      expect(trigger).toHaveAttribute('data-slot', 'select-trigger')
-      expect(trigger).toHaveTextContent('Select fruit')
-    })
-  })
+      const trigger = screen.getByRole('combobox');
+      expect(trigger).toBeInTheDocument();
+      expect(trigger).toHaveAttribute('data-slot', 'select-trigger');
+      expect(trigger).toHaveTextContent('Select fruit');
+    });
+  });
 
   describe('Accessibility', () => {
     it('should have proper ARIA attributes', () => {
@@ -247,15 +251,15 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveAttribute('aria-label', 'Fruit selection')
-      expect(trigger).toHaveAttribute('aria-expanded', 'false')
-      expect(trigger).toHaveAttribute('role', 'combobox')
-      expect(trigger).toHaveAttribute('aria-autocomplete', 'none')
-    })
+      const trigger = screen.getByRole('combobox');
+      expect(trigger).toHaveAttribute('aria-label', 'Fruit selection');
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      expect(trigger).toHaveAttribute('role', 'combobox');
+      expect(trigger).toHaveAttribute('aria-autocomplete', 'none');
+    });
 
     it('should handle required state', () => {
       // Arrange & Act
@@ -268,11 +272,11 @@ describe('Select Component', () => {
             <SelectItem value="option1">Option 1</SelectItem>
           </SelectContent>
         </Select>
-      )
+      );
 
       // Assert
-      const trigger = screen.getByRole('combobox')
-      expect(trigger).toHaveAttribute('aria-required', 'true')
-    })
-  })
-})
+      const trigger = screen.getByRole('combobox');
+      expect(trigger).toHaveAttribute('aria-required', 'true');
+    });
+  });
+});

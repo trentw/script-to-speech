@@ -1,5 +1,5 @@
-import { AlertCircle, Home, RefreshCw, WifiOff } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
+import { AlertCircle, Home, RefreshCw, WifiOff } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +23,7 @@ export function RouteError({ error, reset }: RouteErrorProps) {
   // Determine error type and appropriate messaging
   const getErrorInfo = () => {
     const errorMessage = error.message || 'An unexpected error occurred';
-    
+
     // Check for network errors
     if (
       errorMessage.includes('fetch') ||
@@ -34,11 +34,12 @@ export function RouteError({ error, reset }: RouteErrorProps) {
       return {
         icon: WifiOff,
         title: 'Connection Error',
-        description: 'Unable to connect to the server. Please check your internet connection and try again.',
+        description:
+          'Unable to connect to the server. Please check your internet connection and try again.',
         iconColor: 'text-orange-500',
       };
     }
-    
+
     // Check for route not found errors
     if (
       errorMessage.includes('route') ||
@@ -48,16 +49,18 @@ export function RouteError({ error, reset }: RouteErrorProps) {
       return {
         icon: AlertCircle,
         title: 'Page Not Found',
-        description: 'The page you are looking for does not exist or has been moved.',
+        description:
+          'The page you are looking for does not exist or has been moved.',
         iconColor: 'text-yellow-500',
       };
     }
-    
+
     // General JavaScript errors
     return {
       icon: AlertCircle,
       title: 'Something went wrong',
-      description: 'An unexpected error has occurred. Please try refreshing the page or contact support if the problem persists.',
+      description:
+        'An unexpected error has occurred. Please try refreshing the page or contact support if the problem persists.',
       iconColor: 'text-destructive',
     };
   };
@@ -73,7 +76,7 @@ export function RouteError({ error, reset }: RouteErrorProps) {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <div className="bg-muted mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
             <ErrorIcon className={`h-6 w-6 ${errorInfo.iconColor}`} />
           </div>
           <CardTitle className="text-xl">{errorInfo.title}</CardTitle>
@@ -84,23 +87,23 @@ export function RouteError({ error, reset }: RouteErrorProps) {
 
         {isDevelopment && (
           <CardContent>
-            <div className="rounded-md bg-muted p-4">
-              <p className="mb-2 text-sm font-medium text-muted-foreground">
+            <div className="bg-muted rounded-md p-4">
+              <p className="text-muted-foreground mb-2 text-sm font-medium">
                 Error Details (Development Mode)
               </p>
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   <span className="font-medium">Name:</span> {error.name}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-muted-foreground text-xs">
                   <span className="font-medium">Message:</span> {error.message}
                 </p>
                 {error.stack && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-xs font-medium text-muted-foreground hover:text-foreground">
+                    <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs font-medium">
                       Stack Trace
                     </summary>
-                    <pre className="mt-2 max-h-48 overflow-auto rounded bg-background p-2 text-xs">
+                    <pre className="bg-background mt-2 max-h-48 overflow-auto rounded p-2 text-xs">
                       {error.stack}
                     </pre>
                   </details>

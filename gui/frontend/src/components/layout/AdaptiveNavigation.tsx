@@ -123,12 +123,13 @@ export function AdaptiveNavigation({
                 key={item.id}
                 {...item.linkOptions}
                 activeProps={{
-                  className: 'bg-primary text-primary-foreground hover:bg-primary/90',
+                  className:
+                    'bg-primary text-primary-foreground hover:bg-primary/90',
                 }}
                 className={cn(
                   'flex w-full items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   'hover:bg-accent hover:text-accent-foreground',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                   !isExpanded && 'px-2'
                 )}
               >

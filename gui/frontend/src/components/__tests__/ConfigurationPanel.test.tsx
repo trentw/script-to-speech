@@ -1,12 +1,12 @@
-import userEvent from '@testing-library/user-event'
-import { beforeEach,describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useConfiguration } from '@/stores/appStore'
-import { render, screen, waitFor } from '@/test/utils/render'
-import { TEST_PROVIDERS, TEST_VOICES } from '@/test/utils/test-data'
-import type { ProviderInfo, VoiceEntry } from '@/types'
+import { useConfiguration } from '@/stores/appStore';
+import { render, screen, waitFor } from '@/test/utils/render';
+import { TEST_PROVIDERS, TEST_VOICES } from '@/test/utils/test-data';
+import type { VoiceEntry } from '@/types';
 
-import { ConfigurationPanel } from '../ConfigurationPanel'
+import { ConfigurationPanel } from '../ConfigurationPanel';
 
 // Mock the store
 vi.mock('@/stores/appStore', () => ({
@@ -14,42 +14,52 @@ vi.mock('@/stores/appStore', () => ({
     selectedProvider: null,
     selectedVoice: null,
     currentConfig: {},
-  }))
-}))
+  })),
+}));
 
 // Mock the child components to simplify testing
 vi.mock('../app/ProviderSelectionSelector', () => ({
-  ProviderSelectionSelector: ({ 
-    selectedProvider, 
-    onProviderSelect, 
-    onOpenProviderPanel 
-  }: any) => (
+  ProviderSelectionSelector: ({
+    selectedProvider,
+    onProviderSelect,
+    onOpenProviderPanel,
+  }: {
+    selectedProvider?: string;
+    onProviderSelect: (provider: string) => void;
+    onOpenProviderPanel: () => void;
+  }) => (
     <div data-testid="provider-selector">
-      <button onClick={() => onProviderSelect('openai')} data-testid="select-provider-btn">
+      <button
+        onClick={() => onProviderSelect('openai')}
+        data-testid="select-provider-btn"
+      >
         {selectedProvider || 'Select Provider'}
       </button>
       <button onClick={onOpenProviderPanel}>Browse All</button>
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../VoiceSelector', () => ({
-  VoiceSelector: ({ 
-    selectedVoice, 
-    onVoiceSelect, 
-    onOpenVoicePanel 
-  }: any) => (
+  VoiceSelector: ({ selectedVoice, onVoiceSelect, onOpenVoicePanel }: {
+    selectedVoice?: VoiceEntry;
+    onVoiceSelect: (voice: VoiceEntry) => void;
+    onOpenVoicePanel: () => void;
+  }) => (
     <div data-testid="voice-selector">
       <button onClick={() => onVoiceSelect(TEST_VOICES[0])}>
         {selectedVoice?.sts_id || 'Select Voice'}
       </button>
       <button onClick={onOpenVoicePanel}>Browse Voices</button>
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../ConfigForm', () => ({
-  ConfigForm: ({ config, onConfigChange }: any) => (
+  ConfigForm: ({ config, onConfigChange }: {
+    config?: Record<string, unknown>;
+    onConfigChange: (config: Record<string, unknown>) => void;
+  }) => (
     <div data-testid="config-form">
       <input
         type="number"
@@ -58,47 +68,60 @@ vi.mock('../ConfigForm', () => ({
         data-testid="speed-input"
       />
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../ProviderSelectionPanel', () => ({
-  ProviderSelectionPanel: ({ onProviderSelect, onBack }: any) => (
+  ProviderSelectionPanel: ({ onProviderSelect, onBack }: {
+    onProviderSelect: (provider: string) => void;
+    onBack: () => void;
+  }) => (
     <div data-testid="provider-panel">
       <button onClick={onBack}>Back</button>
       <button onClick={() => onProviderSelect('elevenlabs')}>ElevenLabs</button>
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../VoiceSelectionPanel', () => ({
-  VoiceSelectionPanel: ({ onVoiceSelect, onBack }: any) => (
+  VoiceSelectionPanel: ({ onVoiceSelect, onBack }: {
+    onVoiceSelect: (voice: VoiceEntry) => void;
+    onBack: () => void;
+  }) => (
     <div data-testid="voice-panel">
       <button onClick={onBack}>Back</button>
       <button onClick={() => onVoiceSelect(TEST_VOICES[1])}>
         Select Second Voice
       </button>
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../HistoryTab', () => ({
-  HistoryTab: ({ onTaskSelect }: any) => (
+  HistoryTab: ({ onTaskSelect }: {
+    onTaskSelect: (task: { task_id: string; status: string }) => void;
+  }) => (
     <div data-testid="history-tab">
-      <button onClick={() => onTaskSelect({ task_id: '123', status: 'completed' })}>
+      <button
+        onClick={() => onTaskSelect({ task_id: '123', status: 'completed' })}
+      >
         Task 123
       </button>
     </div>
-  )
-}))
+  ),
+}));
 
 vi.mock('../HistoryDetailsPanel', () => ({
-  HistoryDetailsPanel: ({ task, onBack }: any) => (
+  HistoryDetailsPanel: ({ task, onBack }: {
+    task: { task_id: string };
+    onBack: () => void;
+  }) => (
     <div data-testid="history-details">
       <button onClick={onBack}>Back</button>
       <span>Task: {task.task_id}</span>
     </div>
-  )
-}))
+  ),
+}));
 
 describe('ConfigurationPanel', () => {
   const defaultProps = {
@@ -110,115 +133,117 @@ describe('ConfigurationPanel', () => {
     onProviderChange: vi.fn(),
     onVoiceSelect: vi.fn(),
     onConfigChange: vi.fn(),
-  }
+  };
 
   beforeEach(() => {
-    vi.clearAllMocks()
+    vi.clearAllMocks();
     // Reset store mock to default state
     vi.mocked(useConfiguration).mockReturnValue({
       selectedProvider: null,
       selectedVoice: null,
       currentConfig: {},
-    })
-  })
+    });
+  });
 
   describe('Tab Navigation', () => {
     it('should render settings and history tabs', () => {
       // Arrange & Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByRole('tab', { name: 'Settings' })).toBeInTheDocument()
-      expect(screen.getByRole('tab', { name: 'History' })).toBeInTheDocument()
-    })
+      expect(screen.getByRole('tab', { name: 'Settings' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'History' })).toBeInTheDocument();
+    });
 
     it('should show settings content by default', () => {
       // Arrange & Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByText('Text to Speech Provider')).toBeInTheDocument()
-      expect(screen.queryByTestId('history-tab')).not.toBeInTheDocument()
-    })
+      expect(screen.getByText('Text to Speech Provider')).toBeInTheDocument();
+      expect(screen.queryByTestId('history-tab')).not.toBeInTheDocument();
+    });
 
     it('should switch to history tab when clicked', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Act
-      await user.click(screen.getByRole('tab', { name: 'History' }))
+      await user.click(screen.getByRole('tab', { name: 'History' }));
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByTestId('history-tab')).toBeInTheDocument()
-      })
-      expect(screen.queryByText('Text to Speech Provider')).not.toBeInTheDocument()
-    })
-  })
+        expect(screen.getByTestId('history-tab')).toBeInTheDocument();
+      });
+      expect(
+        screen.queryByText('Text to Speech Provider')
+      ).not.toBeInTheDocument();
+    });
+  });
 
   describe('Provider Selection', () => {
     it('should display provider selector', () => {
       // Arrange & Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByTestId('provider-selector')).toBeInTheDocument()
-    })
+      expect(screen.getByTestId('provider-selector')).toBeInTheDocument();
+    });
 
     it('should call onProviderChange when provider is selected', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Act
-      await user.click(screen.getByText('Select Provider'))
+      await user.click(screen.getByText('Select Provider'));
 
       // Assert
-      expect(defaultProps.onProviderChange).toHaveBeenCalledWith('openai')
-    })
+      expect(defaultProps.onProviderChange).toHaveBeenCalledWith('openai');
+    });
 
     it('should show provider panel when browse is clicked', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Act
-      await user.click(screen.getByText('Browse All'))
+      await user.click(screen.getByText('Browse All'));
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByTestId('provider-panel')).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByTestId('provider-panel')).toBeInTheDocument();
+      });
+    });
 
     it('should hide provider panel when back is clicked', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      await user.click(screen.getByText('Browse All'))
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+      await user.click(screen.getByText('Browse All'));
       await waitFor(() => {
-        expect(screen.getByTestId('provider-panel')).toBeInTheDocument()
-      })
+        expect(screen.getByTestId('provider-panel')).toBeInTheDocument();
+      });
 
       // Act
-      await user.click(screen.getByRole('button', { name: 'Back' }))
+      await user.click(screen.getByRole('button', { name: 'Back' }));
 
       // Assert
       await waitFor(() => {
-        expect(screen.queryByTestId('provider-panel')).not.toBeInTheDocument()
-      })
-    })
-  })
+        expect(screen.queryByTestId('provider-panel')).not.toBeInTheDocument();
+      });
+    });
+  });
 
   describe('Voice Selection', () => {
     it('should not show voice selector when no provider selected', () => {
       // Arrange & Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.queryByTestId('voice-selector')).not.toBeInTheDocument()
-    })
+      expect(screen.queryByTestId('voice-selector')).not.toBeInTheDocument();
+    });
 
     it('should show voice selector when provider is selected', () => {
       // Arrange
@@ -226,14 +251,14 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
+      });
 
       // Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByTestId('voice-selector')).toBeInTheDocument()
-    })
+      expect(screen.getByTestId('voice-selector')).toBeInTheDocument();
+    });
 
     it('should call onVoiceSelect when voice is selected', async () => {
       // Arrange
@@ -241,17 +266,17 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      
+      });
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+
       // Act
-      await user.click(screen.getByText('Select Voice'))
+      await user.click(screen.getByText('Select Voice'));
 
       // Assert
-      expect(defaultProps.onVoiceSelect).toHaveBeenCalledWith(TEST_VOICES[0])
-    })
-  })
+      expect(defaultProps.onVoiceSelect).toHaveBeenCalledWith(TEST_VOICES[0]);
+    });
+  });
 
   describe('Configuration Form', () => {
     it('should show config form when provider is selected', async () => {
@@ -260,14 +285,14 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
+      });
 
       // Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByTestId('config-form')).toBeInTheDocument()
-    })
+      expect(screen.getByTestId('config-form')).toBeInTheDocument();
+    });
 
     it('should call onConfigChange when config is updated', async () => {
       // Arrange
@@ -275,18 +300,20 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      
+      });
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+
       // Act
-      const speedInput = screen.getByTestId('speed-input')
-      await user.clear(speedInput)
-      await user.type(speedInput, '1.5')
+      const speedInput = screen.getByTestId('speed-input');
+      await user.clear(speedInput);
+      await user.type(speedInput, '1.5');
 
       // Assert
-      expect(defaultProps.onConfigChange).toHaveBeenCalledWith({ speed: '1.5' })
-    })
+      expect(defaultProps.onConfigChange).toHaveBeenCalledWith({
+        speed: '1.5',
+      });
+    });
 
     it('should show reset button when provider is selected', async () => {
       // Arrange
@@ -294,14 +321,14 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
+      });
 
       // Act
-      render(<ConfigurationPanel {...defaultProps} />)
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Assert
-      expect(screen.getByText('Reset to defaults')).toBeInTheDocument()
-    })
+      expect(screen.getByText('Reset to defaults')).toBeInTheDocument();
+    });
 
     it('should reset config when reset button is clicked', async () => {
       // Arrange
@@ -309,79 +336,79 @@ describe('ConfigurationPanel', () => {
         selectedProvider: 'openai',
         selectedVoice: null,
         currentConfig: {},
-      })
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      
+      });
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+
       // Act
-      await user.click(screen.getByText('Reset to defaults'))
+      await user.click(screen.getByText('Reset to defaults'));
 
       // Assert
-      expect(defaultProps.onConfigChange).toHaveBeenCalledWith({})
-    })
-  })
+      expect(defaultProps.onConfigChange).toHaveBeenCalledWith({});
+    });
+  });
 
   describe('History Tab', () => {
     it('should show history details when task is selected', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+
       // Switch to history tab
-      await user.click(screen.getByRole('tab', { name: 'History' }))
-      
+      await user.click(screen.getByRole('tab', { name: 'History' }));
+
       // Act
-      await user.click(screen.getByText('Task 123'))
+      await user.click(screen.getByText('Task 123'));
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByTestId('history-details')).toBeInTheDocument()
-        expect(screen.getByText('Task: 123')).toBeInTheDocument()
-      })
-    })
+        expect(screen.getByTestId('history-details')).toBeInTheDocument();
+        expect(screen.getByText('Task: 123')).toBeInTheDocument();
+      });
+    });
 
     it('should go back to history list when back is clicked', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
-      
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
+
       // Switch to history tab and select a task
-      await user.click(screen.getByRole('tab', { name: 'History' }))
-      await user.click(screen.getByText('Task 123'))
-      
+      await user.click(screen.getByRole('tab', { name: 'History' }));
+      await user.click(screen.getByText('Task 123'));
+
       await waitFor(() => {
-        expect(screen.getByTestId('history-details')).toBeInTheDocument()
-      })
+        expect(screen.getByTestId('history-details')).toBeInTheDocument();
+      });
 
       // Act
-      const backButtons = screen.getAllByRole('button', { name: 'Back' })
-      await user.click(backButtons[backButtons.length - 1]) // Click the last back button
+      const backButtons = screen.getAllByRole('button', { name: 'Back' });
+      await user.click(backButtons[backButtons.length - 1]); // Click the last back button
 
       // Assert
       await waitFor(() => {
-        expect(screen.queryByTestId('history-details')).not.toBeInTheDocument()
-        expect(screen.getByTestId('history-tab')).toBeInTheDocument()
-      })
-    })
-  })
+        expect(screen.queryByTestId('history-details')).not.toBeInTheDocument();
+        expect(screen.getByTestId('history-tab')).toBeInTheDocument();
+      });
+    });
+  });
 
   describe('Panel Transitions', () => {
     it('should handle transitions smoothly', async () => {
       // Arrange
-      const user = userEvent.setup()
-      render(<ConfigurationPanel {...defaultProps} />)
+      const user = userEvent.setup();
+      render(<ConfigurationPanel {...defaultProps} />);
 
       // Act - trigger multiple transitions quickly
-      await user.click(screen.getByText('Browse All'))
-      
+      await user.click(screen.getByText('Browse All'));
+
       // Immediately click back before transition completes
-      const backButton = await screen.findByRole('button', { name: 'Back' })
-      await user.click(backButton)
+      const backButton = await screen.findByRole('button', { name: 'Back' });
+      await user.click(backButton);
 
       // Assert - should handle rapid transitions without errors
       await waitFor(() => {
-        expect(screen.getByTestId('provider-selector')).toBeInTheDocument()
-      })
-    })
-  })
-})
+        expect(screen.getByTestId('provider-selector')).toBeInTheDocument();
+      });
+    });
+  });
+});

@@ -1,6 +1,12 @@
-import { createRootRouteWithContext, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import type { AnyRoute } from '@tanstack/react-router';
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createRootRouteWithContext,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
+import { useEffect } from 'react';
+
+import { RouteError } from '@/components/errors';
 
 import { AppLoading, AppStatus } from '../components/app/AppStatus';
 import { ErrorDisplay } from '../components/app/ErrorDisplay';
@@ -9,7 +15,6 @@ import { HeaderContent } from '../components/app/HeaderContent';
 import { HistoryContent } from '../components/app/HistoryContent';
 import { PanelContent } from '../components/app/PanelContent';
 import { SettingsContent } from '../components/app/SettingsContent';
-import { RouteError } from '@/components/errors';
 import {
   AdaptiveNavigation,
   AppShell,
@@ -57,7 +62,9 @@ function RootComponent() {
 
   // Get current route's staticData for UI flags
   const currentMatch = routerState.matches[routerState.matches.length - 1];
-  const currentStaticData = currentMatch?.staticData as RouteStaticData | undefined;
+  const currentStaticData = currentMatch?.staticData as
+    | RouteStaticData
+    | undefined;
 
   // Use Screenplay state to get the current view mode
   const { viewMode: screenplayViewMode } = useScreenplay();
@@ -65,8 +72,6 @@ function RootComponent() {
   // Use Zustand store hooks for client state
   const {
     selectedProvider,
-    selectedVoice,
-    currentConfig,
     setSelectedProvider,
     setSelectedVoice,
     setCurrentConfig,
@@ -97,7 +102,7 @@ function RootComponent() {
     if (providersError) {
       setError(providersError.message);
     }
-  }, [providersError]);
+  }, [providersError, setError]);
 
   const handleProviderChange = (provider: string) => {
     clearError(); // Clear any existing errors
@@ -162,38 +167,42 @@ function RootComponent() {
             </ResponsivePanel>
           ) : undefined
         }
-        footer={currentStaticData?.ui?.showFooter ? <FooterContent /> : undefined}
+        footer={
+          currentStaticData?.ui?.showFooter ? <FooterContent /> : undefined
+        }
       />
 
       {/* Mobile Drawers - only show if configured in route staticData */}
-      {isMobile && currentStaticData?.ui?.mobileDrawers?.includes('settings') && (
-        <MobileDrawer
-          title="Settings"
-          isOpen={activeModal === 'settings'}
-          onClose={closeModal}
-        >
-          <SettingsContent
-            providers={providers || []}
-            voiceLibrary={voiceLibrary}
-            voiceCounts={voiceCounts}
-            providerErrors={providerErrors}
-            loading={providersLoading}
-            onProviderChange={handleProviderChange}
-            onVoiceSelect={handleVoiceSelect}
-            onConfigChange={handleConfigChange}
-          />
-        </MobileDrawer>
-      )}
+      {isMobile &&
+        currentStaticData?.ui?.mobileDrawers?.includes('settings') && (
+          <MobileDrawer
+            title="Settings"
+            isOpen={activeModal === 'settings'}
+            onClose={closeModal}
+          >
+            <SettingsContent
+              providers={providers || []}
+              voiceLibrary={voiceLibrary}
+              voiceCounts={voiceCounts}
+              providerErrors={providerErrors}
+              loading={providersLoading}
+              onProviderChange={handleProviderChange}
+              onVoiceSelect={handleVoiceSelect}
+              onConfigChange={handleConfigChange}
+            />
+          </MobileDrawer>
+        )}
 
-      {isMobile && currentStaticData?.ui?.mobileDrawers?.includes('history') && (
-        <MobileDrawer
-          title="History"
-          isOpen={activeModal === 'history'}
-          onClose={closeModal}
-        >
-          <HistoryContent />
-        </MobileDrawer>
-      )}
+      {isMobile &&
+        currentStaticData?.ui?.mobileDrawers?.includes('history') && (
+          <MobileDrawer
+            title="History"
+            isOpen={activeModal === 'history'}
+            onClose={closeModal}
+          >
+            <HistoryContent />
+          </MobileDrawer>
+        )}
 
       <ErrorDisplay />
     </>

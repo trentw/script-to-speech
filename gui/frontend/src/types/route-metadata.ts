@@ -3,7 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 /**
  * Static metadata for routes that can be used for navigation,
  * UI configuration, and developer documentation.
- * 
+ *
  * This interface demonstrates how routes can self-describe their
  * properties, eliminating the need for hardcoded logic throughout
  * the application.
@@ -11,13 +11,13 @@ import type { LucideIcon } from 'lucide-react';
 export interface RouteStaticData {
   /** Display title for headers and navigation (optional - can be inherited from parent) */
   title?: string;
-  
+
   /** Icon component or identifier for navigation */
   icon?: LucideIcon | string;
-  
+
   /** Brief description for developer documentation */
   description?: string;
-  
+
   /** Navigation configuration */
   navigation?: {
     /** Label to show in navigation (defaults to title) */
@@ -27,7 +27,7 @@ export interface RouteStaticData {
     /** Whether to show in main navigation */
     showInNav?: boolean;
   };
-  
+
   /** UI feature flags */
   ui?: {
     /** Show side panel on desktop (TTS view) */
@@ -37,7 +37,7 @@ export interface RouteStaticData {
     /** Mobile drawer options */
     mobileDrawers?: Array<'settings' | 'history'>;
   };
-  
+
   /** Help text or additional documentation */
   helpText?: string;
 }

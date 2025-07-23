@@ -35,7 +35,7 @@ export const HeaderContent = ({
     // Fall back to default if no route has a title
     return 'Script to Speech';
   };
-  
+
   const appName = getRouteTitle();
   const subAppName = '';
 

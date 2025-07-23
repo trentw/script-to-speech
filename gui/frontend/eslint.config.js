@@ -47,7 +47,12 @@ export default tseslint.config([
   },
   // Test file configuration
   {
-    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/test/**/*.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}'],
+    files: [
+      '**/*.test.{ts,tsx}',
+      '**/*.spec.{ts,tsx}',
+      '**/test/**/*.{ts,tsx}',
+      '**/__tests__/**/*.{ts,tsx}',
+    ],
     plugins: {
       vitest,
       'testing-library': testingLibrary,
@@ -67,7 +72,7 @@ export default tseslint.config([
       'vitest/prefer-to-have-length': 'warn',
       'vitest/valid-expect': 'error',
       'vitest/valid-title': 'error',
-      
+
       // Testing Library rules
       'testing-library/await-async-queries': 'error',
       'testing-library/no-await-sync-queries': 'error',
@@ -75,10 +80,10 @@ export default tseslint.config([
       'testing-library/no-dom-import': 'error',
       'testing-library/prefer-screen-queries': 'warn',
       'testing-library/prefer-user-event': 'warn',
-      
+
       // Relax no-explicit-any for test files
       '@typescript-eslint/no-explicit-any': 'warn',
-      
+
       // Disable react-refresh for test files
       'react-refresh/only-export-components': 'off',
     },

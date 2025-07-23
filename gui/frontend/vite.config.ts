@@ -51,7 +51,11 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             // Group vendor chunks to optimize caching
             'react-vendor': ['react', 'react-dom'],
-            'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+            'ui-vendor': [
+              '@radix-ui/react-dialog',
+              '@radix-ui/react-select',
+              '@radix-ui/react-tabs',
+            ],
             'query-vendor': ['@tanstack/react-query'],
           },
         },

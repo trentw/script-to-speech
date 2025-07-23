@@ -2,10 +2,16 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Mic } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 
-import { MainContent } from '../components/app/MainContent';
 import { RouteError } from '@/components/errors';
+
+import { MainContent } from '../components/app/MainContent';
 import { useAudioGeneration } from '../hooks/audio/useAudioGeneration';
-import { useConfiguration, useCentralAudio, useUIState, useUserInput } from '../stores/appStore';
+import {
+  useCentralAudio,
+  useConfiguration,
+  useUIState,
+  useUserInput,
+} from '../stores/appStore';
 import type { GenerationRequest } from '../types';
 import type { RouteStaticData } from '../types/route-metadata';
 
@@ -15,7 +21,8 @@ export const Route = createFileRoute('/tts')({
   staticData: {
     title: 'Text to Speech',
     icon: Mic,
-    description: 'Generate speech from text using multiple TTS providers and voices',
+    description:
+      'Generate speech from text using multiple TTS providers and voices',
     navigation: {
       order: 1,
       showInNav: true,
@@ -25,21 +32,19 @@ export const Route = createFileRoute('/tts')({
       showFooter: true,
       mobileDrawers: ['settings', 'history'],
     },
-    helpText: 'Enter text and select a voice to generate natural-sounding speech. Supports multiple providers including OpenAI, ElevenLabs, and more.',
+    helpText:
+      'Enter text and select a voice to generate natural-sounding speech. Supports multiple providers including OpenAI, ElevenLabs, and more.',
   } satisfies RouteStaticData,
 });
 
 function TTSView() {
   // Use Zustand store hooks for client state
-  const {
-    selectedProvider,
-    selectedVoice,
-    currentConfig,
-  } = useConfiguration();
+  const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
   const { text } = useUserInput();
   const { clearError } = useUIState();
   const { disableAutoplay } = useCentralAudio();
-  const { handleGenerate, isGenerating, cancelGeneration } = useAudioGeneration();
+  const { handleGenerate, isGenerating, cancelGeneration } =
+    useAudioGeneration();
 
   const handleGenerateRequest = useCallback(async () => {
     if (!selectedProvider || !text.trim()) return;

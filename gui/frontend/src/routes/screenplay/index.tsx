@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
-import { ScreenplayContent } from '../../components/screenplay/ScreenplayContent';
 import { RouteError } from '@/components/errors';
+
+import { ScreenplayContent } from '../../components/screenplay/ScreenplayContent';
 import { useScreenplay } from '../../stores/appStore';
 import type { RouteStaticData } from '../../types/route-metadata';
 
@@ -11,7 +12,8 @@ export const Route = createFileRoute('/screenplay/')({
   staticData: {
     // Title inherited from parent route: "Screenplay Parser"
     description: 'Upload a screenplay PDF file to begin parsing',
-    helpText: 'Supported formats: PDF files containing properly formatted screenplays. The parser will extract dialogue, character names, and scene information.',
+    helpText:
+      'Supported formats: PDF files containing properly formatted screenplays. The parser will extract dialogue, character names, and scene information.',
   } satisfies RouteStaticData,
 });
 
@@ -26,9 +28,6 @@ function ScreenplayUploadView() {
   };
 
   return (
-    <ScreenplayContent
-      viewMode="upload"
-      onTaskCreated={handleTaskCreated}
-    />
+    <ScreenplayContent viewMode="upload" onTaskCreated={handleTaskCreated} />
   );
 }

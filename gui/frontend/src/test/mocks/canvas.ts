@@ -5,4 +5,4 @@ export const createCanvas = () => ({
     fillRect: () => {},
     drawImage: () => {},
   }),
-})
+});

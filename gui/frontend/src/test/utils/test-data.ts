@@ -1,9 +1,11 @@
-import type { ProviderInfo } from '@/types/api/provider'
-import type { TaskResponse, TaskStatus } from '@/types/api/task'
-import type { VoiceEntry } from '@/types/api/voice'
+import type { ProviderInfo } from '@/types/api/provider';
+import type { TaskResponse, TaskStatus } from '@/types/api/task';
+import type { VoiceEntry } from '@/types/api/voice';
 
 // Provider Info mock factory
-export function createMockProviderInfo(overrides?: Partial<ProviderInfo>): ProviderInfo {
+export function createMockProviderInfo(
+  overrides?: Partial<ProviderInfo>
+): ProviderInfo {
   return {
     provider_id: 'test-provider',
     display_name: 'Test Provider',
@@ -12,11 +14,13 @@ export function createMockProviderInfo(overrides?: Partial<ProviderInfo>): Provi
     voice_library_voices: ['voice-1', 'voice-2'],
     direct_input_voices: ['custom-voice-1', 'custom-voice-2'],
     ...overrides,
-  }
+  };
 }
 
 // Voice Entry mock factory
-export function createMockVoiceEntry(overrides?: Partial<VoiceEntry>): VoiceEntry {
+export function createMockVoiceEntry(
+  overrides?: Partial<VoiceEntry>
+): VoiceEntry {
   return {
     voice_id: 'test-voice-id',
     name: 'Test Voice',
@@ -27,11 +31,13 @@ export function createMockVoiceEntry(overrides?: Partial<VoiceEntry>): VoiceEntr
     provider: 'test-provider',
     tags: ['test', 'mock'],
     ...overrides,
-  }
+  };
 }
 
 // Task Response mock factory
-export function createMockTaskResponse(overrides?: Partial<TaskResponse>): TaskResponse {
+export function createMockTaskResponse(
+  overrides?: Partial<TaskResponse>
+): TaskResponse {
   return {
     task_id: 'test-task-123',
     status: 'pending' as TaskStatus,
@@ -39,7 +45,7 @@ export function createMockTaskResponse(overrides?: Partial<TaskResponse>): TaskR
     updated_at: new Date().toISOString(),
     message: 'Task created successfully',
     ...overrides,
-  }
+  };
 }
 
 // Common test data constants
@@ -60,7 +66,7 @@ export const TEST_PROVIDERS: ProviderInfo[] = [
     voice_library_voices: ['rachel', 'drew', 'clyde'],
     direct_input_voices: [],
   }),
-]
+];
 
 export const TEST_VOICES: VoiceEntry[] = [
   createMockVoiceEntry({
@@ -83,20 +89,20 @@ export const TEST_VOICES: VoiceEntry[] = [
     provider: 'elevenlabs',
     tags: ['news', 'documentary'],
   }),
-]
+];
 
 export const TEST_TASK_PENDING = createMockTaskResponse({
   task_id: 'task-pending-123',
   status: 'pending',
   message: 'Task is pending',
-})
+});
 
 export const TEST_TASK_PROCESSING = createMockTaskResponse({
   task_id: 'task-processing-123',
   status: 'processing',
   message: 'Generating audio...',
   progress: 45,
-})
+});
 
 export const TEST_TASK_COMPLETED = createMockTaskResponse({
   task_id: 'task-completed-123',
@@ -106,11 +112,11 @@ export const TEST_TASK_COMPLETED = createMockTaskResponse({
     audio_url: '/api/audio/test-audio.mp3',
     duration: 10.5,
   },
-})
+});
 
 export const TEST_TASK_FAILED = createMockTaskResponse({
   task_id: 'task-failed-123',
   status: 'failed',
   message: 'Failed to generate audio',
   error: 'Invalid API key',
-})
+});
