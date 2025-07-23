@@ -1,3 +1,4 @@
+import { useNavigate } from '@tanstack/react-router';
 import { useEffect } from 'react';
 
 import { Card } from '@/components/ui/card';
@@ -16,14 +17,17 @@ import { ScreenplayUploadZone } from './ScreenplayUploadZone';
 
 interface ScreenplayContentProps {
   viewMode: 'upload' | 'status' | 'result';
-  setViewMode: (mode: 'upload' | 'status' | 'result') => void;
+  setViewMode?: (mode: 'upload' | 'status' | 'result') => void;
+  onTaskCreated?: (taskId: string) => void;
 }
 
 export function ScreenplayContent({
   viewMode,
   setViewMode,
+  onTaskCreated,
 }: ScreenplayContentProps) {
-  const { currentTaskId, setCurrentTaskId, setSelectedScreenplay } =
+  const navigate = useNavigate();
+  const { currentTaskId, setCurrentTaskId, setSelectedScreenplay, setViewMode: setStoreViewMode } =
     useScreenplay();
 
   const { setError, clearError } = useUIState();
@@ -43,7 +47,7 @@ export function ScreenplayContent({
     try {
       const result = await uploadMutation.mutateAsync({ file, textOnly });
       setCurrentTaskId(result.task_id);
-      // Don't switch view mode here - let the useEffect handle it based on task status
+      // Don't navigate immediately - wait for task to actually start processing
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Upload failed');
     }
@@ -53,33 +57,48 @@ export function ScreenplayContent({
   const handleSelectScreenplay = (screenplay: RecentScreenplay) => {
     setSelectedScreenplay(screenplay);
     setCurrentTaskId(screenplay.task_id);
-    setViewMode('result');
+    // Navigate to the task route
+    navigate({ to: '/screenplay/$taskId', params: { taskId: screenplay.task_id } });
   };
 
   // Update view mode based on task status
   useEffect(() => {
     if (taskStatus) {
+      // Navigate to task page when task actually starts processing (from upload page)
+      if (
+        onTaskCreated &&
+        (taskStatus.status === 'pending' || taskStatus.status === 'processing') &&
+        viewMode === 'upload'
+      ) {
+        onTaskCreated(currentTaskId!);
+        return; // Exit early since we're navigating away
+      }
+
       // Switch to result view when completed (from any mode)
-      if (taskStatus.status === 'completed') {
+      if (taskStatus.status === 'completed' && setViewMode) {
         setViewMode('result');
+        setStoreViewMode('result');
       }
       // Switch to status view when backend starts processing (pending or processing)
       else if (
         (taskStatus.status === 'pending' ||
           taskStatus.status === 'processing') &&
-        viewMode === 'upload'
+        viewMode === 'upload' &&
+        setViewMode
       ) {
         setViewMode('status');
+        setStoreViewMode('status');
       }
     }
-  }, [taskStatus?.status, viewMode, setViewMode]);
+  }, [taskStatus?.status, viewMode, setViewMode, setStoreViewMode, onTaskCreated, currentTaskId]);
 
   // Reset to upload mode when no task is selected
   useEffect(() => {
-    if (!currentTaskId && viewMode !== 'upload') {
+    if (!currentTaskId && viewMode !== 'upload' && setViewMode) {
       setViewMode('upload');
+      setStoreViewMode('upload');
     }
-  }, [currentTaskId, viewMode, setViewMode]);
+  }, [currentTaskId, viewMode, setViewMode, setStoreViewMode]);
 
   return (
     <div className="flex h-full flex-col">

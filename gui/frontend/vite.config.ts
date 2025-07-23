@@ -1,4 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -14,6 +15,10 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       tailwindcss(),
+      TanStackRouterVite({
+        autoCodeSplitting: true,
+        generatedRouteTree: './src/routeTree.gen.ts',
+      }),
       react(),
       // Bundle analyzer plugin - only enabled in analyze mode
       isAnalyze &&

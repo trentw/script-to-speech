@@ -1,7 +1,9 @@
+import { useRouterState } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 
 import { useViewportSize } from '../../hooks/useViewportSize';
 import { useLayout } from '../../stores/appStore';
+import type { RouteStaticData } from '../../types/route-metadata';
 import { AppHeader } from '../layout/AppHeader';
 import { appButtonVariants } from '../ui/button-variants';
 
@@ -18,14 +20,27 @@ export const HeaderContent = ({
 }: HeaderContentProps) => {
   const { isMobile } = useViewportSize();
   const { toggleSidebar, setActiveModal } = useLayout();
+  const routerState = useRouterState();
+
+  // Get title from current route's staticData, checking parent routes if needed
+  const getRouteTitle = (): string => {
+    // Walk backwards through the route matches to find the first available title
+    for (let i = routerState.matches.length - 1; i >= 0; i--) {
+      const match = routerState.matches[i];
+      const staticData = match?.staticData as RouteStaticData | undefined;
+      if (staticData?.title) {
+        return staticData.title;
+      }
+    }
+    // Fall back to default if no route has a title
+    return 'Script to Speech';
+  };
+  
+  const appName = getRouteTitle();
+  const subAppName = '';
 
   // Only show action buttons on mobile for TTS view
   const showActionButtons = isMobile && activeView === 'tts';
-
-  // Set title based on active view
-  const appName =
-    activeView === 'screenplay' ? 'Screenplay Parser' : 'Text to Speech';
-  const subAppName = '';
 
   return (
     <AppHeader

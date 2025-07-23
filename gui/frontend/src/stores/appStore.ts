@@ -64,6 +64,7 @@ interface CentralAudioSlice {
   ) => void;
   clearAudio: () => void;
   setLoading: (loading: boolean) => void;
+  disableAutoplay: () => void;
 }
 
 // Layout slice - handles responsive layout state
@@ -232,6 +233,10 @@ const useAppStore = create<AppStore>()(
           set({ loading }, false, 'centralAudio/setLoading');
         },
 
+        disableAutoplay: () => {
+          set({ autoplay: false }, false, 'centralAudio/disableAutoplay');
+        },
+
         // Layout slice implementation
         viewportSize: 'desktop',
         sidebarExpanded: true,
@@ -379,6 +384,7 @@ export const useCentralAudio = () =>
       autoplay: state.autoplay,
       setAudioData: state.setAudioData,
       clearAudio: state.clearAudio,
+      disableAutoplay: state.disableAutoplay,
       setLoading: state.setLoading,
     }))
   );
