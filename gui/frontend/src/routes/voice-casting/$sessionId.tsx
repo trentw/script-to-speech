@@ -17,10 +17,20 @@ import {
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
 import { apiService } from '@/services/api';
 import { type CharacterInfo,useVoiceCasting } from '@/stores/appStore';
+import type { RouteStaticData } from '@/types/route-metadata';
 
 export const Route = createFileRoute('/voice-casting/$sessionId')({
   component: VoiceCastingMain,
   errorComponent: RouteError,
+  staticData: {
+    title: 'Voice Casting Session',
+    description: 'Assign voices to screenplay characters',
+    ui: {
+      showPanel: false,
+      showFooter: true,
+      mobileDrawers: [],
+    },
+  } satisfies RouteStaticData,
 });
 
 function VoiceCastingMain() {

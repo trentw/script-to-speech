@@ -4,13 +4,14 @@ import { useEffect,useMemo, useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { usePreviewVoice } from '@/hooks/mutations/usePreviewVoice';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
 import { useCentralAudio,useVoiceCasting } from '@/stores/appStore';
 import type { VoiceEntry } from '@/types';
+import { playVoicePreview } from '@/utils/voiceUtils';
 
 interface CharacterData {
   name: string;
@@ -49,9 +50,8 @@ export function VoiceAssignmentPanel({
     providersError,
     providersLength: providers?.length
   });
-  const previewVoice = usePreviewVoice();
   const { setCharacterAssignment, assignments } = useVoiceCasting();
-  const { loading: audioLoading } = useCentralAudio();
+  const { setAudioData } = useCentralAudio();
 
   // Get current assignment if exists
   const currentAssignment = assignments.get(characterName);
@@ -119,20 +119,32 @@ export function VoiceAssignmentPanel({
     }
   };
 
-  const playPreview = async (voiceId: string) => {
-    const voice = voiceList.find(v => v.sts_id === voiceId);
-    if (!voice) return;
+  const playPreview = (voice: VoiceEntry) => {
+    console.log('playPreview called:', { voice, selectedProvider, providers });
+    console.log('voice.preview_url:', voice.preview_url);
     
-    await previewVoice.mutateAsync({
-      provider: selectedProvider,
-      voiceId: voiceId,
+    const providerInfo = providers?.find(p => p.identifier === selectedProvider);
+    if (!providerInfo) {
+      console.log('No provider info found for:', selectedProvider);
+      return;
+    }
+    
+    console.log('Calling playVoicePreview with:', {
+      voiceId: voice.sts_id,
+      providerName: providerInfo.name,
       characterName: character.displayName,
-      config: voice.config,
+      previewUrl: voice.preview_url
     });
+    
+    playVoicePreview(
+      voice,
+      setAudioData,
+      providerInfo.name,
+      character.displayName
+    );
   };
 
   const isLoading = providersLoading || voicesLoading;
-  const isPreviewLoading = previewVoice.isPending || audioLoading;
 
   return (
     <div className="container max-w-4xl mx-auto p-6 space-y-6">
@@ -252,7 +264,7 @@ export function VoiceAssignmentPanel({
                                   {voices.map(voice => (
                                     <Card
                                       key={voice.sts_id}
-                                      className={`cursor-pointer transition-all ${
+                                      className={`group cursor-pointer transition-all ${
                                         selectedVoice === voice.sts_id
                                           ? 'border-primary ring-2 ring-primary/20'
                                           : 'hover:bg-accent'
@@ -295,21 +307,17 @@ export function VoiceAssignmentPanel({
                                               )}
                                             </div>
                                           </div>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              playPreview(voice.sts_id);
-                                            }}
-                                            disabled={isPreviewLoading}
-                                          >
-                                            {isPreviewLoading ? (
-                                              <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
+                                          {voice.preview_url && (
+                                            <button
+                                              className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                playPreview(voice);
+                                              }}
+                                            >
                                               <Play className="h-4 w-4" />
-                                            )}
-                                          </Button>
+                                            </button>
+                                          )}
                                         </div>
                                       </CardContent>
                                     </Card>

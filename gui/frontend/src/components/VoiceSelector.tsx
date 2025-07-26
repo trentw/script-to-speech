@@ -2,6 +2,7 @@ import { Volume2 } from 'lucide-react';
 import React from 'react';
 
 import { SelectorButton, SelectorDetailsView } from '@/components/ui/selector';
+import { getVoiceDisplayName, getVoiceSubtext } from '@/utils/voiceUtils';
 
 import type { VoiceEntry } from '../types';
 
@@ -20,20 +21,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   onVoiceSelect: _onVoiceSelect,
   onOpenVoicePanel,
 }) => {
-  const getVoiceDisplayName = (voice: VoiceEntry) => {
-    return voice.description?.provider_name || voice.sts_id;
-  };
-
-  const getVoiceSubtext = (voice: VoiceEntry) => {
-    const parts = [];
-    if (voice.voice_properties?.gender)
-      parts.push(voice.voice_properties.gender);
-    if (voice.voice_properties?.accent)
-      parts.push(voice.voice_properties.accent);
-    if (voice.description?.perceived_age)
-      parts.push(voice.description.perceived_age);
-    return parts.join(' • ');
-  };
 
   const renderVoiceTags = (voice: VoiceEntry) => {
     const tags: Array<{

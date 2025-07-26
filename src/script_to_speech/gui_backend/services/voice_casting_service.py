@@ -10,12 +10,10 @@ from io import StringIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from pydub import AudioSegment
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 from ruamel.yaml.constructor import DuplicateKeyError
 
-from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 from script_to_speech.utils.dialogue_stats_utils import get_speaker_statistics
 from script_to_speech.utils.logging import get_screenplay_logger
 from script_to_speech.utils.file_system_utils import PathSecurityValidator
@@ -105,15 +103,6 @@ class ParseYamlResponse(BaseModel):
     errors: List[str] = Field(default_factory=list)
 
 
-class PreviewVoiceResponse(BaseModel):
-    """Response with preview audio information."""
-    
-    audio_url: str
-    duration: float
-    provider: str
-    voice_id: str
-
-
 class GenerateCharacterNotesPromptResponse(BaseModel):
     """Response with generated character notes prompt."""
     
@@ -143,8 +132,6 @@ class VoiceCastingService:
 
     def __init__(self) -> None:
         """Initialize the voice casting service."""
-        self._preview_cache: Dict[str, str] = {}  # Cache for preview audio URLs
-        self._tts_manager = TTSProviderManager(config_data={})
         self._voice_library = VoiceLibrary()
         self._sessions: Dict[str, VoiceCastingSession] = {}  # In-memory session storage
         # Initialize path validator for secure file access
@@ -705,120 +692,6 @@ class VoiceCastingService:
                 comment_buffer = []
         
         return character_comments
-
-    async def preview_voice(
-        self,
-        provider: str,
-        voice_id: str,
-        text: str,
-        provider_config: Optional[Dict[str, Any]] = None
-    ) -> PreviewVoiceResponse:
-        """
-        Generate preview audio for a specific voice.
-        
-        Args:
-            provider: TTS provider name
-            voice_id: Voice ID (sts_id)
-            text: Text to generate audio for
-            provider_config: Optional provider-specific configuration
-            
-        Returns:
-            PreviewVoiceResponse with audio URL and metadata
-        """
-        # Create cache key
-        cache_key = f"{provider}:{voice_id}:{hash(text)}"
-        
-        # Check cache
-        if cache_key in self._preview_cache:
-            audio_url = self._preview_cache[cache_key]
-            # Get duration from cached file
-            audio_path = settings.AUDIO_OUTPUT_DIR / audio_url.split("/")[-1]
-            if audio_path.exists():
-                audio = AudioSegment.from_file(str(audio_path))
-                duration = len(audio) / 1000.0  # Convert milliseconds to seconds
-                return PreviewVoiceResponse(
-                    audio_url=audio_url,
-                    duration=duration,
-                    provider=provider,
-                    voice_id=voice_id
-                )
-        
-        # Generate unique filename
-        task_id = str(uuid.uuid4())
-        output_filename = f"preview_{provider}_{voice_id}_{task_id}.mp3"
-        output_path = settings.AUDIO_OUTPUT_DIR / output_filename
-        
-        # Ensure output directory exists
-        settings.AUDIO_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        
-        # Create temporary dialogue chunk
-        chunk = {
-            "type": "dialogue",
-            "speaker": "preview",
-            "text": text
-        }
-        
-        # Build voice config
-        voice_config = {
-            "preview": {
-                "provider": provider,
-                "sts_id": voice_id
-            }
-        }
-        
-        if provider_config:
-            voice_config["preview"].update(provider_config)
-        
-        # Initialize TTS manager with voice config
-        tts_manager = TTSProviderManager(
-            config_data=voice_config,
-            overall_provider=provider
-        )
-        
-        # Generate audio in a thread to avoid blocking
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(
-            None,
-            self._generate_preview_audio_sync,
-            tts_manager,
-            chunk,
-            str(output_path)
-        )
-        
-        # Get audio duration
-        audio = AudioSegment.from_file(str(output_path))
-        duration = len(audio) / 1000.0  # Convert milliseconds to seconds
-        
-        # Create URL
-        audio_url = f"/static/{output_filename}"
-        
-        # Cache the result
-        self._preview_cache[cache_key] = audio_url
-        
-        return PreviewVoiceResponse(
-            audio_url=audio_url,
-            duration=duration,
-            provider=provider,
-            voice_id=voice_id
-        )
-
-    def _generate_preview_audio_sync(
-        self,
-        tts_manager: TTSProviderManager,
-        chunk: Dict[str, Any],
-        output_path: str
-    ) -> None:
-        """
-        Synchronous helper to generate preview audio.
-        
-        Args:
-            tts_manager: Configured TTS provider manager
-            chunk: Dialogue chunk to generate
-            output_path: Path to save audio file
-        """
-        # Generate audio
-        provider = tts_manager.get_provider_for_chunk(chunk)
-        provider.generate_audio_for_chunk(chunk, output_path)
 
     async def generate_character_notes_prompt(
         self,

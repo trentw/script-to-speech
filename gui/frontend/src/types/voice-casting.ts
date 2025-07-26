@@ -46,13 +46,6 @@ export interface ParseYamlResponse {
   errors: string[]
 }
 
-export interface PreviewVoiceResponse {
-  audio_url: string
-  duration: number
-  provider: string
-  voice_id: string
-}
-
 export interface VoiceCastingSession {
   session_id: string
   screenplay_json_path: string

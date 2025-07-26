@@ -303,20 +303,6 @@ class ApiService {
     );
   }
 
-  async previewVoice(params: {
-    provider: string;
-    voice_id: string;
-    text: string;
-    provider_config?: Record<string, any>;
-  }): Promise<ApiResponse<import('../types/voice-casting').PreviewVoiceResponse>> {
-    return this.request<import('../types/voice-casting').PreviewVoiceResponse>(
-      '/voice-casting/preview-voice',
-      {
-        method: 'POST',
-        body: JSON.stringify(params),
-      }
-    );
-  }
 
   async generateCharacterNotesPrompt(params: {
     session_id: string;

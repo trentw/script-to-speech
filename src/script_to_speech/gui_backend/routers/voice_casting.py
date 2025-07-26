@@ -17,7 +17,6 @@ from ..services.voice_casting_service import (
     VoiceAssignment,
     GenerateYamlResponse,
     ParseYamlResponse,
-    PreviewVoiceResponse,
     VoiceCastingSession,
 )
 from ..services.screenplay_service import screenplay_service
@@ -57,24 +56,6 @@ class ParseYamlRequest(BaseModel):
     """Request to parse YAML and extract assignments."""
     
     yaml_content: str
-
-
-class PreviewVoiceRequest(BaseModel):
-    """Request to generate voice preview audio."""
-    
-    provider: str
-    voice_id: str = Field(..., alias="sts_id")
-    text: str = Field(
-        default="Hello, this is a preview of the selected voice. Let me demonstrate how this character might sound in your production.",
-        description="Text to use for preview"
-    )
-    provider_config: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="Additional provider-specific configuration"
-    )
-    
-    class Config:
-        populate_by_name = True
 
 
 @router.post("/extract-characters", response_model=ExtractCharactersResponse)
@@ -129,23 +110,6 @@ async def parse_yaml(request: ParseYamlRequest) -> ParseYamlResponse:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to parse YAML: {str(e)}"
-        )
-
-
-@router.post("/preview-voice", response_model=PreviewVoiceResponse)
-async def preview_voice(request: PreviewVoiceRequest) -> PreviewVoiceResponse:
-    """Generate preview audio for a specific voice."""
-    try:
-        return await voice_casting_service.preview_voice(
-            request.provider,
-            request.voice_id,
-            request.text,
-            request.provider_config
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate voice preview: {str(e)}"
         )
 
 

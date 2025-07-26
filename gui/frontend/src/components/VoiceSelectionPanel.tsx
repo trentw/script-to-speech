@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
+import { getVoiceDisplayName, getVoiceSubtext, playVoicePreview } from '@/utils/voiceUtils';
 
 import { useCentralAudio } from '../stores/appStore';
 import type { VoiceEntry } from '../types';
@@ -26,34 +27,7 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
   const { setAudioData } = useCentralAudio();
 
   const playPreview = (voice: VoiceEntry) => {
-    if (!voice?.preview_url) return;
-
-    // Load the preview into the central audio player with autoplay
-    const voiceName = getVoiceDisplayName(voice);
-    setAudioData(
-      voice.preview_url,
-      `Voice preview: ${voiceName}`,
-      `${provider} • ${voiceName}`,
-      undefined, // no custom filename for previews
-      true // autoplay
-    );
-  };
-
-  const getVoiceDisplayName = (voice: VoiceEntry) => {
-    return voice.description?.provider_name || voice.sts_id;
-  };
-
-  const getVoiceSubtext = (voice: VoiceEntry) => {
-    const parts = [];
-    if (voice.voice_properties?.gender)
-      parts.push(voice.voice_properties.gender);
-    if (voice.voice_properties?.accent)
-      parts.push(voice.voice_properties.accent);
-    if (voice.description?.perceived_age)
-      parts.push(voice.description.perceived_age);
-    return parts.length > 0
-      ? parts.join(' • ')
-      : voice.description?.custom_description || '';
+    playVoicePreview(voice, setAudioData, provider);
   };
 
   const filteredVoices = voices.filter((voice) => {
