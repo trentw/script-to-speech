@@ -251,6 +251,184 @@ class ApiService {
     );
   }
 
+  // Voice Casting endpoints
+  async extractCharacters(
+    screenplayJsonPath: string
+  ): Promise<ApiResponse<import('../types/voice-casting').ExtractCharactersResponse>> {
+    return this.request<import('../types/voice-casting').ExtractCharactersResponse>(
+      '/voice-casting/extract-characters',
+      {
+        method: 'POST',
+        body: JSON.stringify({ screenplay_json_path: screenplayJsonPath }),
+      }
+    );
+  }
+
+  async generateYaml(params: {
+    assignments: import('../types/voice-casting').VoiceAssignment[];
+    character_info: import('../types/voice-casting').CharacterInfo[];
+    include_comments?: boolean;
+  }): Promise<ApiResponse<import('../types/voice-casting').GenerateYamlResponse>> {
+    return this.request<import('../types/voice-casting').GenerateYamlResponse>(
+      '/voice-casting/generate-yaml',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async validateYaml(params: {
+    yaml_content: string;
+    screenplay_json_path: string;
+  }): Promise<ApiResponse<import('../types/voice-casting').ValidateYamlResponse>> {
+    return this.request<import('../types/voice-casting').ValidateYamlResponse>(
+      '/voice-casting/validate-yaml',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async parseYaml(
+    yamlContent: string
+  ): Promise<ApiResponse<import('../types/voice-casting').ParseYamlResponse>> {
+    return this.request<import('../types/voice-casting').ParseYamlResponse>(
+      '/voice-casting/parse-yaml',
+      {
+        method: 'POST',
+        body: JSON.stringify({ yaml_content: yamlContent }),
+      }
+    );
+  }
+
+  async previewVoice(params: {
+    provider: string;
+    voice_id: string;
+    text: string;
+    provider_config?: Record<string, any>;
+  }): Promise<ApiResponse<import('../types/voice-casting').PreviewVoiceResponse>> {
+    return this.request<import('../types/voice-casting').PreviewVoiceResponse>(
+      '/voice-casting/preview-voice',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async generateCharacterNotesPrompt(params: {
+    session_id: string;
+    yaml_content: string;
+    custom_prompt_path?: string;
+  }): Promise<ApiResponse<{ prompt_content: string; privacy_notice: string }>> {
+    return this.request<{ prompt_content: string; privacy_notice: string }>(
+      '/voice-casting/generate-character-notes-prompt',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async generateVoiceLibraryPrompt(params: {
+    yaml_content: string;
+    providers: string[];
+    custom_prompt_path?: string;
+  }): Promise<ApiResponse<{ prompt_content: string; privacy_notice: string }>> {
+    return this.request<{ prompt_content: string; privacy_notice: string }>(
+      '/voice-casting/generate-voice-library-prompt',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+  }
+
+  async uploadScreenplayJson(
+    file: File
+  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/voice-casting/upload-json`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        return {
+          error:
+            errorData.detail || errorData.error || `HTTP ${response.status}`,
+        };
+      }
+
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Network error',
+      };
+    }
+  }
+
+  async getVoiceCastingSession(
+    sessionId: string
+  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+    return this.request<import('../types/voice-casting').VoiceCastingSession>(
+      `/voice-casting/session/${sessionId}`
+    );
+  }
+
+  async createSessionFromTask(
+    taskId: string
+  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+    return this.request<import('../types/voice-casting').VoiceCastingSession>(
+      '/voice-casting/create-session-from-task',
+      {
+        method: 'POST',
+        body: JSON.stringify({ task_id: taskId }),
+      }
+    );
+  }
+
+  async uploadScreenplaySource(
+    sessionId: string,
+    file: File
+  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/voice-casting/session/${sessionId}/screenplay-source`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Unknown error' }));
+        return {
+          error:
+            errorData.detail || errorData.error || `HTTP ${response.status}`,
+        };
+      }
+
+      const data = await response.json();
+      return { data };
+    } catch (error) {
+      return {
+        error: error instanceof Error ? error.message : 'Network error',
+      };
+    }
+  }
+
   // Utility methods
   async healthCheck(): Promise<boolean> {
     try {

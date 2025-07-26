@@ -10,14 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TtsRouteImport } from './routes/tts'
+import { Route as VoiceCastingRouteRouteImport } from './routes/voice-casting/route'
 import { Route as ScreenplayRouteRouteImport } from './routes/screenplay/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VoiceCastingIndexRouteImport } from './routes/voice-casting/index'
 import { Route as ScreenplayIndexRouteImport } from './routes/screenplay/index'
+import { Route as VoiceCastingSessionIdRouteImport } from './routes/voice-casting/$sessionId'
 import { Route as ScreenplayTaskIdRouteImport } from './routes/screenplay/$taskId'
+import { Route as VoiceCastingSessionIdNotesRouteImport } from './routes/voice-casting/$sessionId.notes'
+import { Route as VoiceCastingSessionIdLibraryRouteImport } from './routes/voice-casting/$sessionId.library'
 
 const TtsRoute = TtsRouteImport.update({
   id: '/tts',
   path: '/tts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VoiceCastingRouteRoute = VoiceCastingRouteRouteImport.update({
+  id: '/voice-casting',
+  path: '/voice-casting',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ScreenplayRouteRoute = ScreenplayRouteRouteImport.update({
@@ -30,60 +40,115 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VoiceCastingIndexRoute = VoiceCastingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VoiceCastingRouteRoute,
+} as any)
 const ScreenplayIndexRoute = ScreenplayIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ScreenplayRouteRoute,
+} as any)
+const VoiceCastingSessionIdRoute = VoiceCastingSessionIdRouteImport.update({
+  id: '/$sessionId',
+  path: '/$sessionId',
+  getParentRoute: () => VoiceCastingRouteRoute,
 } as any)
 const ScreenplayTaskIdRoute = ScreenplayTaskIdRouteImport.update({
   id: '/$taskId',
   path: '/$taskId',
   getParentRoute: () => ScreenplayRouteRoute,
 } as any)
+const VoiceCastingSessionIdNotesRoute =
+  VoiceCastingSessionIdNotesRouteImport.update({
+    id: '/notes',
+    path: '/notes',
+    getParentRoute: () => VoiceCastingSessionIdRoute,
+  } as any)
+const VoiceCastingSessionIdLibraryRoute =
+  VoiceCastingSessionIdLibraryRouteImport.update({
+    id: '/library',
+    path: '/library',
+    getParentRoute: () => VoiceCastingSessionIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/screenplay': typeof ScreenplayRouteRouteWithChildren
+  '/voice-casting': typeof VoiceCastingRouteRouteWithChildren
   '/tts': typeof TtsRoute
   '/screenplay/$taskId': typeof ScreenplayTaskIdRoute
+  '/voice-casting/$sessionId': typeof VoiceCastingSessionIdRouteWithChildren
   '/screenplay/': typeof ScreenplayIndexRoute
+  '/voice-casting/': typeof VoiceCastingIndexRoute
+  '/voice-casting/$sessionId/library': typeof VoiceCastingSessionIdLibraryRoute
+  '/voice-casting/$sessionId/notes': typeof VoiceCastingSessionIdNotesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/tts': typeof TtsRoute
   '/screenplay/$taskId': typeof ScreenplayTaskIdRoute
+  '/voice-casting/$sessionId': typeof VoiceCastingSessionIdRouteWithChildren
   '/screenplay': typeof ScreenplayIndexRoute
+  '/voice-casting': typeof VoiceCastingIndexRoute
+  '/voice-casting/$sessionId/library': typeof VoiceCastingSessionIdLibraryRoute
+  '/voice-casting/$sessionId/notes': typeof VoiceCastingSessionIdNotesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/screenplay': typeof ScreenplayRouteRouteWithChildren
+  '/voice-casting': typeof VoiceCastingRouteRouteWithChildren
   '/tts': typeof TtsRoute
   '/screenplay/$taskId': typeof ScreenplayTaskIdRoute
+  '/voice-casting/$sessionId': typeof VoiceCastingSessionIdRouteWithChildren
   '/screenplay/': typeof ScreenplayIndexRoute
+  '/voice-casting/': typeof VoiceCastingIndexRoute
+  '/voice-casting/$sessionId/library': typeof VoiceCastingSessionIdLibraryRoute
+  '/voice-casting/$sessionId/notes': typeof VoiceCastingSessionIdNotesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/screenplay'
+    | '/voice-casting'
     | '/tts'
     | '/screenplay/$taskId'
+    | '/voice-casting/$sessionId'
     | '/screenplay/'
+    | '/voice-casting/'
+    | '/voice-casting/$sessionId/library'
+    | '/voice-casting/$sessionId/notes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/tts' | '/screenplay/$taskId' | '/screenplay'
+  to:
+    | '/'
+    | '/tts'
+    | '/screenplay/$taskId'
+    | '/voice-casting/$sessionId'
+    | '/screenplay'
+    | '/voice-casting'
+    | '/voice-casting/$sessionId/library'
+    | '/voice-casting/$sessionId/notes'
   id:
     | '__root__'
     | '/'
     | '/screenplay'
+    | '/voice-casting'
     | '/tts'
     | '/screenplay/$taskId'
+    | '/voice-casting/$sessionId'
     | '/screenplay/'
+    | '/voice-casting/'
+    | '/voice-casting/$sessionId/library'
+    | '/voice-casting/$sessionId/notes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ScreenplayRouteRoute: typeof ScreenplayRouteRouteWithChildren
+  VoiceCastingRouteRoute: typeof VoiceCastingRouteRouteWithChildren
   TtsRoute: typeof TtsRoute
 }
 
@@ -94,6 +159,13 @@ declare module '@tanstack/react-router' {
       path: '/tts'
       fullPath: '/tts'
       preLoaderRoute: typeof TtsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/voice-casting': {
+      id: '/voice-casting'
+      path: '/voice-casting'
+      fullPath: '/voice-casting'
+      preLoaderRoute: typeof VoiceCastingRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/screenplay': {
@@ -110,6 +182,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/voice-casting/': {
+      id: '/voice-casting/'
+      path: '/'
+      fullPath: '/voice-casting/'
+      preLoaderRoute: typeof VoiceCastingIndexRouteImport
+      parentRoute: typeof VoiceCastingRouteRoute
+    }
     '/screenplay/': {
       id: '/screenplay/'
       path: '/'
@@ -117,12 +196,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScreenplayIndexRouteImport
       parentRoute: typeof ScreenplayRouteRoute
     }
+    '/voice-casting/$sessionId': {
+      id: '/voice-casting/$sessionId'
+      path: '/$sessionId'
+      fullPath: '/voice-casting/$sessionId'
+      preLoaderRoute: typeof VoiceCastingSessionIdRouteImport
+      parentRoute: typeof VoiceCastingRouteRoute
+    }
     '/screenplay/$taskId': {
       id: '/screenplay/$taskId'
       path: '/$taskId'
       fullPath: '/screenplay/$taskId'
       preLoaderRoute: typeof ScreenplayTaskIdRouteImport
       parentRoute: typeof ScreenplayRouteRoute
+    }
+    '/voice-casting/$sessionId/notes': {
+      id: '/voice-casting/$sessionId/notes'
+      path: '/notes'
+      fullPath: '/voice-casting/$sessionId/notes'
+      preLoaderRoute: typeof VoiceCastingSessionIdNotesRouteImport
+      parentRoute: typeof VoiceCastingSessionIdRoute
+    }
+    '/voice-casting/$sessionId/library': {
+      id: '/voice-casting/$sessionId/library'
+      path: '/library'
+      fullPath: '/voice-casting/$sessionId/library'
+      preLoaderRoute: typeof VoiceCastingSessionIdLibraryRouteImport
+      parentRoute: typeof VoiceCastingSessionIdRoute
     }
   }
 }
@@ -141,9 +241,38 @@ const ScreenplayRouteRouteWithChildren = ScreenplayRouteRoute._addFileChildren(
   ScreenplayRouteRouteChildren,
 )
 
+interface VoiceCastingSessionIdRouteChildren {
+  VoiceCastingSessionIdLibraryRoute: typeof VoiceCastingSessionIdLibraryRoute
+  VoiceCastingSessionIdNotesRoute: typeof VoiceCastingSessionIdNotesRoute
+}
+
+const VoiceCastingSessionIdRouteChildren: VoiceCastingSessionIdRouteChildren = {
+  VoiceCastingSessionIdLibraryRoute: VoiceCastingSessionIdLibraryRoute,
+  VoiceCastingSessionIdNotesRoute: VoiceCastingSessionIdNotesRoute,
+}
+
+const VoiceCastingSessionIdRouteWithChildren =
+  VoiceCastingSessionIdRoute._addFileChildren(
+    VoiceCastingSessionIdRouteChildren,
+  )
+
+interface VoiceCastingRouteRouteChildren {
+  VoiceCastingSessionIdRoute: typeof VoiceCastingSessionIdRouteWithChildren
+  VoiceCastingIndexRoute: typeof VoiceCastingIndexRoute
+}
+
+const VoiceCastingRouteRouteChildren: VoiceCastingRouteRouteChildren = {
+  VoiceCastingSessionIdRoute: VoiceCastingSessionIdRouteWithChildren,
+  VoiceCastingIndexRoute: VoiceCastingIndexRoute,
+}
+
+const VoiceCastingRouteRouteWithChildren =
+  VoiceCastingRouteRoute._addFileChildren(VoiceCastingRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ScreenplayRouteRoute: ScreenplayRouteRouteWithChildren,
+  VoiceCastingRouteRoute: VoiceCastingRouteRouteWithChildren,
   TtsRoute: TtsRoute,
 }
 export const routeTree = rootRouteImport

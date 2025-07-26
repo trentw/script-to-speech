@@ -9,6 +9,33 @@ import type { ScreenplayResult, VoiceEntry } from '../types';
 type ConfigValue = string | number | boolean | string[];
 type Config = Record<string, ConfigValue>;
 
+// Voice Casting Types
+export interface CharacterInfo {
+  name: string;
+  lineCount: number;
+  firstAppearance?: number;
+  totalCharacters?: number;
+  longestDialogue?: number;
+  isNarrator?: boolean;
+  description?: string;
+  notes?: string;
+}
+
+export interface VoiceAssignment {
+  sts_id: string;  // Changed from voiceId
+  provider: string;
+  voiceEntry?: VoiceEntry;
+  confidence?: number;
+  reasoning?: string;
+  castingNotes?: string;
+  role?: string;
+  additional_notes?: string[];  // New field for arbitrary comments
+  // Parsed metadata (not stored in YAML)
+  line_count?: number;
+  total_characters?: number;
+  longest_dialogue?: number;
+}
+
 // Configuration slice - handles TTS provider/voice settings
 interface ConfigurationSlice {
   selectedProvider: string | undefined;
@@ -97,13 +124,34 @@ interface ScreenplaySlice {
   resetScreenplayState: () => void;
 }
 
+// Voice Casting slice - handles voice assignment for screenplay characters
+interface VoiceCastingSlice {
+  castingSessionId: string | undefined;
+  screenplayJsonPath: string | undefined;
+  screenplayData: { characters: Map<string, CharacterInfo> } | undefined;
+  assignments: Map<string, VoiceAssignment>;
+  castingMethod: 'manual' | 'llm-assisted';
+  yamlContent: string | undefined;
+
+  // Actions
+  setCastingSessionId: (sessionId: string | undefined) => void;
+  setScreenplayJsonPath: (path: string | undefined) => void;
+  setScreenplayData: (data: { characters: Map<string, CharacterInfo> } | undefined) => void;
+  setCharacterAssignment: (characterName: string, assignment: VoiceAssignment) => void;
+  importAssignments: (assignments: Map<string, VoiceAssignment>) => void;
+  setYamlContent: (content: string | undefined) => void;
+  setCastingMethod: (method: 'manual' | 'llm-assisted') => void;
+  resetCastingState: () => void;
+}
+
 // Combined store type
 type AppStore = ConfigurationSlice &
   UserInputSlice &
   UISlice &
   CentralAudioSlice &
   LayoutSlice &
-  ScreenplaySlice;
+  ScreenplaySlice &
+  VoiceCastingSlice;
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -319,6 +367,81 @@ const useAppStore = create<AppStore>()(
             'screenplay/reset'
           );
         },
+
+        // Voice Casting slice implementation
+        castingSessionId: undefined,
+        screenplayJsonPath: undefined,
+        screenplayData: undefined,
+        assignments: new Map(),
+        castingMethod: 'manual',
+        yamlContent: undefined,
+
+        setCastingSessionId: (sessionId) => {
+          set({ castingSessionId: sessionId }, false, 'voiceCasting/setCastingSessionId');
+        },
+
+        setScreenplayJsonPath: (path) => {
+          set({ screenplayJsonPath: path }, false, 'voiceCasting/setScreenplayJsonPath');
+        },
+
+        setScreenplayData: (data) => {
+          set(
+            { screenplayData: data },
+            false,
+            'voiceCasting/setScreenplayData'
+          );
+        },
+
+        setCharacterAssignment: (characterName, assignment) => {
+          set(
+            (state) => {
+              const newAssignments = new Map(state.assignments);
+              newAssignments.set(characterName, assignment);
+              return { assignments: newAssignments };
+            },
+            false,
+            'voiceCasting/setCharacterAssignment'
+          );
+        },
+
+        importAssignments: (assignments) => {
+          set(
+            { assignments },
+            false,
+            'voiceCasting/importAssignments'
+          );
+        },
+
+        setYamlContent: (content) => {
+          set(
+            { yamlContent: content },
+            false,
+            'voiceCasting/setYamlContent'
+          );
+        },
+
+        setCastingMethod: (method) => {
+          set(
+            { castingMethod: method },
+            false,
+            'voiceCasting/setCastingMethod'
+          );
+        },
+
+        resetCastingState: () => {
+          set(
+            {
+              castingSessionId: undefined,
+              screenplayJsonPath: undefined,
+              screenplayData: undefined,
+              assignments: new Map(),
+              castingMethod: 'manual',
+              yamlContent: undefined,
+            },
+            false,
+            'voiceCasting/reset'
+          );
+        },
       }),
       {
         name: 'sts-app-store', // localStorage key
@@ -416,6 +539,26 @@ export const useScreenplay = () =>
       setSelectedScreenplay: state.setSelectedScreenplay,
       setViewMode: state.setViewMode,
       resetScreenplayState: state.resetScreenplayState,
+    }))
+  );
+
+export const useVoiceCasting = () =>
+  useAppStore(
+    useShallow((state) => ({
+      castingSessionId: state.castingSessionId,
+      screenplayJsonPath: state.screenplayJsonPath,
+      screenplayData: state.screenplayData,
+      assignments: state.assignments,
+      castingMethod: state.castingMethod,
+      yamlContent: state.yamlContent,
+      setCastingSessionId: state.setCastingSessionId,
+      setScreenplayJsonPath: state.setScreenplayJsonPath,
+      setScreenplayData: state.setScreenplayData,
+      setCharacterAssignment: state.setCharacterAssignment,
+      importAssignments: state.importAssignments,
+      setYamlContent: state.setYamlContent,
+      setCastingMethod: state.setCastingMethod,
+      resetCastingState: state.resetCastingState,
     }))
   );
 

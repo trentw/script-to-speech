@@ -1,0 +1,98 @@
+import { CheckCircle2, Copy, Download, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+
+interface GeneratePromptDisplayProps {
+  promptText: string;
+  isGenerating: boolean;
+  onGenerate: () => void;
+  generateButtonText?: string;
+  filePrefix: string; // For download filename like "character-notes-prompt" or "voice-library-prompt"
+  sessionId: string;
+}
+
+export function GeneratePromptDisplay({
+  promptText,
+  isGenerating,
+  onGenerate,
+  generateButtonText = "Generate Prompt",
+  filePrefix,
+  sessionId,
+}: GeneratePromptDisplayProps) {
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(promptText);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2000);
+  };
+
+  const handleDownloadPrompt = () => {
+    const blob = new Blob([promptText], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filePrefix}-${sessionId}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  if (isGenerating) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (promptText) {
+    return (
+      <div className="space-y-3">
+        <Textarea
+          value={promptText}
+          readOnly
+          className="h-48 font-mono text-sm"
+        />
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleCopyPrompt}
+          >
+            {copiedPrompt ? (
+              <>
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </>
+            )}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleDownloadPrompt}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="text-center py-8">
+      <Button onClick={onGenerate}>
+        {generateButtonText}
+      </Button>
+    </div>
+  );
+}
