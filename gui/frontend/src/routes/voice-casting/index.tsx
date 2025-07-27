@@ -30,7 +30,7 @@ export const Route = createFileRoute('/voice-casting/')({
 });
 
 function VoiceCastingUpload() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [creatingSession, setCreatingSession] = useState<string | null>(null);
   const [showMethodSelector, setShowMethodSelector] = useState(false);
@@ -114,7 +114,7 @@ function VoiceCastingUpload() {
   });
 
   // Get character count for the method selector
-  const { data: charactersData } = useScreenplayCharacters(
+  const { data: _charactersData } = useScreenplayCharacters(
     sessionData?.screenplay_json_path,
     { enabled: !!sessionData?.screenplay_json_path && showMethodSelector }
   );

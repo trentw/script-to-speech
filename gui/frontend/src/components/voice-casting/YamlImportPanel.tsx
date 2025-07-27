@@ -59,7 +59,12 @@ export function YamlImportPanel({
         });
       }
     }
-  }, [debouncedYamlInput, screenplayJsonPath]);
+  }, [
+    debouncedYamlInput,
+    screenplayJsonPath,
+    parseYamlMutation,
+    validateYamlMutation,
+  ]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>

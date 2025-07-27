@@ -152,5 +152,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*", "pydantic.*", "pydantic_settings.*", "fastapi.*", "uvicorn.*", "pathvalidate.*"]
 ignore_missing_imports = true

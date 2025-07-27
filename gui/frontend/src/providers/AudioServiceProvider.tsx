@@ -11,7 +11,7 @@
  * - AudioService manages its own state (no external synchronization needed)
  */
 
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useRef } from 'react';
 
 import { AudioService, audioService } from '../services/AudioService';
 

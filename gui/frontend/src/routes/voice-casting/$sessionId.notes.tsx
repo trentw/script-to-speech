@@ -5,10 +5,9 @@ import {
   ArrowLeft,
   CheckCircle2,
   Copy,
-  Download,
   Loader2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -78,7 +77,7 @@ function CharacterNotesGeneration() {
   };
 
   // Step 1: Generate prompt
-  const handleGeneratePrompt = async () => {
+  const handleGeneratePrompt = useCallback(async () => {
     if (!session?.screenplay_json_path) return;
 
     // Show privacy warning first
@@ -88,9 +87,9 @@ function CharacterNotesGeneration() {
     }
 
     await generatePromptInternal();
-  };
+  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal]);
 
-  const generatePromptInternal = async () => {
+  const generatePromptInternal = useCallback(async () => {
     // Generate YAML structure for character notes prompt
     // If we have assignments, use them, otherwise create YAML from screenplay character data
     let yamlContent = '';
@@ -115,10 +114,17 @@ function CharacterNotesGeneration() {
     if (result) {
       setPromptText(result.prompt_content);
     }
-  };
+  }, [
+    assignments,
+    generateYamlMutation,
+    exportToYaml,
+    generatePromptMutation,
+    sessionId,
+    setPromptText,
+  ]);
 
   // Function to export current assignments or screenplay characters to YAML format
-  const exportToYaml = async (): Promise<string> => {
+  const exportToYaml = useCallback(async (): Promise<string> => {
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
       // Get character info for comments
@@ -147,7 +153,7 @@ function CharacterNotesGeneration() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  };
+  }, [assignments, session?.screenplay_json_path]);
 
   const handlePrivacyAccept = async () => {
     setPrivacyAccepted(true);
@@ -216,6 +222,8 @@ function CharacterNotesGeneration() {
     session?.screenplay_source_path,
     assignments.size,
     privacyAccepted,
+    handleGeneratePrompt,
+    promptText,
   ]);
 
   if (sessionLoading) {

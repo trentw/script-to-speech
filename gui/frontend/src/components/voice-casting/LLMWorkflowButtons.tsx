@@ -1,5 +1,5 @@
 import { useNavigate } from '@tanstack/react-router';
-import { FileText, Library, Wand2 } from 'lucide-react';
+import { FileText, Library } from 'lucide-react';
 import React from 'react';
 
 import { Button } from '@/components/ui/button';

@@ -5,11 +5,10 @@ import {
   ArrowLeft,
   CheckCircle2,
   Copy,
-  Download,
   Info,
   Loader2,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -88,7 +87,7 @@ function VoiceLibraryCasting() {
           : [providers[0]?.identifier].filter(Boolean)
       );
     }
-  }, [providers]);
+  }, [providers, selectedProviders.length]);
 
   // Navigate back to main casting page
   const handleBack = () => {
@@ -96,7 +95,7 @@ function VoiceLibraryCasting() {
   };
 
   // Function to export current assignments or screenplay characters to YAML format
-  const exportToYaml = async (): Promise<string> => {
+  const exportToYaml = useCallback(async (): Promise<string> => {
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
       // Get character info for comments
@@ -125,7 +124,7 @@ function VoiceLibraryCasting() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  };
+  }, [assignments, session?.screenplay_json_path]);
 
   // Step 1: Generate prompt
   const handleGeneratePrompt = async () => {
@@ -209,7 +208,7 @@ function VoiceLibraryCasting() {
     await generatePromptInternal();
   };
 
-  const generatePromptInternal = async () => {
+  const generatePromptInternal = useCallback(async () => {
     // Validate provider selection
     if (selectedProviders.length === 0) {
       setError('Please select at least one provider');
@@ -273,7 +272,7 @@ function VoiceLibraryCasting() {
       console.error('Final error message:', errorMessage);
       setError(errorMessage);
     }
-  };
+  }, [selectedProviders, exportToYaml, generatePromptMutation, setError]);
 
   const handlePrivacyCancel = () => {
     setShowPrivacyWarning(false);
@@ -341,7 +340,13 @@ function VoiceLibraryCasting() {
     ) {
       generatePromptInternal();
     }
-  }, [session?.screenplay_json_path, providers, privacyAccepted]);
+  }, [
+    session?.screenplay_json_path,
+    providers,
+    privacyAccepted,
+    generatePromptInternal,
+    promptText,
+  ]);
 
   if (sessionLoading) {
     return (

@@ -8,7 +8,7 @@ import shutil
 import tempfile
 import threading
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -35,7 +35,7 @@ class ScreenplayParsingTask:
         self.message = "Task created"
         self.result: Optional[Dict[str, Any]] = None
         self.error: Optional[str] = None
-        self.created_at = datetime.now(UTC)
+        self.created_at = datetime.now(timezone.utc)
         self.started_at: Optional[datetime] = None
         self.completed_at: Optional[datetime] = None
         self.temp_file_path: Optional[str] = None
@@ -110,7 +110,7 @@ class ScreenplayService:
         """Process a screenplay parsing task in the background."""
         try:
             task.status = TaskStatus.PROCESSING
-            task.started_at = datetime.now(UTC)
+            task.started_at = datetime.now(timezone.utc)
             task.message = "Processing screenplay..."
             task.progress = 0.1
 
@@ -186,7 +186,7 @@ class ScreenplayService:
             task.progress = 0.9
 
             task.status = TaskStatus.COMPLETED
-            task.completed_at = datetime.now(UTC)
+            task.completed_at = datetime.now(timezone.utc)
             task.message = "Screenplay parsing completed successfully"
             task.progress = 1.0
 
@@ -198,7 +198,7 @@ class ScreenplayService:
             task.status = TaskStatus.FAILED
             task.error = str(e)
             task.message = f"Parsing failed: {str(e)}"
-            task.completed_at = datetime.now(UTC)
+            task.completed_at = datetime.now(timezone.utc)
         finally:
             # Clean up temporary file
             if task.temp_file_path and os.path.exists(task.temp_file_path):
@@ -352,7 +352,7 @@ class ScreenplayService:
 
     def cleanup_old_tasks(self, max_age_hours: int = 24) -> int:
         """Clean up old completed tasks."""
-        cutoff_time = datetime.now(UTC).timestamp() - (max_age_hours * 3600)
+        cutoff_time = datetime.now(timezone.utc).timestamp() - (max_age_hours * 3600)
         removed_count = 0
 
         with self._lock:
@@ -368,8 +368,8 @@ class ScreenplayService:
 
             # Perform cleanup within the same lock to avoid deadlock
             for task_id in task_ids_to_remove:
-                task = self._tasks.get(task_id)
-                if task:
+                if task_id in self._tasks:
+                    task = self._tasks[task_id]
                     # Clean up files (same logic as delete_task but without lock)
                     try:
                         # Delete temporary file if it still exists

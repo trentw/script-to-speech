@@ -4,12 +4,7 @@ import os
 from pathlib import Path
 from typing import List
 
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    from pydantic import BaseSettings
-
-from pydantic import ConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -32,7 +27,7 @@ class Settings(BaseSettings):
         "tauri://localhost",  # Tauri app
     ]
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=True,
         extra="ignore",  # Ignore extra environment variables like API keys

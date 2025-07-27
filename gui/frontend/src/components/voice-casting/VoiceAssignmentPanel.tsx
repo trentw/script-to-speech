@@ -95,7 +95,7 @@ export function VoiceAssignmentPanel({
   } = useVoiceLibrary(selectedProvider);
 
   // Use the voices directly from the hook
-  const voiceList = providerVoices || [];
+  const voiceList = useMemo(() => providerVoices || [], [providerVoices]);
 
   // Group voices by gender for better organization
   const voicesByGender = useMemo(() => {

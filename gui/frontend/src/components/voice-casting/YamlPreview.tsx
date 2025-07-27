@@ -56,7 +56,7 @@ export function YamlPreview({
     if (!yamlContent) {
       generateYamlMutation.mutate({ includeMetadata: true });
     }
-  }, []);
+  }, [generateYamlMutation, yamlContent]);
 
   // Fallback local generation if mutation not available
   const generateLocalYaml = () => {
@@ -137,7 +137,7 @@ export function YamlPreview({
       await navigator.clipboard.writeText(displayYaml);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
+    } catch {
       // Failed to copy to clipboard
     }
   };

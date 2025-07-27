@@ -1,5 +1,6 @@
 """Audio generation service wrapping generate_standalone_speech functionality."""
 
+import argparse
 import asyncio
 import logging
 import threading
@@ -236,7 +237,7 @@ class GenerationService:
         request = task.request
 
         # Create a mock argparse.Namespace object for _build_tts_provider_config_data
-        class MockArgs:
+        class MockArgs(argparse.Namespace):
             def __init__(
                 self, provider: str, config: Dict[str, Any], sts_id: Optional[str]
             ):
@@ -287,7 +288,7 @@ class GenerationService:
                 task.message = f"Generating variant {variant}/{request.variants}"
 
                 # Generate audio in thread
-                def generate_audio():
+                def generate_audio() -> None:
                     generate_standalone_speech(
                         tts_manager=tts_manager,
                         text=request.text,

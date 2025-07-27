@@ -24,7 +24,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import {
   CharacterCard,
   VoiceAssignmentPanel,
@@ -98,8 +97,8 @@ function VoiceCastingMain() {
     setCastingSessionId,
     setScreenplayJsonPath,
     setScreenplayData,
-    setCharacterAssignment,
-    resetCastingState,
+    setCharacterAssignment: _setCharacterAssignment,
+    resetCastingState: _resetCastingState,
   } = useVoiceCasting();
 
   // Initialize store with session ID and character data when component mounts

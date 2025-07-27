@@ -48,7 +48,7 @@ export interface AudioMetadata {
 
 // Create internal Zustand store for complete audio state
 const createAudioStore = () =>
-  createStore<AudioServiceState>((set) => ({
+  createStore<AudioServiceState>((_set) => ({
     // Audio playback state
     playbackState: 'idle' as AudioPlaybackState,
     currentTime: 0,

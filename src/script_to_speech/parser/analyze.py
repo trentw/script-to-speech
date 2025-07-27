@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from ..utils.file_system_utils import create_output_folders
 from ..utils.logging import get_screenplay_logger
@@ -14,7 +14,7 @@ from .utils.logging_utils import setup_parser_logging
 logger = get_screenplay_logger("parser.analyze")
 
 
-def analyze_chunks(chunks: list, log_results: bool = True) -> Dict[str, any]:
+def analyze_chunks(chunks: list, log_results: bool = True) -> Dict[str, Any]:
     """Analyze screenplay chunks and optionally log statistics.
 
     Args:
@@ -88,7 +88,7 @@ def analyze_chunks(chunks: list, log_results: bool = True) -> Dict[str, any]:
 
 def analyze_screenplay_chunks(
     json_path: str, log_results: bool = True
-) -> Dict[str, any]:
+) -> Dict[str, Any]:
     """Analyze a screenplay chunks JSON file and output statistics.
 
     Args:

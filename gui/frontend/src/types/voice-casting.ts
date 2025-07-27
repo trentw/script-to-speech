@@ -13,7 +13,7 @@ export interface VoiceAssignment {
   sts_id: string;
   casting_notes?: string;
   role?: string;
-  provider_config?: Record<string, any>;
+  provider_config?: Record<string, unknown>;
   additional_notes?: string[];
   // Parsed metadata (not stored in YAML)
   line_count?: number;

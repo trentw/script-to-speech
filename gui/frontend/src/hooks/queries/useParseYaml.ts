@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
 import type { VoiceAssignment } from '@/stores/appStore';
-import type { VoiceDetails, VoiceEntry } from '@/types';
+import type { VoiceEntry } from '@/types';
 
 interface ParsedYamlResponse {
   assignments: Record<
@@ -10,11 +10,11 @@ interface ParsedYamlResponse {
     {
       voice_id: string;
       provider: string;
-      config?: Record<string, any>;
+      config?: Record<string, unknown>;
     }
   >;
   screenplay_name?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface ParseYamlRequest {
@@ -68,7 +68,7 @@ export function useParseYaml(yamlContent: string | undefined) {
           if (voiceResponse.data) {
             voiceEntry = voiceResponse.data;
           }
-        } catch (error) {
+        } catch {
           // Voice not found in library, that's okay
           console.warn(`Voice ${assignment.voice_id} not found in library`);
         }

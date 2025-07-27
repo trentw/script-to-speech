@@ -11,7 +11,6 @@ describe('AppStore - Configuration Slice', () => {
     state.resetConfiguration();
     state.clearText();
     state.clearError();
-    state.clearAudio();
     state.resetScreenplayState();
   });
 

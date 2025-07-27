@@ -99,7 +99,7 @@ export function ScreenplayContent({
       }
     }
   }, [
-    taskStatus?.status,
+    taskStatus,
     viewMode,
     setViewMode,
     setStoreViewMode,

@@ -286,21 +286,31 @@ class VoiceLibraryService:
 
     def get_voice_stats(self) -> Dict[str, Any]:
         """Get statistics about the voice library."""
-        stats = {"total_voices": 0, "providers": {}, "genders": {}, "languages": set()}
+        stats: Dict[str, Any] = {
+            "total_voices": 0,
+            "providers": {},
+            "genders": {},
+            "languages": set(),
+        }
 
         for provider, voices in self._voices_cache.items():
-            stats["providers"][provider] = len(voices)
-            stats["total_voices"] += len(voices)
+            providers_dict = stats["providers"]
+            providers_dict[provider] = len(voices)
+            stats["total_voices"] = stats["total_voices"] + len(voices)
 
             for voice in voices:
                 if voice.voice_properties and voice.voice_properties.gender:
                     gender = voice.voice_properties.gender
-                    stats["genders"][gender] = stats["genders"].get(gender, 0) + 1
+                    genders_dict = stats["genders"]
+                    genders_dict[gender] = genders_dict.get(gender, 0) + 1
 
                 if voice.voice_properties and voice.voice_properties.accent:
-                    stats["languages"].add(voice.voice_properties.accent)
+                    languages_set = stats["languages"]
+                    languages_set.add(voice.voice_properties.accent)
 
-        stats["languages"] = list(stats["languages"])
+        # Convert set to list for JSON serialization
+        languages_set = stats["languages"]
+        stats["languages"] = list(languages_set)
 
         return stats
 

@@ -1,7 +1,7 @@
 """Screenplay parsing API routes."""
 
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
@@ -81,7 +81,7 @@ async def get_parsing_task_status(task_id: str) -> TaskStatusResponse:
 
 
 @router.get("/result/{task_id}")
-async def get_parsing_result(task_id: str):
+async def get_parsing_result(task_id: str) -> Optional[Dict[str, Any]]:
     """Get the parsed JSON result and analysis for a completed task.
 
     Returns:
@@ -106,7 +106,7 @@ async def get_parsing_result(task_id: str):
 
 
 @router.get("/recent")
-async def get_recent_screenplays(limit: int = 10):
+async def get_recent_screenplays(limit: int = 10) -> List[Dict[str, Any]]:
     """Get list of recently parsed screenplays.
 
     Args:

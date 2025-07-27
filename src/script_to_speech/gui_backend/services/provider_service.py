@@ -188,7 +188,7 @@ class ProviderService:
     ) -> ValidationResult:
         """Validate a provider configuration."""
         errors = []
-        warnings = []
+        warnings: List[str] = []
 
         try:
             if provider_name not in self._providers_cache:
