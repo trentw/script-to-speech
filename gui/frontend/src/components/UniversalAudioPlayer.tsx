@@ -1,9 +1,9 @@
 import { FastForward, Loader2, Pause, Play, Rewind } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 
-import { useAudio } from '../hooks/useAudio';
+import { useAudioCommands,useAudioMetadata, useAudioState } from '../services/AudioService';
 import { DownloadButton, DownloadButtonPresets } from './ui/DownloadButton';
 import { Slider } from './ui/slider';
 import {
@@ -14,18 +14,6 @@ import {
 } from './ui/tooltip';
 
 export interface AudioPlayerProps {
-  /** Audio URL to play - if undefined, shows empty state */
-  audioUrl?: string;
-  /** Primary text - main description or "Select audio for playback" */
-  primaryText?: string;
-  /** Secondary text - provider and voice info */
-  secondaryText?: string;
-  /** Custom filename for downloads */
-  downloadFilename?: string;
-  /** Show loading state during generation */
-  loading?: boolean;
-  /** Auto-play when new audio is loaded */
-  autoplay?: boolean;
   /** Callback when audio starts playing */
   onPlay?: () => void;
   /** Callback when audio ends */
@@ -33,48 +21,46 @@ export interface AudioPlayerProps {
 }
 
 /**
- * Universal AudioPlayer component that's always visible
- * Used for voice previews, generated speech, and history playback
+ * Universal AudioPlayer component - Pure visualization component
+ * Now uses AudioService's internal Zustand store for single source of truth
+ * NO reactive patterns - purely displays current state and provides controls
  */
 export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
-  audioUrl,
-  primaryText,
-  secondaryText,
-  downloadFilename,
-  loading = false,
-  autoplay = false,
   onPlay,
+  onEnd,
 }) => {
-  const {
-    isReady,
-    isPlaying,
-    isLoading,
-    currentTime,
-    duration,
-    error,
-    play,
-    pause,
-    seek,
-  } = useAudio({
-    src: audioUrl,
-    autoplay: autoplay,
-  });
+  // Get audio state and metadata from AudioService's internal store
+  const { playbackState, currentTime, duration, error, src } = useAudioState();
+  const { primaryText, secondaryText, downloadFilename } = useAudioMetadata();
+  const commands = useAudioCommands();
 
-  const hasAudio = Boolean(audioUrl && !loading);
-  const canPlay = hasAudio && isReady && !error;
-  const showLoading = loading || (isLoading && !isReady);
+  // Handle onEnd callback - only when audio naturally ends
+  useEffect(() => {
+    if (onEnd && playbackState === 'idle' && currentTime === 0 && src) {
+      onEnd();
+    }
+  }, [onEnd, playbackState, currentTime, src]);
+
+  const hasAudio = Boolean(src);
+  const isPlaying = playbackState === 'playing';
+  const isLoading = playbackState === 'loading';
+  const showLoading = isLoading;
+  
+  // Specific control capabilities - fixes disabled controls during playback
+  const canTogglePlayback = hasAudio && !isLoading && !error;
+  const canSeek = hasAudio && !isLoading && !error && duration > 0;
 
   const handlePlayPause = async () => {
     if (isPlaying) {
-      pause();
+      commands.pause();
     } else {
       if (onPlay) onPlay();
-      await play();
+      await commands.play();
     }
   };
 
   const handleSeek = (values: number[]) => {
-    seek(values[0]);
+    commands.seek(values[0]);
   };
 
   const formatTime = (seconds: number): string => {
@@ -152,8 +138,8 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
                     variant: 'audio-control',
                     size: 'icon-md',
                   })}
-                  onClick={() => seek(currentTime - 5)}
-                  disabled={!canPlay}
+                  onClick={() => commands.seek(currentTime - 5)}
+                  disabled={!canSeek}
                 >
                   <Rewind className="h-6 w-6" />
                 </button>
@@ -171,7 +157,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
                     size: 'icon-xl',
                   })}
                   onClick={handlePlayPause}
-                  disabled={!canPlay}
+                  disabled={!canTogglePlayback}
                 >
                   {showLoading ? (
                     <Loader2 className="h-9 w-9 animate-spin" />
@@ -194,8 +180,8 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
                     variant: 'audio-control',
                     size: 'icon-md',
                   })}
-                  onClick={() => seek(currentTime + 5)}
-                  disabled={!canPlay}
+                  onClick={() => commands.seek(currentTime + 5)}
+                  disabled={!canSeek}
                 >
                   <FastForward className="h-6 w-6" />
                 </button>
@@ -208,9 +194,9 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
 
           {/* Right: Download */}
           <div className="flex flex-1 items-center justify-end gap-4">
-            {hasAudio && audioUrl && (
+            {hasAudio && src && (
               <DownloadButton
-                url={audioUrl}
+                url={src}
                 filename={downloadFilename}
                 {...DownloadButtonPresets.audioControl}
                 tooltip="Download audio file"
@@ -229,7 +215,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
             onValueChange={handleSeek}
             max={duration || 100}
             step={0.1}
-            disabled={!canPlay}
+            disabled={!canSeek}
             className="w-full [&_[data-slot=slider-range]]:bg-black [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-black [&_[data-slot=slider-thumb]]:bg-black [&_[data-slot=slider-thumb]]:shadow-md [&_[data-slot=slider-track]]:bg-gray-300"
           />
           <span className="text-muted-foreground w-12 font-mono text-xs">

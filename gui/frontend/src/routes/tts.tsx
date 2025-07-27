@@ -7,7 +7,6 @@ import { RouteError } from '@/components/errors';
 import { MainContent } from '../components/app/MainContent';
 import { useAudioGeneration } from '../hooks/audio/useAudioGeneration';
 import {
-  useCentralAudio,
   useConfiguration,
   useUIState,
   useUserInput,
@@ -42,7 +41,6 @@ function TTSView() {
   const { selectedProvider, selectedVoice, currentConfig } = useConfiguration();
   const { text } = useUserInput();
   const { clearError } = useUIState();
-  const { disableAutoplay } = useCentralAudio();
   const { handleGenerate, isGenerating, cancelGeneration } =
     useAudioGeneration();
 
@@ -94,15 +92,12 @@ function TTSView() {
     };
   }, [handleKeyDown]);
 
-  // Cancel any pending audio generation and disable autoplay when navigating away from TTS
+  // Cancel any pending audio generation when navigating away from TTS
   useEffect(() => {
     return () => {
       cancelGeneration();
-      // Disable autoplay for any loaded audio when leaving TTS page
-      // This prevents autoplay when navigating back to TTS while keeping audio loaded
-      disableAutoplay();
     };
-  }, [cancelGeneration, disableAutoplay]);
+  }, [cancelGeneration]);
 
   return (
     <MainContent

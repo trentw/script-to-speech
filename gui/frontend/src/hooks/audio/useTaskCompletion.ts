@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import type { TaskStatusResponse } from '../../types';
 import { getAudioFilename, getAudioUrls } from '../../utils/audioUtils';
 import { useSmartTaskPolling } from '../queries/useSmartTaskPolling';
-import { useAudioEvents } from './useAudioEvents';
+import { useAudioCommands } from '../useAudioCommands';
 
 /**
  * Hook for detecting task completion and triggering audio playback
@@ -15,7 +15,7 @@ export const useTaskCompletion = (
   onTaskProcessed?: (taskId: string) => void
 ) => {
   const { data: tasks } = useSmartTaskPolling();
-  const { playGeneratedAudio } = useAudioEvents();
+  const { playGeneratedAudio } = useAudioCommands();
 
   useEffect(() => {
     // Early return if no pending task or no tasks data
@@ -47,18 +47,15 @@ export const useTaskCompletion = (
     const voiceId =
       completedTask.request?.sts_id || completedTask.result?.voice_id;
 
-    // Trigger audio playback through event system
-    playGeneratedAudio({
-      url: audioUrls[0], // Use first audio file for single player
-      primaryText:
-        displayText.length > 50
-          ? displayText.slice(0, 50) + '...'
-          : displayText,
-      secondaryText: [provider, voiceId].filter(Boolean).join(' • '),
-      downloadFilename: getAudioFilename(completedTask, 0),
-      autoplay: true,
-      source: 'generation',
-    });
+    // Trigger audio playback through command system
+    playGeneratedAudio(
+      audioUrls[0], // Use first audio file for single player
+      displayText.length > 50
+        ? displayText.slice(0, 50) + '...'
+        : displayText,
+      [provider, voiceId].filter(Boolean).join(' • '),
+      getAudioFilename(completedTask, 0)
+    );
 
     // Notify that task was processed
     onTaskProcessed?.(pendingTaskId);

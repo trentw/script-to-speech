@@ -2,7 +2,7 @@ import { Clock, MoreHorizontal, Play, Search } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 
 import { useSmartTaskPolling } from '../hooks/queries/useSmartTaskPolling';
-import { useCentralAudio } from '../stores/appStore';
+import { useAudioCommands } from '../hooks/useAudioCommands';
 import type { TaskStatusResponse } from '../types';
 import {
   getAudioFilename,
@@ -27,7 +27,7 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: allTasks = [], isLoading } = useSmartTaskPolling();
-  const { setAudioData } = useCentralAudio();
+  const { playGeneratedAudio } = useAudioCommands();
 
   // Group tasks by date
   const groupedTasks = useMemo(() => {
@@ -146,13 +146,12 @@ export const HistoryTab: React.FC<HistoryTabProps> = ({ onTaskSelect }) => {
     const provider = task.request?.provider || task.result?.provider;
     const voiceId = task.request?.sts_id || task.result?.voice_id;
 
-    // Load into central audio player with autoplay
-    setAudioData(
+    // Load and play audio using command pattern
+    playGeneratedAudio(
       audioUrl,
       displayText.length > 50 ? displayText.slice(0, 50) + '...' : displayText,
       [provider, voiceId].filter(Boolean).join(' • '),
-      getAudioFilename(task, 0),
-      true // autoplay
+      getAudioFilename(task, 0)
     );
   };
 

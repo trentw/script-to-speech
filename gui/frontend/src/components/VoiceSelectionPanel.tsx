@@ -3,9 +3,9 @@ import React, { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
-import { getVoiceDisplayName, getVoiceSubtext, playVoicePreview } from '@/utils/voiceUtils';
+import { getVoiceDisplayName, getVoiceSubtext } from '@/utils/voiceUtils';
 
-import { useCentralAudio } from '../stores/appStore';
+import { useAudioCommands } from '../hooks/useAudioCommands';
 import type { VoiceEntry } from '../types';
 
 interface VoiceSelectionPanelProps {
@@ -24,10 +24,10 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
   onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { setAudioData } = useCentralAudio();
+  const { playVoicePreview } = useAudioCommands();
 
-  const playPreview = (voice: VoiceEntry) => {
-    playVoicePreview(voice, setAudioData, provider);
+  const handlePlayPreview = async (voice: VoiceEntry) => {
+    await playVoicePreview(voice, provider);
   };
 
   const filteredVoices = voices.filter((voice) => {
@@ -144,7 +144,7 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
                           className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            playPreview(voice);
+                            handlePlayPreview(voice);
                           }}
                         >
                           <Play className="h-4 w-4" />

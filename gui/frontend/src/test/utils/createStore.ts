@@ -15,13 +15,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     // UI slice defaults
     error: undefined,
 
-    // Central Audio slice defaults
-    audioUrl: undefined,
-    primaryText: undefined,
-    secondaryText: undefined,
-    downloadFilename: undefined,
-    loading: false,
-    autoplay: false,
 
     // Layout slice defaults
     viewportSize: 'desktop',
@@ -62,32 +55,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     setError: (error) => set({ error }),
     clearError: () => set({ error: undefined }),
 
-    // Central Audio slice actions
-    setAudioData: (
-      audioUrl,
-      primaryText,
-      secondaryText,
-      downloadFilename,
-      autoplay = false
-    ) =>
-      set({
-        audioUrl,
-        primaryText,
-        secondaryText,
-        downloadFilename,
-        loading: false,
-        autoplay,
-      }),
-    clearAudio: () =>
-      set({
-        audioUrl: undefined,
-        primaryText: undefined,
-        secondaryText: undefined,
-        downloadFilename: undefined,
-        loading: false,
-        autoplay: false,
-      }),
-    setLoading: (loading) => set({ loading }),
 
     // Layout slice actions
     setViewportSize: (size) => set({ viewportSize: size }),

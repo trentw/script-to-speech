@@ -72,27 +72,6 @@ interface UISlice {
   clearError: () => void;
 }
 
-// Central Audio slice - manages the central audio player
-interface CentralAudioSlice {
-  audioUrl: string | undefined;
-  primaryText: string | undefined;
-  secondaryText: string | undefined;
-  downloadFilename: string | undefined;
-  loading: boolean;
-  autoplay: boolean;
-
-  // Actions
-  setAudioData: (
-    audioUrl: string,
-    primaryText: string,
-    secondaryText?: string,
-    downloadFilename?: string,
-    autoplay?: boolean
-  ) => void;
-  clearAudio: () => void;
-  setLoading: (loading: boolean) => void;
-  disableAutoplay: () => void;
-}
 
 // Layout slice - handles responsive layout state
 interface LayoutSlice {
@@ -148,7 +127,6 @@ interface VoiceCastingSlice {
 type AppStore = ConfigurationSlice &
   UserInputSlice &
   UISlice &
-  CentralAudioSlice &
   LayoutSlice &
   ScreenplaySlice &
   VoiceCastingSlice;
@@ -233,57 +211,6 @@ const useAppStore = create<AppStore>()(
           set({ error: undefined }, false, 'ui/clearError');
         },
 
-        // Central Audio slice implementation
-        audioUrl: undefined,
-        primaryText: undefined,
-        secondaryText: undefined,
-        downloadFilename: undefined,
-        loading: false,
-        autoplay: false,
-
-        setAudioData: (
-          audioUrl,
-          primaryText,
-          secondaryText,
-          downloadFilename,
-          autoplay = false
-        ) => {
-          set(
-            {
-              audioUrl,
-              primaryText,
-              secondaryText,
-              downloadFilename,
-              loading: false,
-              autoplay,
-            },
-            false,
-            'centralAudio/setAudioData'
-          );
-        },
-
-        clearAudio: () => {
-          set(
-            {
-              audioUrl: undefined,
-              primaryText: undefined,
-              secondaryText: undefined,
-              downloadFilename: undefined,
-              loading: false,
-              autoplay: false,
-            },
-            false,
-            'centralAudio/clearAudio'
-          );
-        },
-
-        setLoading: (loading) => {
-          set({ loading }, false, 'centralAudio/setLoading');
-        },
-
-        disableAutoplay: () => {
-          set({ autoplay: false }, false, 'centralAudio/disableAutoplay');
-        },
 
         // Layout slice implementation
         viewportSize: 'desktop',
@@ -496,21 +423,6 @@ export const useUIState = () =>
     }))
   );
 
-export const useCentralAudio = () =>
-  useAppStore(
-    useShallow((state) => ({
-      audioUrl: state.audioUrl,
-      primaryText: state.primaryText,
-      secondaryText: state.secondaryText,
-      downloadFilename: state.downloadFilename,
-      loading: state.loading,
-      autoplay: state.autoplay,
-      setAudioData: state.setAudioData,
-      clearAudio: state.clearAudio,
-      disableAutoplay: state.disableAutoplay,
-      setLoading: state.setLoading,
-    }))
-  );
 
 export const useLayout = () =>
   useAppStore(

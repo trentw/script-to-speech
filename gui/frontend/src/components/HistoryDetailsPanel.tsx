@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import React from 'react';
 
-import { useCentralAudio } from '../stores/appStore';
+import { useAudioCommands } from '../hooks/useAudioCommands';
 import type { TaskStatusResponse } from '../types';
 import { getAudioFilename, getAudioUrls } from '../utils/audioUtils';
 import { Badge } from './ui/badge';
@@ -26,7 +26,7 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
   task,
   onBack,
 }) => {
-  const { setAudioData } = useCentralAudio();
+  const { playGeneratedAudio } = useAudioCommands();
   const formatDateTime = (dateString?: string) => {
     if (!dateString) return 'Unknown time';
 
@@ -76,13 +76,12 @@ export const HistoryDetailsPanel: React.FC<HistoryDetailsPanelProps> = ({
     const provider = task.request?.provider || task.result?.provider;
     const voiceId = task.request?.sts_id || task.result?.voice_id;
 
-    // Load into central audio player with autoplay
-    setAudioData(
+    // Load and play audio using command pattern
+    playGeneratedAudio(
       audioUrl,
       displayText.length > 50 ? displayText.slice(0, 50) + '...' : displayText,
       [provider, voiceId].filter(Boolean).join(' • '),
-      getAudioFilename(task, index),
-      true // autoplay
+      getAudioFilename(task, index)
     );
   };
 

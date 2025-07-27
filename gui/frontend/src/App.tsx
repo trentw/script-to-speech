@@ -3,6 +3,7 @@ import { RouterProvider } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { useMemo } from 'react';
 
+import { AudioServiceProvider } from './providers';
 import { createAppRouter } from './router';
 
 function App() {
@@ -10,10 +11,10 @@ function App() {
   const router = useMemo(() => createAppRouter(queryClient), [queryClient]);
 
   return (
-    <>
+    <AudioServiceProvider>
       <RouterProvider router={router} />
       <TanStackRouterDevtools router={router} />
-    </>
+    </AudioServiceProvider>
   );
 }
 

@@ -9,6 +9,7 @@ export * from './form/NumberField';
 export * from './form/StringField';
 export * from './HistoryDetailsPanel';
 export * from './HistoryTab';
+export * from './MiniAudioPlayer';
 export * from './TextInput';
 export * from './VoiceSelectionPanel';
 export * from './VoiceSelector';

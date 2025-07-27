@@ -9,9 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
-import { useCentralAudio,useVoiceCasting } from '@/stores/appStore';
+import { useAudioCommands } from '@/hooks/useAudioCommands';
+import { useVoiceCasting } from '@/stores/appStore';
 import type { VoiceEntry } from '@/types';
-import { playVoicePreview } from '@/utils/voiceUtils';
 
 interface CharacterData {
   name: string;
@@ -51,7 +51,7 @@ export function VoiceAssignmentPanel({
     providersLength: providers?.length
   });
   const { setCharacterAssignment, assignments } = useVoiceCasting();
-  const { setAudioData } = useCentralAudio();
+  const { playVoicePreview } = useAudioCommands();
 
   // Get current assignment if exists
   const currentAssignment = assignments.get(characterName);
@@ -119,8 +119,8 @@ export function VoiceAssignmentPanel({
     }
   };
 
-  const playPreview = (voice: VoiceEntry) => {
-    console.log('playPreview called:', { voice, selectedProvider, providers });
+  const handlePlayPreview = async (voice: VoiceEntry) => {
+    console.log('handlePlayPreview called:', { voice, selectedProvider, providers });
     console.log('voice.preview_url:', voice.preview_url);
     
     const providerInfo = providers?.find(p => p.identifier === selectedProvider);
@@ -136,12 +136,7 @@ export function VoiceAssignmentPanel({
       previewUrl: voice.preview_url
     });
     
-    playVoicePreview(
-      voice,
-      setAudioData,
-      providerInfo.name,
-      character.displayName
-    );
+    await playVoicePreview(voice, providerInfo.name, character.displayName);
   };
 
   const isLoading = providersLoading || voicesLoading;
@@ -312,7 +307,7 @@ export function VoiceAssignmentPanel({
                                               className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
                                               onClick={(e) => {
                                                 e.stopPropagation();
-                                                playPreview(voice);
+                                                handlePlayPreview(voice);
                                               }}
                                             >
                                               <Play className="h-4 w-4" />

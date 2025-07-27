@@ -1,6 +1,6 @@
 import { apiService } from '@/services/api';
-import type { CharacterInfo, VoiceAssignment as ApiVoiceAssignment } from '@/types/voice-casting';
 import type { VoiceAssignment as StoreVoiceAssignment } from '@/stores/appStore';
+import type { CharacterInfo, VoiceAssignment as ApiVoiceAssignment } from '@/types/voice-casting';
 
 /**
  * Centralized YAML utilities for voice casting
