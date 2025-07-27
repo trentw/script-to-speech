@@ -1,6 +1,9 @@
 import { apiService } from '@/services/api';
 import type { VoiceAssignment as StoreVoiceAssignment } from '@/stores/appStore';
-import type { CharacterInfo, VoiceAssignment as ApiVoiceAssignment } from '@/types/voice-casting';
+import type {
+  CharacterInfo,
+  VoiceAssignment as ApiVoiceAssignment,
+} from '@/types/voice-casting';
 
 /**
  * Centralized YAML utilities for voice casting
@@ -18,7 +21,7 @@ export const yamlUtils = {
   ): Promise<string> => {
     // Convert Map to array of assignments for API
     const assignmentsArray: ApiVoiceAssignment[] = [];
-    
+
     for (const [characterName, assignment] of assignments) {
       assignmentsArray.push({
         character: characterName,
@@ -32,21 +35,22 @@ export const yamlUtils = {
         longest_dialogue: assignment.longest_dialogue,
       });
     }
-    
+
     // Call backend generateYaml API
     const response = await apiService.generateYaml({
       assignments: assignmentsArray,
       character_info: characterInfo,
       include_comments: true,
     });
-    
+
     if (response.error) {
-      const errorMessage = typeof response.error === 'string' 
-        ? response.error 
-        : JSON.stringify(response.error);
+      const errorMessage =
+        typeof response.error === 'string'
+          ? response.error
+          : JSON.stringify(response.error);
       throw new Error(errorMessage);
     }
-    
+
     return response.data!.yaml_content;
   },
 
@@ -55,27 +59,30 @@ export const yamlUtils = {
    * @param yamlContent YAML configuration content
    * @returns Promise<Map<string, StoreVoiceAssignment>> assignments Map
    */
-  yamlToAssignments: async (yamlContent: string): Promise<Map<string, StoreVoiceAssignment>> => {
+  yamlToAssignments: async (
+    yamlContent: string
+  ): Promise<Map<string, StoreVoiceAssignment>> => {
     // Call backend parseYaml API
     const response = await apiService.parseYaml({ yamlContent });
-    
+
     if (response.error) {
-      const errorMessage = typeof response.error === 'string' 
-        ? response.error 
-        : JSON.stringify(response.error);
+      const errorMessage =
+        typeof response.error === 'string'
+          ? response.error
+          : JSON.stringify(response.error);
       throw new Error(errorMessage);
     }
-    
+
     const result = response.data!;
-    
+
     if (result.has_errors) {
       throw new Error(`YAML parsing failed: ${result.errors.join(', ')}`);
     }
-    
+
     // Convert API response to store format
     const assignments = new Map<string, StoreVoiceAssignment>();
-    
-    result.assignments.forEach(assignment => {
+
+    result.assignments.forEach((assignment) => {
       assignments.set(assignment.character, {
         sts_id: assignment.sts_id,
         provider: assignment.provider,
@@ -93,7 +100,7 @@ export const yamlUtils = {
         },
       });
     });
-    
+
     return assignments;
   },
 
@@ -104,13 +111,14 @@ export const yamlUtils = {
    */
   charactersToYaml: async (screenplayJsonPath: string): Promise<string> => {
     // Extract characters from the screenplay
-    const extractResponse = await apiService.extractCharacters(screenplayJsonPath);
+    const extractResponse =
+      await apiService.extractCharacters(screenplayJsonPath);
     if (extractResponse.error) {
       throw new Error(`Failed to extract characters: ${extractResponse.error}`);
     }
 
     const charactersData = extractResponse.data!;
-    
+
     let yamlContent = '# Voice configuration for speakers\n';
     yamlContent += '# Each speaker requires provider and sts_id fields\n';
     yamlContent += '# Generated from screenplay character data\n\n';
@@ -119,19 +127,20 @@ export const yamlUtils = {
     for (const character of charactersData.characters) {
       yamlContent += `# ${character.name}: ${character.line_count} lines\n`;
       yamlContent += `# Total characters: ${character.total_characters}, Longest dialogue: ${character.longest_dialogue} characters\n`;
-      
+
       if (character.casting_notes) {
         yamlContent += `# Casting notes: ${character.casting_notes}\n`;
       }
       if (character.role) {
         yamlContent += `# Role: ${character.role}\n`;
       }
-      
+
       // Quote character names with spaces or special characters
-      const quotedName = character.name.includes(' ') || character.name.includes('#') 
-        ? `"${character.name}"` 
-        : character.name;
-      
+      const quotedName =
+        character.name.includes(' ') || character.name.includes('#')
+          ? `"${character.name}"`
+          : character.name;
+
       yamlContent += `${quotedName}:\n`;
       yamlContent += `  provider: # TO BE FILLED BY LLM\n`;
       yamlContent += `  sts_id: # TO BE FILLED BY LLM\n\n`;

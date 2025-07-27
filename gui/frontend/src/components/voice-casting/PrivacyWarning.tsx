@@ -1,9 +1,9 @@
-import { AlertTriangle } from 'lucide-react'
-import React, { useEffect,useState } from 'react'
+import { AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,16 +11,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Label } from '@/components/ui/label'
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 
 interface PrivacyWarningProps {
-  message?: string
-  checked?: boolean
-  onCheckedChange?: (checked: boolean) => void
-  isModal?: boolean
-  onAccept?: () => void
-  onCancel?: () => void
+  message?: string;
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+  isModal?: boolean;
+  onAccept?: () => void;
+  onCancel?: () => void;
 }
 
 const DEFAULT_MESSAGE = `This feature requires sending your screenplay data to an external Large Language Model (LLM) service.
@@ -31,45 +31,45 @@ Please note:
 • Sensitive or confidential content should not be processed
 • You are responsible for compliance with any applicable agreements
 
-By proceeding, you acknowledge these privacy implications.`
+By proceeding, you acknowledge these privacy implications.`;
 
-export function PrivacyWarning({ 
-  message = DEFAULT_MESSAGE, 
-  checked = false, 
+export function PrivacyWarning({
+  message = DEFAULT_MESSAGE,
+  checked = false,
   onCheckedChange,
   isModal = false,
   onAccept,
-  onCancel
+  onCancel,
 }: PrivacyWarningProps) {
-  const [localChecked, setLocalChecked] = useState(checked)
+  const [localChecked, setLocalChecked] = useState(checked);
 
   useEffect(() => {
-    setLocalChecked(checked)
-  }, [checked])
+    setLocalChecked(checked);
+  }, [checked]);
 
   const handleCheckedChange = (value: boolean) => {
-    setLocalChecked(value)
-    onCheckedChange?.(value)
-  }
+    setLocalChecked(value);
+    onCheckedChange?.(value);
+  };
 
   const handleAccept = () => {
-    onAccept?.()
-  }
+    onAccept?.();
+  };
 
   const handleCancel = () => {
-    onCancel?.()
-  }
+    onCancel?.();
+  };
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      onCancel?.()
+      onCancel?.();
     }
-  }
+  };
 
   if (isModal) {
     return (
       <Dialog open={isModal} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[525px] bg-white border shadow-lg">
+        <DialogContent className="border bg-white shadow-lg sm:max-w-[525px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -80,7 +80,7 @@ export function PrivacyWarning({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="whitespace-pre-wrap text-sm text-muted-foreground">
+            <div className="text-muted-foreground text-sm whitespace-pre-wrap">
               {message}
             </div>
             <div className="flex items-center space-x-2">
@@ -91,7 +91,7 @@ export function PrivacyWarning({
               />
               <Label
                 htmlFor="privacy-consent-modal"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 I understand and accept the privacy implications
               </Label>
@@ -107,15 +107,17 @@ export function PrivacyWarning({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    )
+    );
   }
 
   return (
     <Alert className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-      <AlertTitle className="text-amber-900 dark:text-amber-100">Privacy Notice</AlertTitle>
+      <AlertTitle className="text-amber-900 dark:text-amber-100">
+        Privacy Notice
+      </AlertTitle>
       <AlertDescription className="space-y-4">
-        <div className="whitespace-pre-wrap text-sm text-amber-800 dark:text-amber-200">
+        <div className="text-sm whitespace-pre-wrap text-amber-800 dark:text-amber-200">
           {message}
         </div>
         {onCheckedChange && (
@@ -127,7 +129,7 @@ export function PrivacyWarning({
             />
             <Label
               htmlFor="privacy-consent"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               I understand and accept the privacy implications
             </Label>
@@ -135,5 +137,5 @@ export function PrivacyWarning({
         )}
       </AlertDescription>
     </Alert>
-  )
+  );
 }

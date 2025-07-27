@@ -103,7 +103,9 @@ class MockAudio extends EventTarget {
 // Extend global types for test utilities
 declare global {
   var MockAudio: typeof MockAudio;
-  var getAudioMockInstance: (element: HTMLAudioElement) => MockAudio | undefined;
+  var getAudioMockInstance: (
+    element: HTMLAudioElement
+  ) => MockAudio | undefined;
 }
 
 // Make MockAudio available globally for tests

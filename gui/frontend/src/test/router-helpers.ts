@@ -7,10 +7,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import type { Router } from '@tanstack/react-router';
 import { createMemoryHistory } from '@tanstack/react-router';
 
-import {
-  createScreenplayTaskRoute,
-  ROUTES,
-} from '../lib/routes';
+import { createScreenplayTaskRoute, ROUTES } from '../lib/routes';
 import { createAppRouter, type RouterContext } from '../router';
 
 // Mock router utilities for unit tests

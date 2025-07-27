@@ -1,10 +1,10 @@
 /**
  * AudioServiceProvider - React Context Provider for AudioService integration
- * 
+ *
  * This provider creates and manages the AudioService singleton instance.
  * Since AudioService now has its own internal Zustand store, this provider
  * is primarily for ensuring the service is initialized at app startup.
- * 
+ *
  * Key features:
  * - Handles React 18 strict mode double initialization
  * - Provides AudioService instance to child components
@@ -19,7 +19,9 @@ interface AudioServiceContextValue {
   audioService: AudioService;
 }
 
-const AudioServiceContext = createContext<AudioServiceContextValue | null>(null);
+const AudioServiceContext = createContext<AudioServiceContextValue | null>(
+  null
+);
 
 interface AudioServiceProviderProps {
   children: React.ReactNode;

@@ -1,7 +1,23 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
-import { AlertCircle, ArrowLeft, Brain, CheckCircle2, Circle, Download, Eye, FileText,Loader2, Upload } from 'lucide-react';
-import { useEffect,useState } from 'react';
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
+import {
+  AlertCircle,
+  ArrowLeft,
+  Brain,
+  CheckCircle2,
+  Circle,
+  Download,
+  Eye,
+  FileText,
+  Loader2,
+  Upload,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -9,14 +25,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { 
+import {
   CharacterCard,
   VoiceAssignmentPanel,
   YamlImportPanel,
-  YamlPreview} from '@/components/voice-casting';
+  YamlPreview,
+} from '@/components/voice-casting';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
 import { apiService } from '@/services/api';
-import { type CharacterInfo,useVoiceCasting } from '@/stores/appStore';
+import { type CharacterInfo, useVoiceCasting } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 
 export const Route = createFileRoute('/voice-casting/$sessionId')({
@@ -37,17 +54,24 @@ function VoiceCastingMain() {
   const { sessionId } = Route.useParams();
   const navigate = useNavigate();
   const routerState = useRouterState();
-  
+
   // Check if we're on a child route (notes or library)
-  const isOnChildRoute = routerState.location.pathname.includes('/notes') || 
-                         routerState.location.pathname.includes('/library');
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null);
+  const isOnChildRoute =
+    routerState.location.pathname.includes('/notes') ||
+    routerState.location.pathname.includes('/library');
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(
+    null
+  );
   const [showAssignmentPanel, setShowAssignmentPanel] = useState(false);
   const [showYamlPreview, setShowYamlPreview] = useState(false);
   const [showImportPanel, setShowImportPanel] = useState(false);
 
   // Fetch session data
-  const { data: session, isLoading: sessionLoading, error: sessionError } = useQuery({
+  const {
+    data: session,
+    isLoading: sessionLoading,
+    error: sessionError,
+  } = useQuery({
     queryKey: ['voice-casting-session', sessionId],
     queryFn: async () => {
       const response = await apiService.getVoiceCastingSession(sessionId);
@@ -59,10 +83,12 @@ function VoiceCastingMain() {
   });
 
   // Fetch character data from backend using session's screenplay_json_path
-  const { data: charactersData, isLoading, error } = useScreenplayCharacters(
-    session?.screenplay_json_path
-  );
-  
+  const {
+    data: charactersData,
+    isLoading,
+    error,
+  } = useScreenplayCharacters(session?.screenplay_json_path);
+
   // Connect to voice casting store
   const {
     castingSessionId,
@@ -81,26 +107,39 @@ function VoiceCastingMain() {
     if (sessionId && sessionId !== castingSessionId) {
       setCastingSessionId(sessionId);
     }
-    
+
     if (charactersData && session) {
       // Store the file path
-      if (session.screenplay_json_path && session.screenplay_json_path !== screenplayJsonPath) {
+      if (
+        session.screenplay_json_path &&
+        session.screenplay_json_path !== screenplayJsonPath
+      ) {
         setScreenplayJsonPath(session.screenplay_json_path);
       }
-      
+
       if (!screenplayData) {
         // Convert character data to the format expected by the store
         const charactersMap = new Map<string, CharacterInfo>();
         Object.entries(charactersData.characters).forEach(([name, info]) => {
           charactersMap.set(name, info);
         });
-        
+
         setScreenplayData({
           characters: charactersMap,
         });
       }
     }
-  }, [sessionId, castingSessionId, charactersData, screenplayData, screenplayJsonPath, session, setCastingSessionId, setScreenplayData, setScreenplayJsonPath]);
+  }, [
+    sessionId,
+    castingSessionId,
+    charactersData,
+    screenplayData,
+    screenplayJsonPath,
+    session,
+    setCastingSessionId,
+    setScreenplayData,
+    setScreenplayJsonPath,
+  ]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -111,29 +150,34 @@ function VoiceCastingMain() {
   }, []);
 
   // Transform character data for display
-  const characters = charactersData ? Object.entries(charactersData.characters).map(([name, info]) => {
-    const assignment = assignments.get(name);
-    return {
-      name,
-      displayName: name === 'default' ? 'Narrator' : name,
-      lineCount: info.lineCount,
-      totalCharacters: info.totalCharacters || 0,
-      longestDialogue: info.longestDialogue || 0,
-      isNarrator: info.isNarrator || false,
-      castingNotes: assignment?.castingNotes,
-      role: assignment?.role,
-      assignedVoice: assignment ? {
-        provider: assignment.provider,
-        voiceName: assignment.voiceEntry?.sts_id || assignment.sts_id,
-        voiceId: assignment.sts_id,
-      } : null,
-    };
-  }) : [];
+  const characters = charactersData
+    ? Object.entries(charactersData.characters).map(([name, info]) => {
+        const assignment = assignments.get(name);
+        return {
+          name,
+          displayName: name === 'default' ? 'Narrator' : name,
+          lineCount: info.lineCount,
+          totalCharacters: info.totalCharacters || 0,
+          longestDialogue: info.longestDialogue || 0,
+          isNarrator: info.isNarrator || false,
+          castingNotes: assignment?.castingNotes,
+          role: assignment?.role,
+          assignedVoice: assignment
+            ? {
+                provider: assignment.provider,
+                voiceName: assignment.voiceEntry?.sts_id || assignment.sts_id,
+                voiceId: assignment.sts_id,
+              }
+            : null,
+        };
+      })
+    : [];
 
   // Calculate progress
-  const assignedCount = characters.filter(c => c.assignedVoice).length;
+  const assignedCount = characters.filter((c) => c.assignedVoice).length;
   const totalCount = characters.length;
-  const progressPercentage = totalCount > 0 ? (assignedCount / totalCount) * 100 : 0;
+  const progressPercentage =
+    totalCount > 0 ? (assignedCount / totalCount) * 100 : 0;
 
   const handleBack = () => {
     navigate({ to: '/voice-casting' });
@@ -156,11 +200,11 @@ function VoiceCastingMain() {
   const handleExportYaml = () => {
     // This will be handled in the YamlPreview component
   };
-  
+
   const handleImport = () => {
     setShowImportPanel(true);
   };
-  
+
   const handleImportSuccess = () => {
     setShowImportPanel(false);
     // The assignments are already updated in the store by the import panel
@@ -171,17 +215,22 @@ function VoiceCastingMain() {
   };
 
   const handleLLMVoiceLibrary = () => {
-    navigate({ to: '/voice-casting/$sessionId/library', params: { sessionId } });
+    navigate({
+      to: '/voice-casting/$sessionId/library',
+      params: { sessionId },
+    });
   };
 
   // Loading state
   if (isLoading || sessionLoading) {
     return (
-      <div className="container max-w-6xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-            <p className="text-muted-foreground">Loading screenplay characters...</p>
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <div className="flex h-64 items-center justify-center">
+          <div className="space-y-4 text-center">
+            <Loader2 className="text-muted-foreground mx-auto h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">
+              Loading screenplay characters...
+            </p>
           </div>
         </div>
       </div>
@@ -191,15 +240,16 @@ function VoiceCastingMain() {
   // Error state
   if (error || sessionError) {
     return (
-      <div className="container max-w-6xl mx-auto p-6 space-y-6">
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load screenplay characters: {error?.message || sessionError?.message}
+            Failed to load screenplay characters:{' '}
+            {error?.message || sessionError?.message}
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
         </Button>
       </div>
@@ -207,9 +257,9 @@ function VoiceCastingMain() {
   }
 
   if (showAssignmentPanel && selectedCharacter) {
-    const character = characters.find(c => c.name === selectedCharacter);
+    const character = characters.find((c) => c.name === selectedCharacter);
     if (!character) return null;
-    
+
     return (
       <VoiceAssignmentPanel
         characterName={selectedCharacter}
@@ -229,7 +279,7 @@ function VoiceCastingMain() {
       />
     );
   }
-  
+
   if (showImportPanel) {
     return (
       <YamlImportPanel
@@ -245,30 +295,25 @@ function VoiceCastingMain() {
   }
 
   return (
-    <div className="container max-w-6xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto max-w-6xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleBack}
-          >
+          <Button variant="ghost" size="icon" onClick={handleBack}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold">Voice Casting</h1>
             <p className="text-muted-foreground">
-              {session?.screenplay_name || charactersData?.screenplay_name || 'Screenplay'}
+              {session?.screenplay_name ||
+                charactersData?.screenplay_name ||
+                'Screenplay'}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            onClick={handleImport}
-          >
-            <Upload className="h-4 w-4 mr-2" />
+          <Button variant="outline" onClick={handleImport}>
+            <Upload className="mr-2 h-4 w-4" />
             Import
           </Button>
           <Button
@@ -276,29 +321,28 @@ function VoiceCastingMain() {
             onClick={handlePreviewYaml}
             disabled={assignedCount === 0}
           >
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="mr-2 h-4 w-4" />
             Preview YAML
           </Button>
-          <Button
-            onClick={handleExportYaml}
-            disabled={assignedCount === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
+          <Button onClick={handleExportYaml} disabled={assignedCount === 0}>
+            <Download className="mr-2 h-4 w-4" />
             Export Configuration
           </Button>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="bg-card rounded-lg border p-4 space-y-3">
+      <div className="bg-card space-y-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <p className="text-sm font-medium">Assignment Progress</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               {assignedCount} of {totalCount} characters assigned
             </p>
           </div>
-          <Badge variant={assignedCount === totalCount ? "default" : "secondary"}>
+          <Badge
+            variant={assignedCount === totalCount ? 'default' : 'secondary'}
+          >
             {Math.round(progressPercentage)}% Complete
           </Badge>
         </div>
@@ -306,33 +350,25 @@ function VoiceCastingMain() {
       </div>
 
       {/* LLM-Assisted Features */}
-      <div className="bg-card rounded-lg border p-4 space-y-3">
+      <div className="bg-card space-y-3 rounded-lg border p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-sm font-medium flex items-center gap-2">
+            <p className="flex items-center gap-2 text-sm font-medium">
               <Brain className="h-4 w-4" />
               LLM-Assisted Features
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Use AI to analyze characters and suggest voice assignments
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLLMCharacterNotes}
-          >
-            <FileText className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleLLMCharacterNotes}>
+            <FileText className="mr-2 h-4 w-4" />
             Character Analysis
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLLMVoiceLibrary}
-          >
-            <Brain className="h-4 w-4 mr-2" />
+          <Button variant="outline" size="sm" onClick={handleLLMVoiceLibrary}>
+            <Brain className="mr-2 h-4 w-4" />
             Voice Suggestions
           </Button>
         </div>
@@ -342,7 +378,7 @@ function VoiceCastingMain() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Characters</h2>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="text-muted-foreground flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <span>Assigned</span>

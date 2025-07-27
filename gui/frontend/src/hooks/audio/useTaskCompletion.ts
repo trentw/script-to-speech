@@ -50,9 +50,7 @@ export const useTaskCompletion = (
     // Trigger audio playback through command system
     playGeneratedAudio(
       audioUrls[0], // Use first audio file for single player
-      displayText.length > 50
-        ? displayText.slice(0, 50) + '...'
-        : displayText,
+      displayText.length > 50 ? displayText.slice(0, 50) + '...' : displayText,
       [provider, voiceId].filter(Boolean).join(' • '),
       getAudioFilename(completedTask, 0)
     );

@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle,MessageSquare, Mic, User } from 'lucide-react';
+import { CheckCircle2, Circle, MessageSquare, Mic, User } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,23 +25,34 @@ interface CharacterCardProps {
   onAssignVoice: () => void;
 }
 
-export function CharacterCard({ character, onAssignVoice }: CharacterCardProps) {
+export function CharacterCard({
+  character,
+  onAssignVoice,
+}: CharacterCardProps) {
   const isAssigned = !!character.assignedVoice;
 
   return (
-    <Card className={`transition-all ${isAssigned ? 'border-green-500/50' : ''}`}>
+    <Card
+      className={`transition-all ${isAssigned ? 'border-green-500/50' : ''}`}
+    >
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Header */}
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <div className={`rounded-full p-2 ${character.isNarrator ? 'bg-primary/10' : 'bg-muted'}`}>
+              <div
+                className={`rounded-full p-2 ${character.isNarrator ? 'bg-primary/10' : 'bg-muted'}`}
+              >
                 <User className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">{character.displayName}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {character.isNarrator ? 'Narrator / Stage Directions' : 'Character'}
+                <h3 className="text-lg font-semibold">
+                  {character.displayName}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {character.isNarrator
+                    ? 'Narrator / Stage Directions'
+                    : 'Character'}
                 </p>
               </div>
             </div>
@@ -49,23 +60,27 @@ export function CharacterCard({ character, onAssignVoice }: CharacterCardProps) 
               {isAssigned ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
               ) : (
-                <Circle className="h-5 w-5 text-muted-foreground" />
+                <Circle className="text-muted-foreground h-5 w-5" />
               )}
             </div>
           </div>
 
           {/* Character Info */}
           {(character.role || character.castingNotes) && (
-            <div className="space-y-2 p-3 bg-muted/50 rounded-md">
+            <div className="bg-muted/50 space-y-2 rounded-md p-3">
               {character.role && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">Role</p>
+                  <p className="text-muted-foreground text-xs font-medium">
+                    Role
+                  </p>
                   <p className="text-sm">{character.role}</p>
                 </div>
               )}
               {character.castingNotes && (
                 <div className="space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground">Casting Notes</p>
+                  <p className="text-muted-foreground text-xs font-medium">
+                    Casting Notes
+                  </p>
                   <p className="text-sm">{character.castingNotes}</p>
                 </div>
               )}
@@ -75,7 +90,7 @@ export function CharacterCard({ character, onAssignVoice }: CharacterCardProps) 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3 text-sm">
             <div className="space-y-1">
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <div className="text-muted-foreground flex items-center gap-1">
                 <MessageSquare className="h-3 w-3" />
                 <span>Lines</span>
               </div>
@@ -83,7 +98,9 @@ export function CharacterCard({ character, onAssignVoice }: CharacterCardProps) 
             </div>
             <div className="space-y-1">
               <p className="text-muted-foreground">Characters</p>
-              <p className="font-medium">{character.totalCharacters.toLocaleString()}</p>
+              <p className="font-medium">
+                {character.totalCharacters.toLocaleString()}
+              </p>
             </div>
             <div className="space-y-1">
               <p className="text-muted-foreground">Longest</p>
@@ -94,29 +111,33 @@ export function CharacterCard({ character, onAssignVoice }: CharacterCardProps) 
           {/* Voice Assignment */}
           <div className="space-y-2">
             {isAssigned ? (
-              <div className="rounded-md bg-muted p-3 space-y-2">
+              <div className="bg-muted space-y-2 rounded-md p-3">
                 <div className="flex items-center gap-2">
-                  <Mic className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{character.assignedVoice.voiceName}</span>
+                  <Mic className="text-muted-foreground h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {character.assignedVoice.voiceName}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="text-xs">
                     {character.assignedVoice.provider}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {character.assignedVoice.voiceId}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="rounded-md border-2 border-dashed border-muted p-3 text-center">
-                <p className="text-sm text-muted-foreground">No voice assigned</p>
+              <div className="border-muted rounded-md border-2 border-dashed p-3 text-center">
+                <p className="text-muted-foreground text-sm">
+                  No voice assigned
+                </p>
               </div>
             )}
-            
-            <Button 
+
+            <Button
               onClick={onAssignVoice}
-              variant={isAssigned ? "outline" : "default"}
+              variant={isAssigned ? 'outline' : 'default'}
               className="w-full"
             >
               {isAssigned ? 'Change Voice' : 'Assign Voice'}

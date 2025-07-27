@@ -3,7 +3,11 @@ import React from 'react';
 
 import { cn } from '@/lib/utils';
 
-import { useAudioCommands,useAudioMetadata, useAudioState } from '../services/AudioService';
+import {
+  useAudioCommands,
+  useAudioMetadata,
+  useAudioState,
+} from '../services/AudioService';
 import { Button } from './ui/button';
 import {
   Tooltip,
@@ -25,10 +29,10 @@ export interface MiniAudioPlayerProps {
 
 /**
  * MiniAudioPlayer - Compact audio player for constrained spaces
- * 
+ *
  * A minimal audio player that shows play/pause controls and title.
  * Uses AudioService's internal Zustand store for single source of truth.
- * 
+ *
  * Features:
  * - Compact design suitable for lists, cards, or tight spaces
  * - Shows current audio metadata from AudioService internal store
@@ -62,9 +66,9 @@ export const MiniAudioPlayer: React.FC<MiniAudioPlayerProps> = ({
   const isReady = playbackState === 'idle' || playbackState === 'paused';
   const canPlay = isReady && !isLoading;
   const buttonHandler = isPlaying ? commands.pause : commands.play;
-  
+
   // Button icon based on state
-  const ButtonIcon = isLoading ? Loader2 : (isPlaying ? Pause : Play);
+  const ButtonIcon = isLoading ? Loader2 : isPlaying ? Pause : Play;
   const buttonProps = {
     onClick: canPlay ? buttonHandler : undefined,
     disabled: !canPlay,
@@ -73,9 +77,9 @@ export const MiniAudioPlayer: React.FC<MiniAudioPlayerProps> = ({
 
   return (
     <TooltipProvider>
-      <div 
+      <div
         className={cn(
-          'flex items-center gap-2 min-w-0',
+          'flex min-w-0 items-center gap-2',
           compact ? 'gap-1' : 'gap-2',
           className
         )}
@@ -85,38 +89,37 @@ export const MiniAudioPlayer: React.FC<MiniAudioPlayerProps> = ({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              size={compact ? "sm" : "default"}
+              size={compact ? 'sm' : 'default'}
               className={cn(
                 'flex-shrink-0',
                 compact ? 'h-6 w-6 p-0' : 'h-8 w-8 p-0'
               )}
               {...buttonProps}
             >
-              <ButtonIcon 
+              <ButtonIcon
                 className={cn(
                   isLoading && 'animate-spin',
                   compact ? 'h-3 w-3' : 'h-4 w-4'
-                )} 
+                )}
               />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            {isLoading 
-              ? 'Loading audio...' 
-              : isPlaying 
-                ? 'Pause audio' 
-                : 'Play audio'
-            }
+            {isLoading
+              ? 'Loading audio...'
+              : isPlaying
+                ? 'Pause audio'
+                : 'Play audio'}
           </TooltipContent>
         </Tooltip>
 
         {/* Audio Title */}
-        <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1 flex-col">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div 
+              <div
                 className={cn(
-                  'truncate font-medium text-foreground',
+                  'text-foreground truncate font-medium',
                   compact ? 'text-xs' : 'text-sm'
                 )}
                 title={displayTitle}
@@ -127,7 +130,7 @@ export const MiniAudioPlayer: React.FC<MiniAudioPlayerProps> = ({
             <TooltipContent side="top" className="max-w-xs">
               <div className="text-sm">{displayTitle}</div>
               {displaySecondary && (
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-muted-foreground mt-1 text-xs">
                   {displaySecondary}
                 </div>
               )}
@@ -138,8 +141,8 @@ export const MiniAudioPlayer: React.FC<MiniAudioPlayerProps> = ({
           {displaySecondary && !compact && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div 
-                  className="truncate text-xs text-muted-foreground"
+                <div
+                  className="text-muted-foreground truncate text-xs"
                   title={displaySecondary}
                 >
                   {displaySecondary}

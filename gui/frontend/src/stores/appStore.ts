@@ -22,14 +22,14 @@ export interface CharacterInfo {
 }
 
 export interface VoiceAssignment {
-  sts_id: string;  // Changed from voiceId
+  sts_id: string; // Changed from voiceId
   provider: string;
   voiceEntry?: VoiceEntry;
   confidence?: number;
   reasoning?: string;
   castingNotes?: string;
   role?: string;
-  additional_notes?: string[];  // New field for arbitrary comments
+  additional_notes?: string[]; // New field for arbitrary comments
   // Parsed metadata (not stored in YAML)
   line_count?: number;
   total_characters?: number;
@@ -71,7 +71,6 @@ interface UISlice {
   setError: (error: string | undefined) => void;
   clearError: () => void;
 }
-
 
 // Layout slice - handles responsive layout state
 interface LayoutSlice {
@@ -115,8 +114,13 @@ interface VoiceCastingSlice {
   // Actions
   setCastingSessionId: (sessionId: string | undefined) => void;
   setScreenplayJsonPath: (path: string | undefined) => void;
-  setScreenplayData: (data: { characters: Map<string, CharacterInfo> } | undefined) => void;
-  setCharacterAssignment: (characterName: string, assignment: VoiceAssignment) => void;
+  setScreenplayData: (
+    data: { characters: Map<string, CharacterInfo> } | undefined
+  ) => void;
+  setCharacterAssignment: (
+    characterName: string,
+    assignment: VoiceAssignment
+  ) => void;
   importAssignments: (assignments: Map<string, VoiceAssignment>) => void;
   setYamlContent: (content: string | undefined) => void;
   setCastingMethod: (method: 'manual' | 'llm-assisted') => void;
@@ -211,7 +215,6 @@ const useAppStore = create<AppStore>()(
           set({ error: undefined }, false, 'ui/clearError');
         },
 
-
         // Layout slice implementation
         viewportSize: 'desktop',
         sidebarExpanded: true,
@@ -304,11 +307,19 @@ const useAppStore = create<AppStore>()(
         yamlContent: undefined,
 
         setCastingSessionId: (sessionId) => {
-          set({ castingSessionId: sessionId }, false, 'voiceCasting/setCastingSessionId');
+          set(
+            { castingSessionId: sessionId },
+            false,
+            'voiceCasting/setCastingSessionId'
+          );
         },
 
         setScreenplayJsonPath: (path) => {
-          set({ screenplayJsonPath: path }, false, 'voiceCasting/setScreenplayJsonPath');
+          set(
+            { screenplayJsonPath: path },
+            false,
+            'voiceCasting/setScreenplayJsonPath'
+          );
         },
 
         setScreenplayData: (data) => {
@@ -332,19 +343,11 @@ const useAppStore = create<AppStore>()(
         },
 
         importAssignments: (assignments) => {
-          set(
-            { assignments },
-            false,
-            'voiceCasting/importAssignments'
-          );
+          set({ assignments }, false, 'voiceCasting/importAssignments');
         },
 
         setYamlContent: (content) => {
-          set(
-            { yamlContent: content },
-            false,
-            'voiceCasting/setYamlContent'
-          );
+          set({ yamlContent: content }, false, 'voiceCasting/setYamlContent');
         },
 
         setCastingMethod: (method) => {
@@ -422,7 +425,6 @@ export const useUIState = () =>
       clearError: state.clearError,
     }))
   );
-
 
 export const useLayout = () =>
   useAppStore(

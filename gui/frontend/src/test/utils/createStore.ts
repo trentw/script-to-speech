@@ -15,7 +15,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     // UI slice defaults
     error: undefined,
 
-
     // Layout slice defaults
     viewportSize: 'desktop',
     sidebarExpanded: true,
@@ -54,7 +53,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     // UI slice actions
     setError: (error) => set({ error }),
     clearError: () => set({ error: undefined }),
-
 
     // Layout slice actions
     setViewportSize: (size) => set({ viewportSize: size }),

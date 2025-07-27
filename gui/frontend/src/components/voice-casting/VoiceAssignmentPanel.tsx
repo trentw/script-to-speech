@@ -1,11 +1,17 @@
-import { AlertCircle,ArrowLeft, Check, Loader2, Play } from 'lucide-react';
-import { useEffect,useMemo, useState } from 'react';
+import { AlertCircle, ArrowLeft, Check, Loader2, Play } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
@@ -41,21 +47,25 @@ export function VoiceAssignmentPanel({
   onAssign,
 }: VoiceAssignmentPanelProps) {
   // Use real data from hooks
-  const { data: providers, isPending: providersLoading, error: providersError } = useProviders();
-  
+  const {
+    data: providers,
+    isPending: providersLoading,
+    error: providersError,
+  } = useProviders();
+
   // Debug logging
   console.log('VoiceAssignmentPanel render:', {
     providers,
     providersLoading,
     providersError,
-    providersLength: providers?.length
+    providersLength: providers?.length,
   });
   const { setCharacterAssignment, assignments } = useVoiceCasting();
   const { playVoicePreview } = useAudioCommands();
 
   // Get current assignment if exists
   const currentAssignment = assignments.get(characterName);
-  
+
   // Initialize state with current assignment or stable provider default
   const [selectedProvider, setSelectedProvider] = useState<string>(
     currentAssignment?.provider || 'openai'
@@ -68,8 +78,9 @@ export function VoiceAssignmentPanel({
   useEffect(() => {
     if (providers && providers.length > 0 && !currentAssignment?.provider) {
       // Only use openai or elevenlabs as they are stable
-      const stableProvider = providers.find(p => p.identifier === 'openai') || 
-                            providers.find(p => p.identifier === 'elevenlabs');
+      const stableProvider =
+        providers.find((p) => p.identifier === 'openai') ||
+        providers.find((p) => p.identifier === 'elevenlabs');
       if (stableProvider) {
         setSelectedProvider(stableProvider.identifier);
       }
@@ -77,7 +88,11 @@ export function VoiceAssignmentPanel({
   }, [providers, currentAssignment?.provider]);
 
   // Load voices for the selected provider
-  const { data: providerVoices, isPending: voicesLoading, error: voicesError } = useVoiceLibrary(selectedProvider);
+  const {
+    data: providerVoices,
+    isPending: voicesLoading,
+    error: voicesError,
+  } = useVoiceLibrary(selectedProvider);
 
   // Use the voices directly from the hook
   const voiceList = providerVoices || [];
@@ -90,8 +105,8 @@ export function VoiceAssignmentPanel({
       neutral: [],
       unknown: [],
     };
-    
-    voiceList.forEach(voice => {
+
+    voiceList.forEach((voice) => {
       const gender = voice.voice_properties?.gender?.toLowerCase() || 'unknown';
       if (grouped[gender]) {
         grouped[gender].push(voice);
@@ -99,13 +114,13 @@ export function VoiceAssignmentPanel({
         grouped.unknown.push(voice);
       }
     });
-    
+
     return grouped;
   }, [voiceList]);
 
   const handleAssign = () => {
     if (selectedVoice && selectedProvider) {
-      const voice = voiceList.find(v => v.sts_id === selectedVoice);
+      const voice = voiceList.find((v) => v.sts_id === selectedVoice);
       if (voice) {
         setCharacterAssignment(characterName, {
           voiceId: selectedVoice,
@@ -120,38 +135,47 @@ export function VoiceAssignmentPanel({
   };
 
   const handlePlayPreview = async (voice: VoiceEntry) => {
-    console.log('handlePlayPreview called:', { voice, selectedProvider, providers });
+    console.log('handlePlayPreview called:', {
+      voice,
+      selectedProvider,
+      providers,
+    });
     console.log('voice.preview_url:', voice.preview_url);
-    
-    const providerInfo = providers?.find(p => p.identifier === selectedProvider);
+
+    const providerInfo = providers?.find(
+      (p) => p.identifier === selectedProvider
+    );
     if (!providerInfo) {
       console.log('No provider info found for:', selectedProvider);
       return;
     }
-    
+
     console.log('Calling playVoicePreview with:', {
       voiceId: voice.sts_id,
       providerName: providerInfo.name,
       characterName: character.displayName,
-      previewUrl: voice.preview_url
+      previewUrl: voice.preview_url,
     });
-    
+
     await playVoicePreview(voice, providerInfo.name, character.displayName);
   };
 
   const isLoading = providersLoading || voicesLoading;
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto max-w-4xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">Assign Voice to {character.displayName}</h1>
+          <h1 className="text-2xl font-bold">
+            Assign Voice to {character.displayName}
+          </h1>
           <p className="text-muted-foreground">
-            {character.lineCount} lines • {character.totalCharacters.toLocaleString()} characters
+            {character.lineCount} lines •{' '}
+            {character.totalCharacters.toLocaleString()} characters
           </p>
         </div>
       </div>
@@ -169,7 +193,9 @@ export function VoiceAssignmentPanel({
             <div>
               <p className="text-muted-foreground">Role Type</p>
               <p className="font-medium">
-                {character.isNarrator ? 'Narrator / Stage Directions' : 'Speaking Character'}
+                {character.isNarrator
+                  ? 'Narrator / Stage Directions'
+                  : 'Speaking Character'}
               </p>
             </div>
             <div>
@@ -178,7 +204,9 @@ export function VoiceAssignmentPanel({
             </div>
             <div>
               <p className="text-muted-foreground">Longest Dialogue</p>
-              <p className="font-medium">{character.longestDialogue} characters</p>
+              <p className="font-medium">
+                {character.longestDialogue} characters
+              </p>
             </div>
           </div>
         </CardContent>
@@ -187,10 +215,10 @@ export function VoiceAssignmentPanel({
       {/* Provider Selection */}
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">Select TTS Provider</h2>
-        
+
         {isLoading ? (
-          <div className="flex items-center justify-center h-48">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex h-48 items-center justify-center">
+            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
           </div>
         ) : providersError ? (
           <Alert>
@@ -214,28 +242,44 @@ export function VoiceAssignmentPanel({
             </AlertDescription>
           </Alert>
         ) : (
-          <Tabs value={selectedProvider} onValueChange={(value) => {
-            setSelectedProvider(value);
-            setSelectedVoice(null); // Reset voice selection when provider changes
-          }}>
+          <Tabs
+            value={selectedProvider}
+            onValueChange={(value) => {
+              setSelectedProvider(value);
+              setSelectedVoice(null); // Reset voice selection when provider changes
+            }}
+          >
             {(() => {
               // Filter to only show stable providers for testing
-              const stableProviders = providers.filter(p => 
-                p.identifier === 'openai' || p.identifier === 'elevenlabs'
+              const stableProviders = providers.filter(
+                (p) =>
+                  p.identifier === 'openai' || p.identifier === 'elevenlabs'
               );
               return (
                 <>
-                  <TabsList className="grid w-full" style={{ gridTemplateColumns: `repeat(${Math.min(stableProviders.length, 4)}, 1fr)` }}>
-                    {stableProviders.map(provider => (
-                      <TabsTrigger key={provider.identifier} value={provider.identifier}>
+                  <TabsList
+                    className="grid w-full"
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.min(stableProviders.length, 4)}, 1fr)`,
+                    }}
+                  >
+                    {stableProviders.map((provider) => (
+                      <TabsTrigger
+                        key={provider.identifier}
+                        value={provider.identifier}
+                      >
                         {provider.name}
                       </TabsTrigger>
                     ))}
                   </TabsList>
 
-                  {stableProviders.map(provider => (
-                    <TabsContent key={provider.identifier} value={provider.identifier} className="space-y-4">
-                      <div className="text-sm text-muted-foreground">
+                  {stableProviders.map((provider) => (
+                    <TabsContent
+                      key={provider.identifier}
+                      value={provider.identifier}
+                      className="space-y-4"
+                    >
+                      <div className="text-muted-foreground text-sm">
                         {voiceList.length} voices available
                       </div>
 
@@ -247,80 +291,112 @@ export function VoiceAssignmentPanel({
                         </Alert>
                       ) : (
                         <div className="space-y-4">
-                          {Object.entries(voicesByGender).map(([gender, voices]) => {
-                            if (voices.length === 0) return null;
-                            
-                            return (
-                              <div key={gender} className="space-y-2">
-                                <h3 className="text-sm font-medium capitalize text-muted-foreground">
-                                  {gender} Voices ({voices.length})
-                                </h3>
-                                <div className="grid gap-3">
-                                  {voices.map(voice => (
-                                    <Card
-                                      key={voice.sts_id}
-                                      className={`group cursor-pointer transition-all ${
-                                        selectedVoice === voice.sts_id
-                                          ? 'border-primary ring-2 ring-primary/20'
-                                          : 'hover:bg-accent'
-                                      }`}
-                                      onClick={() => setSelectedVoice(voice.sts_id)}
-                                    >
-                                      <CardContent className="p-4">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-3">
-                                            <div className="space-y-1">
-                                              <div className="flex items-center gap-2">
-                                                <h4 className="font-medium">
-                                                  {voice.description?.provider_name || voice.sts_id}
-                                                </h4>
-                                                {selectedVoice === voice.sts_id && (
-                                                  <Check className="h-4 w-4 text-primary" />
+                          {Object.entries(voicesByGender).map(
+                            ([gender, voices]) => {
+                              if (voices.length === 0) return null;
+
+                              return (
+                                <div key={gender} className="space-y-2">
+                                  <h3 className="text-muted-foreground text-sm font-medium capitalize">
+                                    {gender} Voices ({voices.length})
+                                  </h3>
+                                  <div className="grid gap-3">
+                                    {voices.map((voice) => (
+                                      <Card
+                                        key={voice.sts_id}
+                                        className={`group cursor-pointer transition-all ${
+                                          selectedVoice === voice.sts_id
+                                            ? 'border-primary ring-primary/20 ring-2'
+                                            : 'hover:bg-accent'
+                                        }`}
+                                        onClick={() =>
+                                          setSelectedVoice(voice.sts_id)
+                                        }
+                                      >
+                                        <CardContent className="p-4">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <div className="space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                  <h4 className="font-medium">
+                                                    {voice.description
+                                                      ?.provider_name ||
+                                                      voice.sts_id}
+                                                  </h4>
+                                                  {selectedVoice ===
+                                                    voice.sts_id && (
+                                                    <Check className="text-primary h-4 w-4" />
+                                                  )}
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                  {voice.voice_properties
+                                                    ?.accent && (
+                                                    <Badge
+                                                      variant="secondary"
+                                                      className="text-xs"
+                                                    >
+                                                      {
+                                                        voice.voice_properties
+                                                          .accent
+                                                      }
+                                                    </Badge>
+                                                  )}
+                                                  {voice.voice_properties
+                                                    ?.age && (
+                                                    <Badge
+                                                      variant="outline"
+                                                      className="text-xs"
+                                                    >
+                                                      Age:{' '}
+                                                      {
+                                                        voice.voice_properties
+                                                          .age
+                                                      }
+                                                    </Badge>
+                                                  )}
+                                                  {voice.tags?.character_types?.map(
+                                                    (tag) => (
+                                                      <Badge
+                                                        key={tag}
+                                                        variant="outline"
+                                                        className="text-xs"
+                                                      >
+                                                        {tag}
+                                                      </Badge>
+                                                    )
+                                                  )}
+                                                </div>
+                                                {voice.description
+                                                  ?.provider_description && (
+                                                  <p className="text-muted-foreground line-clamp-2 text-xs">
+                                                    {
+                                                      voice.description
+                                                        .provider_description
+                                                    }
+                                                  </p>
                                                 )}
                                               </div>
-                                              <div className="flex items-center gap-2 flex-wrap">
-                                                {voice.voice_properties?.accent && (
-                                                  <Badge variant="secondary" className="text-xs">
-                                                    {voice.voice_properties.accent}
-                                                  </Badge>
-                                                )}
-                                                {voice.voice_properties?.age && (
-                                                  <Badge variant="outline" className="text-xs">
-                                                    Age: {voice.voice_properties.age}
-                                                  </Badge>
-                                                )}
-                                                {voice.tags?.character_types?.map(tag => (
-                                                  <Badge key={tag} variant="outline" className="text-xs">
-                                                    {tag}
-                                                  </Badge>
-                                                ))}
-                                              </div>
-                                              {voice.description?.provider_description && (
-                                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                                  {voice.description.provider_description}
-                                                </p>
-                                              )}
                                             </div>
+                                            {voice.preview_url && (
+                                              <button
+                                                className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePlayPreview(voice);
+                                                }}
+                                              >
+                                                <Play className="h-4 w-4" />
+                                              </button>
+                                            )}
                                           </div>
-                                          {voice.preview_url && (
-                                            <button
-                                              className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handlePlayPreview(voice);
-                                              }}
-                                            >
-                                              <Play className="h-4 w-4" />
-                                            </button>
-                                          )}
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  ))}
+                                        </CardContent>
+                                      </Card>
+                                    ))}
+                                  </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            }
+                          )}
                         </div>
                       )}
                     </TabsContent>

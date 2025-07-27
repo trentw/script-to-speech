@@ -1,16 +1,16 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query';
 
-import { apiService } from '@/services/api'
+import { apiService } from '@/services/api';
 
 interface GenerateVoiceLibraryPromptRequest {
-  yaml_content: string
-  providers: string[]
-  custom_prompt_path?: string
+  yaml_content: string;
+  providers: string[];
+  custom_prompt_path?: string;
 }
 
 interface GenerateVoiceLibraryPromptResponse {
-  prompt_content: string
-  privacy_notice: string
+  prompt_content: string;
+  privacy_notice: string;
 }
 
 export function useGenerateVoiceLibraryPrompt() {
@@ -24,17 +24,18 @@ export function useGenerateVoiceLibraryPrompt() {
         yaml_content: data.yaml_content,
         providers: data.providers,
         custom_prompt_path: data.custom_prompt_path,
-      })
-      
+      });
+
       if (response.error) {
         // Handle error properly - response.error might be an object
-        const errorMessage = typeof response.error === 'string' 
-          ? response.error 
-          : JSON.stringify(response.error);
-        throw new Error(errorMessage)
+        const errorMessage =
+          typeof response.error === 'string'
+            ? response.error
+            : JSON.stringify(response.error);
+        throw new Error(errorMessage);
       }
-      
-      return response.data!
+
+      return response.data!;
     },
-  })
+  });
 }

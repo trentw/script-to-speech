@@ -6,10 +6,10 @@ import { getVoiceDisplayName } from '../utils/voiceUtils';
 
 /**
  * High-level audio command hooks for common use cases
- * 
+ *
  * This hook provides application-specific commands that use the AudioService's
  * internal Zustand store pattern for atomic state updates.
- * 
+ *
  * Features:
  * - Commands pass metadata directly to AudioService (single source of truth)
  * - No dual state management - AudioService handles everything
@@ -23,79 +23,87 @@ export function useAudioCommands() {
    * Play a voice preview with explicit command flow
    * Passes metadata directly to AudioService for atomic updates
    */
-  const playVoicePreview = useCallback(async (
-    voice: VoiceEntry,
-    providerName: string,
-    characterName?: string
-  ) => {
-    if (!voice?.preview_url) return;
+  const playVoicePreview = useCallback(
+    async (voice: VoiceEntry, providerName: string, characterName?: string) => {
+      if (!voice?.preview_url) return;
 
-    const voiceName = getVoiceDisplayName(voice);
-    const primaryText = characterName
-      ? `${characterName} • Voice preview: ${voiceName}`
-      : `Voice preview: ${voiceName}`;
-    const secondaryText = `${providerName} • ${voiceName}`;
+      const voiceName = getVoiceDisplayName(voice);
+      const primaryText = characterName
+        ? `${characterName} • Voice preview: ${voiceName}`
+        : `Voice preview: ${voiceName}`;
+      const secondaryText = `${providerName} • ${voiceName}`;
 
-    // Atomic command: load audio and set metadata in one operation
-    await commands.loadAndPlay(voice.preview_url, {
-      primaryText,
-      secondaryText,
-      // no download filename for previews
-    });
-  }, [commands]);
+      // Atomic command: load audio and set metadata in one operation
+      await commands.loadAndPlay(voice.preview_url, {
+        primaryText,
+        secondaryText,
+        // no download filename for previews
+      });
+    },
+    [commands]
+  );
 
   /**
    * Play generated audio with explicit command flow
    * Passes metadata directly to AudioService for atomic updates
    */
-  const playGeneratedAudio = useCallback(async (
-    audioUrl: string,
-    primaryText: string,
-    secondaryText?: string,
-    downloadFilename?: string
-  ) => {
-    // Atomic command: load audio and set metadata in one operation
-    await commands.loadAndPlay(audioUrl, {
-      primaryText,
-      secondaryText: secondaryText || '',
-      downloadFilename,
-    });
-  }, [commands]);
+  const playGeneratedAudio = useCallback(
+    async (
+      audioUrl: string,
+      primaryText: string,
+      secondaryText?: string,
+      downloadFilename?: string
+    ) => {
+      // Atomic command: load audio and set metadata in one operation
+      await commands.loadAndPlay(audioUrl, {
+        primaryText,
+        secondaryText: secondaryText || '',
+        downloadFilename,
+      });
+    },
+    [commands]
+  );
 
   /**
    * Load audio with metadata without playing (rare use case)
    */
-  const loadAudio = useCallback(async (
-    audioUrl: string,
-    primaryText: string,
-    secondaryText?: string,
-    downloadFilename?: string
-  ) => {
-    // Atomic command: load audio and set metadata in one operation
-    commands.loadWithMetadata(audioUrl, {
-      primaryText,
-      secondaryText: secondaryText || '',
-      downloadFilename,
-    });
-  }, [commands]);
+  const loadAudio = useCallback(
+    async (
+      audioUrl: string,
+      primaryText: string,
+      secondaryText?: string,
+      downloadFilename?: string
+    ) => {
+      // Atomic command: load audio and set metadata in one operation
+      commands.loadWithMetadata(audioUrl, {
+        primaryText,
+        secondaryText: secondaryText || '',
+        downloadFilename,
+      });
+    },
+    [commands]
+  );
 
   /**
    * Load and play audio in one command (convenience method)
    * Always loads then plays - no conditional behavior
    */
-  const loadAndPlayAudio = useCallback(async (
-    audioUrl: string,
-    primaryText: string,
-    secondaryText?: string,
-    downloadFilename?: string
-  ) => {
-    // Atomic command: load audio and set metadata in one operation
-    await commands.loadAndPlay(audioUrl, {
-      primaryText,
-      secondaryText: secondaryText || '',
-      downloadFilename,
-    });
-  }, [commands]);
+  const loadAndPlayAudio = useCallback(
+    async (
+      audioUrl: string,
+      primaryText: string,
+      secondaryText?: string,
+      downloadFilename?: string
+    ) => {
+      // Atomic command: load audio and set metadata in one operation
+      await commands.loadAndPlay(audioUrl, {
+        primaryText,
+        secondaryText: secondaryText || '',
+        downloadFilename,
+      });
+    },
+    [commands]
+  );
 
   return {
     // High-level commands for common use cases
@@ -109,7 +117,7 @@ export function useAudioCommands() {
     pauseAudio: commands.pause,
     toggleAudio: commands.toggle,
     clearAudio: commands.clear,
-    
+
     // Direct access to AudioService commands
     ...commands,
   };

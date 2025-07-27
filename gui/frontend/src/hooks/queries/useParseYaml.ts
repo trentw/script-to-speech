@@ -2,14 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
 import type { VoiceAssignment } from '@/stores/appStore';
-import type { VoiceDetails,VoiceEntry } from '@/types';
+import type { VoiceDetails, VoiceEntry } from '@/types';
 
 interface ParsedYamlResponse {
-  assignments: Record<string, {
-    voice_id: string;
-    provider: string;
-    config?: Record<string, any>;
-  }>;
+  assignments: Record<
+    string,
+    {
+      voice_id: string;
+      provider: string;
+      config?: Record<string, any>;
+    }
+  >;
   screenplay_name?: string;
   metadata?: Record<string, any>;
 }
@@ -46,7 +49,7 @@ export function useParseYaml(yamlContent: string | undefined) {
         throw new Error('Failed to parse YAML');
       }
 
-      const data = await response.json() as ParsedYamlResponse;
+      const data = (await response.json()) as ParsedYamlResponse;
 
       // Convert parsed assignments to Map<string, VoiceAssignment>
       const assignmentsMap = new Map<string, VoiceAssignment>();
@@ -54,14 +57,14 @@ export function useParseYaml(yamlContent: string | undefined) {
       for (const [character, assignment] of Object.entries(data.assignments)) {
         // Optionally fetch voice details
         let voiceEntry: VoiceEntry | undefined;
-        
+
         try {
           // Try to fetch voice details from library
           const voiceResponse = await apiService.getVoiceDetails(
             assignment.provider,
             assignment.voice_id
           );
-          
+
           if (voiceResponse.data) {
             voiceEntry = voiceResponse.data;
           }

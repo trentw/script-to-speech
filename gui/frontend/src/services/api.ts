@@ -254,21 +254,24 @@ class ApiService {
   // Voice Casting endpoints
   async extractCharacters(
     screenplayJsonPath: string
-  ): Promise<ApiResponse<import('../types/voice-casting').ExtractCharactersResponse>> {
-    return this.request<import('../types/voice-casting').ExtractCharactersResponse>(
-      '/voice-casting/extract-characters',
-      {
-        method: 'POST',
-        body: JSON.stringify({ screenplay_json_path: screenplayJsonPath }),
-      }
-    );
+  ): Promise<
+    ApiResponse<import('../types/voice-casting').ExtractCharactersResponse>
+  > {
+    return this.request<
+      import('../types/voice-casting').ExtractCharactersResponse
+    >('/voice-casting/extract-characters', {
+      method: 'POST',
+      body: JSON.stringify({ screenplay_json_path: screenplayJsonPath }),
+    });
   }
 
   async generateYaml(params: {
     assignments: import('../types/voice-casting').VoiceAssignment[];
     character_info: import('../types/voice-casting').CharacterInfo[];
     include_comments?: boolean;
-  }): Promise<ApiResponse<import('../types/voice-casting').GenerateYamlResponse>> {
+  }): Promise<
+    ApiResponse<import('../types/voice-casting').GenerateYamlResponse>
+  > {
     return this.request<import('../types/voice-casting').GenerateYamlResponse>(
       '/voice-casting/generate-yaml',
       {
@@ -281,7 +284,9 @@ class ApiService {
   async validateYaml(params: {
     yaml_content: string;
     screenplay_json_path: string;
-  }): Promise<ApiResponse<import('../types/voice-casting').ValidateYamlResponse>> {
+  }): Promise<
+    ApiResponse<import('../types/voice-casting').ValidateYamlResponse>
+  > {
     return this.request<import('../types/voice-casting').ValidateYamlResponse>(
       '/voice-casting/validate-yaml',
       {
@@ -302,7 +307,6 @@ class ApiService {
       }
     );
   }
-
 
   async generateCharacterNotesPrompt(params: {
     session_id: string;
@@ -334,15 +338,20 @@ class ApiService {
 
   async uploadScreenplayJson(
     file: File
-  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+  ): Promise<
+    ApiResponse<import('../types/voice-casting').VoiceCastingSession>
+  > {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/voice-casting/upload-json`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/voice-casting/upload-json`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response
@@ -365,7 +374,9 @@ class ApiService {
 
   async getVoiceCastingSession(
     sessionId: string
-  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+  ): Promise<
+    ApiResponse<import('../types/voice-casting').VoiceCastingSession>
+  > {
     return this.request<import('../types/voice-casting').VoiceCastingSession>(
       `/voice-casting/session/${sessionId}`
     );
@@ -373,7 +384,9 @@ class ApiService {
 
   async createSessionFromTask(
     taskId: string
-  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+  ): Promise<
+    ApiResponse<import('../types/voice-casting').VoiceCastingSession>
+  > {
     return this.request<import('../types/voice-casting').VoiceCastingSession>(
       '/voice-casting/create-session-from-task',
       {
@@ -386,15 +399,20 @@ class ApiService {
   async uploadScreenplaySource(
     sessionId: string,
     file: File
-  ): Promise<ApiResponse<import('../types/voice-casting').VoiceCastingSession>> {
+  ): Promise<
+    ApiResponse<import('../types/voice-casting').VoiceCastingSession>
+  > {
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/voice-casting/session/${sessionId}/screenplay-source`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/voice-casting/session/${sessionId}/screenplay-source`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response

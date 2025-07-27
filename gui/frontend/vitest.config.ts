@@ -15,7 +15,12 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: './src/test/setup.ts',
       pool: 'forks', // Better isolation for Zustand stores
-      exclude: ['**/node_modules/**', '**/docs/**', '**/*.spec.ts', '**/*.spec.tsx'],
+      exclude: [
+        '**/node_modules/**',
+        '**/docs/**',
+        '**/*.spec.ts',
+        '**/*.spec.tsx',
+      ],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

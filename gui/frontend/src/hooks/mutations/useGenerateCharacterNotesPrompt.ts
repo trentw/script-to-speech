@@ -1,16 +1,16 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query';
 
-import { apiService } from '@/services/api'
+import { apiService } from '@/services/api';
 
 interface GenerateCharacterNotesPromptRequest {
-  sessionId: string
-  yamlContent: string
-  customPromptPath?: string
+  sessionId: string;
+  yamlContent: string;
+  customPromptPath?: string;
 }
 
 interface GenerateCharacterNotesPromptResponse {
-  prompt_content: string
-  privacy_notice: string
+  prompt_content: string;
+  privacy_notice: string;
 }
 
 export function useGenerateCharacterNotesPrompt() {
@@ -24,13 +24,13 @@ export function useGenerateCharacterNotesPrompt() {
         session_id: data.sessionId,
         yaml_content: data.yamlContent,
         custom_prompt_path: data.customPromptPath,
-      })
-      
+      });
+
       if (response.error) {
-        throw new Error(response.error)
+        throw new Error(response.error);
       }
-      
-      return response.data!
+
+      return response.data!;
     },
-  })
+  });
 }

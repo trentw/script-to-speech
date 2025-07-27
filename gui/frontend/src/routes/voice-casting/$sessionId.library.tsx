@@ -1,16 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AlertCircle, ArrowLeft, CheckCircle2, Copy, Download,Info, Loader2 } from 'lucide-react';
-import { useEffect,useState } from 'react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  Download,
+  Info,
+  Loader2,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { GeneratePromptDisplay, PrivacyWarning } from '@/components/voice-casting';
+import {
+  GeneratePromptDisplay,
+  PrivacyWarning,
+} from '@/components/voice-casting';
 import { useGenerateVoiceLibraryPrompt } from '@/hooks/mutations/useGenerateVoiceLibraryPrompt';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
 import { useProviders } from '@/hooks/queries';
@@ -34,15 +51,15 @@ function VoiceLibraryCasting() {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  
-  const {
-    assignments,
-    importAssignments,
-    setYamlContent,
-  } = useVoiceCasting();
+
+  const { assignments, importAssignments, setYamlContent } = useVoiceCasting();
 
   // Fetch session data
-  const { data: session, isLoading: sessionLoading, error: sessionError } = useQuery({
+  const {
+    data: session,
+    isLoading: sessionLoading,
+    error: sessionError,
+  } = useQuery({
     queryKey: ['voice-casting-session', sessionId],
     queryFn: async () => {
       const response = await apiService.getVoiceCastingSession(sessionId);
@@ -63,9 +80,13 @@ function VoiceLibraryCasting() {
       // Start with common providers selected
       const commonProviders = ['openai', 'elevenlabs'];
       const availableCommon = providers
-        .filter(p => commonProviders.includes(p.identifier))
-        .map(p => p.identifier);
-      setSelectedProviders(availableCommon.length > 0 ? availableCommon : [providers[0]?.identifier].filter(Boolean));
+        .filter((p) => commonProviders.includes(p.identifier))
+        .map((p) => p.identifier);
+      setSelectedProviders(
+        availableCommon.length > 0
+          ? availableCommon
+          : [providers[0]?.identifier].filter(Boolean)
+      );
     }
   }, [providers]);
 
@@ -82,7 +103,9 @@ function VoiceLibraryCasting() {
       let characterInfo = [];
       if (session?.screenplay_json_path) {
         try {
-          const extractResponse = await apiService.extractCharacters(session.screenplay_json_path);
+          const extractResponse = await apiService.extractCharacters(
+            session.screenplay_json_path
+          );
           if (!extractResponse.error) {
             characterInfo = extractResponse.data!.characters;
           }
@@ -90,13 +113,15 @@ function VoiceLibraryCasting() {
           console.warn('Failed to fetch character info for comments:', err);
         }
       }
-      
+
       return await yamlUtils.assignmentsToYaml(assignments, characterInfo);
     }
 
     // If no assignments, create minimal YAML from screenplay characters
     if (!session?.screenplay_json_path) {
-      throw new Error('No screenplay data available. Please ensure the session has character data.');
+      throw new Error(
+        'No screenplay data available. Please ensure the session has character data.'
+      );
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
@@ -135,20 +160,20 @@ function VoiceLibraryCasting() {
       }
     } catch (err) {
       console.error('Error generating prompt:', err);
-      
+
       // Extract error message properly
       let errorMessage = 'Failed to generate prompt';
-      
+
       if (err instanceof Error) {
         errorMessage = err.message;
         console.error('Error details:', {
           name: err.name,
           message: err.message,
-          stack: err.stack
+          stack: err.stack,
         });
       } else if (typeof err === 'object' && err !== null) {
         console.error('Full error object:', err);
-        
+
         // Handle serialization errors better
         if ('message' in err && typeof err.message === 'string') {
           errorMessage = err.message;
@@ -161,7 +186,8 @@ function VoiceLibraryCasting() {
           try {
             errorMessage = JSON.stringify(err, null, 2);
           } catch (jsonErr) {
-            errorMessage = 'Unknown error occurred (cannot serialize error object)';
+            errorMessage =
+              'Unknown error occurred (cannot serialize error object)';
             console.error('Error serializing error object:', jsonErr);
           }
         }
@@ -170,7 +196,7 @@ function VoiceLibraryCasting() {
       } else {
         errorMessage = String(err);
       }
-      
+
       console.error('Final error message:', errorMessage);
       setError(errorMessage);
     }
@@ -207,20 +233,20 @@ function VoiceLibraryCasting() {
       }
     } catch (err) {
       console.error('Error generating prompt:', err);
-      
+
       // Extract error message properly
       let errorMessage = 'Failed to generate prompt';
-      
+
       if (err instanceof Error) {
         errorMessage = err.message;
         console.error('Error details:', {
           name: err.name,
           message: err.message,
-          stack: err.stack
+          stack: err.stack,
         });
       } else if (typeof err === 'object' && err !== null) {
         console.error('Full error object:', err);
-        
+
         // Handle serialization errors better
         if ('message' in err && typeof err.message === 'string') {
           errorMessage = err.message;
@@ -233,7 +259,8 @@ function VoiceLibraryCasting() {
           try {
             errorMessage = JSON.stringify(err, null, 2);
           } catch (jsonErr) {
-            errorMessage = 'Unknown error occurred (cannot serialize error object)';
+            errorMessage =
+              'Unknown error occurred (cannot serialize error object)';
             console.error('Error serializing error object:', jsonErr);
           }
         }
@@ -242,7 +269,7 @@ function VoiceLibraryCasting() {
       } else {
         errorMessage = String(err);
       }
-      
+
       console.error('Final error message:', errorMessage);
       setError(errorMessage);
     }
@@ -258,11 +285,13 @@ function VoiceLibraryCasting() {
   const handleParseResponse = async () => {
     if (!yamlResponse.trim()) return;
 
-    const result = await parseYamlMutation.mutateAsync({ yamlContent: yamlResponse });
+    const result = await parseYamlMutation.mutateAsync({
+      yamlContent: yamlResponse,
+    });
 
     // Convert parsed assignments to Map format for the store
     const newAssignments = new Map();
-    result.assignments.forEach(assignment => {
+    result.assignments.forEach((assignment) => {
       newAssignments.set(assignment.character, {
         provider: assignment.provider,
         sts_id: assignment.sts_id,
@@ -277,7 +306,7 @@ function VoiceLibraryCasting() {
     // Import the assignments to the store
     importAssignments(newAssignments);
     setYamlContent(yamlResponse);
-    
+
     setShowSuccess(true);
     setTimeout(() => {
       navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
@@ -291,27 +320,34 @@ function VoiceLibraryCasting() {
   };
 
   const toggleProvider = (providerId: string) => {
-    setSelectedProviders(prev => {
+    setSelectedProviders((prev) => {
       const newSelection = prev.includes(providerId)
-        ? prev.filter(id => id !== providerId)
+        ? prev.filter((id) => id !== providerId)
         : [...prev, providerId];
-      console.log(`Toggling provider ${providerId}: ${prev} -> ${newSelection}`);
+      console.log(
+        `Toggling provider ${providerId}: ${prev} -> ${newSelection}`
+      );
       return newSelection;
     });
   };
 
   // Auto-generate prompt on mount if we have the necessary data
   useEffect(() => {
-    if (session?.screenplay_json_path && !promptText && providers && privacyAccepted) {
+    if (
+      session?.screenplay_json_path &&
+      !promptText &&
+      providers &&
+      privacyAccepted
+    ) {
       generatePromptInternal();
     }
   }, [session?.screenplay_json_path, providers, privacyAccepted]);
 
   if (sessionLoading) {
     return (
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="container mx-auto max-w-4xl space-y-6 p-6">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
       </div>
     );
@@ -319,15 +355,18 @@ function VoiceLibraryCasting() {
 
   if (sessionError) {
     return (
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
+      <div className="container mx-auto max-w-4xl space-y-6 p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Failed to load session: {sessionError instanceof Error ? sessionError.message : String(sessionError)}
+            Failed to load session:{' '}
+            {sessionError instanceof Error
+              ? sessionError.message
+              : String(sessionError)}
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
         </Button>
       </div>
@@ -335,14 +374,10 @@ function VoiceLibraryCasting() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto max-w-4xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-        >
+        <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -354,7 +389,7 @@ function VoiceLibraryCasting() {
       </div>
 
       {/* Privacy Warning Modal */}
-      <PrivacyWarning 
+      <PrivacyWarning
         isModal={showPrivacyWarning}
         onAccept={handlePrivacyAccept}
         onCancel={handlePrivacyCancel}
@@ -363,8 +398,9 @@ function VoiceLibraryCasting() {
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          This workflow helps you leverage an LLM to suggest appropriate voices from your 
-          available TTS providers based on character descriptions and casting notes.
+          This workflow helps you leverage an LLM to suggest appropriate voices
+          from your available TTS providers based on character descriptions and
+          casting notes.
         </AlertDescription>
       </Alert>
 
@@ -391,7 +427,9 @@ function VoiceLibraryCasting() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setSelectedProviders(providers.map(p => p.identifier))}
+                  onClick={() =>
+                    setSelectedProviders(providers.map((p) => p.identifier))
+                  }
                   disabled={selectedProviders.length === providers.length}
                 >
                   Select All
@@ -407,19 +445,24 @@ function VoiceLibraryCasting() {
               </div>
               <div className="space-y-2">
                 {providers.map((provider, index) => (
-                  <div key={`provider-${provider.identifier}-${index}`} className="flex items-center space-x-2">
+                  <div
+                    key={`provider-${provider.identifier}-${index}`}
+                    className="flex items-center space-x-2"
+                  >
                     <Checkbox
                       id={`provider-checkbox-${provider.identifier}`}
                       checked={selectedProviders.includes(provider.identifier)}
                       onCheckedChange={(checked) => {
-                        console.log(`Checkbox change for ${provider.identifier}: ${checked}`);
+                        console.log(
+                          `Checkbox change for ${provider.identifier}: ${checked}`
+                        );
                         if (checked === 'indeterminate') return;
                         toggleProvider(provider.identifier);
                       }}
                     />
                     <Label
                       htmlFor={`provider-checkbox-${provider.identifier}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       {provider.name || provider.identifier}
                     </Label>
@@ -456,7 +499,8 @@ function VoiceLibraryCasting() {
         <CardHeader>
           <CardTitle>Step 2: Paste LLM Response</CardTitle>
           <CardDescription>
-            Paste the YAML response from the LLM here. The parser is flexible and accepts various YAML formats.
+            Paste the YAML response from the LLM here. The parser is flexible
+            and accepts various YAML formats.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -479,12 +523,12 @@ function VoiceLibraryCasting() {
                 >
                   {copiedResponse ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="mr-2 h-4 w-4" />
                       Copy
                     </>
                   )}
@@ -500,7 +544,7 @@ function VoiceLibraryCasting() {
           >
             {parseYamlMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Parsing...
               </>
             ) : (

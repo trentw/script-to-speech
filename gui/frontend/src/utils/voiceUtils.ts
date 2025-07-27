@@ -29,4 +29,3 @@ export function getVoiceSubtext(voice: VoiceEntry): string {
     ? parts.join(' • ')
     : voice.description?.custom_description || '';
 }
-

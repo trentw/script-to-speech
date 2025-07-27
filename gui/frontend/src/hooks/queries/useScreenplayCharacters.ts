@@ -37,12 +37,13 @@ export function useScreenplayCharacters(jsonPathOrTaskId: string | undefined) {
         screenplayName = filename.replace('.json', '');
       } else {
         // Task ID provided - fetch task details first
-        const taskResponse = await apiService.getScreenplayTaskStatus(jsonPathOrTaskId);
-        
+        const taskResponse =
+          await apiService.getScreenplayTaskStatus(jsonPathOrTaskId);
+
         if (taskResponse.error) {
           throw new Error(taskResponse.error);
         }
-        
+
         const taskResult = taskResponse.data!;
 
         if (taskResult.status !== 'completed' || !taskResult.result) {
@@ -74,7 +75,9 @@ export function useScreenplayCharacters(jsonPathOrTaskId: string | undefined) {
           lineCount: char.line_count,
           totalCharacters: char.total_characters,
           longestDialogue: char.longest_dialogue,
-          isNarrator: char.name.toLowerCase() === 'default' || char.name.toLowerCase() === 'narrator',
+          isNarrator:
+            char.name.toLowerCase() === 'default' ||
+            char.name.toLowerCase() === 'narrator',
           castingNotes: char.casting_notes,
           role: char.role,
         };

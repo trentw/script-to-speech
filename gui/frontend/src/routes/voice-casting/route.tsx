@@ -20,7 +20,8 @@ export const Route = createFileRoute('/voice-casting')({
       showFooter: true,
       mobileDrawers: [],
     },
-    helpText: 'Interactively assign TTS provider voices to each character in your screenplay. Preview voices and generate YAML configuration files.',
+    helpText:
+      'Interactively assign TTS provider voices to each character in your screenplay. Preview voices and generate YAML configuration files.',
   } satisfies RouteStaticData,
 });
 

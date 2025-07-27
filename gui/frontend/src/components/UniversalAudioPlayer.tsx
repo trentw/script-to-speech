@@ -3,7 +3,11 @@ import React, { useEffect } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 
-import { useAudioCommands,useAudioMetadata, useAudioState } from '../services/AudioService';
+import {
+  useAudioCommands,
+  useAudioMetadata,
+  useAudioState,
+} from '../services/AudioService';
 import { DownloadButton, DownloadButtonPresets } from './ui/DownloadButton';
 import { Slider } from './ui/slider';
 import {
@@ -45,7 +49,7 @@ export const UniversalAudioPlayer: React.FC<AudioPlayerProps> = ({
   const isPlaying = playbackState === 'playing';
   const isLoading = playbackState === 'loading';
   const showLoading = isLoading;
-  
+
   // Specific control capabilities - fixes disabled controls during playback
   const canTogglePlayback = hasAudio && !isLoading && !error;
   const canSeek = hasAudio && !isLoading && !error && duration > 0;

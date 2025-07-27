@@ -41,7 +41,11 @@ vi.mock('../app/ProviderSelectionSelector', () => ({
 }));
 
 vi.mock('../VoiceSelector', () => ({
-  VoiceSelector: ({ selectedVoice, onVoiceSelect, onOpenVoicePanel }: {
+  VoiceSelector: ({
+    selectedVoice,
+    onVoiceSelect,
+    onOpenVoicePanel,
+  }: {
     selectedVoice?: VoiceEntry;
     onVoiceSelect: (voice: VoiceEntry) => void;
     onOpenVoicePanel: () => void;
@@ -56,7 +60,10 @@ vi.mock('../VoiceSelector', () => ({
 }));
 
 vi.mock('../ConfigForm', () => ({
-  ConfigForm: ({ config, onConfigChange }: {
+  ConfigForm: ({
+    config,
+    onConfigChange,
+  }: {
     config?: Record<string, unknown>;
     onConfigChange: (config: Record<string, unknown>) => void;
   }) => (
@@ -72,7 +79,10 @@ vi.mock('../ConfigForm', () => ({
 }));
 
 vi.mock('../ProviderSelectionPanel', () => ({
-  ProviderSelectionPanel: ({ onProviderSelect, onBack }: {
+  ProviderSelectionPanel: ({
+    onProviderSelect,
+    onBack,
+  }: {
     onProviderSelect: (provider: string) => void;
     onBack: () => void;
   }) => (
@@ -84,7 +94,10 @@ vi.mock('../ProviderSelectionPanel', () => ({
 }));
 
 vi.mock('../VoiceSelectionPanel', () => ({
-  VoiceSelectionPanel: ({ onVoiceSelect, onBack }: {
+  VoiceSelectionPanel: ({
+    onVoiceSelect,
+    onBack,
+  }: {
     onVoiceSelect: (voice: VoiceEntry) => void;
     onBack: () => void;
   }) => (
@@ -98,7 +111,9 @@ vi.mock('../VoiceSelectionPanel', () => ({
 }));
 
 vi.mock('../HistoryTab', () => ({
-  HistoryTab: ({ onTaskSelect }: {
+  HistoryTab: ({
+    onTaskSelect,
+  }: {
     onTaskSelect: (task: { task_id: string; status: string }) => void;
   }) => (
     <div data-testid="history-tab">
@@ -112,7 +127,10 @@ vi.mock('../HistoryTab', () => ({
 }));
 
 vi.mock('../HistoryDetailsPanel', () => ({
-  HistoryDetailsPanel: ({ task, onBack }: {
+  HistoryDetailsPanel: ({
+    task,
+    onBack,
+  }: {
     task: { task_id: string };
     onBack: () => void;
   }) => (

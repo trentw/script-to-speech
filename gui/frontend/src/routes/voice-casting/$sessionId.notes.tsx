@@ -1,15 +1,32 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { AlertCircle, ArrowLeft, CheckCircle2, Copy, Download, Loader2 } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  Copy,
+  Download,
+  Loader2,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { GeneratePromptDisplay, PrivacyWarning, ScreenplaySourceUpload } from '@/components/voice-casting';
+import {
+  GeneratePromptDisplay,
+  PrivacyWarning,
+  ScreenplaySourceUpload,
+} from '@/components/voice-casting';
 import { useGenerateCharacterNotesPrompt } from '@/hooks/mutations/useGenerateCharacterNotesPrompt';
 import { useGenerateYaml } from '@/hooks/mutations/useGenerateYaml';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
@@ -32,15 +49,15 @@ function CharacterNotesGeneration() {
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-  
-  const {
-    assignments,
-    importAssignments,
-    setYamlContent,
-  } = useVoiceCasting();
+
+  const { assignments, importAssignments, setYamlContent } = useVoiceCasting();
 
   // Fetch session data
-  const { data: session, isLoading: sessionLoading, error: sessionError } = useQuery({
+  const {
+    data: session,
+    isLoading: sessionLoading,
+    error: sessionError,
+  } = useQuery({
     queryKey: ['voice-casting-session', sessionId],
     queryFn: async () => {
       const response = await apiService.getVoiceCastingSession(sessionId);
@@ -77,10 +94,12 @@ function CharacterNotesGeneration() {
     // Generate YAML structure for character notes prompt
     // If we have assignments, use them, otherwise create YAML from screenplay character data
     let yamlContent = '';
-    
+
     if (assignments.size > 0) {
       // Generate YAML from current assignments
-      const yamlResult = await generateYamlMutation.mutateAsync({ assignments });
+      const yamlResult = await generateYamlMutation.mutateAsync({
+        assignments,
+      });
       yamlContent = yamlResult.data.yaml_content;
     } else {
       // Create YAML structure from screenplay character data
@@ -106,7 +125,9 @@ function CharacterNotesGeneration() {
       let characterInfo = [];
       if (session?.screenplay_json_path) {
         try {
-          const extractResponse = await apiService.extractCharacters(session.screenplay_json_path);
+          const extractResponse = await apiService.extractCharacters(
+            session.screenplay_json_path
+          );
           if (!extractResponse.error) {
             characterInfo = extractResponse.data!.characters;
           }
@@ -114,13 +135,15 @@ function CharacterNotesGeneration() {
           console.warn('Failed to fetch character info for comments:', err);
         }
       }
-      
+
       return await yamlUtils.assignmentsToYaml(assignments, characterInfo);
     }
 
     // If no assignments, create minimal YAML from screenplay characters
     if (!session?.screenplay_json_path) {
-      throw new Error('No screenplay data available. Please ensure the session has character data.');
+      throw new Error(
+        'No screenplay data available. Please ensure the session has character data.'
+      );
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
@@ -143,11 +166,13 @@ function CharacterNotesGeneration() {
   const handleParseResponse = async () => {
     if (!yamlResponse.trim()) return;
 
-    const result = await parseYamlMutation.mutateAsync({ yamlContent: yamlResponse });
+    const result = await parseYamlMutation.mutateAsync({
+      yamlContent: yamlResponse,
+    });
 
     // Convert parsed assignments to Map format for the store
     const newAssignments = new Map();
-    result.assignments.forEach(assignment => {
+    result.assignments.forEach((assignment) => {
       newAssignments.set(assignment.character, {
         provider: assignment.provider,
         sts_id: assignment.sts_id,
@@ -162,7 +187,7 @@ function CharacterNotesGeneration() {
     // Import the assignments to the store
     importAssignments(newAssignments);
     setYamlContent(yamlResponse);
-    
+
     setShowSuccess(true);
     setTimeout(() => {
       navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
@@ -177,16 +202,27 @@ function CharacterNotesGeneration() {
 
   // Auto-generate prompt on mount if we have the necessary data
   useEffect(() => {
-    if (session?.screenplay_json_path && session?.screenplay_source_path && assignments.size > 0 && !promptText && privacyAccepted) {
+    if (
+      session?.screenplay_json_path &&
+      session?.screenplay_source_path &&
+      assignments.size > 0 &&
+      !promptText &&
+      privacyAccepted
+    ) {
       handleGeneratePrompt();
     }
-  }, [session?.screenplay_json_path, session?.screenplay_source_path, assignments.size, privacyAccepted]);
+  }, [
+    session?.screenplay_json_path,
+    session?.screenplay_source_path,
+    assignments.size,
+    privacyAccepted,
+  ]);
 
   if (sessionLoading) {
     return (
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="container mx-auto max-w-4xl space-y-6 p-6">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
         </div>
       </div>
     );
@@ -194,7 +230,7 @@ function CharacterNotesGeneration() {
 
   if (sessionError) {
     return (
-      <div className="container max-w-4xl mx-auto p-6 space-y-6">
+      <div className="container mx-auto max-w-4xl space-y-6 p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -202,7 +238,7 @@ function CharacterNotesGeneration() {
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={handleBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
         </Button>
       </div>
@@ -210,14 +246,10 @@ function CharacterNotesGeneration() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto p-6 space-y-6">
+    <div className="container mx-auto max-w-4xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleBack}
-        >
+        <Button variant="ghost" size="icon" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -229,7 +261,7 @@ function CharacterNotesGeneration() {
       </div>
 
       {/* Privacy Warning Modal */}
-      <PrivacyWarning 
+      <PrivacyWarning
         isModal={showPrivacyWarning}
         onAccept={handlePrivacyAccept}
         onCancel={handlePrivacyCancel}
@@ -240,18 +272,29 @@ function CharacterNotesGeneration() {
         <CardHeader>
           <CardTitle>Step 1: Screenplay Source</CardTitle>
           <CardDescription>
-            Upload the original screenplay file (PDF or TXT) to generate character notes. 
-            This helps the LLM understand character context and relationships.
+            Upload the original screenplay file (PDF or TXT) to generate
+            character notes. This helps the LLM understand character context and
+            relationships.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {session?.screenplay_source_path ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg bg-green-50 border-green-200">
+              <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-4">
                 <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <svg className="h-4 w-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                    <svg
+                      className="h-4 w-4 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   </div>
                   <div>
@@ -268,10 +311,13 @@ function CharacterNotesGeneration() {
                   size="sm"
                   onClick={() => {
                     // Reset the screenplay source path to show upload again
-                    queryClient.setQueryData(['voice-casting-session', sessionId], {
-                      ...session,
-                      screenplay_source_path: null
-                    });
+                    queryClient.setQueryData(
+                      ['voice-casting-session', sessionId],
+                      {
+                        ...session,
+                        screenplay_source_path: null,
+                      }
+                    );
                   }}
                 >
                   Change File
@@ -283,7 +329,9 @@ function CharacterNotesGeneration() {
               sessionId={sessionId}
               onUploadComplete={() => {
                 // Invalidate session query to refetch updated data
-                queryClient.invalidateQueries({ queryKey: ['voice-casting-session', sessionId] });
+                queryClient.invalidateQueries({
+                  queryKey: ['voice-casting-session', sessionId],
+                });
               }}
             />
           )}
@@ -295,10 +343,9 @@ function CharacterNotesGeneration() {
         <CardHeader>
           <CardTitle>Step 2: Generate Prompt</CardTitle>
           <CardDescription>
-            {session?.screenplay_source_path 
-              ? "Copy this prompt and paste it into your preferred LLM"
-              : "Upload the screenplay source file first to generate the character notes prompt"
-            }
+            {session?.screenplay_source_path
+              ? 'Copy this prompt and paste it into your preferred LLM'
+              : 'Upload the screenplay source file first to generate the character notes prompt'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -312,11 +359,14 @@ function CharacterNotesGeneration() {
               sessionId={sessionId}
             />
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>Please upload the screenplay source file above to generate the prompt.</p>
+            <div className="text-muted-foreground py-8 text-center">
+              <p>
+                Please upload the screenplay source file above to generate the
+                prompt.
+              </p>
             </div>
           )}
-          
+
           {generatePromptMutation.error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -333,7 +383,8 @@ function CharacterNotesGeneration() {
         <CardHeader>
           <CardTitle>Step 3: Paste LLM Response</CardTitle>
           <CardDescription>
-            Paste the YAML response from the LLM here. The parser is flexible and accepts various YAML formats.
+            Paste the YAML response from the LLM here. The parser is flexible
+            and accepts various YAML formats.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -356,12 +407,12 @@ function CharacterNotesGeneration() {
                 >
                   {copiedResponse ? (
                     <>
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
                       Copied!
                     </>
                   ) : (
                     <>
-                      <Copy className="h-4 w-4 mr-2" />
+                      <Copy className="mr-2 h-4 w-4" />
                       Copy
                     </>
                   )}
@@ -377,7 +428,7 @@ function CharacterNotesGeneration() {
           >
             {parseYamlMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Parsing...
               </>
             ) : (

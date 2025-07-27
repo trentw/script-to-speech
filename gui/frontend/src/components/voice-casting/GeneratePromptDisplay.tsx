@@ -17,7 +17,7 @@ export function GeneratePromptDisplay({
   promptText,
   isGenerating,
   onGenerate,
-  generateButtonText = "Generate Prompt",
+  generateButtonText = 'Generate Prompt',
   filePrefix,
   sessionId,
 }: GeneratePromptDisplayProps) {
@@ -58,29 +58,21 @@ export function GeneratePromptDisplay({
           className="h-48 font-mono text-sm"
         />
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleCopyPrompt}
-          >
+          <Button size="sm" variant="outline" onClick={handleCopyPrompt}>
             {copiedPrompt ? (
               <>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
+                <CheckCircle2 className="mr-2 h-4 w-4" />
                 Copied!
               </>
             ) : (
               <>
-                <Copy className="h-4 w-4 mr-2" />
+                <Copy className="mr-2 h-4 w-4" />
                 Copy
               </>
             )}
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleDownloadPrompt}
-          >
-            <Download className="h-4 w-4 mr-2" />
+          <Button size="sm" variant="outline" onClick={handleDownloadPrompt}>
+            <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
         </div>
@@ -89,10 +81,8 @@ export function GeneratePromptDisplay({
   }
 
   return (
-    <div className="text-center py-8">
-      <Button onClick={onGenerate}>
-        {generateButtonText}
-      </Button>
+    <div className="py-8 text-center">
+      <Button onClick={onGenerate}>{generateButtonText}</Button>
     </div>
   );
 }

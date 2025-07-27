@@ -21,7 +21,6 @@ export const VoiceSelector: React.FC<VoiceSelectorProps> = ({
   onVoiceSelect: _onVoiceSelect,
   onOpenVoicePanel,
 }) => {
-
   const renderVoiceTags = (voice: VoiceEntry) => {
     const tags: Array<{
       label: string;

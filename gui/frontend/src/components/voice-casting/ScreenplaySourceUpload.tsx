@@ -1,9 +1,21 @@
-import { AlertCircle, CheckCircle2, FileText, Loader2, Upload } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  Upload,
+} from 'lucide-react';
 import { useRef, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { useUploadScreenplaySource } from '@/hooks/mutations/useUploadScreenplaySource';
 
 interface ScreenplaySourceUploadProps {
@@ -11,12 +23,15 @@ interface ScreenplaySourceUploadProps {
   onUploadComplete?: () => void;
 }
 
-export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: ScreenplaySourceUploadProps) {
+export function ScreenplaySourceUpload({
+  sessionId,
+  onUploadComplete,
+}: ScreenplaySourceUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const uploadMutation = useUploadScreenplaySource();
 
   const acceptedTypes = '.pdf,.txt';
@@ -44,13 +59,15 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
       setSelectedFile(null);
       return;
     }
-    
+
     setSelectedFile(file);
     setValidationError(null);
     uploadMutation.reset(); // Clear any previous errors
   };
 
-  const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       handleFileSelect(file);
@@ -70,7 +87,7 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
   const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
     setDragOver(false);
-    
+
     const file = event.dataTransfer.files[0];
     if (file) {
       handleFileSelect(file);
@@ -91,7 +108,7 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
         sessionId,
         file: selectedFile,
       });
-      
+
       onUploadComplete?.();
     } catch {
       // Error is handled by the mutation
@@ -119,18 +136,15 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
           Upload Screenplay Source
         </CardTitle>
         <CardDescription>
-          Upload the original screenplay file (PDF or TXT) to generate character notes. 
-          This helps the LLM understand character context and relationships.
+          Upload the original screenplay file (PDF or TXT) to generate character
+          notes. This helps the LLM understand character context and
+          relationships.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* File Drop Zone */}
         <div
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center transition-colors
-            ${dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-            ${selectedFile ? 'bg-muted/50' : 'hover:border-primary/50 hover:bg-primary/5'}
-          `}
+          className={`rounded-lg border-2 border-dashed p-8 text-center transition-colors ${dragOver ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'} ${selectedFile ? 'bg-muted/50' : 'hover:border-primary/50 hover:bg-primary/5'} `}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -142,13 +156,13 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
             onChange={handleFileInputChange}
             className="hidden"
           />
-          
+
           {selectedFile ? (
             <div className="space-y-2">
-              <FileText className="h-12 w-12 mx-auto text-primary" />
+              <FileText className="text-primary mx-auto h-12 w-12" />
               <div>
                 <p className="font-medium">{selectedFile.name}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   {(selectedFile.size / (1024 * 1024)).toFixed(1)} MB
                 </p>
               </div>
@@ -164,12 +178,12 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
             </div>
           ) : (
             <div className="space-y-4">
-              <Upload className="h-12 w-12 mx-auto text-muted-foreground" />
+              <Upload className="text-muted-foreground mx-auto h-12 w-12" />
               <div>
                 <p className="text-lg font-medium">
                   Drop your screenplay file here
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   or click to browse
                 </p>
               </div>
@@ -185,9 +199,13 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
         </div>
 
         {/* File Requirements */}
-        <div className="text-sm text-muted-foreground space-y-1">
-          <p><strong>Accepted formats:</strong> PDF, TXT</p>
-          <p><strong>Maximum size:</strong> 100MB</p>
+        <div className="text-muted-foreground space-y-1 text-sm">
+          <p>
+            <strong>Accepted formats:</strong> PDF, TXT
+          </p>
+          <p>
+            <strong>Maximum size:</strong> 100MB
+          </p>
         </div>
 
         {/* Error Display */}
@@ -205,7 +223,8 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
           <Alert>
             <CheckCircle2 className="h-4 w-4" />
             <AlertDescription>
-              Screenplay source uploaded successfully! You can now generate the character notes prompt.
+              Screenplay source uploaded successfully! You can now generate the
+              character notes prompt.
             </AlertDescription>
           </Alert>
         )}
@@ -219,12 +238,12 @@ export function ScreenplaySourceUpload({ sessionId, onUploadComplete }: Screenpl
           >
             {uploadMutation.isPending ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Uploading...
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4 mr-2" />
+                <Upload className="mr-2 h-4 w-4" />
                 Upload Screenplay
               </>
             )}

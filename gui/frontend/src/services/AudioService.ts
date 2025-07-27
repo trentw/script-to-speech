@@ -1,9 +1,9 @@
 /**
  * AudioService - Command-pattern singleton with Internal Zustand Store
- * 
+ *
  * This service implements the expert-recommended "AudioService with Internal Zustand Store" pattern
  * to create a single source of truth for ALL audio-related state and metadata.
- * 
+ *
  * Key features:
  * - Single source of truth for audio state AND metadata
  * - Internal Zustand store for React integration and atomic updates
@@ -17,7 +17,12 @@
 import { createStore } from 'zustand/vanilla';
 
 // Finite state enum for clear state management
-export type AudioPlaybackState = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
+export type AudioPlaybackState =
+  | 'idle'
+  | 'loading'
+  | 'playing'
+  | 'paused'
+  | 'error';
 
 // Complete audio state including both playback and metadata
 export interface AudioServiceState {
@@ -27,7 +32,7 @@ export interface AudioServiceState {
   duration: number;
   error: string | null;
   src: string | null;
-  
+
   // Metadata (moved from global Zustand store)
   primaryText: string;
   secondaryText: string;
@@ -42,19 +47,20 @@ export interface AudioMetadata {
 }
 
 // Create internal Zustand store for complete audio state
-const createAudioStore = () => createStore<AudioServiceState>((set) => ({
-  // Audio playback state
-  playbackState: 'idle' as AudioPlaybackState,
-  currentTime: 0,
-  duration: 0,
-  error: null,
-  src: null,
-  
-  // Metadata 
-  primaryText: '',
-  secondaryText: '',
-  downloadFilename: '',
-}));
+const createAudioStore = () =>
+  createStore<AudioServiceState>((set) => ({
+    // Audio playback state
+    playbackState: 'idle' as AudioPlaybackState,
+    currentTime: 0,
+    duration: 0,
+    error: null,
+    src: null,
+
+    // Metadata
+    primaryText: '',
+    secondaryText: '',
+    downloadFilename: '',
+  }));
 
 class AudioService {
   private static instance: AudioService | null = null;
@@ -62,10 +68,10 @@ class AudioService {
   private playPromise: Promise<void> | null = null;
   private lastCommandTime: number = 0;
   private readonly commandDebounceMs: number = 50; // Prevent rapid command bursts
-  
+
   // Internal Zustand store - single source of truth for ALL audio state
   private store = createAudioStore();
-  
+
   // Subscribe function for React components
   public subscribe = this.store.subscribe;
   public getState = this.store.getState;
@@ -76,7 +82,7 @@ class AudioService {
     this.audio.loop = false;
     this.audio.volume = 1;
     this.setupHTMLAudioListeners();
-    
+
     // NOTE: Memory Management Trade-off
     // The singleton pattern means this instance and its event listeners
     // persist for the application's lifetime. This is a minor memory leak
@@ -94,7 +100,6 @@ class AudioService {
     }
     return AudioService.instance;
   }
-
 
   /**
    * Command guard - prevents rapid command bursts and ensures idempotent operations
@@ -143,7 +148,7 @@ class AudioService {
   };
 
   private onTimeUpdate = (): void => {
-    this.updateState({ 
+    this.updateState({
       currentTime: this.audio.currentTime,
       duration: this.audio.duration,
     });
@@ -173,7 +178,7 @@ class AudioService {
   private onError = (): void => {
     const error = this.audio.error;
     let message = 'Unknown audio error';
-    
+
     if (error) {
       switch (error.code) {
         case error.MEDIA_ERR_ABORTED:
@@ -183,21 +188,23 @@ class AudioService {
           message = 'A network error caused the audio download to fail.';
           break;
         case error.MEDIA_ERR_DECODE:
-          message = 'The audio playback was aborted due to a corruption problem.';
+          message =
+            'The audio playback was aborted due to a corruption problem.';
           break;
         case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-          message = 'The audio could not be loaded, either because the server or network failed or because the format is not supported.';
+          message =
+            'The audio could not be loaded, either because the server or network failed or because the format is not supported.';
           break;
         default:
           message = 'An unknown error occurred.';
           break;
       }
     }
-    
+
     const errorMsg = `Audio error (${error?.code || 'unknown'}): ${message}`;
-    
+
     console.error('Audio error:', errorMsg, this.audio.error);
-    
+
     this.updateState({
       playbackState: 'error',
       error: errorMsg,
@@ -206,7 +213,7 @@ class AudioService {
 
   private onLoadStart = (): void => {
     // Audio started loading - transition to loading state
-    this.updateState({ 
+    this.updateState({
       playbackState: 'loading',
       error: null, // Clear previous errors
     });
@@ -258,7 +265,10 @@ class AudioService {
   private async _play(): Promise<void> {
     const currentState = this.store.getState();
     // State guard - only play from idle or paused states
-    if (currentState.playbackState !== 'idle' && currentState.playbackState !== 'paused') {
+    if (
+      currentState.playbackState !== 'idle' &&
+      currentState.playbackState !== 'paused'
+    ) {
       return;
     }
 
@@ -275,11 +285,12 @@ class AudioService {
       this.updateState({ error: null });
       this.playPromise = this.audio.play();
       await this.playPromise;
-      
+
       // State will be updated by onPlay event handler
     } catch (error) {
       console.error('Error playing audio:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Playback failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Playback failed';
       this.updateState({
         playbackState: 'error',
         error: errorMessage,
@@ -323,7 +334,10 @@ class AudioService {
 
     const currentState = this.store.getState();
     // State guard - can seek in idle, playing, or paused states
-    if (currentState.playbackState === 'loading' || currentState.playbackState === 'error') {
+    if (
+      currentState.playbackState === 'loading' ||
+      currentState.playbackState === 'error'
+    ) {
       return;
     }
 
@@ -338,11 +352,14 @@ class AudioService {
    */
   public async toggle(): Promise<void> {
     if (!this.guardCommand()) return;
-    
+
     const currentState = this.store.getState();
     if (currentState.playbackState === 'playing') {
       this.pause();
-    } else if (currentState.playbackState === 'idle' || currentState.playbackState === 'paused') {
+    } else if (
+      currentState.playbackState === 'idle' ||
+      currentState.playbackState === 'paused'
+    ) {
       await this._play();
     }
   }
@@ -359,7 +376,7 @@ class AudioService {
       this.audio.pause();
       this.audio.removeAttribute('src');
       this.audio.load(); // Reset the media element properly
-      
+
       this.updateState({
         playbackState: 'idle',
         currentTime: 0,
@@ -377,7 +394,10 @@ class AudioService {
    * This is the preferred method that atomically updates both audio and metadata
    * Uses internal _play() to avoid command guard conflicts within atomic operation
    */
-  public async loadAndPlay(src: string, metadata?: AudioMetadata): Promise<void> {
+  public async loadAndPlay(
+    src: string,
+    metadata?: AudioMetadata
+  ): Promise<void> {
     if (!this.guardCommand()) return;
 
     // Atomic update - set both audio source and metadata in one operation
@@ -399,7 +419,7 @@ class AudioService {
     this.audio.pause();
     this.audio.src = src;
     this.audio.load();
-    
+
     // Wait for loading to complete, then play using internal method
     // Use _play() instead of play() to avoid command guard debounce conflict
     await this.waitForState('idle');
@@ -455,7 +475,10 @@ class AudioService {
   /**
    * Helper: Wait for specific state (for command sequencing)
    */
-  private waitForState(targetState: AudioPlaybackState, timeoutMs: number = 15000): Promise<void> {
+  private waitForState(
+    targetState: AudioPlaybackState,
+    timeoutMs: number = 15000
+  ): Promise<void> {
     return new Promise((resolve, reject) => {
       const currentState = this.store.getState();
       if (currentState.playbackState === targetState) {
@@ -518,9 +541,12 @@ class AudioService {
   public static destroy(): void {
     if (AudioService.instance) {
       const instance = AudioService.instance;
-      
+
       // Remove all HTML audio event listeners
-      instance.audio.removeEventListener('loadedmetadata', instance.onLoadedMetadata);
+      instance.audio.removeEventListener(
+        'loadedmetadata',
+        instance.onLoadedMetadata
+      );
       instance.audio.removeEventListener('timeupdate', instance.onTimeUpdate);
       instance.audio.removeEventListener('play', instance.onPlay);
       instance.audio.removeEventListener('pause', instance.onPause);
@@ -528,13 +554,13 @@ class AudioService {
       instance.audio.removeEventListener('error', instance.onError);
       instance.audio.removeEventListener('loadstart', instance.onLoadStart);
       instance.audio.removeEventListener('canplay', instance.onCanPlay);
-      
+
       // Event listeners are already removed above
-      
+
       // Pause and clear audio
       instance.audio.pause();
       instance.audio.src = '';
-      
+
       AudioService.instance = null;
     }
   }
@@ -577,7 +603,9 @@ const audioStateSelector = (state: AudioServiceState): AudioStateResult => ({
   src: state.src,
 });
 
-const audioMetadataSelector = (state: AudioServiceState): AudioMetadataResult => ({
+const audioMetadataSelector = (
+  state: AudioServiceState
+): AudioMetadataResult => ({
   primaryText: state.primaryText,
   secondaryText: state.secondaryText,
   downloadFilename: state.downloadFilename,
@@ -586,10 +614,10 @@ const audioMetadataSelector = (state: AudioServiceState): AudioMetadataResult =>
 // Generic hook for subscribing to AudioService internal store with proper caching
 function useAudioServiceStore<T>(selector: (state: AudioServiceState) => T): T {
   const service = AudioService.getInstance();
-  
+
   const getSnapshot = useCallback(() => {
     const currentState = service.getState();
-    
+
     // Handle audio state selector with lightweight key (only relevant fields)
     if (selector === audioStateSelector) {
       const stateSnapshot = `${currentState.playbackState}|${currentState.currentTime}|${currentState.duration}|${currentState.error}|${currentState.src}`;
@@ -601,7 +629,7 @@ function useAudioServiceStore<T>(selector: (state: AudioServiceState) => T): T {
       lastAudioStateSnapshot = stateSnapshot;
       return result as T;
     }
-    
+
     // Handle metadata selector with its own lightweight key (only metadata fields)
     if (selector === audioMetadataSelector) {
       const stateSnapshot = `${currentState.primaryText}|${currentState.secondaryText}|${currentState.downloadFilename}`;
@@ -613,11 +641,11 @@ function useAudioServiceStore<T>(selector: (state: AudioServiceState) => T): T {
       lastMetadataSnapshot = stateSnapshot;
       return result as T;
     }
-    
+
     // For unknown selectors, call directly (no caching)
     return selector(currentState);
   }, [service, selector]);
-  
+
   return useSyncExternalStore(
     service.subscribe,
     getSnapshot,
@@ -625,7 +653,7 @@ function useAudioServiceStore<T>(selector: (state: AudioServiceState) => T): T {
   );
 }
 
-// Convenience hooks for common state selections  
+// Convenience hooks for common state selections
 export function useAudioState(): AudioStateResult {
   return useAudioServiceStore(audioStateSelector);
 }
@@ -635,17 +663,23 @@ export function useAudioMetadata(): AudioMetadataResult {
 }
 
 export function useAudioCommands() {
-  return useMemo(() => ({
-    play: () => audioService.play(),
-    pause: () => audioService.pause(),
-    toggle: () => audioService.toggle(),
-    seek: (time: number) => audioService.seek(time),
-    load: (src: string) => audioService.load(src),
-    loadAndPlay: (src: string, metadata?: AudioMetadata) => audioService.loadAndPlay(src, metadata),
-    loadWithMetadata: (src: string, metadata: AudioMetadata) => audioService.loadWithMetadata(src, metadata),
-    setMetadata: (metadata: AudioMetadata) => audioService.setMetadata(metadata),
-    clear: () => audioService.clear(),
-  }), []); // Empty dependency array since audioService is a stable singleton
+  return useMemo(
+    () => ({
+      play: () => audioService.play(),
+      pause: () => audioService.pause(),
+      toggle: () => audioService.toggle(),
+      seek: (time: number) => audioService.seek(time),
+      load: (src: string) => audioService.load(src),
+      loadAndPlay: (src: string, metadata?: AudioMetadata) =>
+        audioService.loadAndPlay(src, metadata),
+      loadWithMetadata: (src: string, metadata: AudioMetadata) =>
+        audioService.loadWithMetadata(src, metadata),
+      setMetadata: (metadata: AudioMetadata) =>
+        audioService.setMetadata(metadata),
+      clear: () => audioService.clear(),
+    }),
+    []
+  ); // Empty dependency array since audioService is a stable singleton
 }
 
 // Also export the class for testing

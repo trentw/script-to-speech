@@ -15,7 +15,11 @@ vi.mock('@/stores/appStore', () => ({
 // Mock framer-motion to avoid animation complexities in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    aside: ({ children, className, style }: {
+    aside: ({
+      children,
+      className,
+      style,
+    }: {
       children: React.ReactNode;
       className?: string;
       style?: React.CSSProperties;

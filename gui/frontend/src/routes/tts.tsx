@@ -6,11 +6,7 @@ import { RouteError } from '@/components/errors';
 
 import { MainContent } from '../components/app/MainContent';
 import { useAudioGeneration } from '../hooks/audio/useAudioGeneration';
-import {
-  useConfiguration,
-  useUIState,
-  useUserInput,
-} from '../stores/appStore';
+import { useConfiguration, useUIState, useUserInput } from '../stores/appStore';
 import type { GenerationRequest } from '../types';
 import type { RouteStaticData } from '../types/route-metadata';
 
