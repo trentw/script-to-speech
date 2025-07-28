@@ -10,6 +10,7 @@ interface ValidateYamlRequest {
 
 export function useValidateYaml() {
   return useMutation<ValidateYamlResponse, Error, ValidateYamlRequest>({
+    mutationKey: ['validateYaml'],
     mutationFn: async ({ yamlContent, screenplayJsonPath }) => {
       const response = await apiService.validateYaml({
         yaml_content: yamlContent,

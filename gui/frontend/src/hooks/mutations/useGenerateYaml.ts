@@ -8,13 +8,14 @@ import type {
 } from '@/types/voice-casting';
 
 interface GenerateYamlRequest {
-  assignments: VoiceAssignment[];
-  characterInfo: CharacterInfo[];
+  assignments: Record<string, VoiceAssignment>;
+  characterInfo: Record<string, CharacterInfo>;
   includeComments?: boolean;
 }
 
 export function useGenerateYaml() {
   return useMutation<GenerateYamlResponse, Error, GenerateYamlRequest>({
+    mutationKey: ['generateYaml'],
     mutationFn: async (data) => {
       const response = await apiService.generateYaml({
         assignments: data.assignments,

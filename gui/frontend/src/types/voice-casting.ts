@@ -10,7 +10,7 @@ export interface CharacterInfo {
 export interface VoiceAssignment {
   character: string;
   provider: string;
-  sts_id: string;
+  sts_id?: string; // Optional - only for library voices
   casting_notes?: string;
   role?: string;
   provider_config?: Record<string, unknown>;

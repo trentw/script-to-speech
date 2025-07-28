@@ -95,11 +95,12 @@ function CharacterNotesGeneration() {
     let yamlContent = '';
 
     if (assignments.size > 0) {
-      // Generate YAML from current assignments
-      const yamlResult = await generateYamlMutation.mutateAsync({
+      // Generate YAML from current assignments using yamlUtils
+      // This handles the transformation to the correct API format
+      yamlContent = await yamlUtils.assignmentsToYaml(
         assignments,
-      });
-      yamlContent = yamlResult.data.yaml_content;
+        characterInfo
+      );
     } else {
       // Create YAML structure from screenplay character data
       yamlContent = await exportToYaml();

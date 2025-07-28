@@ -59,12 +59,7 @@ export function YamlImportPanel({
         });
       }
     }
-  }, [
-    debouncedYamlInput,
-    screenplayJsonPath,
-    parseYamlMutation,
-    validateYamlMutation,
-  ]);
+  }, [debouncedYamlInput, screenplayJsonPath]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -83,8 +78,9 @@ export function YamlImportPanel({
       const assignmentsMap = new Map<string, VoiceAssignment>();
       parseYamlMutation.data.assignments.forEach((assignment) => {
         assignmentsMap.set(assignment.character, {
-          voiceId: assignment.sts_id,
+          sts_id: assignment.sts_id,
           provider: assignment.provider,
+          provider_config: assignment.provider_config,
           castingNotes: assignment.casting_notes,
           role: assignment.role,
         });

@@ -45,8 +45,8 @@ class ValidateYamlRequest(BaseModel):
 class GenerateYamlRequest(BaseModel):
     """Request to generate YAML from character assignments."""
 
-    assignments: List[VoiceAssignment]
-    character_info: List[CharacterInfo]
+    assignments: Dict[str, VoiceAssignment]
+    character_info: Dict[str, CharacterInfo]
     include_comments: bool = Field(
         default=True, description="Include character stats and notes as comments"
     )

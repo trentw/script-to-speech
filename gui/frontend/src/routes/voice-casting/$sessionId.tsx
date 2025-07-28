@@ -272,7 +272,6 @@ function VoiceCastingMain() {
   if (showYamlPreview) {
     return (
       <YamlPreview
-        characters={characters}
         onBack={() => setShowYamlPreview(false)}
         onExport={handleExportYaml}
       />

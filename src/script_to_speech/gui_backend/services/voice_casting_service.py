@@ -80,7 +80,7 @@ class VoiceAssignment(BaseModel):
 
     character: str
     provider: str
-    sts_id: str = ""  # Primary field, may be empty
+    sts_id: str = ""  # Optional - only for library voices, may be empty
     casting_notes: Optional[str] = None
     role: Optional[str] = None
     provider_config: Optional[Dict[str, Any]] = None
@@ -339,30 +339,27 @@ class VoiceCastingService:
 
     async def generate_yaml(
         self,
-        assignments: List[VoiceAssignment],
-        character_info: List[CharacterInfo],
+        assignments: Dict[str, VoiceAssignment],
+        character_info: Dict[str, CharacterInfo],
         include_comments: bool = True,
     ) -> GenerateYamlResponse:
         """
         Generate YAML configuration from voice assignments.
 
         Args:
-            assignments: List of voice assignments
-            character_info: List of character information for comments
+            assignments: Dictionary of character name to voice assignment
+            character_info: Dictionary of character name to character information for comments
             include_comments: Whether to include character stats and notes
 
         Returns:
             GenerateYamlResponse with generated YAML content
         """
-        yaml = YAML(typ="safe")
+        yaml = YAML()
         yaml.preserve_quotes = True
         yaml.default_flow_style = False
         yaml.width = 4096  # Prevent line wrapping
         yaml.map_indent = 2
         yaml.sequence_indent = 4
-
-        # Create character info lookup
-        char_info_map = {info.name: info for info in character_info}
 
         # Build YAML structure using CommentedMap
         root = CommentedMap()
@@ -370,15 +367,16 @@ class VoiceCastingService:
         # Sort assignments: default first, then by line count descending
         sorted_assignments = self._sort_assignments(assignments, character_info)
 
-        for idx, assignment in enumerate(sorted_assignments):
-            char_name = assignment.character
-
+        for idx, (char_name, assignment) in enumerate(sorted_assignments.items()):
             # Build character configuration
             char_config = CommentedMap()
 
             # Ensure field order: provider first, sts_id second, then others
             char_config["provider"] = assignment.provider
-            if assignment.sts_id:  # Only include if not empty
+
+            has_sts_id = assignment.sts_id and assignment.sts_id.strip()
+
+            if has_sts_id:  # Only include if not empty
                 char_config["sts_id"] = assignment.sts_id
 
             # Add additional provider fields from provider_config
@@ -390,25 +388,30 @@ class VoiceCastingService:
             # Add character to root with comments if requested
             if include_comments:
                 comment_lines = self._build_character_comments(
-                    assignment, char_info_map
+                    assignment, character_info
                 )
-                if comment_lines:
-                    # For first character, add header comments too
-                    if idx == 0:
-                        header_lines = [
-                            "Voice configuration for speakers",
-                            "Each speaker requires:",
-                            "  provider: The TTS provider to use",
-                            "  Additional provider-specific configuration fields",
-                            "  Optional fields can be included at the root level",
-                            "",
-                        ]
+                # For first character, add header comments too
+                if idx == 0:
+                    header_lines = [
+                        "Voice configuration for speakers",
+                        "Each speaker requires:",
+                        "  provider: The TTS provider to use",
+                        "  Additional provider-specific configuration fields",
+                        "  Optional fields can be included at the root level",
+                        "",
+                    ]
+                    if comment_lines:
                         all_comments = header_lines + comment_lines
                     else:
-                        all_comments = [
-                            ""
-                        ] + comment_lines  # Add empty line before comments
+                        all_comments = header_lines
+                elif comment_lines:
+                    all_comments = [
+                        ""
+                    ] + comment_lines  # Add empty line before comments
+                else:
+                    all_comments = []
 
+                if all_comments:
                     # Add comments before the character key
                     root.yaml_set_comment_before_after_key(
                         char_name, before="\n".join(all_comments)
@@ -424,37 +427,42 @@ class VoiceCastingService:
         return GenerateYamlResponse(yaml_content=yaml_content.rstrip())
 
     def _sort_assignments(
-        self, assignments: List[VoiceAssignment], character_info: List[CharacterInfo]
-    ) -> List[VoiceAssignment]:
+        self,
+        assignments: Dict[str, VoiceAssignment],
+        character_info: Dict[str, CharacterInfo],
+    ) -> Dict[str, VoiceAssignment]:
         """Sort assignments by line count (default first, then descending)."""
-        char_info_map = {info.name: info for info in character_info}
 
-        return sorted(
-            assignments,
-            key=lambda a: (
-                a.character != "default",
+        # Sort the items and create a new dict with sorted order
+        sorted_items = sorted(
+            assignments.items(),
+            key=lambda item: (
+                item[0] != "default",  # character name from dict key
                 -(
-                    a.line_count
-                    or char_info_map.get(
-                        a.character,
+                    item[1].line_count
+                    or character_info.get(
+                        item[0],
                         CharacterInfo(
-                            name=a.character,
+                            name=item[0],
                             line_count=0,
                             total_characters=0,
                             longest_dialogue=0,
                         ),
                     ).line_count
                 ),
-                a.character,
+                item[0],  # character name for consistent ordering
             ),
         )
 
+        # Return as a new dict maintaining the sorted order
+        return dict(sorted_items)
+
     def _build_character_comments(
-        self, assignment: VoiceAssignment, char_info_map: Dict[str, CharacterInfo]
+        self, assignment: VoiceAssignment, character_info: Dict[str, CharacterInfo]
     ) -> List[str]:
         """Build comment lines for a character."""
         comments = []
-        char_info = char_info_map.get(assignment.character)
+        char_info = character_info.get(assignment.character)
 
         # Character stats (use from assignment if available, otherwise from char_info)
         line_count = assignment.line_count or (char_info.line_count if char_info else 0)
@@ -546,9 +554,7 @@ class VoiceCastingService:
                 speaker_str = str(speaker).strip()
 
                 provider = config.get("provider")
-                sts_id = config.get("sts_id") or config.get(
-                    "voice_id", ""
-                )  # Default to empty string
+                sts_id = config.get("sts_id", "")  # Default to empty string
 
                 if not provider:
                     errors.append(f"{speaker_str}: Missing required 'provider' field")
@@ -560,7 +566,7 @@ class VoiceCastingService:
                 # Build provider_config with all fields except provider and sts_id
                 temp_provider_config: Dict[str, Any] = {}
                 for key, value in config.items():
-                    if key not in ["provider", "sts_id", "voice_id"]:
+                    if key not in ["provider", "sts_id"]:
                         temp_provider_config[key] = value
 
                 # Only include provider_config if it has content

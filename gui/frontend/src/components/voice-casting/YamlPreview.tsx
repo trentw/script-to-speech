@@ -19,44 +19,51 @@ import {
 } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useGenerateYaml } from '@/hooks/mutations/useGenerateYaml';
 import { useVoiceCasting } from '@/stores/appStore';
-
-interface CharacterData {
-  name: string;
-  displayName: string;
-  lineCount: number;
-  totalCharacters: number;
-  longestDialogue: number;
-  isNarrator: boolean;
-  assignedVoice: {
-    provider: string;
-    voiceName: string;
-    voiceId: string; // This represents sts_id but keeps the old name for interface compatibility
-  } | null;
-}
+import { yamlUtils } from '@/utils/yamlUtils';
 
 interface YamlPreviewProps {
-  characters: CharacterData[];
   onBack: () => void;
   onExport: () => void;
 }
 
-export function YamlPreview({
-  characters,
-  onBack,
-  onExport,
-}: YamlPreviewProps) {
+export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
   const [copied, setCopied] = useState(false);
-  const { yamlContent } = useVoiceCasting();
-  const generateYamlMutation = useGenerateYaml();
+  const [yamlContent, setYamlContent] = useState<string | undefined>(undefined);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
+  const { assignments, screenplayData } = useVoiceCasting();
 
-  // Generate YAML when component mounts or when requested
+  // Generate YAML when component mounts or when assignments exist
   useEffect(() => {
-    if (!yamlContent) {
-      generateYamlMutation.mutate({ includeMetadata: true });
-    }
-  }, [generateYamlMutation, yamlContent]);
+    const generateYaml = async () => {
+      if (!yamlContent && assignments.size > 0 && screenplayData) {
+        setIsGenerating(true);
+        setError(undefined);
+
+        try {
+          // Convert character data to array for yamlUtils
+          const characterInfo = Array.from(screenplayData.characters.values());
+
+          // Use yamlUtils to generate YAML directly from store data
+          // This preserves all imported data: sts_id, casting_notes, roles, etc.
+          const generatedYaml = await yamlUtils.assignmentsToYaml(
+            assignments,
+            characterInfo
+          );
+          setYamlContent(generatedYaml);
+        } catch (err) {
+          setError(
+            err instanceof Error ? err.message : 'Failed to generate YAML'
+          );
+        } finally {
+          setIsGenerating(false);
+        }
+      }
+    };
+
+    generateYaml();
+  }, [yamlContent, assignments, screenplayData]);
 
   // Fallback local generation if mutation not available
   const generateLocalYaml = () => {
@@ -68,63 +75,52 @@ export function YamlPreview({
     lines.push(`# Generated at: ${new Date().toISOString()}`);
     lines.push('');
 
-    // Group characters by provider
-    const byProvider: Record<string, CharacterData[]> = {};
-    const unassigned: CharacterData[] = [];
+    // If no assignments, show message
+    if (assignments.size === 0) {
+      lines.push('# No voice assignments found');
+      lines.push('# Import a YAML file or assign voices to characters');
+      return lines.join('\n');
+    }
 
-    characters.forEach((char) => {
-      if (char.assignedVoice) {
-        const provider = char.assignedVoice.provider;
-        if (!byProvider[provider]) {
-          byProvider[provider] = [];
-        }
-        byProvider[provider].push(char);
-      } else {
-        unassigned.push(char);
-      }
-    });
+    // Generate YAML from assignments in store
+    Array.from(assignments.entries()).forEach(([characterName, assignment]) => {
+      const characterInfo = screenplayData?.characters.get(characterName);
 
-    // Write assigned characters grouped by provider
-    Object.entries(byProvider).forEach(([provider, chars]) => {
-      lines.push(`# ${provider.toUpperCase()} Configuration`);
-
-      chars.forEach((char) => {
-        lines.push('');
-        lines.push(`# ${char.displayName}: ${char.lineCount} lines`);
+      // Add character comments if available
+      if (characterInfo) {
+        lines.push(`# ${characterName}: ${characterInfo.lineCount} lines`);
         lines.push(
-          `# Total characters: ${char.totalCharacters}, Longest dialogue: ${char.longestDialogue} characters`
+          `# Total characters: ${characterInfo.totalCharacters || 0}, Longest dialogue: ${characterInfo.longestDialogue || 0} characters`
         );
-        lines.push(`${char.name}:`);
-        lines.push(`  provider: ${char.assignedVoice!.provider}`);
 
-        // Use the actual sts_id format
-        lines.push(`  sts_id: ${char.assignedVoice!.voiceId}`);
-
-        // Add provider-specific config if needed
-        if (provider === 'openai') {
-          lines.push(`  voice: ${char.assignedVoice!.voiceId}`);
+        // Add casting notes and role if available
+        if (assignment.castingNotes) {
+          lines.push(`# Casting notes: ${assignment.castingNotes}`);
         }
-      });
+        if (assignment.role) {
+          lines.push(`# Role: ${assignment.role}`);
+        }
+      }
+
+      // Add character assignment
+      lines.push(`${characterName}:`);
+      lines.push(`  provider: ${assignment.provider}`);
+
+      if (assignment.sts_id) {
+        lines.push(`  sts_id: ${assignment.sts_id}`);
+      }
+
+      // Add provider config fields
+      if (assignment.provider_config) {
+        Object.entries(assignment.provider_config).forEach(([key, value]) => {
+          if (key !== 'provider' && key !== 'sts_id') {
+            lines.push(`  ${key}: ${value}`);
+          }
+        });
+      }
+
       lines.push('');
     });
-
-    // Write unassigned characters
-    if (unassigned.length > 0) {
-      lines.push(
-        '# UNASSIGNED CHARACTERS - Please assign voices to these characters'
-      );
-      unassigned.forEach((char) => {
-        lines.push('');
-        lines.push(`# ${char.displayName}: ${char.lineCount} lines`);
-        lines.push(
-          `# Total characters: ${char.totalCharacters}, Longest dialogue: ${char.longestDialogue} characters`
-        );
-        lines.push(`${char.name}:`);
-        lines.push(`  provider:`);
-        lines.push(`  sts_id:`);
-        lines.push(`  # Add provider-specific configuration here`);
-      });
-    }
 
     return lines.join('\n');
   };
@@ -158,18 +154,21 @@ export function YamlPreview({
     onExport();
   };
 
-  // Generate statistics
+  // Generate statistics from voice casting store
   const stats = {
-    totalCharacters: characters.length,
-    assignedCharacters: characters.filter((c) => c.assignedVoice).length,
+    totalCharacters: screenplayData?.characters.size || 0,
+    assignedCharacters: assignments.size,
     providers: [
       ...new Set(
-        characters
-          .filter((c) => c.assignedVoice)
-          .map((c) => c.assignedVoice!.provider)
+        Array.from(assignments.values()).map(
+          (assignment) => assignment.provider
+        )
       ),
     ],
-    totalLines: characters.reduce((sum, c) => sum + c.lineCount, 0),
+    totalLines: Array.from(screenplayData?.characters.values() || []).reduce(
+      (sum, c) => sum + c.lineCount,
+      0
+    ),
   };
 
   return (
@@ -224,7 +223,7 @@ export function YamlPreview({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {generateYamlMutation.isPending ? (
+              {isGenerating ? (
                 <div className="flex h-[600px] items-center justify-center">
                   <div className="space-y-4 text-center">
                     <Loader2 className="text-muted-foreground mx-auto h-8 w-8 animate-spin" />
@@ -233,12 +232,11 @@ export function YamlPreview({
                     </p>
                   </div>
                 </div>
-              ) : generateYamlMutation.isError ? (
+              ) : error ? (
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    Failed to generate YAML:{' '}
-                    {generateYamlMutation.error?.message}
+                    Failed to generate YAML: {error}
                   </AlertDescription>
                 </Alert>
               ) : (
@@ -290,8 +288,8 @@ export function YamlPreview({
               </CardHeader>
               <CardContent className="space-y-2">
                 {stats.providers.map((provider) => {
-                  const count = characters.filter(
-                    (c) => c.assignedVoice?.provider === provider
+                  const count = Array.from(assignments.values()).filter(
+                    (assignment) => assignment.provider === provider
                   ).length;
                   return (
                     <div key={provider} className="flex justify-between">
@@ -312,33 +310,41 @@ export function YamlPreview({
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {characters.map((char) => (
-                  <div
-                    key={char.name}
-                    className="flex items-center justify-between border-b py-2 last:border-0"
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="font-medium">{char.displayName}</span>
-                      <span className="text-muted-foreground text-sm">
-                        {char.lineCount} lines
-                      </span>
-                    </div>
-                    <div>
-                      {char.assignedVoice ? (
-                        <span className="text-sm">
-                          <span className="capitalize">
-                            {char.assignedVoice.provider}
-                          </span>{' '}
-                          - {char.assignedVoice.voiceName}
-                        </span>
-                      ) : (
-                        <span className="text-sm text-orange-600">
-                          Unassigned
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                {Array.from(screenplayData?.characters.entries() || []).map(
+                  ([characterName, characterInfo]) => {
+                    const assignment = assignments.get(characterName);
+                    const displayName =
+                      characterName === 'default' ? 'Narrator' : characterName;
+
+                    return (
+                      <div
+                        key={characterName}
+                        className="flex items-center justify-between border-b py-2 last:border-0"
+                      >
+                        <div className="flex items-center gap-4">
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-muted-foreground text-sm">
+                            {characterInfo.lineCount} lines
+                          </span>
+                        </div>
+                        <div>
+                          {assignment ? (
+                            <span className="text-sm">
+                              <span className="capitalize">
+                                {assignment.provider}
+                              </span>{' '}
+                              - {assignment.sts_id || 'Custom voice'}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-orange-600">
+                              Unassigned
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+                )}
               </div>
             </CardContent>
           </Card>

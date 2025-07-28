@@ -9,6 +9,7 @@ interface ParseYamlRequest {
 
 export function useParseYaml() {
   return useMutation<ParseYamlResponse, Error, ParseYamlRequest>({
+    mutationKey: ['parseYaml'],
     mutationFn: async (data) => {
       const response = await apiService.parseYaml(data.yamlContent);
 

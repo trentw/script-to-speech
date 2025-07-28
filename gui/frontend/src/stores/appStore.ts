@@ -22,8 +22,10 @@ export interface CharacterInfo {
 }
 
 export interface VoiceAssignment {
-  sts_id: string; // Changed from voiceId
+  voice_identifier: string; // Primary identifier: "{provider}:{sts_id}" or "{provider}:custom:{primary_field_value}"
+  sts_id?: string; // Optional - only for library voices
   provider: string;
+  provider_config?: Record<string, unknown>; // Provider-specific configuration
   voiceEntry?: VoiceEntry;
   confidence?: number;
   reasoning?: string;

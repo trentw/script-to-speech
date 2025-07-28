@@ -266,8 +266,14 @@ class ApiService {
   }
 
   async generateYaml(params: {
-    assignments: import('../types/voice-casting').VoiceAssignment[];
-    character_info: import('../types/voice-casting').CharacterInfo[];
+    assignments: Record<
+      string,
+      import('../types/voice-casting').VoiceAssignment
+    >;
+    character_info: Record<
+      string,
+      import('../types/voice-casting').CharacterInfo
+    >;
     include_comments?: boolean;
   }): Promise<
     ApiResponse<import('../types/voice-casting').GenerateYamlResponse>

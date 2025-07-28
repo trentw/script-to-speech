@@ -292,13 +292,20 @@ function VoiceLibraryCasting() {
     const newAssignments = new Map();
     result.assignments.forEach((assignment) => {
       newAssignments.set(assignment.character, {
+        voice_identifier: assignment.voice_identifier,
+        sts_id: assignment.sts_id, // Optional - only populated for library voices
         provider: assignment.provider,
-        sts_id: assignment.sts_id,
-        voiceEntry: {
-          sts_id: assignment.sts_id,
-          casting_notes: assignment.casting_notes,
-          role: assignment.role,
-        },
+        provider_config: assignment.provider_config,
+        voiceEntry: assignment.sts_id
+          ? {
+              sts_id: assignment.sts_id,
+              casting_notes: assignment.casting_notes,
+              role: assignment.role,
+            }
+          : undefined,
+        castingNotes: assignment.casting_notes,
+        role: assignment.role,
+        additional_notes: assignment.additional_notes,
       });
     });
 

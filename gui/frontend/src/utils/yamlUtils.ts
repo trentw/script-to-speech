@@ -6,6 +6,41 @@ import type {
 } from '@/types/voice-casting';
 
 /**
+ * Get the primary field value for a custom voice configuration
+ * @param provider The TTS provider name
+ * @param config The provider configuration object
+ * @returns The primary field value or 'unknown'
+ */
+function getPrimaryFieldValue(
+  provider: string,
+  config: Record<string, unknown>
+): string {
+  // Define primary fields for each provider
+  const primaryFields: Record<string, string> = {
+    openai: 'voice',
+    elevenlabs: 'voice_id',
+    cartesia: 'voice_id',
+    minimax: 'voice_id',
+    zonos: 'default_voice_name',
+  };
+
+  const primaryField = primaryFields[provider];
+  if (primaryField && config[primaryField]) {
+    return String(config[primaryField]);
+  }
+
+  // Fallback: try common field names
+  const fallbackFields = ['voice_id', 'voice', 'voice_name', 'name'];
+  for (const field of fallbackFields) {
+    if (config[field]) {
+      return String(config[field]);
+    }
+  }
+
+  return 'unknown';
+}
+
+/**
  * Centralized YAML utilities for voice casting
  */
 export const yamlUtils = {
@@ -19,27 +54,42 @@ export const yamlUtils = {
     assignments: Map<string, StoreVoiceAssignment>,
     characterInfo: CharacterInfo[]
   ): Promise<string> => {
-    // Convert Map to array of assignments for API
-    const assignmentsArray: ApiVoiceAssignment[] = [];
+    // Convert Map to Record for API (no transformation needed, just different structure)
+    const assignmentsRecord: Record<string, ApiVoiceAssignment> = {};
+    const characterInfoRecord: Record<string, CharacterInfo> = {};
 
+    // Convert assignments Map to Record and fix field name mappings
     for (const [characterName, assignment] of assignments) {
-      assignmentsArray.push({
+      assignmentsRecord[characterName] = {
         character: characterName,
         provider: assignment.provider,
-        sts_id: assignment.sts_id,
+        sts_id: assignment.sts_id, // Optional - only for library voices
+        provider_config: assignment.provider_config,
         casting_notes: assignment.castingNotes,
         role: assignment.role,
         additional_notes: assignment.additional_notes,
         line_count: assignment.line_count,
         total_characters: assignment.total_characters,
         longest_dialogue: assignment.longest_dialogue,
-      });
+      };
     }
 
-    // Call backend generateYaml API
+    // Convert characterInfo Array to Record and fix field name mappings
+    for (const info of characterInfo) {
+      characterInfoRecord[info.name] = {
+        name: info.name,
+        line_count: info.lineCount,
+        total_characters: info.totalCharacters,
+        longest_dialogue: info.longestDialogue,
+        casting_notes: info.casting_notes,
+        role: info.role,
+      };
+    }
+
+    // Call backend generateYaml API with Record format
     const response = await apiService.generateYaml({
-      assignments: assignmentsArray,
-      character_info: characterInfo,
+      assignments: assignmentsRecord,
+      character_info: characterInfoRecord,
       include_comments: true,
     });
 
@@ -83,22 +133,47 @@ export const yamlUtils = {
     const assignments = new Map<string, StoreVoiceAssignment>();
 
     result.assignments.forEach((assignment) => {
-      assignments.set(assignment.character, {
-        sts_id: assignment.sts_id,
+      // Generate voice_identifier for frontend UI state management
+      let voice_identifier: string;
+      if (assignment.sts_id) {
+        // Library voice
+        voice_identifier = `${assignment.provider}:${assignment.sts_id}`;
+      } else if (assignment.provider_config) {
+        // Custom voice - find the primary field value
+        const primaryFieldValue = getPrimaryFieldValue(
+          assignment.provider,
+          assignment.provider_config
+        );
+        voice_identifier = `${assignment.provider}:custom:${primaryFieldValue}`;
+      } else {
+        // Fallback - this shouldn't happen in practice
+        voice_identifier = `${assignment.provider}:unknown`;
+      }
+
+      // Extract sts_id from assignment
+      const sts_id = assignment.sts_id;
+
+      const storeAssignment: StoreVoiceAssignment = {
+        voice_identifier,
+        sts_id, // Use the resolved sts_id
         provider: assignment.provider,
+        provider_config: assignment.provider_config,
         castingNotes: assignment.casting_notes,
         role: assignment.role,
         additional_notes: assignment.additional_notes,
         line_count: assignment.line_count,
         total_characters: assignment.total_characters,
         longest_dialogue: assignment.longest_dialogue,
-        voiceEntry: {
-          sts_id: assignment.sts_id,
-          provider: assignment.provider,
-          config: assignment.provider_config || {},
-          // Add other VoiceEntry fields if needed
-        },
-      });
+        voiceEntry: sts_id
+          ? {
+              sts_id: sts_id,
+              provider: assignment.provider,
+              config: assignment.provider_config || {},
+            }
+          : undefined,
+      };
+
+      assignments.set(assignment.character, storeAssignment);
     });
 
     return assignments;
@@ -120,7 +195,8 @@ export const yamlUtils = {
     const charactersData = extractResponse.data!;
 
     let yamlContent = '# Voice configuration for speakers\n';
-    yamlContent += '# Each speaker requires provider and sts_id fields\n';
+    yamlContent +=
+      '# Each speaker requires provider and either sts_id (for library voices) or provider-specific fields\n';
     yamlContent += '# Generated from screenplay character data\n\n';
 
     // Create YAML entries for each character with empty provider/sts_id for LLM to fill
@@ -142,8 +218,10 @@ export const yamlUtils = {
           : character.name;
 
       yamlContent += `${quotedName}:\n`;
-      yamlContent += `  provider: # TO BE FILLED BY LLM\n`;
-      yamlContent += `  sts_id: # TO BE FILLED BY LLM\n\n`;
+      yamlContent += `  provider: # TO BE FILLED BY LLM (e.g., openai, elevenlabs, cartesia)\n`;
+      yamlContent += `  sts_id: # TO BE FILLED BY LLM (for library voices) OR omit and add provider-specific fields below\n`;
+      yamlContent += `  # For custom voices, add provider-specific fields instead of sts_id\n`;
+      yamlContent += `  # e.g., voice_id: custom_voice_id (for elevenlabs/cartesia)\n\n`;
     }
 
     return yamlContent;
