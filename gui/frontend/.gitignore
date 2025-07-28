@@ -25,3 +25,7 @@ dist-ssr
 
 # Test coverage
 coverage
+
+# Generated files
+src/routeTree.gen.ts
+*.gen.ts

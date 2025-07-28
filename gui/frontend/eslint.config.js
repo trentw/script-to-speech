@@ -11,7 +11,7 @@ import vitest from 'eslint-plugin-vitest';
 import testingLibrary from 'eslint-plugin-testing-library';
 
 export default tseslint.config([
-  globalIgnores(['dist', 'src-tauri']),
+  globalIgnores(['dist', 'src-tauri', 'src/routeTree.gen.ts', '**/*.gen.ts']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
