@@ -509,10 +509,16 @@ describe('AudioService', () => {
       // Play
       await service.play();
 
+      // Allow time for the play event to be processed
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       // Wait for state to update after play event
-      await vi.waitFor(() => {
-        expect(service.isCurrentlyPlaying()).toBe(true);
-      });
+      await vi.waitFor(
+        () => {
+          expect(service.isCurrentlyPlaying()).toBe(true);
+        },
+        { timeout: 1000 }
+      );
     });
 
     it('should update metadata without affecting playback', async () => {

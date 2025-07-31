@@ -292,7 +292,6 @@ function VoiceLibraryCasting() {
     const newAssignments = new Map();
     result.assignments.forEach((assignment) => {
       newAssignments.set(assignment.character, {
-        voice_identifier: assignment.voice_identifier,
         sts_id: assignment.sts_id, // Optional - only populated for library voices
         provider: assignment.provider,
         provider_config: assignment.provider_config,

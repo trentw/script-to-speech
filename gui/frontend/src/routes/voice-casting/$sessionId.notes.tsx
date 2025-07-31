@@ -27,10 +27,9 @@ import {
   ScreenplaySourceUpload,
 } from '@/components/voice-casting';
 import { useGenerateCharacterNotesPrompt } from '@/hooks/mutations/useGenerateCharacterNotesPrompt';
-import { useGenerateYaml } from '@/hooks/mutations/useGenerateYaml';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
 import { apiService } from '@/services/api';
-import { useVoiceCasting } from '@/stores/appStore';
+import { type CharacterInfo, useVoiceCasting } from '@/stores/appStore';
 import { yamlUtils } from '@/utils/yamlUtils';
 
 export const Route = createFileRoute('/voice-casting/$sessionId/notes')({
@@ -68,7 +67,6 @@ function CharacterNotesGeneration() {
   });
 
   const generatePromptMutation = useGenerateCharacterNotesPrompt();
-  const generateYamlMutation = useGenerateYaml();
   const parseYamlMutation = useParseYaml();
 
   // Navigate back to main casting page
@@ -76,60 +74,12 @@ function CharacterNotesGeneration() {
     navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
   };
 
-  // Step 1: Generate prompt
-  const handleGeneratePrompt = useCallback(async () => {
-    if (!session?.screenplay_json_path) return;
-
-    // Show privacy warning first
-    if (!privacyAccepted) {
-      setShowPrivacyWarning(true);
-      return;
-    }
-
-    await generatePromptInternal();
-  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal]);
-
-  const generatePromptInternal = useCallback(async () => {
-    // Generate YAML structure for character notes prompt
-    // If we have assignments, use them, otherwise create YAML from screenplay character data
-    let yamlContent = '';
-
-    if (assignments.size > 0) {
-      // Generate YAML from current assignments using yamlUtils
-      // This handles the transformation to the correct API format
-      yamlContent = await yamlUtils.assignmentsToYaml(
-        assignments,
-        characterInfo
-      );
-    } else {
-      // Create YAML structure from screenplay character data
-      yamlContent = await exportToYaml();
-    }
-
-    // Generate the character notes prompt using session_id
-    const result = await generatePromptMutation.mutateAsync({
-      sessionId: sessionId,
-      yamlContent: yamlContent,
-    });
-
-    if (result) {
-      setPromptText(result.prompt_content);
-    }
-  }, [
-    assignments,
-    generateYamlMutation,
-    exportToYaml,
-    generatePromptMutation,
-    sessionId,
-    setPromptText,
-  ]);
-
   // Function to export current assignments or screenplay characters to YAML format
   const exportToYaml = useCallback(async (): Promise<string> => {
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
       // Get character info for comments
-      let characterInfo = [];
+      let characterInfo: CharacterInfo[] = [];
       if (session?.screenplay_json_path) {
         try {
           const extractResponse = await apiService.extractCharacters(
@@ -155,6 +105,69 @@ function CharacterNotesGeneration() {
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
   }, [assignments, session?.screenplay_json_path]);
+
+  // Step 1: Generate prompt
+  const generatePromptInternal = useCallback(async () => {
+    // Generate YAML structure for character notes prompt
+    // If we have assignments, use them, otherwise create YAML from screenplay character data
+    let yamlContent = '';
+
+    if (assignments.size > 0) {
+      // Get character info for the YAML generation
+      let characterInfo: CharacterInfo[] = [];
+      if (session?.screenplay_json_path) {
+        try {
+          const extractResponse = await apiService.extractCharacters(
+            session.screenplay_json_path
+          );
+          if (!extractResponse.error) {
+            characterInfo = extractResponse.data!.characters;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch character info for comments:', err);
+        }
+      }
+
+      // Generate YAML from current assignments using yamlUtils
+      // This handles the transformation to the correct API format
+      yamlContent = await yamlUtils.assignmentsToYaml(
+        assignments,
+        characterInfo
+      );
+    } else {
+      // Create YAML structure from screenplay character data
+      yamlContent = await exportToYaml();
+    }
+
+    // Generate the character notes prompt using session_id
+    const result = await generatePromptMutation.mutateAsync({
+      sessionId: sessionId,
+      yamlContent: yamlContent,
+    });
+
+    if (result) {
+      setPromptText(result.prompt_content);
+    }
+  }, [
+    assignments,
+    session,
+    exportToYaml,
+    generatePromptMutation,
+    sessionId,
+    setPromptText,
+  ]);
+
+  const handleGeneratePrompt = useCallback(async () => {
+    if (!session?.screenplay_json_path) return;
+
+    // Show privacy warning first
+    if (!privacyAccepted) {
+      setShowPrivacyWarning(true);
+      return;
+    }
+
+    await generatePromptInternal();
+  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal]);
 
   const handlePrivacyAccept = async () => {
     setPrivacyAccepted(true);

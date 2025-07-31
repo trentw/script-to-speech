@@ -22,8 +22,7 @@ export interface CharacterInfo {
 }
 
 export interface VoiceAssignment {
-  voice_identifier: string; // Primary identifier: "{provider}:{sts_id}" or "{provider}:custom:{primary_field_value}"
-  sts_id?: string; // Optional - only for library voices
+  sts_id?: string; // Present = library voice, absent = custom voice
   provider: string;
   provider_config?: Record<string, unknown>; // Provider-specific configuration
   voiceEntry?: VoiceEntry;
@@ -112,6 +111,7 @@ interface VoiceCastingSlice {
   assignments: Map<string, VoiceAssignment>;
   castingMethod: 'manual' | 'llm-assisted';
   yamlContent: string | undefined;
+  voiceCache: Map<string, VoiceEntry>;
 
   // Actions
   setCastingSessionId: (sessionId: string | undefined) => void;
@@ -119,13 +119,43 @@ interface VoiceCastingSlice {
   setScreenplayData: (
     data: { characters: Map<string, CharacterInfo> } | undefined
   ) => void;
-  setCharacterAssignment: (
+
+  // Character metadata operations (role, casting notes, etc.)
+  setCharacterMetadata: (
+    characterName: string,
+    metadata: Partial<
+      Pick<VoiceAssignment, 'role' | 'castingNotes' | 'additional_notes'>
+    >
+  ) => void;
+
+  // Voice assignment operations (provider, sts_id, config)
+  setCharacterVoice: (
+    characterName: string,
+    voiceData: {
+      sts_id?: string;
+      provider: string;
+      provider_config?: Record<string, unknown>;
+      voiceEntry?: VoiceEntry;
+    }
+  ) => void;
+
+  // Full replacement (replaces entire assignment)
+  replaceCharacterAssignment: (
     characterName: string,
     assignment: VoiceAssignment
   ) => void;
+
+  removeCharacterAssignment: (characterName: string) => void;
+  removeVoiceFromAssignment: (characterName: string) => void;
   importAssignments: (assignments: Map<string, VoiceAssignment>) => void;
   setYamlContent: (content: string | undefined) => void;
   setCastingMethod: (method: 'manual' | 'llm-assisted') => void;
+  setVoiceCache: (cache: Map<string, VoiceEntry>) => void;
+  addToVoiceCache: (
+    provider: string,
+    sts_id: string,
+    voice: VoiceEntry
+  ) => void;
   resetCastingState: () => void;
 }
 
@@ -307,6 +337,7 @@ const useAppStore = create<AppStore>()(
         assignments: new Map(),
         castingMethod: 'manual',
         yamlContent: undefined,
+        voiceCache: new Map(),
 
         setCastingSessionId: (sessionId) => {
           set(
@@ -332,7 +363,64 @@ const useAppStore = create<AppStore>()(
           );
         },
 
-        setCharacterAssignment: (characterName, assignment) => {
+        setCharacterMetadata: (characterName, metadata) => {
+          set(
+            (state) => {
+              const newAssignments = new Map(state.assignments);
+              const existing =
+                newAssignments.get(characterName) || ({} as VoiceAssignment);
+              newAssignments.set(characterName, { ...existing, ...metadata });
+              return { assignments: newAssignments };
+            },
+            false,
+            'voiceCasting/setCharacterMetadata'
+          );
+        },
+
+        setCharacterVoice: (characterName, voiceData) => {
+          set(
+            (state) => {
+              const newAssignments = new Map(state.assignments);
+              const existing =
+                newAssignments.get(characterName) || ({} as VoiceAssignment);
+
+              // Preserve metadata, replace voice data
+              const updated: VoiceAssignment = {
+                // Apply new voice data first
+                ...voiceData,
+
+                // Update tracking fields
+                confidence: 1.0,
+                reasoning: 'Manually assigned',
+
+                // Preserve all metadata fields (only if they exist)
+                ...(existing.role !== undefined && { role: existing.role }),
+                ...(existing.castingNotes !== undefined && {
+                  castingNotes: existing.castingNotes,
+                }),
+                ...(existing.additional_notes !== undefined && {
+                  additional_notes: existing.additional_notes,
+                }),
+                ...(existing.line_count !== undefined && {
+                  line_count: existing.line_count,
+                }),
+                ...(existing.total_characters !== undefined && {
+                  total_characters: existing.total_characters,
+                }),
+                ...(existing.longest_dialogue !== undefined && {
+                  longest_dialogue: existing.longest_dialogue,
+                }),
+              };
+
+              newAssignments.set(characterName, updated);
+              return { assignments: newAssignments };
+            },
+            false,
+            'voiceCasting/setCharacterVoice'
+          );
+        },
+
+        replaceCharacterAssignment: (characterName, assignment) => {
           set(
             (state) => {
               const newAssignments = new Map(state.assignments);
@@ -340,7 +428,78 @@ const useAppStore = create<AppStore>()(
               return { assignments: newAssignments };
             },
             false,
-            'voiceCasting/setCharacterAssignment'
+            'voiceCasting/replaceCharacterAssignment'
+          );
+        },
+
+        removeCharacterAssignment: (characterName) => {
+          set(
+            (state) => {
+              const newAssignments = new Map(state.assignments);
+              newAssignments.delete(characterName);
+              return { assignments: newAssignments };
+            },
+            false,
+            'voiceCasting/removeCharacterAssignment'
+          );
+        },
+
+        removeVoiceFromAssignment: (characterName) => {
+          set(
+            (state) => {
+              const newAssignments = new Map(state.assignments);
+              const currentAssignment = newAssignments.get(characterName);
+
+              if (currentAssignment) {
+                // Create a new assignment that preserves character metadata but removes voice data
+                const updatedAssignment: Partial<VoiceAssignment> = {
+                  // Preserve character metadata only (only include if defined)
+                  ...(currentAssignment.role !== undefined && {
+                    role: currentAssignment.role,
+                  }),
+                  ...(currentAssignment.castingNotes !== undefined && {
+                    castingNotes: currentAssignment.castingNotes,
+                  }),
+                  ...(currentAssignment.additional_notes !== undefined && {
+                    additional_notes: currentAssignment.additional_notes,
+                  }),
+                  ...(currentAssignment.confidence !== undefined && {
+                    confidence: currentAssignment.confidence,
+                  }),
+                  ...(currentAssignment.reasoning !== undefined && {
+                    reasoning: currentAssignment.reasoning,
+                  }),
+                  ...(currentAssignment.line_count !== undefined && {
+                    line_count: currentAssignment.line_count,
+                  }),
+                  ...(currentAssignment.total_characters !== undefined && {
+                    total_characters: currentAssignment.total_characters,
+                  }),
+                  ...(currentAssignment.longest_dialogue !== undefined && {
+                    longest_dialogue: currentAssignment.longest_dialogue,
+                  }),
+                };
+
+                // Only keep the assignment if it has any metadata to preserve
+                if (
+                  updatedAssignment.role ||
+                  updatedAssignment.castingNotes ||
+                  updatedAssignment.additional_notes
+                ) {
+                  newAssignments.set(
+                    characterName,
+                    updatedAssignment as VoiceAssignment
+                  );
+                } else {
+                  // If no metadata to preserve, remove the assignment completely
+                  newAssignments.delete(characterName);
+                }
+              }
+
+              return { assignments: newAssignments };
+            },
+            false,
+            'voiceCasting/removeVoiceFromAssignment'
           );
         },
 
@@ -360,6 +519,23 @@ const useAppStore = create<AppStore>()(
           );
         },
 
+        setVoiceCache: (cache) => {
+          set({ voiceCache: cache }, false, 'voiceCasting/setVoiceCache');
+        },
+
+        addToVoiceCache: (provider, sts_id, voice) => {
+          set(
+            (state) => {
+              const newCache = new Map(state.voiceCache);
+              const cacheKey = `${provider}:${sts_id}`;
+              newCache.set(cacheKey, voice);
+              return { voiceCache: newCache };
+            },
+            false,
+            'voiceCasting/addToVoiceCache'
+          );
+        },
+
         resetCastingState: () => {
           set(
             {
@@ -369,6 +545,7 @@ const useAppStore = create<AppStore>()(
               assignments: new Map(),
               castingMethod: 'manual',
               yamlContent: undefined,
+              voiceCache: new Map(),
             },
             false,
             'voiceCasting/reset'
@@ -467,13 +644,20 @@ export const useVoiceCasting = () =>
       assignments: state.assignments,
       castingMethod: state.castingMethod,
       yamlContent: state.yamlContent,
+      voiceCache: state.voiceCache,
       setCastingSessionId: state.setCastingSessionId,
       setScreenplayJsonPath: state.setScreenplayJsonPath,
       setScreenplayData: state.setScreenplayData,
-      setCharacterAssignment: state.setCharacterAssignment,
+      setCharacterMetadata: state.setCharacterMetadata,
+      setCharacterVoice: state.setCharacterVoice,
+      replaceCharacterAssignment: state.replaceCharacterAssignment,
+      removeCharacterAssignment: state.removeCharacterAssignment,
+      removeVoiceFromAssignment: state.removeVoiceFromAssignment,
       importAssignments: state.importAssignments,
       setYamlContent: state.setYamlContent,
       setCastingMethod: state.setCastingMethod,
+      setVoiceCache: state.setVoiceCache,
+      addToVoiceCache: state.addToVoiceCache,
       resetCastingState: state.resetCastingState,
     }))
   );

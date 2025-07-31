@@ -6,41 +6,6 @@ import type {
 } from '@/types/voice-casting';
 
 /**
- * Get the primary field value for a custom voice configuration
- * @param provider The TTS provider name
- * @param config The provider configuration object
- * @returns The primary field value or 'unknown'
- */
-function getPrimaryFieldValue(
-  provider: string,
-  config: Record<string, unknown>
-): string {
-  // Define primary fields for each provider
-  const primaryFields: Record<string, string> = {
-    openai: 'voice',
-    elevenlabs: 'voice_id',
-    cartesia: 'voice_id',
-    minimax: 'voice_id',
-    zonos: 'default_voice_name',
-  };
-
-  const primaryField = primaryFields[provider];
-  if (primaryField && config[primaryField]) {
-    return String(config[primaryField]);
-  }
-
-  // Fallback: try common field names
-  const fallbackFields = ['voice_id', 'voice', 'voice_name', 'name'];
-  for (const field of fallbackFields) {
-    if (config[field]) {
-      return String(config[field]);
-    }
-  }
-
-  return 'unknown';
-}
-
-/**
  * Centralized YAML utilities for voice casting
  */
 export const yamlUtils = {
@@ -133,28 +98,10 @@ export const yamlUtils = {
     const assignments = new Map<string, StoreVoiceAssignment>();
 
     result.assignments.forEach((assignment) => {
-      // Generate voice_identifier for frontend UI state management
-      let voice_identifier: string;
-      if (assignment.sts_id) {
-        // Library voice
-        voice_identifier = `${assignment.provider}:${assignment.sts_id}`;
-      } else if (assignment.provider_config) {
-        // Custom voice - find the primary field value
-        const primaryFieldValue = getPrimaryFieldValue(
-          assignment.provider,
-          assignment.provider_config
-        );
-        voice_identifier = `${assignment.provider}:custom:${primaryFieldValue}`;
-      } else {
-        // Fallback - this shouldn't happen in practice
-        voice_identifier = `${assignment.provider}:unknown`;
-      }
-
       // Extract sts_id from assignment
       const sts_id = assignment.sts_id;
 
       const storeAssignment: StoreVoiceAssignment = {
-        voice_identifier,
         sts_id, // Use the resolved sts_id
         provider: assignment.provider,
         provider_config: assignment.provider_config,
