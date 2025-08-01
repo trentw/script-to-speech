@@ -1,11 +1,11 @@
-import { ArrowLeft, Play, Search } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import React, { useState } from 'react';
 
+import { PlayPreviewButton } from '@/components/PlayPreviewButton';
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { getVoiceDisplayName, getVoiceSubtext } from '@/utils/voiceUtils';
 
-import { useAudioCommands } from '../hooks/useAudioCommands';
 import type { VoiceEntry } from '../types';
 
 interface VoiceSelectionPanelProps {
@@ -24,11 +24,6 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
   onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const { playVoicePreview } = useAudioCommands();
-
-  const handlePlayPreview = async (voice: VoiceEntry) => {
-    await playVoicePreview(voice, provider);
-  };
 
   const filteredVoices = voices.filter((voice) => {
     if (!searchQuery) return true;
@@ -140,15 +135,13 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
 
                       {/* Play button */}
                       {voice.preview_url && (
-                        <button
-                          className={`${appButtonVariants({ variant: 'list-action', size: 'icon-sm' })} opacity-0 transition-all duration-200 group-hover:opacity-100`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handlePlayPreview(voice);
-                          }}
-                        >
-                          <Play className="h-4 w-4" />
-                        </button>
+                        <div className="opacity-0 transition-all duration-200 group-hover:opacity-100">
+                          <PlayPreviewButton
+                            voice={voice}
+                            providerName={provider}
+                            tooltip="Play voice preview"
+                          />
+                        </div>
                       )}
                     </div>
                   </button>

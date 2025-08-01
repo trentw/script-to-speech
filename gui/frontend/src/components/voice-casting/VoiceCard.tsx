@@ -3,12 +3,12 @@ import {
   ChevronDown,
   CirclePlus,
   Mic,
-  Play,
   Settings,
   X,
 } from 'lucide-react';
 import { useState } from 'react';
 
+import { PlayPreviewButton } from '@/components/PlayPreviewButton';
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import {
@@ -28,12 +28,11 @@ interface VoiceCardProps {
   sts_id?: string | undefined;
   isCustom?: boolean;
   onAssignVoice: () => void;
-  onPlayPreview?: (() => void) | (() => Promise<void>) | undefined;
   onRemoveAssignment?: (() => void) | undefined;
   showRemoveButton?: boolean;
   showAssignButton?: boolean;
   voiceUsageMap?: Map<string, Array<{ character: string; lineCount: number }>>;
-  _currentCharacter?: string;
+  currentCharacter?: string;
   className?: string;
 }
 
@@ -43,12 +42,11 @@ export function VoiceCard({
   sts_id,
   isCustom = false,
   onAssignVoice,
-  onPlayPreview,
   onRemoveAssignment,
   showRemoveButton = false,
   showAssignButton = false,
   voiceUsageMap,
-  _currentCharacter,
+  currentCharacter,
   className,
 }: VoiceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -263,26 +261,13 @@ export function VoiceCard({
           </div>
 
           <div className="flex items-center gap-1">
-            {voiceEntry.preview_url && onPlayPreview && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className={appButtonVariants({
-                      variant: 'list-action',
-                      size: 'icon-sm',
-                    })}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onPlayPreview();
-                    }}
-                  >
-                    <Play className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Play voice preview</p>
-                </TooltipContent>
-              </Tooltip>
+            {voiceEntry && voiceEntry.preview_url && (
+              <PlayPreviewButton
+                voice={voiceEntry}
+                providerName={provider}
+                characterName={currentCharacter}
+                tooltip="Play voice preview"
+              />
             )}
             <Tooltip>
               <TooltipTrigger asChild>

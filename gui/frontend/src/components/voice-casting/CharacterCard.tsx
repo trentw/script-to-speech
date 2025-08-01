@@ -8,8 +8,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useProviders } from '@/hooks/queries';
-import { useAudioCommands } from '@/hooks/useAudioCommands';
 import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { cn } from '@/lib/utils';
 import { useVoiceCasting } from '@/stores/appStore';
@@ -42,10 +40,8 @@ export function CharacterCard({
   character,
   onAssignVoice,
 }: CharacterCardProps) {
-  const { data: providers } = useProviders();
   const { assignments, screenplayData, removeVoiceFromAssignment } =
     useVoiceCasting();
-  const { playVoicePreview } = useAudioCommands();
 
   // Get assignment data from store
   const assignment = assignments.get(character.name);
@@ -71,21 +67,6 @@ export function CharacterCard({
       character.name
     );
   }, [assignments, screenplayData?.characters, character.name]);
-
-  const handlePlayPreview = async () => {
-    if (!voiceEntry || !providers) return;
-
-    const providerInfo = providers.find(
-      (p) => p.identifier === assignment?.provider
-    );
-    if (!providerInfo) return;
-
-    await playVoicePreview(
-      voiceEntry,
-      providerInfo.name,
-      character.displayName
-    );
-  };
 
   const handleRemoveAssignment = () => {
     removeVoiceFromAssignment(character.name);
@@ -204,9 +185,6 @@ export function CharacterCard({
                 !!(assignment && assignment.provider && !assignment?.sts_id)
               }
               onAssignVoice={onAssignVoice}
-              onPlayPreview={
-                voiceEntry?.preview_url ? handlePlayPreview : undefined
-              }
               onRemoveAssignment={
                 isAssigned ? handleRemoveAssignment : undefined
               }

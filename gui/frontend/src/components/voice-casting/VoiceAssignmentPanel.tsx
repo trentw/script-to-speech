@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
-import { useAudioCommands } from '@/hooks/useAudioCommands';
 import { useVoiceCasting } from '@/stores/appStore';
 import type { VoiceEntry } from '@/types';
 import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
@@ -57,7 +56,6 @@ export function VoiceAssignmentPanel({
   } = useProviders();
 
   const { setCharacterVoice, assignments, screenplayData } = useVoiceCasting();
-  const { playVoicePreview } = useAudioCommands();
 
   // Get current assignment if exists
   const currentAssignment = assignments.get(characterName);
@@ -118,17 +116,6 @@ export function VoiceAssignmentPanel({
       provider_config: config,
     });
     onAssign();
-  };
-
-  const handlePlayPreview = async (voice: VoiceEntry) => {
-    const providerInfo = providers?.find(
-      (p) => p.identifier === selectedProvider
-    );
-    if (!providerInfo) {
-      return;
-    }
-
-    await playVoicePreview(voice, providerInfo.name, character.displayName);
   };
 
   const isLoading = providersLoading || voicesLoading;
@@ -269,7 +256,6 @@ export function VoiceAssignmentPanel({
                                 onAssignVoice={() =>
                                   handleLibraryVoiceAssign(voice)
                                 }
-                                onPlayPreview={() => handlePlayPreview(voice)}
                                 showAssignButton={true}
                                 voiceUsageMap={voiceUsageMap}
                                 currentCharacter={characterName}

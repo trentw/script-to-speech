@@ -237,3 +237,30 @@ export const getAudioFilename = (
 
   return `${provider}-${voiceId}-${taskId}-${index}.${extension}`;
 };
+
+/**
+ * Normalizes audio URLs for consistent comparison
+ * Strips query parameters and handles blob URLs to ensure
+ * the same audio file is recognized regardless of cache-busting params
+ */
+export function normalizeAudioUrl(url: string | null | undefined): string {
+  if (!url) return '';
+
+  try {
+    // Handle blob URLs - they should be compared as-is
+    if (url.startsWith('blob:')) {
+      return url;
+    }
+
+    // Parse URL and remove query parameters
+    const urlObj = new URL(url);
+    urlObj.search = ''; // Remove all query params
+
+    return urlObj.toString();
+  } catch {
+    // If URL parsing fails, return the original
+    // This handles relative URLs or malformed strings
+    const questionIndex = url.indexOf('?');
+    return questionIndex > -1 ? url.slice(0, questionIndex) : url;
+  }
+}
