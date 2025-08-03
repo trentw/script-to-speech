@@ -99,7 +99,7 @@ export function YamlImportPanel({
     yamlInput.trim().length > 0 && !isLoading && !parseError && !hasErrors;
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-6">
+    <div className="container mx-auto max-w-6xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>
