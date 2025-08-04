@@ -24,17 +24,31 @@ import { useRecentScreenplays } from '@/hooks/queries/useRecentScreenplays';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
 import { apiService } from '@/services/api';
 
-export const Route = createFileRoute('/voice-casting/')({
+type VoiceCastingSearch = {
+  method?: 'select';
+};
+
+export const Route = createFileRoute('/voice-casting/')<{
+  Search: VoiceCastingSearch;
+}>({
+  validateSearch: (search: Record<string, unknown>): VoiceCastingSearch => {
+    return {
+      method: search.method === 'select' ? 'select' : undefined,
+    };
+  },
   component: VoiceCastingUpload,
   errorComponent: RouteError,
 });
 
 function VoiceCastingUpload() {
-  const _navigate = useNavigate();
+  const navigate = useNavigate();
+  const { method } = Route.useSearch();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [creatingSession, setCreatingSession] = useState<string | null>(null);
-  const [showMethodSelector, setShowMethodSelector] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+
+  // Show method selector based on search parameter
+  const showMethodSelector = method === 'select';
 
   // Fetch recent completed screenplay parsing tasks
   const { data: screenplays, isLoading } = useRecentScreenplays(5);
@@ -51,7 +65,7 @@ function VoiceCastingUpload() {
     onSuccess: (data) => {
       // Show method selector instead of navigating directly
       setPendingSessionId(data.session_id);
-      setShowMethodSelector(true);
+      navigate({ search: { method: 'select' } });
     },
   });
 
@@ -89,7 +103,7 @@ function VoiceCastingUpload() {
 
       // Show method selector for recent screenplays too
       setPendingSessionId(response.data.session_id);
-      setShowMethodSelector(true);
+      navigate({ search: { method: 'select' } });
     } catch (error) {
       // Failed to create session from task
       console.error('Failed to create session from task:', error);
@@ -120,7 +134,7 @@ function VoiceCastingUpload() {
   );
 
   const handleMethodSelectorClose = () => {
-    setShowMethodSelector(false);
+    navigate({ search: {} }); // Clear search parameters
     setPendingSessionId(null);
     setSelectedFile(null);
   };

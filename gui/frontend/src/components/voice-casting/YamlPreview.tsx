@@ -84,7 +84,7 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
 
     // Generate YAML from assignments in store
     Array.from(assignments.entries()).forEach(([characterName, assignment]) => {
-      const characterInfo = screenplayData?.characters.get(characterName);
+      const characterInfo = screenplayData?.characters?.get(characterName);
 
       // Add character comments if available
       if (characterInfo) {
