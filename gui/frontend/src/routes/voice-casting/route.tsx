@@ -17,7 +17,7 @@ export const Route = createFileRoute('/voice-casting')({
     },
     ui: {
       showPanel: false,
-      showFooter: true,
+      showFooter: false,
       mobileDrawers: [],
     },
     helpText:

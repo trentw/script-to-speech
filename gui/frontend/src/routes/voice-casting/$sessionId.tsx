@@ -11,7 +11,7 @@ export const Route = createFileRoute('/voice-casting/$sessionId')({
     description: 'Assign voices to screenplay characters',
     ui: {
       showPanel: false,
-      showFooter: true,
+      showFooter: false,
       mobileDrawers: [],
     },
   } satisfies RouteStaticData,
