@@ -176,11 +176,12 @@ describe('AppStore - Configuration Slice', () => {
       });
 
       // Assert - check localStorage with correct key
-      const storedState = JSON.parse(
+      const storedData = JSON.parse(
         localStorage.getItem('sts-app-store') || '{}'
       );
-      expect(storedState.state.selectedProvider).toBe('cartesia');
-      expect(storedState.state.selectedVoice).toEqual(testVoice);
+      // The data is wrapped with TTL metadata, so access the state property
+      expect(storedData.state.state.selectedProvider).toBe('cartesia');
+      expect(storedData.state.state.selectedVoice).toEqual(testVoice);
     });
 
     it('should not persist UI and user input slices', () => {
@@ -194,11 +195,12 @@ describe('AppStore - Configuration Slice', () => {
       });
 
       // Assert - check localStorage doesn't contain these values with correct key
-      const storedState = JSON.parse(
+      const storedData = JSON.parse(
         localStorage.getItem('sts-app-store') || '{}'
       );
-      expect(storedState.state?.text).toBeUndefined();
-      expect(storedState.state?.error).toBeUndefined();
+      // The data is wrapped with TTL metadata, so access the state property
+      expect(storedData.state?.state?.text).toBeUndefined();
+      expect(storedData.state?.state?.error).toBeUndefined();
     });
   });
 });

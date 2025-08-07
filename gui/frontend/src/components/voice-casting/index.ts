@@ -8,5 +8,6 @@ export * from './ProviderAvatar';
 export * from './ScreenplaySourceUpload';
 export * from './VoiceAssignmentPanel';
 export * from './VoiceCard';
+export * from './VoiceCastingHistoryList';
 export * from './YamlImportPanel';
 export * from './YamlPreview';

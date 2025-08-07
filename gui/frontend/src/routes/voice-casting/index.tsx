@@ -19,10 +19,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CastingMethodSelector } from '@/components/voice-casting';
+import { CastingMethodSelector, VoiceCastingHistoryList } from '@/components/voice-casting';
 import { useRecentScreenplays } from '@/hooks/queries/useRecentScreenplays';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
+import { useVoiceCastingSessions } from '@/hooks/useVoiceCastingSessions';
 import { apiService } from '@/services/api';
+import { useVoiceCasting } from '@/stores/appStore';
 
 type VoiceCastingSearch = {
   method?: 'select';
@@ -46,12 +48,16 @@ function VoiceCastingUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [creatingSession, setCreatingSession] = useState<string | null>(null);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+  const { resetCastingState, setActiveSession, createOrUpdateSession } = useVoiceCasting();
 
   // Show method selector based on search parameter
   const showMethodSelector = method === 'select';
 
   // Fetch recent completed screenplay parsing tasks
   const { data: screenplays, isLoading } = useRecentScreenplays(5);
+  
+  // Fetch recent voice casting sessions
+  const recentSessions = useVoiceCastingSessions(5);
 
   // Mutation for uploading JSON file
   const uploadJsonMutation = useMutation({
@@ -88,12 +94,15 @@ function VoiceCastingUpload() {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
+    
+    // Don't clear data anymore - we support multiple sessions
     uploadJsonMutation.mutate(selectedFile);
   };
 
   const handleSelectRecent = async (taskId: string) => {
     // For recent screenplays, we need to create a session from the task
     setCreatingSession(taskId);
+    
     try {
       // Create a session from the task
       const response = await apiService.createSessionFromTask(taskId);
@@ -110,6 +119,12 @@ function VoiceCastingUpload() {
     } finally {
       setCreatingSession(null);
     }
+  };
+  
+  const handleResumeSession = (sessionId: string) => {
+    // Set the session as active and navigate directly to it
+    setActiveSession(sessionId);
+    navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
   };
 
   // Get session data for the method selector
@@ -140,16 +155,19 @@ function VoiceCastingUpload() {
   };
 
   return (
-    <div className="container mx-auto max-w-4xl space-y-6 p-6">
-      <div className="space-y-2">
+    <div className="container mx-auto p-6">
+      <div className="space-y-2 mb-6">
         <h1 className="text-3xl font-bold">Voice Casting</h1>
         <p className="text-muted-foreground">
           Assign TTS voices to your screenplay characters
         </p>
       </div>
 
-      {/* Upload New Screenplay */}
-      <Card>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Main Content - Left Column */}
+        <div className="space-y-6 lg:col-span-2">
+          {/* Upload New Screenplay */}
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -215,11 +233,11 @@ function VoiceCastingUpload() {
             </Alert>
           )}
         </CardContent>
-      </Card>
+          </Card>
 
-      {/* Recent Screenplays */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Recent Screenplays</h2>
+          {/* Cast from Recently Parsed Screenplays */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">Cast from Recently Parsed Screenplays</h2>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
@@ -261,8 +279,21 @@ function VoiceCastingUpload() {
                 </CardContent>
               </Card>
             ))}
+            </div>
+          )}
           </div>
-        )}
+        </div>
+
+        {/* Right Column - Recent Castings */}
+        <div>
+          <Card className="p-4">
+            <h3 className="mb-4 text-lg font-semibold">Recent Castings</h3>
+            <VoiceCastingHistoryList
+              sessions={recentSessions}
+              onSelect={handleResumeSession}
+            />
+          </Card>
+        </div>
       </div>
 
       {/* Casting Method Selector Modal */}

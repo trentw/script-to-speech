@@ -76,7 +76,28 @@ function VoiceCastingSessionIndex() {
   } = useScreenplayCharacters(session?.screenplay_json_path);
 
   // Connect to voice casting store
-  const { assignments, setScreenplayData } = useVoiceCasting();
+  const { 
+    assignments, 
+    setScreenplayData, 
+    setCastingSessionId, 
+    setScreenplayJsonPath,
+    createOrUpdateSession
+  } = useVoiceCasting();
+
+  // Set session information in store when session data loads
+  useEffect(() => {
+    if (session) {
+      setCastingSessionId(session.session_id);
+      setScreenplayJsonPath(session.screenplay_json_path);
+      
+      // Create or update the session in the multi-session store
+      createOrUpdateSession({
+        sessionId: session.session_id,
+        screenplayName: session.screenplay_name,
+        screenplayJsonPath: session.screenplay_json_path,
+      });
+    }
+  }, [session, setCastingSessionId, setScreenplayJsonPath, createOrUpdateSession]);
 
   // Update the screenplay data in the store when characters data loads
   useEffect(() => {
