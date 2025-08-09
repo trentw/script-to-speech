@@ -40,15 +40,19 @@ export function CharacterCard({
   character,
   onAssignVoice,
 }: CharacterCardProps) {
-  const { assignments, screenplayData, removeVoiceFromAssignment } =
-    useVoiceCasting();
+  // All hooks must be called at the top level
+  const { getActiveSession, removeVoiceFromAssignment } = useVoiceCasting();
+  const activeSession = getActiveSession();
 
-  // Get assignment data from store
-  const assignment = assignments.get(character.name);
-  const isAssigned = !!(
-    assignment &&
-    (assignment.sts_id || assignment.provider)
+  // Safely access session data with fallbacks
+  const screenplayData = activeSession?.screenplayData;
+
+  // Memoize assignments to prevent dependency issues
+  const assignments = useMemo(
+    () => activeSession?.assignments || new Map(),
+    [activeSession?.assignments]
   );
+  const assignment = assignments.get(character.name);
 
   // Resolve voice entry if we have an assignment but no voiceEntry
   const resolvedVoice = useResolveVoiceEntry(
@@ -56,17 +60,45 @@ export function CharacterCard({
     assignment?.sts_id
   );
 
-  // Use assignment.voiceEntry first, fall back to resolved
-  const voiceEntry = assignment?.voiceEntry || resolvedVoice;
+  // Calculate assignment status - memoized for performance
+  const assignmentData = useMemo(() => {
+    if (!activeSession) {
+      return { isAssigned: false, assignment: null };
+    }
+
+    const isAssigned = !!(
+      assignment &&
+      (assignment.sts_id || assignment.provider)
+    );
+
+    return { isAssigned, assignment };
+  }, [activeSession, assignment]);
 
   // Calculate voice usage map
   const voiceUsageMap = useMemo(() => {
+    if (!activeSession) return new Map();
     return calculateVoiceUsage(
       assignments,
       screenplayData?.characters,
       character.name
     );
-  }, [assignments, screenplayData?.characters, character.name]);
+  }, [activeSession, assignments, screenplayData?.characters, character.name]);
+
+  // Guard against no active session AFTER all hooks
+  if (!activeSession) {
+    return (
+      <Card className="col-span-1">
+        <CardContent className="p-4">
+          <p className="text-muted-foreground text-sm">No active session</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const { isAssigned } = assignmentData;
+
+  // Use assignment.voiceEntry first, fall back to resolved
+  const voiceEntry = assignment?.voiceEntry || resolvedVoice;
 
   const handleRemoveAssignment = () => {
     removeVoiceFromAssignment(character.name);

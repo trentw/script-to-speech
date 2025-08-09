@@ -2,6 +2,8 @@
  * Test utilities for TanStack Router and Playwright
  */
 
+/* eslint-disable testing-library/prefer-screen-queries */
+
 import { expect, Page } from '@playwright/test';
 import type { QueryClient } from '@tanstack/react-query';
 import type { Router } from '@tanstack/react-router';

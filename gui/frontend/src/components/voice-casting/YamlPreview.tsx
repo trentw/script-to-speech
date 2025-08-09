@@ -24,7 +24,7 @@ import { yamlUtils } from '@/utils/yamlUtils';
 
 interface YamlPreviewProps {
   onBack: () => void;
-  onExport: () => void;
+  onExport?: () => void;
 }
 
 export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
@@ -32,11 +32,15 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
   const [yamlContent, setYamlContent] = useState<string | undefined>(undefined);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
-  const { assignments, screenplayData } = useVoiceCasting();
+  const { getActiveSession } = useVoiceCasting();
 
   // Generate YAML when component mounts or when assignments exist
   useEffect(() => {
     const generateYaml = async () => {
+      const activeSession = getActiveSession();
+      const assignments = activeSession?.assignments || new Map();
+      const screenplayData = activeSession?.screenplayData;
+
       if (!yamlContent && assignments.size > 0 && screenplayData) {
         setIsGenerating(true);
         setError(undefined);
@@ -63,10 +67,14 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
     };
 
     generateYaml();
-  }, [yamlContent, assignments, screenplayData]);
+  }, [yamlContent, getActiveSession]);
 
   // Fallback local generation if mutation not available
   const generateLocalYaml = () => {
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
+    const screenplayData = activeSession?.screenplayData;
+
     const lines: string[] = [];
 
     // Header comment
@@ -151,10 +159,31 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
     URL.revokeObjectURL(url);
 
     // Call the parent's onExport callback
-    onExport();
+    if (onExport) {
+      onExport();
+    }
   };
 
   // Generate statistics from voice casting store
+  const activeSession = getActiveSession();
+
+  // Guard against no active session
+  if (!activeSession) {
+    return (
+      <div className="space-y-4">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No active session. Please select a session first.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const assignments = activeSession.assignments;
+  const screenplayData = activeSession.screenplayData;
+
   const stats = {
     totalCharacters: screenplayData?.characters.size || 0,
     assignedCharacters: assignments.size,

@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 
 import { FieldType } from '@/types';
@@ -70,6 +71,7 @@ describe('CustomVoiceForm', () => {
   });
 
   it('shows validation error for empty required field', async () => {
+    const user = userEvent.setup();
     renderComponent();
 
     await waitFor(() => {
@@ -77,7 +79,7 @@ describe('CustomVoiceForm', () => {
     });
 
     const applyButton = screen.getByText('Apply Configuration');
-    fireEvent.click(applyButton);
+    await user.click(applyButton);
 
     await waitFor(() => {
       expect(screen.getByText('This field is required')).toBeInTheDocument();
@@ -87,6 +89,7 @@ describe('CustomVoiceForm', () => {
   });
 
   it('calls onConfigChange with valid config', async () => {
+    const user = userEvent.setup();
     renderComponent();
 
     await waitFor(() => {
@@ -95,22 +98,23 @@ describe('CustomVoiceForm', () => {
 
     // Open the select dropdown
     const trigger = screen.getByRole('combobox');
-    fireEvent.click(trigger);
+    await user.click(trigger);
 
     // Select a voice
     await waitFor(() => {
       expect(screen.getByText('alloy')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('alloy'));
+    await user.click(screen.getByText('alloy'));
 
     // Submit the form
     const applyButton = screen.getByText('Apply Configuration');
-    fireEvent.click(applyButton);
+    await user.click(applyButton);
 
     expect(mockOnConfigChange).toHaveBeenCalledWith({ voice: 'alloy' });
   });
 
   it('calls onCancel when cancel button is clicked', async () => {
+    const user = userEvent.setup();
     renderComponent();
 
     await waitFor(() => {
@@ -118,7 +122,7 @@ describe('CustomVoiceForm', () => {
     });
 
     const cancelButton = screen.getByText('Cancel');
-    fireEvent.click(cancelButton);
+    await user.click(cancelButton);
 
     expect(mockOnCancel).toHaveBeenCalled();
   });

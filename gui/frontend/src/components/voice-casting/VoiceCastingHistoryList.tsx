@@ -56,7 +56,7 @@ export function VoiceCastingHistoryList({
                     {session.screenplayName}
                   </h4>
                   {isCompleted ? (
-                    <CheckCircle2 className="text-green-600 h-4 w-4 flex-shrink-0" />
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0 text-green-600" />
                   ) : (
                     <Circle className="text-muted-foreground h-4 w-4 flex-shrink-0" />
                   )}
@@ -64,10 +64,12 @@ export function VoiceCastingHistoryList({
 
                 {/* Assignment Progress */}
                 <div className="flex items-center gap-4 text-sm">
-                  <span className={cn(
-                    "text-muted-foreground",
-                    isCompleted && "text-green-600"
-                  )}>
+                  <span
+                    className={cn(
+                      'text-muted-foreground',
+                      isCompleted && 'text-green-600'
+                    )}
+                  >
                     {session.assignedCount}/{session.totalCount} assigned
                   </span>
                 </div>

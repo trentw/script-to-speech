@@ -2,11 +2,15 @@ import './index.css';
 
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { enableMapSet } from 'immer';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from './App.tsx';
 import { queryClient } from './lib/queryClient';
+
+// Enable Map/Set support for immer (required for Zustand store)
+enableMapSet();
 
 const rootElement = document.getElementById('root');
 

@@ -48,7 +48,8 @@ function CharacterNotesGeneration() {
   const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
 
-  const { assignments, importAssignments, setYamlContent } = useVoiceCasting();
+  const { getActiveSession, importAssignments, setYamlContent } =
+    useVoiceCasting();
 
   // Fetch session data
   const {
@@ -76,6 +77,9 @@ function CharacterNotesGeneration() {
 
   // Function to export current assignments or screenplay characters to YAML format
   const exportToYaml = useCallback(async (): Promise<string> => {
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
+
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
       // Get character info for comments
@@ -104,13 +108,16 @@ function CharacterNotesGeneration() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  }, [assignments, session?.screenplay_json_path]);
+  }, [getActiveSession, session?.screenplay_json_path]);
 
   // Step 1: Generate prompt
   const generatePromptInternal = useCallback(async () => {
     // Generate YAML structure for character notes prompt
     // If we have assignments, use them, otherwise create YAML from screenplay character data
     let yamlContent = '';
+
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
 
     if (assignments.size > 0) {
       // Get character info for the YAML generation
@@ -149,7 +156,7 @@ function CharacterNotesGeneration() {
       setPromptText(result.prompt_content);
     }
   }, [
-    assignments,
+    getActiveSession,
     session,
     exportToYaml,
     generatePromptMutation,
@@ -222,6 +229,9 @@ function CharacterNotesGeneration() {
 
   // Auto-generate prompt on mount if we have the necessary data
   useEffect(() => {
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
+
     if (
       session?.screenplay_json_path &&
       session?.screenplay_source_path &&
@@ -234,7 +244,7 @@ function CharacterNotesGeneration() {
   }, [
     session?.screenplay_json_path,
     session?.screenplay_source_path,
-    assignments.size,
+    getActiveSession,
     privacyAccepted,
     handleGeneratePrompt,
     promptText,

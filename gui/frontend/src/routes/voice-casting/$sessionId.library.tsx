@@ -51,7 +51,8 @@ function VoiceLibraryCasting() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const { assignments, importAssignments, setYamlContent } = useVoiceCasting();
+  const { getActiveSession, importAssignments, setYamlContent } =
+    useVoiceCasting();
 
   // Fetch session data
   const {
@@ -96,6 +97,9 @@ function VoiceLibraryCasting() {
 
   // Function to export current assignments or screenplay characters to YAML format
   const exportToYaml = useCallback(async (): Promise<string> => {
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
+
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
       // Get character info for comments
@@ -124,7 +128,7 @@ function VoiceLibraryCasting() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  }, [assignments, session?.screenplay_json_path]);
+  }, [getActiveSession, session?.screenplay_json_path]);
 
   // Step 1: Generate prompt
   const handleGeneratePrompt = async () => {

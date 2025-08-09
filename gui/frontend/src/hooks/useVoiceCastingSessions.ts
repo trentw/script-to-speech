@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useVoiceCasting } from '@/stores/appStore';
 
 export function useVoiceCastingSessions(limit = 5) {
-  const { getRecentSessions, voiceCastingSessions } = useVoiceCasting();
+  const { getRecentSessions } = useVoiceCasting();
 
   return useMemo(() => {
     const sessions = getRecentSessions(limit);
@@ -31,5 +31,5 @@ export function useVoiceCastingSessions(limit = 5) {
         lastUpdated: session.lastUpdated,
       };
     });
-  }, [getRecentSessions, limit, voiceCastingSessions]);
+  }, [getRecentSessions, limit]);
 }

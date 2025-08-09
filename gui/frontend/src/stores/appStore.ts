@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { ScreenplayResult, VoiceEntry } from '../types';
@@ -45,7 +46,7 @@ export interface VoiceCastingSessionData {
   screenplayJsonPath: string;
   assignments: Map<string, VoiceAssignment>;
   castingMethod: 'manual' | 'llm-assisted';
-  yamlContent?: string;
+  yamlContent: string;
   voiceCache: Map<string, VoiceEntry>;
   lastUpdated: number;
   screenplayData?: { characters: Map<string, CharacterInfo> };
@@ -117,71 +118,56 @@ interface ScreenplaySlice {
   resetScreenplayState: () => void;
 }
 
-// Voice Casting slice - handles voice assignment for screenplay characters
+// Voice Casting slice - SINGLE SOURCE OF TRUTH
 interface VoiceCastingSlice {
-  // Multi-session support
-  voiceCastingSessions: Map<string, VoiceCastingSessionData>;
+  // Data
+  sessions: Map<string, VoiceCastingSessionData>;
   activeSessionId: string | undefined;
-  
-  // Legacy fields for backward compatibility (will map to active session)
-  castingSessionId: string | undefined;
-  screenplayJsonPath: string | undefined;
-  screenplayData: { characters: Map<string, CharacterInfo> } | undefined;
-  assignments: Map<string, VoiceAssignment>;
-  castingMethod: 'manual' | 'llm-assisted';
-  yamlContent: string | undefined;
-  voiceCache: Map<string, VoiceEntry>;
 
-  // Actions
-  setCastingSessionId: (sessionId: string | undefined) => void;
-  setScreenplayJsonPath: (path: string | undefined) => void;
-  setScreenplayData: (
-    data: { characters: Map<string, CharacterInfo> } | undefined
+  // Core helper - all mutations go through this
+  updateActiveSession: (
+    updater: (session: VoiceCastingSessionData) => void
   ) => void;
 
-  // Character metadata operations (role, casting notes, etc.)
+  // Session management - CONSOLIDATED API
+  deleteSession: (sessionId: string) => void;
+  selectOrCreateSession: (
+    sessionId: string,
+    sessionData?: Partial<VoiceCastingSessionData>
+  ) => void;
+  resetCastingState: () => void;
+
+  // Character operations
+  setCharacterVoice: (character: string, voice: VoiceAssignment) => void;
   setCharacterMetadata: (
-    characterName: string,
-    metadata: Partial<
-      Pick<VoiceAssignment, 'role' | 'castingNotes' | 'additional_notes'>
-    >
+    character: string,
+    metadata: Partial<VoiceAssignment>
   ) => void;
-
-  // Voice assignment operations (provider, sts_id, config)
-  setCharacterVoice: (
-    characterName: string,
-    voiceData: {
-      sts_id?: string;
-      provider: string;
-      provider_config?: Record<string, unknown>;
-      voiceEntry?: VoiceEntry;
-    }
-  ) => void;
-
-  // Full replacement (replaces entire assignment)
-  replaceCharacterAssignment: (
-    characterName: string,
-    assignment: VoiceAssignment
-  ) => void;
-
-  removeCharacterAssignment: (characterName: string) => void;
-  removeVoiceFromAssignment: (characterName: string) => void;
+  removeCharacterAssignment: (character: string) => void;
+  removeVoiceFromAssignment: (character: string) => void;
   importAssignments: (assignments: Map<string, VoiceAssignment>) => void;
-  setYamlContent: (content: string | undefined) => void;
+  setYamlContent: (content: string) => void;
   setCastingMethod: (method: 'manual' | 'llm-assisted') => void;
-  setVoiceCache: (cache: Map<string, VoiceEntry>) => void;
   addToVoiceCache: (
     provider: string,
     sts_id: string,
     voice: VoiceEntry
   ) => void;
-  resetCastingState: () => void;
-  
-  // New multi-session actions
-  setActiveSession: (sessionId: string) => void;
-  createOrUpdateSession: (sessionData: Partial<VoiceCastingSessionData>) => void;
+
+  // Computed getters
+  getActiveSession: () => VoiceCastingSessionData | undefined;
+  getSessionStats: (sessionId: string) => SessionStats | undefined;
   getRecentSessions: (limit?: number) => VoiceCastingSessionData[];
-  cleanOldSessions: () => void;
+}
+
+// Add this type if not present
+interface SessionStats {
+  sessionId: string;
+  screenplayName: string;
+  total: number;
+  assigned: number;
+  completed: boolean;
+  lastUpdated: number;
 }
 
 // Combined store type
@@ -196,7 +182,7 @@ type AppStore = ConfigurationSlice &
 const useAppStore = create<AppStore>()(
   devtools(
     persist(
-      (set, get) => ({
+      immer((set, get) => ({
         // Configuration slice implementation
         selectedProvider: undefined,
         selectedVoice: undefined,
@@ -283,7 +269,11 @@ const useAppStore = create<AppStore>()(
         },
 
         setSidebarExpanded: (expanded) => {
-          set({ sidebarExpanded: expanded }, false, 'layout/setSidebarExpanded');
+          set(
+            { sidebarExpanded: expanded },
+            false,
+            'layout/setSidebarExpanded'
+          );
         },
 
         toggleSidebar: () => {
@@ -351,542 +341,188 @@ const useAppStore = create<AppStore>()(
           );
         },
 
-        // Voice Casting slice implementation
-        voiceCastingSessions: new Map(),
+        // Voice Casting slice implementation - SINGLE SOURCE OF TRUTH
+        sessions: new Map(),
         activeSessionId: undefined,
-        castingSessionId: undefined,
-        screenplayJsonPath: undefined,
-        screenplayData: undefined,
-        assignments: new Map(),
-        castingMethod: 'manual',
-        yamlContent: undefined,
-        voiceCache: new Map(),
 
-        setCastingSessionId: (sessionId) => {
+        // Core helper - all mutations go through this
+        updateActiveSession: (updater) => {
+          const state = get();
+          if (
+            !state.activeSessionId ||
+            !state.sessions.has(state.activeSessionId)
+          ) {
+            throw new Error(
+              '[Voice Casting] No active session to update. Please select or create a session first.'
+            );
+          }
           set(
-            (state) => {
-              // Update both legacy and active session
-              const updates: Partial<VoiceCastingSlice> = {
-                castingSessionId: sessionId,
-                activeSessionId: sessionId,
-              };
-              
-              // If we have a session, load its data
-              if (sessionId && state.voiceCastingSessions.has(sessionId)) {
-                const session = state.voiceCastingSessions.get(sessionId)!;
-                Object.assign(updates, {
-                  screenplayJsonPath: session.screenplayJsonPath,
-                  screenplayData: session.screenplayData,
-                  assignments: session.assignments,
-                  castingMethod: session.castingMethod,
-                  yamlContent: session.yamlContent,
-                  voiceCache: session.voiceCache,
-                });
-              }
-              
-              return updates;
+            (draft) => {
+              const session = draft.sessions.get(draft.activeSessionId!)!;
+              updater(session);
+              session.lastUpdated = Date.now();
             },
             false,
-            'voiceCasting/setCastingSessionId'
+            'voiceCasting/updateActiveSession'
           );
         },
 
-        setScreenplayJsonPath: (path) => {
+        // Session management - CONSOLIDATED API
+
+        deleteSession: (sessionId) => {
           set(
-            (state) => {
-              const updates: Partial<VoiceCastingSlice> = {
-                screenplayJsonPath: path,
-              };
-              
-              // Update active session if exists
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, screenplayJsonPath: path || session.screenplayJsonPath, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
+            (draft) => {
+              draft.sessions.delete(sessionId);
+              if (draft.activeSessionId === sessionId) {
+                draft.activeSessionId = undefined;
               }
-              
-              return updates;
             },
             false,
-            'voiceCasting/setScreenplayJsonPath'
+            'voiceCasting/deleteSession'
           );
         },
 
-        setScreenplayData: (data) => {
+        // Consolidated session selection - creates if needed and sets as active
+        selectOrCreateSession: (sessionId, sessionData) => {
           set(
-            (state) => {
-              const updates: Partial<VoiceCastingSlice> = {
-                screenplayData: data,
-              };
-              
-              // Update active session if exists
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, screenplayData: data, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setScreenplayData'
-          );
-        },
-
-        setCharacterMetadata: (characterName, metadata) => {
-          set(
-            (state) => {
-              const newAssignments = new Map(state.assignments);
-              const existing = newAssignments.get(characterName) || {
-                provider: '',
-              };
-
-              const updated: VoiceAssignment = {
-                ...existing,
-                ...metadata,
-              };
-
-              newAssignments.set(characterName, updated);
-              
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments: newAssignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments: newAssignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setCharacterMetadata'
-          );
-        },
-
-        setCharacterVoice: (characterName, voiceData) => {
-          set(
-            (state) => {
-              const newAssignments = new Map(state.assignments);
-              const existing = newAssignments.get(characterName);
-
-              // Preserve existing metadata when updating voice
-              const updated: VoiceAssignment = {
-                ...voiceData,
-                // Preserve metadata fields if they exist
-                ...(existing?.role !== undefined && { role: existing.role }),
-                ...(existing?.castingNotes !== undefined && {
-                  castingNotes: existing.castingNotes,
-                }),
-                ...(existing?.additional_notes !== undefined && {
-                  additional_notes: existing.additional_notes,
-                }),
-                ...(existing?.line_count !== undefined && {
-                  line_count: existing.line_count,
-                }),
-                ...(existing?.total_characters !== undefined && {
-                  total_characters: existing.total_characters,
-                }),
-                ...(existing?.longest_dialogue !== undefined && {
-                  longest_dialogue: existing.longest_dialogue,
-                }),
-              };
-
-              newAssignments.set(characterName, updated);
-              
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments: newAssignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments: newAssignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setCharacterVoice'
-          );
-        },
-
-        replaceCharacterAssignment: (characterName, assignment) => {
-          set(
-            (state) => {
-              const newAssignments = new Map(state.assignments);
-              newAssignments.set(characterName, assignment);
-              
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments: newAssignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments: newAssignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/replaceCharacterAssignment'
-          );
-        },
-
-        removeCharacterAssignment: (characterName) => {
-          set(
-            (state) => {
-              const newAssignments = new Map(state.assignments);
-              newAssignments.delete(characterName);
-              
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments: newAssignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments: newAssignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/removeCharacterAssignment'
-          );
-        },
-
-        removeVoiceFromAssignment: (characterName) => {
-          set(
-            (state) => {
-              const newAssignments = new Map(state.assignments);
-              const currentAssignment = newAssignments.get(characterName);
-
-              if (currentAssignment) {
-                // Create a new assignment that preserves character metadata but removes voice data
-                const updatedAssignment: Partial<VoiceAssignment> = {
-                  // Preserve character metadata only (only include if defined)
-                  ...(currentAssignment.role !== undefined && {
-                    role: currentAssignment.role,
-                  }),
-                  ...(currentAssignment.castingNotes !== undefined && {
-                    castingNotes: currentAssignment.castingNotes,
-                  }),
-                  ...(currentAssignment.additional_notes !== undefined && {
-                    additional_notes: currentAssignment.additional_notes,
-                  }),
-                  ...(currentAssignment.confidence !== undefined && {
-                    confidence: currentAssignment.confidence,
-                  }),
-                  ...(currentAssignment.reasoning !== undefined && {
-                    reasoning: currentAssignment.reasoning,
-                  }),
-                  ...(currentAssignment.line_count !== undefined && {
-                    line_count: currentAssignment.line_count,
-                  }),
-                  ...(currentAssignment.total_characters !== undefined && {
-                    total_characters: currentAssignment.total_characters,
-                  }),
-                  ...(currentAssignment.longest_dialogue !== undefined && {
-                    longest_dialogue: currentAssignment.longest_dialogue,
-                  }),
+            (draft) => {
+              // Create session if it doesn't exist
+              if (!draft.sessions.has(sessionId) && sessionData) {
+                const newSession: VoiceCastingSessionData = {
+                  sessionId,
+                  screenplayName: sessionData.screenplayName || '',
+                  screenplayJsonPath: sessionData.screenplayJsonPath || '',
+                  assignments: sessionData.assignments || new Map(),
+                  castingMethod: sessionData.castingMethod || 'manual',
+                  yamlContent: sessionData.yamlContent || '',
+                  voiceCache: sessionData.voiceCache || new Map(),
+                  lastUpdated: Date.now(),
+                  screenplayData: sessionData.screenplayData,
                 };
-
-                // Only keep the assignment if it has any metadata to preserve
-                if (
-                  updatedAssignment.role ||
-                  updatedAssignment.castingNotes ||
-                  updatedAssignment.additional_notes
-                ) {
-                  newAssignments.set(
-                    characterName,
-                    updatedAssignment as VoiceAssignment
-                  );
-                } else {
-                  // If no metadata to preserve, remove the assignment completely
-                  newAssignments.delete(characterName);
-                }
+                draft.sessions.set(sessionId, newSession);
               }
-
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments: newAssignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments: newAssignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
+              // Set as active
+              draft.activeSessionId = sessionId;
             },
             false,
-            'voiceCasting/removeVoiceFromAssignment'
+            'voiceCasting/selectOrCreateSession'
           );
+        },
+
+        // Character operations - all use updateActiveSession helper
+        setCharacterVoice: (character, voice) => {
+          get().updateActiveSession((session) => {
+            const existing = session.assignments.get(character);
+            session.assignments.set(character, {
+              ...existing, // Preserve metadata
+              ...voice, // Update voice data
+            });
+          });
+        },
+
+        setCharacterMetadata: (character, metadata) => {
+          get().updateActiveSession((session) => {
+            const existing = session.assignments.get(character) || {
+              provider: '',
+            };
+            const updated = { ...existing, ...metadata };
+            session.assignments.set(character, updated);
+          });
+        },
+
+        removeCharacterAssignment: (character) => {
+          get().updateActiveSession((session) => {
+            session.assignments.delete(character);
+          });
+        },
+        removeVoiceFromAssignment: (character) => {
+          get().updateActiveSession((session) => {
+            const existing = session.assignments.get(character);
+            if (existing) {
+              // Keep metadata, clear voice data
+              session.assignments.set(character, {
+                provider: '',
+                sts_id: undefined,
+                provider_config: undefined,
+                role: existing.role,
+                castingNotes: existing.castingNotes,
+                additional_notes: existing.additional_notes,
+              });
+            }
+          });
         },
 
         importAssignments: (assignments) => {
-          set(
-            (state) => {
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                assignments,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, assignments, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/importAssignments'
-          );
+          get().updateActiveSession((session) => {
+            session.assignments = assignments;
+          });
         },
 
         setYamlContent: (content) => {
-          set(
-            (state) => {
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                yamlContent: content,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, yamlContent: content, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setYamlContent'
-          );
+          get().updateActiveSession((session) => {
+            session.yamlContent = content;
+          });
         },
 
         setCastingMethod: (method) => {
-          set(
-            (state) => {
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                castingMethod: method,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, castingMethod: method, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setCastingMethod'
-          );
-        },
-
-        setVoiceCache: (cache) => {
-          set(
-            (state) => {
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                voiceCache: cache,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, voiceCache: cache, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/setVoiceCache'
-          );
+          get().updateActiveSession((session) => {
+            session.castingMethod = method;
+          });
         },
 
         addToVoiceCache: (provider, sts_id, voice) => {
-          set(
-            (state) => {
-              const newCache = new Map(state.voiceCache);
-              const cacheKey = `${provider}:${sts_id}`;
-              newCache.set(cacheKey, voice);
-              
-              // Update active session
-              const updates: Partial<VoiceCastingSlice> = {
-                voiceCache: newCache,
-              };
-              
-              if (state.activeSessionId && state.voiceCastingSessions.has(state.activeSessionId)) {
-                const session = state.voiceCastingSessions.get(state.activeSessionId)!;
-                const updatedSession = { ...session, voiceCache: newCache, lastUpdated: Date.now() };
-                const newSessions = new Map(state.voiceCastingSessions);
-                newSessions.set(state.activeSessionId, updatedSession);
-                updates.voiceCastingSessions = newSessions;
-              }
-              
-              return updates;
-            },
-            false,
-            'voiceCasting/addToVoiceCache'
-          );
+          get().updateActiveSession((session) => {
+            const cacheKey = `${provider}:${sts_id}`;
+            session.voiceCache.set(cacheKey, voice);
+          });
         },
 
-        resetCastingState: () => {
-          set(
-            {
-              castingSessionId: undefined,
-              screenplayJsonPath: undefined,
-              screenplayData: undefined,
-              assignments: new Map(),
-              castingMethod: 'manual',
-              yamlContent: undefined,
-              voiceCache: new Map(),
-              activeSessionId: undefined,
-              // Note: We don't clear voiceCastingSessions to preserve other sessions
-            },
-            false,
-            'voiceCasting/reset'
-          );
+        // Computed getters
+        getActiveSession: () => {
+          const state = get();
+          if (!state.activeSessionId) return undefined;
+          return state.sessions.get(state.activeSessionId);
         },
-        
-        // New multi-session actions
-        setActiveSession: (sessionId) => {
-          set(
-            (state) => {
-              const session = state.voiceCastingSessions.get(sessionId);
-              if (!session) {
-                console.warn(`[Voice Casting] Session ${sessionId} not found`);
-                return {};
-              }
-              
-              return {
-                activeSessionId: sessionId,
-                castingSessionId: sessionId,
-                screenplayJsonPath: session.screenplayJsonPath,
-                screenplayData: session.screenplayData,
-                assignments: session.assignments,
-                castingMethod: session.castingMethod,
-                yamlContent: session.yamlContent,
-                voiceCache: session.voiceCache,
-              };
-            },
-            false,
-            'voiceCasting/setActiveSession'
-          );
+
+        getSessionStats: (sessionId) => {
+          const state = get();
+          const session = state.sessions.get(sessionId);
+          if (!session) return undefined;
+
+          const total = session.screenplayData?.characters.size || 0;
+          // Count only assignments with actual voices (provider and sts_id or provider_config)
+          const assigned = Array.from(session.assignments.values()).filter(
+            (a) => a.provider && (a.sts_id || a.provider_config)
+          ).length;
+          return {
+            sessionId,
+            screenplayName: session.screenplayName,
+            total,
+            assigned,
+            completed: total > 0 && assigned >= total,
+            lastUpdated: session.lastUpdated,
+          };
         },
-        
-        createOrUpdateSession: (sessionData) => {
-          set(
-            (state) => {
-              const sessionId = sessionData.sessionId || state.activeSessionId;
-              if (!sessionId) {
-                console.error('[Voice Casting] Cannot create/update session without sessionId');
-                return {};
-              }
-              
-              const existingSession = state.voiceCastingSessions.get(sessionId);
-              const newSession: VoiceCastingSessionData = {
-                sessionId,
-                screenplayName: sessionData.screenplayName || existingSession?.screenplayName || '',
-                screenplayJsonPath: sessionData.screenplayJsonPath || existingSession?.screenplayJsonPath || state.screenplayJsonPath || '',
-                assignments: sessionData.assignments || existingSession?.assignments || state.assignments,
-                castingMethod: sessionData.castingMethod || existingSession?.castingMethod || state.castingMethod,
-                yamlContent: sessionData.yamlContent || existingSession?.yamlContent || state.yamlContent,
-                voiceCache: sessionData.voiceCache || existingSession?.voiceCache || state.voiceCache,
-                lastUpdated: Date.now(),
-                screenplayData: sessionData.screenplayData || existingSession?.screenplayData || state.screenplayData,
-              };
-              
-              const newSessions = new Map(state.voiceCastingSessions);
-              newSessions.set(sessionId, newSession);
-              
-              return { voiceCastingSessions: newSessions };
-            },
-            false,
-            'voiceCasting/createOrUpdateSession'
-          );
-        },
-        
+
         getRecentSessions: (limit = 10) => {
           const state = get();
-          const sessions = Array.from(state.voiceCastingSessions.values());
-          
-          // Sort by lastUpdated descending and limit
+          const sessions = Array.from(state.sessions.values());
           return sessions
             .sort((a, b) => b.lastUpdated - a.lastUpdated)
             .slice(0, limit);
         },
-        
-        cleanOldSessions: () => {
+
+        // State reset - clears active session
+        resetCastingState: () => {
           set(
-            (state) => {
-              const now = Date.now();
-              const twelveHours = 12 * 60 * 60 * 1000;
-              const maxSessions = 10;
-              
-              // Get all sessions sorted by lastUpdated
-              const sessions = Array.from(state.voiceCastingSessions.entries())
-                .sort((a, b) => b[1].lastUpdated - a[1].lastUpdated);
-              
-              const newSessions = new Map<string, VoiceCastingSessionData>();
-              
-              // Keep sessions that are either:
-              // 1. Within the last 12 hours AND in the top 10 most recent
-              // 2. Currently active
-              sessions.forEach(([id, session], index) => {
-                const age = now - session.lastUpdated;
-                const isActive = id === state.activeSessionId;
-                const isRecent = age < twelveHours;
-                const isTopN = index < maxSessions;
-                
-                if (isActive || (isRecent && isTopN)) {
-                  newSessions.set(id, session);
-                }
-              });
-              
-              console.log(`[Voice Casting] Cleaned sessions: kept ${newSessions.size} of ${state.voiceCastingSessions.size}`);
-              
-              return { voiceCastingSessions: newSessions };
+            (draft) => {
+              draft.activeSessionId = undefined;
             },
             false,
-            'voiceCasting/cleanOldSessions'
+            'voiceCasting/resetCastingState'
           );
         },
-      }),
+      })),
       {
         name: 'sts-app-store', // localStorage key
         storage: createJSONStorage(() => createTTLStorage(12)), // 12-hour TTL
@@ -898,108 +534,114 @@ const useAppStore = create<AppStore>()(
           currentConfig: state.currentConfig,
           sidebarExpanded: state.sidebarExpanded,
           rightPanelExpanded: state.rightPanelExpanded,
-          
-          // Voice-casting sessions (new) - Convert Maps to Objects for serialization
-          voiceCastingSessions: Object.fromEntries(
-            Array.from(state.voiceCastingSessions.entries()).map(([id, session]) => [
+
+          // Voice-casting sessions - Convert Maps to Objects for serialization
+          sessions: Object.fromEntries(
+            Array.from(state.sessions.entries()).map(([id, session]) => [
               id,
               {
                 ...session,
                 assignments: Object.fromEntries(session.assignments),
                 voiceCache: Object.fromEntries(session.voiceCache),
-                screenplayData: session.screenplayData ? {
-                  characters: Object.fromEntries(session.screenplayData.characters)
-                } : undefined,
-              }
+                screenplayData: session.screenplayData
+                  ? {
+                      characters: Object.fromEntries(
+                        session.screenplayData.characters
+                      ),
+                    }
+                  : undefined,
+              },
             ])
           ),
           activeSessionId: state.activeSessionId,
-          
+
           // text, error, viewportSize, activeModal are NOT persisted (ephemeral state)
         }),
-        
+
         // Rehydration handler to convert Objects back to Maps
         onRehydrateStorage: () => {
-          console.log('[Voice Casting] Starting hydration from persistent storage');
-          
+          console.log(
+            '[Voice Casting] Starting hydration from persistent storage'
+          );
+
           return (state, error) => {
             if (error) {
               console.error('[Voice Casting] Hydration error:', error);
               return;
             }
-            
+
             if (state) {
               try {
                 // Convert persisted sessions back to Maps
-                if (state.voiceCastingSessions && typeof state.voiceCastingSessions === 'object') {
+                if (state.sessions && typeof state.sessions === 'object') {
                   const sessions = new Map<string, VoiceCastingSessionData>();
-                  
-                  Object.entries(state.voiceCastingSessions).forEach(([id, session]: [string, any]) => {
-                    sessions.set(id, {
-                      ...session,
-                      assignments: new Map(Object.entries(session.assignments || {})),
-                      voiceCache: new Map(Object.entries(session.voiceCache || {})),
-                      screenplayData: session.screenplayData ? {
-                        characters: new Map(Object.entries(session.screenplayData.characters || {}))
-                      } : undefined,
-                    });
-                  });
-                  
-                  state.voiceCastingSessions = sessions;
-                  
+
+                  Object.entries(state.sessions).forEach(
+                    ([id, session]: [string, VoiceCastingSessionData]) => {
+                      sessions.set(id, {
+                        ...session,
+                        assignments: new Map(
+                          Object.entries(session.assignments || {})
+                        ),
+                        voiceCache: new Map(
+                          Object.entries(session.voiceCache || {})
+                        ),
+                        screenplayData: session.screenplayData
+                          ? {
+                              characters: new Map(
+                                Object.entries(
+                                  session.screenplayData.characters || {}
+                                )
+                              ),
+                            }
+                          : undefined,
+                      });
+                    }
+                  );
+
+                  state.sessions = sessions;
+
                   // Clean old sessions on startup
                   const now = Date.now();
                   const twelveHours = 12 * 60 * 60 * 1000;
                   const maxSessions = 10;
-                  
-                  const sortedSessions = Array.from(sessions.entries())
-                    .sort((a, b) => b[1].lastUpdated - a[1].lastUpdated);
-                  
-                  const cleanedSessions = new Map<string, VoiceCastingSessionData>();
+
+                  const sortedSessions = Array.from(sessions.entries()).sort(
+                    (a, b) => b[1].lastUpdated - a[1].lastUpdated
+                  );
+
+                  const cleanedSessions = new Map<
+                    string,
+                    VoiceCastingSessionData
+                  >();
                   sortedSessions.forEach(([id, session], index) => {
                     const age = now - session.lastUpdated;
                     if (age < twelveHours && index < maxSessions) {
                       cleanedSessions.set(id, session);
                     }
                   });
-                  
-                  state.voiceCastingSessions = cleanedSessions;
-                  console.log(`[Voice Casting] Restored ${cleanedSessions.size} sessions from storage`);
-                  
-                  // If we have an active session, load its data
-                  if (state.activeSessionId && cleanedSessions.has(state.activeSessionId)) {
-                    const activeSession = cleanedSessions.get(state.activeSessionId)!;
-                    state.castingSessionId = state.activeSessionId;
-                    state.screenplayJsonPath = activeSession.screenplayJsonPath;
-                    state.screenplayData = activeSession.screenplayData;
-                    state.assignments = activeSession.assignments;
-                    state.castingMethod = activeSession.castingMethod;
-                    state.yamlContent = activeSession.yamlContent;
-                    state.voiceCache = activeSession.voiceCache;
-                  } else {
-                    // Clear active session if it no longer exists
+
+                  state.sessions = cleanedSessions;
+                  console.log(
+                    `[Voice Casting] Restored ${cleanedSessions.size} sessions from storage`
+                  );
+
+                  // Validate active session still exists
+                  if (
+                    state.activeSessionId &&
+                    !cleanedSessions.has(state.activeSessionId)
+                  ) {
                     state.activeSessionId = undefined;
-                    state.castingSessionId = undefined;
-                    state.screenplayJsonPath = undefined;
-                    state.screenplayData = undefined;
-                    state.assignments = new Map();
-                    state.castingMethod = 'manual';
-                    state.yamlContent = undefined;
-                    state.voiceCache = new Map();
                   }
                 }
               } catch (rehydrationError) {
-                console.error('[Voice Casting] Error during rehydration:', rehydrationError);
+                console.error(
+                  '[Voice Casting] Error during rehydration:',
+                  rehydrationError
+                );
                 // Initialize with empty data on error
-                state.voiceCastingSessions = new Map();
+                state.sessions = new Map();
                 state.activeSessionId = undefined;
-                state.castingSessionId = undefined;
-                state.screenplayJsonPath = undefined;
-                state.screenplayData = undefined;
-                state.assignments = new Map();
-                state.castingMethod = 'manual';
-                state.yamlContent = undefined;
-                state.voiceCache = new Map();
               }
             }
           };
@@ -1078,47 +720,37 @@ export const useScreenplay = () =>
 export const useVoiceCasting = () =>
   useAppStore(
     useShallow((state) => ({
-      // Multi-session data
-      voiceCastingSessions: state.voiceCastingSessions,
+      // Data access
+      sessions: state.sessions,
       activeSessionId: state.activeSessionId,
-      
-      // Current session data
-      castingSessionId: state.castingSessionId,
-      screenplayJsonPath: state.screenplayJsonPath,
-      screenplayData: state.screenplayData,
-      assignments: state.assignments,
-      castingMethod: state.castingMethod,
-      yamlContent: state.yamlContent,
-      voiceCache: state.voiceCache,
-      
+
       // Actions
-      setCastingSessionId: state.setCastingSessionId,
-      setScreenplayJsonPath: state.setScreenplayJsonPath,
-      setScreenplayData: state.setScreenplayData,
-      setCharacterMetadata: state.setCharacterMetadata,
+      updateActiveSession: state.updateActiveSession,
+      deleteSession: state.deleteSession,
+      selectOrCreateSession: state.selectOrCreateSession,
+      resetCastingState: state.resetCastingState,
       setCharacterVoice: state.setCharacterVoice,
-      replaceCharacterAssignment: state.replaceCharacterAssignment,
+      setCharacterMetadata: state.setCharacterMetadata,
       removeCharacterAssignment: state.removeCharacterAssignment,
       removeVoiceFromAssignment: state.removeVoiceFromAssignment,
       importAssignments: state.importAssignments,
       setYamlContent: state.setYamlContent,
       setCastingMethod: state.setCastingMethod,
-      setVoiceCache: state.setVoiceCache,
       addToVoiceCache: state.addToVoiceCache,
-      resetCastingState: state.resetCastingState,
-      
-      // Multi-session actions
-      setActiveSession: state.setActiveSession,
-      createOrUpdateSession: state.createOrUpdateSession,
+
+      // Computed getters
+      getActiveSession: state.getActiveSession,
+      getSessionStats: state.getSessionStats,
       getRecentSessions: state.getRecentSessions,
-      cleanOldSessions: state.cleanOldSessions,
     }))
   );
 
 // Helper function to clear persisted voice-casting data when starting a new session
 // Note: This is now deprecated in favor of multi-session support
 export const clearPersistedVoiceCastingData = () => {
-  console.log('[Voice Casting] clearPersistedVoiceCastingData is deprecated - sessions are now preserved');
+  console.log(
+    '[Voice Casting] clearPersistedVoiceCastingData is deprecated - sessions are now preserved'
+  );
 };
 
 export default useAppStore;

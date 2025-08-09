@@ -12,7 +12,10 @@ interface LLMWorkflowButtonsProps {
 
 export function LLMWorkflowButtons({ sessionId }: LLMWorkflowButtonsProps) {
   const navigate = useNavigate();
-  const { castingMethod } = useVoiceCasting();
+  const { getActiveSession } = useVoiceCasting();
+
+  const activeSession = getActiveSession();
+  const castingMethod = activeSession?.castingMethod || 'manual';
 
   if (castingMethod !== 'llm-assisted') {
     return null;

@@ -48,26 +48,25 @@ export function VoiceAssignmentPanel({
   onBack,
   onAssign,
 }: VoiceAssignmentPanelProps) {
-  // Use real data from hooks
+  // All hooks must be called at the top level before any early returns
   const {
     data: providers,
     isPending: providersLoading,
     error: providersError,
   } = useProviders();
 
-  const { setCharacterVoice, assignments, screenplayData } = useVoiceCasting();
+  const { setCharacterVoice, getActiveSession } = useVoiceCasting();
+  const activeSession = getActiveSession();
 
-  // Get current assignment if exists
+  // Safely access session data with fallbacks
+  const screenplayData = activeSession?.screenplayData;
+
+  // Memoize assignments to prevent dependency issues
+  const assignments = useMemo(
+    () => activeSession?.assignments || new Map(),
+    [activeSession?.assignments]
+  );
   const currentAssignment = assignments.get(characterName);
-
-  // Calculate voice usage map
-  const voiceUsageMap = useMemo(() => {
-    return calculateVoiceUsage(
-      assignments,
-      screenplayData?.characters,
-      characterName
-    );
-  }, [assignments, screenplayData?.characters, characterName]);
 
   // Initialize state with current assignment or stable provider default
   const [selectedProvider, setSelectedProvider] = useState<string>(
@@ -100,6 +99,29 @@ export function VoiceAssignmentPanel({
 
   // Use the voices directly from the hook
   const voiceList = useMemo(() => providerVoices || [], [providerVoices]);
+
+  // Calculate voice usage map
+  const voiceUsageMap = useMemo(() => {
+    if (!activeSession) return new Map();
+    return calculateVoiceUsage(
+      assignments,
+      screenplayData?.characters,
+      characterName
+    );
+  }, [activeSession, assignments, screenplayData?.characters, characterName]);
+
+  // Guard against no active session AFTER all hooks
+  if (!activeSession) {
+    return (
+      <div className="space-y-4">
+        <Alert>
+          <AlertDescription>
+            No active session. Please select or create a session first.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleLibraryVoiceAssign = (voice: VoiceEntry) => {
     setCharacterVoice(characterName, {

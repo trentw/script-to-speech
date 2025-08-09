@@ -19,7 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { CastingMethodSelector, VoiceCastingHistoryList } from '@/components/voice-casting';
+import {
+  CastingMethodSelector,
+  VoiceCastingHistoryList,
+} from '@/components/voice-casting';
 import { useRecentScreenplays } from '@/hooks/queries/useRecentScreenplays';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
 import { useVoiceCastingSessions } from '@/hooks/useVoiceCastingSessions';
@@ -48,14 +51,14 @@ function VoiceCastingUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [creatingSession, setCreatingSession] = useState<string | null>(null);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const { resetCastingState, setActiveSession, createOrUpdateSession } = useVoiceCasting();
+  const { selectOrCreateSession } = useVoiceCasting();
 
   // Show method selector based on search parameter
   const showMethodSelector = method === 'select';
 
   // Fetch recent completed screenplay parsing tasks
   const { data: screenplays, isLoading } = useRecentScreenplays(5);
-  
+
   // Fetch recent voice casting sessions
   const recentSessions = useVoiceCastingSessions(5);
 
@@ -94,15 +97,14 @@ function VoiceCastingUpload() {
 
   const handleUpload = async () => {
     if (!selectedFile) return;
-    
-    // Don't clear data anymore - we support multiple sessions
+
     uploadJsonMutation.mutate(selectedFile);
   };
 
   const handleSelectRecent = async (taskId: string) => {
     // For recent screenplays, we need to create a session from the task
     setCreatingSession(taskId);
-    
+
     try {
       // Create a session from the task
       const response = await apiService.createSessionFromTask(taskId);
@@ -120,10 +122,10 @@ function VoiceCastingUpload() {
       setCreatingSession(null);
     }
   };
-  
+
   const handleResumeSession = (sessionId: string) => {
     // Set the session as active and navigate directly to it
-    setActiveSession(sessionId);
+    selectOrCreateSession(sessionId);
     navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
   };
 
@@ -156,7 +158,7 @@ function VoiceCastingUpload() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="space-y-2 mb-6">
+      <div className="mb-6 space-y-2">
         <h1 className="text-3xl font-bold">Voice Casting</h1>
         <p className="text-muted-foreground">
           Assign TTS voices to your screenplay characters
@@ -168,119 +170,121 @@ function VoiceCastingUpload() {
         <div className="space-y-6 lg:col-span-2">
           {/* Upload New Screenplay */}
           <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="h-5 w-5" />
-            Upload Screenplay JSON
-          </CardTitle>
-          <CardDescription>
-            Upload a parsed screenplay JSON file to begin voice casting
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="border-border space-y-4 rounded-lg border-2 border-dashed p-8 text-center">
-            <FileJson className="text-muted-foreground mx-auto h-12 w-12" />
-            <div className="space-y-2">
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <span className="text-primary hover:underline">
-                  Choose a file
-                </span>
-                <input
-                  id="file-upload"
-                  type="file"
-                  accept=".json"
-                  onChange={handleFileSelect}
-                  className="sr-only"
-                />
-              </label>
-              <p className="text-muted-foreground text-sm">
-                or drag and drop your screenplay JSON here
-              </p>
-            </div>
-            {selectedFile && (
-              <div className="bg-muted rounded-md p-3">
-                <p className="text-sm font-medium">{selectedFile.name}</p>
-                <p className="text-muted-foreground text-xs">
-                  {(selectedFile.size / 1024).toFixed(1)} KB
-                </p>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5" />
+                Upload Screenplay JSON
+              </CardTitle>
+              <CardDescription>
+                Upload a parsed screenplay JSON file to begin voice casting
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="border-border space-y-4 rounded-lg border-2 border-dashed p-8 text-center">
+                <FileJson className="text-muted-foreground mx-auto h-12 w-12" />
+                <div className="space-y-2">
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <span className="text-primary hover:underline">
+                      Choose a file
+                    </span>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept=".json"
+                      onChange={handleFileSelect}
+                      className="sr-only"
+                    />
+                  </label>
+                  <p className="text-muted-foreground text-sm">
+                    or drag and drop your screenplay JSON here
+                  </p>
+                </div>
+                {selectedFile && (
+                  <div className="bg-muted rounded-md p-3">
+                    <p className="text-sm font-medium">{selectedFile.name}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {(selectedFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || uploadJsonMutation.isPending}
-            className="w-full"
-            variant={selectedFile ? 'default' : 'secondary'}
-          >
-            {uploadJsonMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Uploading...
-              </>
-            ) : selectedFile ? (
-              'Start Voice Casting'
-            ) : (
-              'Select a file to continue'
-            )}
-          </Button>
+              <Button
+                onClick={handleUpload}
+                disabled={!selectedFile || uploadJsonMutation.isPending}
+                className="w-full"
+                variant={selectedFile ? 'default' : 'secondary'}
+              >
+                {uploadJsonMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : selectedFile ? (
+                  'Start Voice Casting'
+                ) : (
+                  'Select a file to continue'
+                )}
+              </Button>
 
-          {uploadJsonMutation.error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {uploadJsonMutation.error.message}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
+              {uploadJsonMutation.error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {uploadJsonMutation.error.message}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
           </Card>
 
           {/* Cast from Recently Parsed Screenplays */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Cast from Recently Parsed Screenplays</h2>
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
-          </div>
-        ) : recentScreenplays.length === 0 ? (
-          <Card>
-            <CardContent className="text-muted-foreground py-8 text-center">
-              <p>No completed screenplay parsing tasks found.</p>
-              <p className="mt-2 text-sm">
-                Parse a screenplay PDF first to begin voice casting.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4">
-            {recentScreenplays.map((screenplay) => (
-              <Card
-                key={screenplay.id}
-                className={`hover:bg-accent cursor-pointer transition-colors ${
-                  creatingSession === screenplay.id ? 'opacity-60' : ''
-                }`}
-                onClick={() =>
-                  !creatingSession && handleSelectRecent(screenplay.id)
-                }
-              >
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="space-y-1">
-                    <h3 className="font-medium">{screenplay.name}</h3>
-                    <p className="text-muted-foreground text-sm">
-                      {screenplay.characters} characters • {screenplay.lines}{' '}
-                      lines • {screenplay.date}
-                    </p>
-                  </div>
-                  {creatingSession === screenplay.id ? (
-                    <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-                  ) : (
-                    <ChevronRight className="text-muted-foreground h-5 w-5" />
-                  )}
+            <h2 className="text-xl font-semibold">
+              Cast from Recently Parsed Screenplays
+            </h2>
+            {isLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              </div>
+            ) : recentScreenplays.length === 0 ? (
+              <Card>
+                <CardContent className="text-muted-foreground py-8 text-center">
+                  <p>No completed screenplay parsing tasks found.</p>
+                  <p className="mt-2 text-sm">
+                    Parse a screenplay PDF first to begin voice casting.
+                  </p>
                 </CardContent>
               </Card>
-            ))}
-            </div>
-          )}
+            ) : (
+              <div className="grid gap-4">
+                {recentScreenplays.map((screenplay) => (
+                  <Card
+                    key={screenplay.id}
+                    className={`hover:bg-accent cursor-pointer transition-colors ${
+                      creatingSession === screenplay.id ? 'opacity-60' : ''
+                    }`}
+                    onClick={() =>
+                      !creatingSession && handleSelectRecent(screenplay.id)
+                    }
+                  >
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div className="space-y-1">
+                        <h3 className="font-medium">{screenplay.name}</h3>
+                        <p className="text-muted-foreground text-sm">
+                          {screenplay.characters} characters •{' '}
+                          {screenplay.lines} lines • {screenplay.date}
+                        </p>
+                      </div>
+                      {creatingSession === screenplay.id ? (
+                        <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
+                      ) : (
+                        <ChevronRight className="text-muted-foreground h-5 w-5" />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

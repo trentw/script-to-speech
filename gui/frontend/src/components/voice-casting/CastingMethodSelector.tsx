@@ -32,7 +32,10 @@ export function CastingMethodSelector({
   onOpenChange,
 }: CastingMethodSelectorProps) {
   const navigate = useNavigate();
-  const { castingMethod, setCastingMethod } = useVoiceCasting();
+  const { getActiveSession, setCastingMethod } = useVoiceCasting();
+
+  const activeSession = getActiveSession();
+  const castingMethod = activeSession?.castingMethod || 'manual';
 
   const handleContinue = () => {
     if (castingMethod === 'llm-assisted') {

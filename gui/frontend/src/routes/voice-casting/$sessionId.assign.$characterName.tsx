@@ -47,7 +47,7 @@ function VoiceAssignmentRoute() {
   } = useScreenplayCharacters(session?.screenplay_json_path);
 
   // Connect to voice casting store
-  const { assignments } = useVoiceCasting();
+  const { getActiveSession } = useVoiceCasting();
 
   // Transform character data for display
   const character = useMemo(() => {
@@ -56,7 +56,10 @@ function VoiceAssignmentRoute() {
     const characterInfo = charactersData.characters[characterName];
     if (!characterInfo) return null;
 
+    const activeSession = getActiveSession();
+    const assignments = activeSession?.assignments || new Map();
     const assignment = assignments.get(characterName);
+
     return {
       name: characterName,
       displayName: characterName === 'default' ? 'Narrator' : characterName,
@@ -74,7 +77,7 @@ function VoiceAssignmentRoute() {
           }
         : null,
     };
-  }, [charactersData, characterName, assignments]);
+  }, [charactersData, characterName, getActiveSession]);
 
   const handleBack = () => {
     navigateToSession(sessionId);

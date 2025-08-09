@@ -14,12 +14,15 @@ export function useResolveVoiceEntry(
   provider?: string,
   sts_id?: string
 ): VoiceEntry | null {
-  const { voiceCache, addToVoiceCache } = useVoiceCasting();
+  const { getActiveSession, addToVoiceCache } = useVoiceCasting();
   const { data: voiceLibrary } = useVoiceLibrary(provider);
 
   const voice = useMemo(() => {
     // Early return if missing required params
     if (!provider || !sts_id) return null;
+
+    const activeSession = getActiveSession();
+    const voiceCache = activeSession?.voiceCache || new Map();
 
     // Check cache first
     const cacheKey = `${provider}:${sts_id}`;
@@ -28,10 +31,13 @@ export function useResolveVoiceEntry(
 
     // Fallback to library lookup (pure operation)
     return voiceLibrary?.find((v) => v.sts_id === sts_id) || null;
-  }, [provider, sts_id, voiceCache, voiceLibrary]);
+  }, [provider, sts_id, voiceLibrary, getActiveSession]);
 
   // Handle caching as a side effect
   useEffect(() => {
+    const activeSession = getActiveSession();
+    const voiceCache = activeSession?.voiceCache || new Map();
+
     if (
       voice &&
       provider &&
@@ -40,7 +46,7 @@ export function useResolveVoiceEntry(
     ) {
       addToVoiceCache(provider, sts_id, voice);
     }
-  }, [voice, provider, sts_id, addToVoiceCache, voiceCache]);
+  }, [voice, provider, sts_id, addToVoiceCache, getActiveSession]);
 
   return voice;
 }

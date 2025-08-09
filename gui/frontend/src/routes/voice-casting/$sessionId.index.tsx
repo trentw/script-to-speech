@@ -76,47 +76,42 @@ function VoiceCastingSessionIndex() {
   } = useScreenplayCharacters(session?.screenplay_json_path);
 
   // Connect to voice casting store
-  const { 
-    assignments, 
-    setScreenplayData, 
-    setCastingSessionId, 
-    setScreenplayJsonPath,
-    createOrUpdateSession
-  } = useVoiceCasting();
+  const { getActiveSession, selectOrCreateSession } = useVoiceCasting();
 
   // Set session information in store when session data loads
   useEffect(() => {
-    if (session) {
-      setCastingSessionId(session.session_id);
-      setScreenplayJsonPath(session.screenplay_json_path);
-      
-      // Create or update the session in the multi-session store
-      createOrUpdateSession({
-        sessionId: session.session_id,
-        screenplayName: session.screenplay_name,
-        screenplayJsonPath: session.screenplay_json_path,
-      });
-    }
-  }, [session, setCastingSessionId, setScreenplayJsonPath, createOrUpdateSession]);
-
-  // Update the screenplay data in the store when characters data loads
-  useEffect(() => {
-    if (charactersData) {
+    if (session && charactersData) {
       // Convert character data to Map format expected by store
       const charactersMap = new Map<string, CharacterInfo>();
       Object.entries(charactersData.characters).forEach(([name, info]) => {
         charactersMap.set(name, info);
       });
 
-      setScreenplayData({
-        characters: charactersMap,
+      // Use consolidated method to select and create/update in one call with all data
+      selectOrCreateSession(session.session_id, {
+        screenplayName: session.screenplay_name,
+        screenplayJsonPath: session.screenplay_json_path,
+        screenplayData: {
+          characters: charactersMap,
+        },
+      });
+    } else if (session) {
+      // Set basic session info if characters data isn't loaded yet
+      selectOrCreateSession(session.session_id, {
+        screenplayName: session.screenplay_name,
+        screenplayJsonPath: session.screenplay_json_path,
       });
     }
-  }, [charactersData, setScreenplayData]);
+  }, [session, charactersData, selectOrCreateSession]);
 
   // Transform character data for display
   const characters = useMemo(() => {
     if (!charactersData) return [];
+
+    const activeSession = getActiveSession();
+    if (!activeSession) return [];
+
+    const assignments = activeSession.assignments;
 
     return Object.entries(charactersData.characters).map(([name, char]) => {
       const assignment = assignments.get(name);
@@ -139,7 +134,7 @@ function VoiceCastingSessionIndex() {
       };
       return characterInfo;
     });
-  }, [charactersData, assignments]);
+  }, [charactersData, getActiveSession]);
 
   // Calculate assignment progress
   const assignedCount = characters.filter((char) => char.assignedVoice).length;

@@ -37,7 +37,7 @@ export function YamlImportPanel({
   const [yamlInput, setYamlInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { importAssignments, screenplayJsonPath } = useVoiceCasting();
+  const { importAssignments, getActiveSession } = useVoiceCasting();
 
   const parseYamlMutation = useParseYaml();
   const validateYamlMutation = useValidateYaml();
@@ -52,6 +52,9 @@ export function YamlImportPanel({
       parseYamlMutation.mutate({ yamlContent: debouncedYamlInput });
 
       // Validate if we have a screenplay JSON path
+      const activeSession = getActiveSession();
+      const screenplayJsonPath = activeSession?.screenplayJsonPath;
+
       if (screenplayJsonPath) {
         validateYamlMutation.mutate({
           yamlContent: debouncedYamlInput,
@@ -59,7 +62,12 @@ export function YamlImportPanel({
         });
       }
     }
-  }, [debouncedYamlInput, screenplayJsonPath]);
+  }, [
+    debouncedYamlInput,
+    getActiveSession,
+    parseYamlMutation,
+    validateYamlMutation,
+  ]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
