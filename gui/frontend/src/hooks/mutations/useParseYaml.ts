@@ -5,13 +5,14 @@ import type { ParseYamlResponse } from '@/types/voice-casting';
 
 interface ParseYamlRequest {
   yamlContent: string;
+  allowPartial?: boolean;
 }
 
 export function useParseYaml() {
   return useMutation<ParseYamlResponse, Error, ParseYamlRequest>({
     mutationKey: ['parseYaml'],
     mutationFn: async (data) => {
-      const response = await apiService.parseYaml(data.yamlContent);
+      const response = await apiService.parseYaml(data);
 
       if (response.error) {
         throw new Error(response.error);

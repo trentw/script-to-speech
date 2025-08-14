@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { ScreenplayResult, VoiceEntry } from '../types';
-import { createTTLStorage } from '../utils/ttlStorage';
+import { createSuperJSONStorage } from '../utils/superJSONStorage';
 
 // Type for configuration values matching VoiceEntry config structure
 type ConfigValue = string | number | boolean | string[];
@@ -50,6 +50,7 @@ export interface VoiceCastingSessionData {
   voiceCache: Map<string, VoiceEntry>;
   lastUpdated: number;
   screenplayData?: { characters: Map<string, CharacterInfo> };
+  yaml_version_id?: number; // Add version tracking for optimistic locking
 }
 
 // Configuration slice - handles TTS provider/voice settings
@@ -153,6 +154,7 @@ interface VoiceCastingSlice {
     sts_id: string,
     voice: VoiceEntry
   ) => void;
+  updateVersionId: (versionId: number) => void;
 
   // Computed getters
   getActiveSession: () => VoiceCastingSessionData | undefined;
@@ -386,8 +388,36 @@ const useAppStore = create<AppStore>()(
         selectOrCreateSession: (sessionId, sessionData) => {
           set(
             (draft) => {
-              // Create session if it doesn't exist
-              if (!draft.sessions.has(sessionId) && sessionData) {
+              const existing = draft.sessions.get(sessionId);
+              
+              if (existing && sessionData) {
+                // Update existing session, preserving user-modified data
+                // Assignments are the source of truth for user data (voices, metadata)
+                console.log('[Store] Updating existing session:', {
+                  sessionId,
+                  existingAssignments: Array.from(existing.assignments.entries()),
+                  incomingData: sessionData,
+                });
+                Object.assign(existing, {
+                  screenplayName: sessionData.screenplayName || existing.screenplayName,
+                  screenplayJsonPath: sessionData.screenplayJsonPath || existing.screenplayJsonPath,
+                  screenplayData: sessionData.screenplayData || existing.screenplayData,
+                  // Use incoming assignments if provided, otherwise preserve existing
+                  assignments: sessionData.assignments || existing.assignments,
+                  // Preserve other user data
+                  castingMethod: sessionData.castingMethod || existing.castingMethod,
+                  yamlContent: sessionData.yamlContent || existing.yamlContent,
+                  voiceCache: sessionData.voiceCache || existing.voiceCache,
+                  yaml_version_id: sessionData.yaml_version_id || existing.yaml_version_id || 1,
+                  lastUpdated: Date.now(),
+                });
+              } else if (!existing && sessionData) {
+                // Create new session
+                console.log('[Store] Creating new session:', {
+                  sessionId,
+                  incomingAssignments: sessionData.assignments ? 
+                    Array.from(sessionData.assignments.entries()) : [],
+                });
                 const newSession: VoiceCastingSessionData = {
                   sessionId,
                   screenplayName: sessionData.screenplayName || '',
@@ -396,10 +426,16 @@ const useAppStore = create<AppStore>()(
                   castingMethod: sessionData.castingMethod || 'manual',
                   yamlContent: sessionData.yamlContent || '',
                   voiceCache: sessionData.voiceCache || new Map(),
+                  yaml_version_id: sessionData.yaml_version_id || 1,
                   lastUpdated: Date.now(),
                   screenplayData: sessionData.screenplayData,
                 };
                 draft.sessions.set(sessionId, newSession);
+              } else if (existing && !sessionData) {
+                console.log('[Store] Selecting existing session without update:', {
+                  sessionId,
+                  existingAssignments: Array.from(existing.assignments.entries()),
+                });
               }
               // Set as active
               draft.activeSessionId = sessionId;
@@ -410,17 +446,61 @@ const useAppStore = create<AppStore>()(
         },
 
         // Character operations - all use updateActiveSession helper
-        setCharacterVoice: (character, voice) => {
+        setCharacterVoice: async (character, voice) => {
+          const session = get().getActiveSession();
+          if (!session) return;
+
+          // Optimistically update local state
           get().updateActiveSession((session) => {
             const existing = session.assignments.get(character);
-            session.assignments.set(character, {
+            const updated = {
               ...existing, // Preserve metadata
               ...voice, // Update voice data
-            });
+            };
+            session.assignments.set(character, updated);
           });
+
+          // Call API to update YAML on backend
+          if (session.sessionId) {
+            const { apiService } = await import('@/services/api');
+            const existing = session.assignments.get(character);
+            const updated = {
+              ...existing,
+              ...voice,
+            };
+            
+            const result = await apiService.updateCharacterAssignment(
+              session.sessionId,
+              character,
+              { character, ...updated },  // Add character field for API
+              session.yaml_version_id || 0
+            );
+
+            if (result.data) {
+              // Update session with new data from backend
+              get().updateActiveSession((session) => {
+                session.yamlContent = result.data.session.yamlContent;
+                session.yaml_version_id = result.data.session.yaml_version_id;
+              });
+            } else if (result.error) {
+              // Revert on error
+              console.error('Failed to update character assignment:', result.error);
+              get().updateActiveSession((session) => {
+                if (existing) {
+                  session.assignments.set(character, existing);
+                } else {
+                  session.assignments.delete(character);
+                }
+              });
+            }
+          }
         },
 
-        setCharacterMetadata: (character, metadata) => {
+        setCharacterMetadata: async (character, metadata) => {
+          const session = get().getActiveSession();
+          if (!session) return;
+
+          // Optimistically update local state
           get().updateActiveSession((session) => {
             const existing = session.assignments.get(character) || {
               provider: '',
@@ -428,12 +508,80 @@ const useAppStore = create<AppStore>()(
             const updated = { ...existing, ...metadata };
             session.assignments.set(character, updated);
           });
+
+          // Call API to update YAML on backend
+          if (session.sessionId) {
+            const { apiService } = await import('@/services/api');
+            const existing = session.assignments.get(character) || { provider: '' };
+            const updated = { ...existing, ...metadata };
+            
+            const result = await apiService.updateCharacterAssignment(
+              session.sessionId,
+              character,
+              { character, ...updated },  // Add character field for API
+              session.yaml_version_id || 0
+            );
+
+            if (result.data) {
+              // Update session with new data from backend
+              get().updateActiveSession((session) => {
+                session.yamlContent = result.data.session.yamlContent;
+                session.yaml_version_id = result.data.session.yaml_version_id;
+              });
+            } else if (result.error) {
+              // Revert on error
+              console.error('Failed to update character metadata:', result.error);
+              get().updateActiveSession((session) => {
+                if (existing.provider) {
+                  session.assignments.set(character, existing);
+                } else {
+                  session.assignments.delete(character);
+                }
+              });
+            }
+          }
         },
 
-        removeCharacterAssignment: (character) => {
+        removeCharacterAssignment: async (character) => {
+          const session = get().getActiveSession();
+          if (!session) return;
+
+          // Store old value for potential revert
+          const oldValue = session.assignments.get(character);
+
+          // Optimistically update local state
           get().updateActiveSession((session) => {
             session.assignments.delete(character);
           });
+
+          // Call API to update YAML on backend
+          if (session.sessionId) {
+            const { apiService } = await import('@/services/api');
+            
+            // Send empty assignment to remove from YAML
+            const result = await apiService.updateCharacterAssignment(
+              session.sessionId,
+              character,
+              { character, provider: '' }, // Empty assignment with character field to remove
+              session.yaml_version_id || 0
+            );
+
+            if (result.data) {
+              // Update session with new data from backend
+              get().updateActiveSession((session) => {
+                session.yamlContent = result.data.session.yamlContent;
+                session.yaml_version_id = result.data.session.yaml_version_id;
+              });
+            } else if (result.error) {
+              // Revert on error
+              console.error('Failed to remove character assignment:', result.error);
+              if (oldValue) {
+                get().updateActiveSession((session) => {
+                  session.assignments.set(character, oldValue);
+                });
+              }
+            }
+          }
         },
         removeVoiceFromAssignment: (character) => {
           get().updateActiveSession((session) => {
@@ -453,8 +601,10 @@ const useAppStore = create<AppStore>()(
         },
 
         importAssignments: (assignments) => {
+          console.log('[Store] Importing assignments:', Array.from(assignments.entries()));
           get().updateActiveSession((session) => {
             session.assignments = assignments;
+            console.log('[Store] Assignments after import:', Array.from(session.assignments.entries()));
           });
         },
 
@@ -474,6 +624,12 @@ const useAppStore = create<AppStore>()(
           get().updateActiveSession((session) => {
             const cacheKey = `${provider}:${sts_id}`;
             session.voiceCache.set(cacheKey, voice);
+          });
+        },
+
+        updateVersionId: (versionId) => {
+          get().updateActiveSession((session) => {
+            session.yaml_version_id = versionId;
           });
         },
 
@@ -524,127 +680,68 @@ const useAppStore = create<AppStore>()(
         },
       })),
       {
-        name: 'sts-app-store', // localStorage key
-        storage: createJSONStorage(() => createTTLStorage(12)), // 12-hour TTL
+        name: 'sts-app-store-v3', // New key to avoid old data conflicts
+        storage: createSuperJSONStorage<AppStore>(), // Use superjson for Map serialization
+        
         // Selective persistence - only persist user preferences and voice-casting data
         partialize: (state) => ({
-          // User preferences (existing)
+          // User preferences
           selectedProvider: state.selectedProvider,
           selectedVoice: state.selectedVoice,
           currentConfig: state.currentConfig,
           sidebarExpanded: state.sidebarExpanded,
           rightPanelExpanded: state.rightPanelExpanded,
 
-          // Voice-casting sessions - Convert Maps to Objects for serialization
-          sessions: Object.fromEntries(
-            Array.from(state.sessions.entries()).map(([id, session]) => [
-              id,
-              {
-                ...session,
-                assignments: Object.fromEntries(session.assignments),
-                voiceCache: Object.fromEntries(session.voiceCache),
-                screenplayData: session.screenplayData
-                  ? {
-                      characters: Object.fromEntries(
-                        session.screenplayData.characters
-                      ),
-                    }
-                  : undefined,
-              },
-            ])
-          ),
+          // Voice-casting sessions - already a plain Map since partialize runs after immer
+          // Superjson handles Map serialization directly
+          sessions: state.sessions,
           activeSessionId: state.activeSessionId,
 
           // text, error, viewportSize, activeModal are NOT persisted (ephemeral state)
         }),
 
-        // Rehydration handler to convert Objects back to Maps
-        onRehydrateStorage: () => {
-          console.log(
-            '[Voice Casting] Starting hydration from persistent storage'
-          );
+        // Rehydration handler - just handle cleanup, no conversion needed!
+        onRehydrateStorage: () => (state, error) => {
+          if (error) {
+            console.error('[Voice Casting] Hydration error:', error);
+            return;
+          }
 
-          return (state, error) => {
-            if (error) {
-              console.error('[Voice Casting] Hydration error:', error);
-              return;
+          if (state && state.sessions) {
+            console.log(
+              `[Voice Casting] Loaded ${state.sessions.size} sessions from storage`
+            );
+            // Log the actual assignments for each session
+            state.sessions.forEach((session, id) => {
+              console.log(`[Voice Casting] Session ${id} assignments:`, 
+                Array.from(session.assignments.entries()));
+            });
+            
+            // Clean old sessions on startup
+            const now = Date.now();
+            const twelveHours = 12 * 60 * 60 * 1000;
+            const maxSessions = 10;
+
+            const sortedSessions = Array.from(state.sessions.entries())
+              .sort((a, b) => b[1].lastUpdated - a[1].lastUpdated);
+
+            // Keep only recent sessions (< 12 hours) and limit to 10
+            state.sessions = new Map(
+              sortedSessions
+                .filter(([_, session], index) => 
+                  now - session.lastUpdated < twelveHours && index < maxSessions
+                )
+            );
+            
+            console.log(
+              `[Voice Casting] After cleanup: ${state.sessions.size} sessions`
+            );
+
+            // Validate active session still exists
+            if (state.activeSessionId && !state.sessions.has(state.activeSessionId)) {
+              state.activeSessionId = undefined;
             }
-
-            if (state) {
-              try {
-                // Convert persisted sessions back to Maps
-                if (state.sessions && typeof state.sessions === 'object') {
-                  const sessions = new Map<string, VoiceCastingSessionData>();
-
-                  Object.entries(state.sessions).forEach(
-                    ([id, session]: [string, VoiceCastingSessionData]) => {
-                      sessions.set(id, {
-                        ...session,
-                        assignments: new Map(
-                          Object.entries(session.assignments || {})
-                        ),
-                        voiceCache: new Map(
-                          Object.entries(session.voiceCache || {})
-                        ),
-                        screenplayData: session.screenplayData
-                          ? {
-                              characters: new Map(
-                                Object.entries(
-                                  session.screenplayData.characters || {}
-                                )
-                              ),
-                            }
-                          : undefined,
-                      });
-                    }
-                  );
-
-                  state.sessions = sessions;
-
-                  // Clean old sessions on startup
-                  const now = Date.now();
-                  const twelveHours = 12 * 60 * 60 * 1000;
-                  const maxSessions = 10;
-
-                  const sortedSessions = Array.from(sessions.entries()).sort(
-                    (a, b) => b[1].lastUpdated - a[1].lastUpdated
-                  );
-
-                  const cleanedSessions = new Map<
-                    string,
-                    VoiceCastingSessionData
-                  >();
-                  sortedSessions.forEach(([id, session], index) => {
-                    const age = now - session.lastUpdated;
-                    if (age < twelveHours && index < maxSessions) {
-                      cleanedSessions.set(id, session);
-                    }
-                  });
-
-                  state.sessions = cleanedSessions;
-                  console.log(
-                    `[Voice Casting] Restored ${cleanedSessions.size} sessions from storage`
-                  );
-
-                  // Validate active session still exists
-                  if (
-                    state.activeSessionId &&
-                    !cleanedSessions.has(state.activeSessionId)
-                  ) {
-                    state.activeSessionId = undefined;
-                  }
-                }
-              } catch (rehydrationError) {
-                console.error(
-                  '[Voice Casting] Error during rehydration:',
-                  rehydrationError
-                );
-                // Initialize with empty data on error
-                state.sessions = new Map();
-                state.activeSessionId = undefined;
-              }
-            }
-          };
+          }
         },
       }
     ),
@@ -737,6 +834,7 @@ export const useVoiceCasting = () =>
       setYamlContent: state.setYamlContent,
       setCastingMethod: state.setCastingMethod,
       addToVoiceCache: state.addToVoiceCache,
+      updateVersionId: state.updateVersionId,
 
       // Computed getters
       getActiveSession: state.getActiveSession,

@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from script_to_speech.utils.logging import get_screenplay_logger
 from ..services.screenplay_service import screenplay_service
 from ..services.voice_casting_service import (
     CharacterInfo,
@@ -27,6 +28,8 @@ router = APIRouter()
 
 # Maximum file size: 50MB
 MAX_FILE_SIZE = 50 * 1024 * 1024
+
+logger = get_screenplay_logger("voice_casting_router")
 
 
 class ExtractCharactersRequest(BaseModel):
@@ -56,6 +59,7 @@ class ParseYamlRequest(BaseModel):
     """Request to parse YAML and extract assignments."""
 
     yaml_content: str
+    allow_partial: Optional[bool] = False
 
 
 @router.post("/extract-characters", response_model=ExtractCharactersResponse)
@@ -103,7 +107,9 @@ async def generate_yaml(request: GenerateYamlRequest) -> GenerateYamlResponse:
 async def parse_yaml(request: ParseYamlRequest) -> ParseYamlResponse:
     """Parse YAML configuration and extract voice assignments."""
     try:
-        return await voice_casting_service.parse_yaml(request.yaml_content)
+        return await voice_casting_service.parse_yaml(
+            request.yaml_content, allow_partial=request.allow_partial
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse YAML: {str(e)}")
 
@@ -130,6 +136,34 @@ class GenerateVoiceLibraryPromptRequest(BaseModel):
     custom_prompt_path: Optional[str] = Field(
         None, description="Optional custom prompt file path"
     )
+
+
+class UpdateYamlRequest(BaseModel):
+    """Request to update session YAML content."""
+    
+    yaml_content: str = Field(..., description="YAML configuration content")
+    version_id: int = Field(..., description="Current version ID for optimistic locking")
+
+
+class UpdateYamlResponse(BaseModel):
+    """Response from YAML update."""
+    
+    session: VoiceCastingSession
+    warnings: List[str] = Field(default_factory=list)
+
+
+class UpdateAssignmentRequest(BaseModel):
+    """Request to update a single character assignment."""
+    
+    assignment: VoiceAssignment = Field(..., description="Voice assignment data")
+    version_id: int = Field(..., description="Current version ID for optimistic locking")
+
+
+class UpdateAssignmentResponse(BaseModel):
+    """Response from assignment update."""
+    
+    session: VoiceCastingSession
+    success: bool = True
 
 
 @router.post(
@@ -408,4 +442,106 @@ async def upload_screenplay_source(
         file_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=500, detail=f"Failed to update session: {str(e)}"
+        )
+
+
+@router.put("/session/{session_id}/yaml", response_model=UpdateYamlResponse)
+async def update_session_yaml(
+    session_id: str,
+    request: UpdateYamlRequest
+) -> UpdateYamlResponse:
+    """
+    Save YAML content for a voice casting session.
+    Returns warnings but doesn't block the save.
+    
+    Args:
+        session_id: The session UUID
+        request: YAML content and version information
+        
+    Returns:
+        UpdateYamlResponse with session and validation warnings
+        
+    Raises:
+        HTTPException: If session not found, version conflict, or invalid YAML
+    """
+    try:
+        session, warnings = await voice_casting_service.update_yaml_content(
+            session_id,
+            request.yaml_content,
+            request.version_id
+        )
+        
+        # Export to filesystem for CLI compatibility
+        path = await voice_casting_service.export_to_filesystem(session_id)
+        
+        logger.info(f"Updated and exported YAML for session {session_id} to {path}")
+        
+        return UpdateYamlResponse(
+            session=session,
+            warnings=warnings
+        )
+        
+    except ValueError as e:
+        error_msg = str(e)
+        if "modified by another source" in error_msg:
+            raise HTTPException(status_code=409, detail=error_msg)
+        elif "Invalid YAML" in error_msg:
+            raise HTTPException(status_code=400, detail=error_msg)
+        else:
+            raise HTTPException(status_code=404, detail=error_msg)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update YAML: {str(e)}"
+        )
+
+
+@router.put("/session/{session_id}/assignment/{character}", response_model=UpdateAssignmentResponse)
+async def update_character_assignment(
+    session_id: str,
+    character: str,
+    request: UpdateAssignmentRequest
+) -> UpdateAssignmentResponse:
+    """
+    Update a single character's voice assignment while preserving YAML structure and comments.
+    
+    Args:
+        session_id: The session UUID
+        character: Character name to update
+        request: Assignment data and version information
+        
+    Returns:
+        UpdateAssignmentResponse with updated session
+        
+    Raises:
+        HTTPException: If session not found, version conflict, or update fails
+    """
+    try:
+        session = await voice_casting_service.update_character_assignment(
+            session_id,
+            character,
+            request.assignment.dict(),
+            request.version_id
+        )
+        
+        # Export to filesystem for CLI compatibility
+        path = await voice_casting_service.export_to_filesystem(session_id)
+        
+        logger.info(f"Updated assignment for {character} in session {session_id}, exported to {path}")
+        
+        return UpdateAssignmentResponse(
+            session=session,
+            success=True
+        )
+        
+    except ValueError as e:
+        error_msg = str(e)
+        if "modified by another source" in error_msg:
+            raise HTTPException(status_code=409, detail=error_msg)
+        elif "not found" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update assignment: {str(e)}"
         )

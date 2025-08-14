@@ -288,38 +288,22 @@ function VoiceLibraryCasting() {
   const handleParseResponse = async () => {
     if (!yamlResponse.trim()) return;
 
-    const result = await parseYamlMutation.mutateAsync({
-      yamlContent: yamlResponse,
-    });
+    try {
+      // Use the centralized yamlUtils converter
+      const newAssignments = await yamlUtils.yamlToAssignments(yamlResponse);
 
-    // Convert parsed assignments to Map format for the store
-    const newAssignments = new Map();
-    result.assignments.forEach((assignment) => {
-      newAssignments.set(assignment.character, {
-        sts_id: assignment.sts_id, // Optional - only populated for library voices
-        provider: assignment.provider,
-        provider_config: assignment.provider_config,
-        voiceEntry: assignment.sts_id
-          ? {
-              sts_id: assignment.sts_id,
-              casting_notes: assignment.casting_notes,
-              role: assignment.role,
-            }
-          : undefined,
-        castingNotes: assignment.casting_notes,
-        role: assignment.role,
-        additional_notes: assignment.additional_notes,
-      });
-    });
+      // Import the assignments to the store
+      importAssignments(newAssignments);
+      setYamlContent(yamlResponse);
 
-    // Import the assignments to the store
-    importAssignments(newAssignments);
-    setYamlContent(yamlResponse);
-
-    setShowSuccess(true);
-    setTimeout(() => {
-      navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
-    }, 2000);
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to parse YAML:', error);
+      // Error will be shown via parseYamlMutation error handling in UI
+    }
   };
 
   const handleCopyResponse = () => {

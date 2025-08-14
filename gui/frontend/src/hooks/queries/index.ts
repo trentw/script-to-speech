@@ -4,5 +4,7 @@ export * from './useBackendStatus';
 export * from './useParseYaml';
 export * from './useProviders';
 export * from './useScreenplayCharacters';
+export * from './useSessionAssignments';
 export * from './useTaskStatus';
+export * from './useVoiceCastingSession';
 export * from './useVoiceLibrary';

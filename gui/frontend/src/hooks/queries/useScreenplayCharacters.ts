@@ -77,8 +77,8 @@ export function useScreenplayCharacters(jsonPathOrTaskId: string | undefined) {
           isNarrator:
             char.name.toLowerCase() === 'default' ||
             char.name.toLowerCase() === 'narrator',
-          castingNotes: char.casting_notes,
-          role: char.role,
+          // Note: castingNotes and role are user-editable metadata stored in assignments,
+          // not provided by the backend
         };
       });
 

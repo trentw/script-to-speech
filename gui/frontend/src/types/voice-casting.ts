@@ -51,6 +51,8 @@ export interface VoiceCastingSession {
   screenplay_json_path: string;
   screenplay_name: string;
   screenplay_source_path?: string;
+  yaml_content?: string;
+  yaml_version_id?: number;
   created_at: string;
   updated_at: string;
   status: 'active' | 'completed' | 'expired';

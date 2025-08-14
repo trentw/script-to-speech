@@ -302,14 +302,18 @@ class ApiService {
     );
   }
 
-  async parseYaml(
-    yamlContent: string
-  ): Promise<ApiResponse<import('../types/voice-casting').ParseYamlResponse>> {
+  async parseYaml(params: {
+    yamlContent: string;
+    allowPartial?: boolean;
+  }): Promise<ApiResponse<import('../types/voice-casting').ParseYamlResponse>> {
     return this.request<import('../types/voice-casting').ParseYamlResponse>(
       '/voice-casting/parse-yaml',
       {
         method: 'POST',
-        body: JSON.stringify({ yaml_content: yamlContent }),
+        body: JSON.stringify({ 
+          yaml_content: params.yamlContent,
+          allow_partial: params.allowPartial 
+        }),
       }
     );
   }
@@ -437,6 +441,41 @@ class ApiService {
         error: error instanceof Error ? error.message : 'Network error',
       };
     }
+  }
+
+  async updateSessionYaml(
+    sessionId: string,
+    yamlContent: string,
+    versionId: number
+  ): Promise<ApiResponse<{ session: import('../types/voice-casting').VoiceCastingSession; warnings: string[] }>> {
+    return this.request<{ session: import('../types/voice-casting').VoiceCastingSession; warnings: string[] }>(
+      `/voice-casting/session/${sessionId}/yaml`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          yaml_content: yamlContent,
+          version_id: versionId,
+        }),
+      }
+    );
+  }
+
+  async updateCharacterAssignment(
+    sessionId: string,
+    character: string,
+    assignment: import('../types/voice-casting').VoiceAssignment,
+    versionId: number
+  ): Promise<ApiResponse<{ session: import('../types/voice-casting').VoiceCastingSession; success: boolean }>> {
+    return this.request<{ session: import('../types/voice-casting').VoiceCastingSession; success: boolean }>(
+      `/voice-casting/session/${sessionId}/assignment/${encodeURIComponent(character)}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          assignment,
+          version_id: versionId,
+        }),
+      }
+    );
   }
 
   // Utility methods

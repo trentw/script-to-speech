@@ -159,13 +159,12 @@ function CharacterNotesGeneration() {
     getActiveSession,
     session,
     exportToYaml,
-    generatePromptMutation,
     sessionId,
     setPromptText,
   ]);
 
   const handleGeneratePrompt = useCallback(async () => {
-    if (!session?.screenplay_json_path) return;
+    if (!session?.screenplay_json_path || generatePromptMutation.isPending) return;
 
     // Show privacy warning first
     if (!privacyAccepted) {
@@ -174,7 +173,7 @@ function CharacterNotesGeneration() {
     }
 
     await generatePromptInternal();
-  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal]);
+  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal, generatePromptMutation.isPending]);
 
   const handlePrivacyAccept = async () => {
     setPrivacyAccepted(true);
@@ -193,32 +192,24 @@ function CharacterNotesGeneration() {
   const handleParseResponse = async () => {
     if (!yamlResponse.trim()) return;
 
-    const result = await parseYamlMutation.mutateAsync({
-      yamlContent: yamlResponse,
-    });
-
-    // Convert parsed assignments to Map format for the store
-    const newAssignments = new Map();
-    result.assignments.forEach((assignment) => {
-      newAssignments.set(assignment.character, {
-        provider: assignment.provider,
-        sts_id: assignment.sts_id,
-        voiceEntry: {
-          sts_id: assignment.sts_id,
-          casting_notes: assignment.casting_notes,
-          role: assignment.role,
-        },
+    try {
+      // Use the centralized yamlUtils converter with allowPartial for character notes
+      const newAssignments = await yamlUtils.yamlToAssignments(yamlResponse, { 
+        allowPartial: true 
       });
-    });
 
-    // Import the assignments to the store
-    importAssignments(newAssignments);
-    setYamlContent(yamlResponse);
+      // Import the assignments to the store
+      importAssignments(newAssignments);
+      setYamlContent(yamlResponse);
 
-    setShowSuccess(true);
-    setTimeout(() => {
-      navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
-    }, 2000);
+      setShowSuccess(true);
+      setTimeout(() => {
+        navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to parse YAML:', error);
+      // Error will be shown via parseYamlMutation error handling in UI
+    }
   };
 
   const handleCopyResponse = () => {

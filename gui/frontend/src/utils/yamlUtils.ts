@@ -43,9 +43,9 @@ export const yamlUtils = {
     for (const info of characterInfo) {
       characterInfoRecord[info.name] = {
         name: info.name,
-        line_count: info.lineCount,
-        total_characters: info.totalCharacters,
-        longest_dialogue: info.longestDialogue,
+        line_count: info.line_count,
+        total_characters: info.total_characters,
+        longest_dialogue: info.longest_dialogue,
         casting_notes: info.casting_notes,
         role: info.role,
       };
@@ -70,34 +70,16 @@ export const yamlUtils = {
   },
 
   /**
-   * Parse YAML string to assignments Map for store
-   * @param yamlContent YAML configuration content
-   * @returns Promise<Map<string, StoreVoiceAssignment>> assignments Map
+   * Transform API assignments array to store Map format
+   * @param assignments Array of assignments from API
+   * @returns Map<string, StoreVoiceAssignment> for store
    */
-  yamlToAssignments: async (
-    yamlContent: string
-  ): Promise<Map<string, StoreVoiceAssignment>> => {
-    // Call backend parseYaml API
-    const response = await apiService.parseYaml({ yamlContent });
+  transformApiResponseToStore: (
+    assignments: Array<import('../types/voice-casting').VoiceAssignment>
+  ): Map<string, StoreVoiceAssignment> => {
+    const assignmentsMap = new Map<string, StoreVoiceAssignment>();
 
-    if (response.error) {
-      const errorMessage =
-        typeof response.error === 'string'
-          ? response.error
-          : JSON.stringify(response.error);
-      throw new Error(errorMessage);
-    }
-
-    const result = response.data!;
-
-    if (result.has_errors) {
-      throw new Error(`YAML parsing failed: ${result.errors.join(', ')}`);
-    }
-
-    // Convert API response to store format
-    const assignments = new Map<string, StoreVoiceAssignment>();
-
-    result.assignments.forEach((assignment) => {
+    assignments.forEach((assignment) => {
       // Extract sts_id from assignment
       const sts_id = assignment.sts_id;
 
@@ -111,20 +93,50 @@ export const yamlUtils = {
         line_count: assignment.line_count,
         total_characters: assignment.total_characters,
         longest_dialogue: assignment.longest_dialogue,
-        voiceEntry: sts_id
-          ? {
-              sts_id: sts_id,
-              provider: assignment.provider,
-              config: assignment.provider_config || {},
-            }
-          : undefined,
+        voiceEntry: undefined, // Let useResolveVoiceEntry hook handle voice resolution for enhanced functionality
       };
 
-      assignments.set(assignment.character, storeAssignment);
+      assignmentsMap.set(assignment.character, storeAssignment);
     });
 
-    return assignments;
+    return assignmentsMap;
   },
+
+  /**
+   * Parse YAML string to assignments Map for store
+   * @param yamlContent YAML configuration content
+   * @param options Parsing options
+   * @returns Promise<Map<string, StoreVoiceAssignment>> assignments Map
+   */
+  yamlToAssignments: async (
+    yamlContent: string,
+    options: { allowPartial?: boolean } = {}
+  ): Promise<Map<string, StoreVoiceAssignment>> => {
+    // Call backend parseYaml API
+    const response = await apiService.parseYaml({
+      yamlContent,
+      allowPartial: options.allowPartial,
+    });
+
+    if (response.error) {
+      const errorMessage =
+        typeof response.error === 'string'
+          ? response.error
+          : JSON.stringify(response.error);
+      throw new Error(errorMessage);
+    }
+
+    const result = response.data!;
+
+    // Conditionally check errors based on mode
+    if (!options.allowPartial && result.has_errors) {
+      throw new Error(`YAML parsing failed: ${result.errors.join(', ')}`);
+    }
+
+    // Reuse transformation logic
+    return yamlUtils.transformApiResponseToStore(result.assignments);
+  },
+
 
   /**
    * Export screenplay character data to YAML format when no assignments exist
@@ -172,5 +184,22 @@ export const yamlUtils = {
     }
 
     return yamlContent;
+  },
+
+  /**
+   * Download YAML content as a file
+   * @param yamlContent YAML content to download
+   * @param filename Filename for the download
+   */
+  downloadYamlFile: (yamlContent: string, filename: string): void => {
+    const blob = new Blob([yamlContent], { type: 'application/x-yaml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   },
 };

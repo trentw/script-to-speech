@@ -34,41 +34,6 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
   const [error, setError] = useState<string | undefined>(undefined);
   const { getActiveSession } = useVoiceCasting();
 
-  // Generate YAML when component mounts or when assignments exist
-  useEffect(() => {
-    const generateYaml = async () => {
-      const activeSession = getActiveSession();
-      const assignments = activeSession?.assignments || new Map();
-      const screenplayData = activeSession?.screenplayData;
-
-      if (!yamlContent && assignments.size > 0 && screenplayData) {
-        setIsGenerating(true);
-        setError(undefined);
-
-        try {
-          // Convert character data to array for yamlUtils
-          const characterInfo = Array.from(screenplayData.characters.values());
-
-          // Use yamlUtils to generate YAML directly from store data
-          // This preserves all imported data: sts_id, casting_notes, roles, etc.
-          const generatedYaml = await yamlUtils.assignmentsToYaml(
-            assignments,
-            characterInfo
-          );
-          setYamlContent(generatedYaml);
-        } catch (err) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to generate YAML'
-          );
-        } finally {
-          setIsGenerating(false);
-        }
-      }
-    };
-
-    generateYaml();
-  }, [yamlContent, getActiveSession]);
-
   // Fallback local generation if mutation not available
   const generateLocalYaml = () => {
     const activeSession = getActiveSession();
@@ -132,6 +97,26 @@ export function YamlPreview({ onBack, onExport }: YamlPreviewProps) {
 
     return lines.join('\n');
   };
+
+  // Use stored YAML content from session
+  useEffect(() => {
+    const activeSession = getActiveSession();
+    
+    // Use the stored YAML content as source of truth
+    if (activeSession?.yamlContent) {
+      setYamlContent(activeSession.yamlContent);
+      setIsGenerating(false);
+      setError(undefined);
+    } else if (activeSession?.assignments && activeSession.assignments.size > 0) {
+      // Fallback: If no YAML content but assignments exist (shouldn't normally happen)
+      setYamlContent(generateLocalYaml());
+      setIsGenerating(false);
+    } else {
+      // No content available
+      setYamlContent('# No voice assignments configured\n');
+      setIsGenerating(false);
+    }
+  }, [getActiveSession]);
 
   // Use generated YAML from mutation if available, otherwise use local generation
   const displayYaml = yamlContent || generateLocalYaml();

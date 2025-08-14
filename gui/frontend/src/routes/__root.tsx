@@ -7,6 +7,7 @@ import {
 import { useEffect } from 'react';
 
 import { RouteError } from '@/components/errors';
+import { Toaster } from '@/components/ui/sonner';
 
 import { AppLoading, AppStatus } from '../components/app/AppStatus';
 import { ErrorDisplay } from '../components/app/ErrorDisplay';
@@ -205,6 +206,7 @@ function RootComponent() {
         )}
 
       <ErrorDisplay />
+      <Toaster />
     </>
   );
 }

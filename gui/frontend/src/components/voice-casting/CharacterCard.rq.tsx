@@ -8,9 +8,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useRemoveAssignment } from '@/hooks/mutations/useRemoveAssignment';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { cn } from '@/lib/utils';
-import { useVoiceCasting } from '@/stores/appStore';
 import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
 
 import { VoiceCard } from './VoiceCard';
@@ -33,26 +34,24 @@ interface CharacterData {
 
 interface CharacterCardProps {
   character: CharacterData;
+  sessionId: string;
   onAssignVoice: () => void;
 }
 
 export function CharacterCard({
   character,
+  sessionId,
   onAssignVoice,
 }: CharacterCardProps) {
-  // All hooks must be called at the top level
-  const { getActiveSession, removeVoiceFromAssignment } = useVoiceCasting();
-  const activeSession = getActiveSession();
+  // Fetch session data and assignments using React Query
+  const {
+    data: sessionData,
+    isLoading,
+    error,
+  } = useSessionAssignments(sessionId);
 
-  // Safely access session data with fallbacks
-  const screenplayData = activeSession?.screenplayData;
-
-  // Memoize assignments to prevent dependency issues
-  const assignments = useMemo(
-    () => activeSession?.assignments || new Map(),
-    [activeSession?.assignments]
-  );
-  const assignment = assignments.get(character.name);
+  // Get assignment for this character
+  const assignment = sessionData?.assignments.get(character.name);
 
   // Resolve voice entry if we have an assignment but no voiceEntry
   const resolvedVoice = useResolveVoiceEntry(
@@ -60,9 +59,12 @@ export function CharacterCard({
     assignment?.sts_id
   );
 
+  // Remove assignment mutation
+  const removeAssignmentMutation = useRemoveAssignment();
+
   // Calculate assignment status - memoized for performance
   const assignmentData = useMemo(() => {
-    if (!activeSession) {
+    if (!sessionData) {
       return { isAssigned: false, assignment: null };
     }
 
@@ -74,24 +76,48 @@ export function CharacterCard({
     );
 
     return { isAssigned, assignment };
-  }, [activeSession, assignment]);
+  }, [sessionData, assignment]);
 
   // Calculate voice usage map
   const voiceUsageMap = useMemo(() => {
-    if (!activeSession) return new Map();
+    if (!sessionData) return new Map();
     return calculateVoiceUsage(
-      assignments,
-      screenplayData?.characters,
+      sessionData.assignments,
+      sessionData.characters,
       character.name
     );
-  }, [activeSession, assignments, screenplayData?.characters, character.name]);
+  }, [sessionData, character.name]);
 
-  // Guard against no active session AFTER all hooks
-  if (!activeSession) {
+  // Guard against loading/error states AFTER all hooks
+  if (isLoading) {
     return (
       <Card className="col-span-1">
         <CardContent className="p-4">
-          <p className="text-muted-foreground text-sm">No active session</p>
+          <div className="animate-pulse space-y-3">
+            <div className="h-4 bg-muted rounded w-3/4"></div>
+            <div className="h-3 bg-muted rounded w-1/2"></div>
+            <div className="h-16 bg-muted rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-1">
+        <CardContent className="p-4">
+          <p className="text-destructive text-sm">Failed to load session data</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!sessionData) {
+    return (
+      <Card className="col-span-1">
+        <CardContent className="p-4">
+          <p className="text-muted-foreground text-sm">No session data</p>
         </CardContent>
       </Card>
     );
@@ -103,7 +129,16 @@ export function CharacterCard({
   const voiceEntry = assignment?.voiceEntry || resolvedVoice;
 
   const handleRemoveAssignment = () => {
-    removeVoiceFromAssignment(character.name);
+    if (!sessionData.yamlVersionId) {
+      console.error('Cannot remove assignment: missing version ID');
+      return;
+    }
+
+    removeAssignmentMutation.mutate({
+      sessionId,
+      character: character.name,
+      versionId: sessionData.yamlVersionId,
+    });
   };
 
   return (

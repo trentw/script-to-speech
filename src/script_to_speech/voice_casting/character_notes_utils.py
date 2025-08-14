@@ -54,7 +54,7 @@ def generate_voice_casting_prompt_file(
 
     # Determine screenplay name and input directory
     screenplay_name = source_screenplay_path.stem
-    input_dir = Path("input") / screenplay_name
+    input_dir = Path.cwd() / "input" / screenplay_name
     input_dir.mkdir(parents=True, exist_ok=True)
 
     # Determine output file path
