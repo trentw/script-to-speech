@@ -4,7 +4,6 @@ import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useVoiceCasting } from '@/stores/appStore';
 
 interface LLMWorkflowButtonsProps {
   sessionId: string;
@@ -12,10 +11,8 @@ interface LLMWorkflowButtonsProps {
 
 export function LLMWorkflowButtons({ sessionId }: LLMWorkflowButtonsProps) {
   const navigate = useNavigate();
-  const { getActiveSession } = useVoiceCasting();
-
-  const activeSession = getActiveSession();
-  const castingMethod = activeSession?.castingMethod || 'manual';
+  // For now, we don't track casting method in React Query version
+  const castingMethod = 'manual';
 
   if (castingMethod !== 'llm-assisted') {
     return null;

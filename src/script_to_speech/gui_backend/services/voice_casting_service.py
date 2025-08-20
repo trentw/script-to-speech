@@ -19,6 +19,7 @@ from ruamel.yaml.constructor import DuplicateKeyError
 
 from script_to_speech.tts_providers.base.exceptions import VoiceNotFoundError
 from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
+from script_to_speech.tts_providers.utils import generate_yaml_config
 from script_to_speech.utils.dialogue_stats_utils import get_speaker_statistics
 from script_to_speech.utils.file_system_utils import PathSecurityValidator
 from script_to_speech.utils.logging import get_screenplay_logger
@@ -29,7 +30,6 @@ from script_to_speech.voice_casting.voice_library_casting_utils import (
     generate_voice_library_casting_prompt_file,
 )
 from script_to_speech.voice_library.voice_library import VoiceLibrary
-from script_to_speech.tts_providers.utils import generate_yaml_config
 
 from ..config import settings
 
@@ -41,11 +41,11 @@ class VoiceCastingSession(BaseModel):
     screenplay_json_path: str
     screenplay_name: str
     screenplay_source_path: Optional[str] = None
-    
+
     # YAML persistence fields
     yaml_content: str = ""  # Current YAML content stored as text
     yaml_version_id: int = 1  # Version counter for optimistic locking
-    
+
     created_at: datetime
     updated_at: datetime
     status: str = "active"  # active, completed, expired
@@ -152,13 +152,13 @@ class VoiceCastingService:
     def _load_screenplay_data(self, screenplay_json_path: str) -> Dict[str, Any]:
         """
         Load screenplay data from JSON file.
-        
+
         Args:
             screenplay_json_path: Path to screenplay JSON file
-            
+
         Returns:
             Parsed screenplay JSON data
-            
+
         Raises:
             ValueError: If path is invalid or file cannot be read
         """
@@ -172,33 +172,39 @@ class VoiceCastingService:
 
         # Load JSON from file
         with open(safe_path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data: Dict[str, Any] = json.load(f)
+            return data
 
     async def validate_yaml_warnings(
         self, yaml_content: str, screenplay_data: Dict[str, Any]
     ) -> List[str]:
         """
         Validate YAML content and return warnings (non-blocking validation).
-        
+
         Args:
             yaml_content: YAML configuration content
             screenplay_data: Parsed screenplay JSON data
-            
+
         Returns:
             List of validation warning messages
         """
         warnings = []
-        
+
         try:
             # Get speaker statistics from screenplay
-            from script_to_speech.utils.dialogue_stats_utils import get_speaker_statistics
-            speaker_stats = get_speaker_statistics(screenplay_data)
+            from script_to_speech.utils.dialogue_stats_utils import (
+                get_speaker_statistics,
+            )
+
+            # Extract dialogues list from screenplay data
+            dialogues = screenplay_data.get("dialogues", [])
+            speaker_stats = get_speaker_statistics(dialogues)
             speakers_in_script = set(speaker_stats.keys())
 
             # Parse YAML and check for duplicates
             yaml = YAML(typ="safe")
             yaml.allow_duplicate_keys = False
-            
+
             try:
                 yaml_data = yaml.load(StringIO(yaml_content))
             except Exception as e:
@@ -212,7 +218,9 @@ class VoiceCastingService:
                     return warnings
 
             if not isinstance(yaml_data, dict):
-                warnings.append("YAML should be a mapping of speakers to voice configurations")
+                warnings.append(
+                    "YAML should be a mapping of speakers to voice configurations"
+                )
                 return warnings
 
             speakers_in_yaml = set(yaml_data.keys())
@@ -224,12 +232,16 @@ class VoiceCastingService:
             if missing_speakers:
                 warnings.append(f"Missing speakers: {', '.join(missing_speakers)}")
             if extra_speakers:
-                warnings.append(f"Extra speakers (not in screenplay): {', '.join(extra_speakers)}")
+                warnings.append(
+                    f"Extra speakers (not in screenplay): {', '.join(extra_speakers)}"
+                )
 
             # Validate provider configurations
             for speaker, config in yaml_data.items():
                 if not isinstance(config, dict):
-                    warnings.append(f"{speaker}: Configuration should be a mapping/dictionary")
+                    warnings.append(
+                        f"{speaker}: Configuration should be a mapping/dictionary"
+                    )
                     continue
 
                 provider_name = config.get("provider")
@@ -238,7 +250,9 @@ class VoiceCastingService:
                     continue
 
                 try:
-                    provider_class = TTSProviderManager._get_provider_class(provider_name)
+                    provider_class = TTSProviderManager._get_provider_class(
+                        provider_name
+                    )
 
                     # Create a copy of the config for validation
                     validation_config = config.copy()
@@ -257,10 +271,14 @@ class VoiceCastingService:
                             validation_config = final_config
 
                         except VoiceNotFoundError as ve:
-                            warnings.append(f"{speaker}: Invalid sts_id '{sts_id}': {str(ve)}")
+                            warnings.append(
+                                f"{speaker}: Invalid sts_id '{sts_id}': {str(ve)}"
+                            )
                             continue
                         except Exception as ve:
-                            warnings.append(f"{speaker}: Failed to expand sts_id '{sts_id}': {str(ve)}")
+                            warnings.append(
+                                f"{speaker}: Failed to expand sts_id '{sts_id}': {str(ve)}"
+                            )
                             continue
 
                     # Validate the (possibly expanded) config
@@ -275,43 +293,40 @@ class VoiceCastingService:
         return warnings
 
     async def update_yaml_content(
-        self,
-        session_id: str,
-        yaml_content: str,
-        version_id: int
+        self, session_id: str, yaml_content: str, version_id: int
     ) -> Tuple[VoiceCastingSession, List[str]]:
         """
         Update YAML content with basic validation.
-        
+
         Args:
             session_id: Session UUID
             yaml_content: New YAML content
             version_id: Client's current version (for optimistic locking)
-            
+
         Returns:
             Tuple of (Updated session, List of validation warnings)
-            
+
         Raises:
             ValueError: If session not found or concurrent modification
         """
         session = self._sessions.get(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         # Optimistic locking check
         if version_id != session.yaml_version_id:
             raise ValueError(
                 "Session has been modified by another source. "
                 "Please refresh and retry your changes."
             )
-        
+
         # Syntactic validation - YAML must be parseable
         try:
-            yaml = YAML(typ='safe')
+            yaml = YAML(typ="safe")
             yaml.load(StringIO(yaml_content))
         except Exception as e:
             raise ValueError(f"Invalid YAML format: {e}")
-        
+
         # Semantic validation - collect warnings but don't block
         warnings = []
         try:
@@ -319,150 +334,302 @@ class VoiceCastingService:
             warnings = await self.validate_yaml_warnings(yaml_content, screenplay_data)
         except Exception as e:
             warnings.append(f"Could not validate against screenplay: {e}")
-        
+
         # Update content and increment version
         session.yaml_content = yaml_content
         session.yaml_version_id += 1
         session.updated_at = datetime.utcnow()
-        
+
         logger.info(
             f"Updated YAML for session {session_id}: "
             f"v{session.yaml_version_id}, {len(yaml_content)} bytes"
         )
-        
+
         return session, warnings
 
-    async def export_to_filesystem(
-        self,
-        session_id: str
-    ) -> str:
+    async def export_to_filesystem(self, session_id: str) -> str:
         """
         Export YAML content to filesystem for CLI compatibility.
         Called when user clicks the Export button.
-        
+
         Args:
             session_id: Session UUID
-            
+
         Returns:
             Path where YAML was written
-            
+
         Raises:
             ValueError: If session not found or YAML is empty
         """
         session = self._sessions.get(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         if not session.yaml_content:
             raise ValueError("No YAML content to export")
-        
+
         # Standard CLI location
         base_path = Path("input") / session.screenplay_name
         base_path.mkdir(parents=True, exist_ok=True)
         yaml_path = base_path / f"{session.screenplay_name}_voice_config.yaml"
-        
+
         # Write YAML content
-        with open(yaml_path, 'w', encoding='utf-8') as f:
+        with open(yaml_path, "w", encoding="utf-8") as f:
             f.write(session.yaml_content)
-        
+
         logger.info(f"Exported YAML for session {session_id} to {yaml_path}")
-        
+
         return str(yaml_path)
 
-    async def update_character_assignment(
-        self,
-        session_id: str,
-        character: str,
-        assignment: Dict[str, Any],
-        version_id: int
-    ) -> VoiceCastingSession:
+    def _load_session_yaml(
+        self, session_id: str, version_id: int
+    ) -> Tuple[VoiceCastingSession, YAML, CommentedMap]:
         """
-        Update a single character's voice assignment while preserving YAML structure and comments.
-        Uses ruamel.yaml to surgically update only the specified character's fields.
-        
+        Load and validate session YAML for modification.
+
         Args:
             session_id: Session UUID
-            character: Character name to update
-            assignment: Assignment data (provider, sts_id, etc.)
             version_id: Client's current version (for optimistic locking)
-            
+
         Returns:
-            Updated VoiceCastingSession
-            
+            Tuple of (session, yaml_instance, parsed_yaml_data)
+
         Raises:
             ValueError: If session not found, version conflict, or YAML parsing fails
         """
         session = self._sessions.get(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         # Optimistic locking check
         if version_id != session.yaml_version_id:
             raise ValueError(
                 "Session has been modified by another source. "
                 "Please refresh and retry your changes."
             )
-        
+
         # If no YAML content exists, we can't update it
         if not session.yaml_content:
             raise ValueError("No YAML content to update")
-        
+
+        # Use ruamel.yaml to preserve comments and formatting
+        yaml = YAML()
+        yaml.preserve_quotes = True
+        yaml.width = 4096  # Prevent line wrapping
+        yaml.indent(mapping=2, sequence=4, offset=2)
+
+        # Parse existing YAML
+        yaml_data = yaml.load(StringIO(session.yaml_content))
+
+        # Handle case where YAML data is None or not a dict
+        if yaml_data is None:
+            yaml_data = CommentedMap()
+        elif not isinstance(yaml_data, dict):
+            raise ValueError("Invalid YAML structure")
+
+        return session, yaml, yaml_data
+
+    def _save_session_yaml(
+        self, session: VoiceCastingSession, yaml: YAML, yaml_data: CommentedMap
+    ) -> VoiceCastingSession:
+        """
+        Save YAML data back to session and increment version.
+
+        Args:
+            session: Session model to update
+            yaml: YAML instance used for formatting
+            yaml_data: Modified YAML data to save
+
+        Returns:
+            Updated VoiceCastingSession
+        """
+        # Convert back to string
+        output = StringIO()
+        yaml.dump(yaml_data, output)
+        updated_yaml = output.getvalue()
+
+        # Update session
+        session.yaml_content = updated_yaml
+        session.yaml_version_id += 1
+        session.updated_at = datetime.utcnow()
+
+        return session
+
+    def _ensure_character_exists(self, yaml_data: CommentedMap, character: str) -> None:
+        """
+        Ensure character entry exists in YAML data.
+
+        Args:
+            yaml_data: Parsed YAML data
+            character: Character name to ensure exists
+        """
+        if character not in yaml_data:
+            yaml_data[character] = CommentedMap()
+
+    async def update_character_assignment(
+        self,
+        session_id: str,
+        character: str,
+        assignment: Dict[str, Any],
+        version_id: int,
+    ) -> VoiceCastingSession:
+        """
+        Update a single character's voice assignment while preserving YAML structure and comments.
+        Uses ruamel.yaml to surgically update only the specified character's fields.
+
+        Args:
+            session_id: Session UUID
+            character: Character name to update
+            assignment: Assignment data (provider, sts_id, etc.)
+            version_id: Client's current version (for optimistic locking)
+
+        Returns:
+            Updated VoiceCastingSession
+
+        Raises:
+            ValueError: If session not found, version conflict, or YAML parsing fails
+        """
         try:
-            # Use ruamel.yaml to preserve comments and formatting
-            yaml = YAML()
-            yaml.preserve_quotes = True
-            yaml.width = 4096  # Prevent line wrapping
-            yaml.indent(mapping=2, sequence=4, offset=2)
-            
-            # Parse existing YAML
-            yaml_data = yaml.load(StringIO(session.yaml_content))
-            
-            # Handle case where YAML data is None or not a dict
-            if yaml_data is None:
-                yaml_data = CommentedMap()
-            elif not isinstance(yaml_data, dict):
-                raise ValueError("Invalid YAML structure")
-            
-            # Update or add the character's assignment
-            if character not in yaml_data:
-                # Add new character
-                yaml_data[character] = CommentedMap()
-            
+            # Load session and YAML data using shared helper
+            session, yaml, yaml_data = self._load_session_yaml(session_id, version_id)
+
+            # Ensure character exists using shared helper
+            self._ensure_character_exists(yaml_data, character)
+
             # Update only the fields provided in the assignment
             # This preserves any existing fields not in the update
             for key, value in assignment.items():
                 # Skip internal fields that shouldn't be in YAML
-                if key in ['character', 'line_count', 'total_characters', 
-                          'longest_dialogue', 'casting_notes', 'role', 'additional_notes']:
+                if key in [
+                    "character",
+                    "line_count",
+                    "total_characters",
+                    "longest_dialogue",
+                    "casting_notes",
+                    "role",
+                    "additional_notes",
+                ]:
                     continue
-                    
+
                 # Only include non-empty values
-                if value is not None and value != '':
+                if value is not None and value != "":
                     yaml_data[character][key] = value
                 elif key in yaml_data[character]:
                     # Remove empty values
                     del yaml_data[character][key]
-            
-            # Convert back to string
-            output = StringIO()
-            yaml.dump(yaml_data, output)
-            updated_yaml = output.getvalue()
-            
-            # Update session
-            session.yaml_content = updated_yaml
-            session.yaml_version_id += 1
-            session.updated_at = datetime.utcnow()
-            
+
+            # Save updated YAML using shared helper
+            updated_session = self._save_session_yaml(session, yaml, yaml_data)
+
             logger.info(
                 f"Updated assignment for {character} in session {session_id}, "
-                f"new version: {session.yaml_version_id}"
+                f"new version: {updated_session.yaml_version_id}"
             )
-            
-            return session
-            
+
+            return updated_session
+
         except Exception as e:
             logger.error(f"Failed to update character assignment: {e}")
             raise ValueError(f"Failed to update YAML: {str(e)}")
+
+    def _safe_delete_yaml_field(self, char_map: CommentedMap, field: str) -> None:
+        """
+        Safely delete a field from a CommentedMap while preserving comments.
+
+        This handles the ruamel.yaml quirk where comments attached to a deleted
+        field can be lost, affecting subsequent characters in the YAML.
+
+        Args:
+            char_map: The character's CommentedMap
+            field: The field to delete
+        """
+        if field not in char_map:
+            return
+
+        # Check if this field has comments attached (e.g., next character's comments)
+        if (
+            hasattr(char_map, "ca")
+            and hasattr(char_map.ca, "items")
+            and field in char_map.ca.items
+        ):
+            comment_data = char_map.ca.items[field]
+
+            # Get list of keys to find a target for comment transfer
+            keys = list(char_map.keys())
+            if field in keys:
+                idx = keys.index(field)
+
+                # Find a key to transfer comments to (prefer previous key, usually 'provider')
+                target_key = None
+                if idx > 0:
+                    # Transfer to previous key (typically 'provider')
+                    target_key = keys[idx - 1]
+                elif idx + 1 < len(keys):
+                    # If no previous key, transfer to next key
+                    target_key = keys[idx + 1]
+
+                if target_key and comment_data:
+                    # Ensure target has a comment structure
+                    if target_key not in char_map.ca.items:
+                        char_map.ca.items[target_key] = [None, None, None, None]
+
+                    # Transfer the comments (slots 2 and 3 typically contain the important comments)
+                    if comment_data[2]:  # Comment before next item
+                        char_map.ca.items[target_key][2] = comment_data[2]
+                    if comment_data[3]:  # End-of-line comment
+                        char_map.ca.items[target_key][3] = comment_data[3]
+
+        # Now safe to remove the field
+        char_map.pop(field, None)
+
+    async def clear_character_voice(
+        self, session_id: str, character: str, version_id: int
+    ) -> VoiceCastingSession:
+        """
+        Clear voice assignment from a character while preserving metadata (YAML comments).
+        Sets the character back to CLI-generated template state: provider field with empty string,
+        no sts_id or provider_config fields. All metadata stored as YAML comments is preserved.
+
+        Args:
+            session_id: Session UUID
+            character: Character name to clear voice from
+            version_id: Client's current version (for optimistic locking)
+
+        Returns:
+            Updated VoiceCastingSession with character in CLI-template state
+
+        Raises:
+            ValueError: If session not found, version conflict, or YAML parsing fails
+        """
+        try:
+            # Load session and YAML data using shared helper
+            session, yaml, yaml_data = self._load_session_yaml(session_id, version_id)
+
+            # Ensure character exists using shared helper
+            self._ensure_character_exists(yaml_data, character)
+
+            # Clear voice assignment to match CLI-generated template
+            # 1. Set provider to empty string (CLI-consistent)
+            yaml_data[character]["provider"] = ""
+
+            # 2. Remove additional voice fields using safe deletion to preserve comments
+            voice_fields_to_remove = ["sts_id", "provider_config"]
+            for field in voice_fields_to_remove:
+                self._safe_delete_yaml_field(yaml_data[character], field)
+
+            # Save updated YAML using shared helper
+            updated_session = self._save_session_yaml(session, yaml, yaml_data)
+
+            logger.info(
+                f"Cleared voice assignment for {character} in session {session_id}, "
+                f"new version: {updated_session.yaml_version_id}"
+            )
+
+            return updated_session
+
+        except Exception as e:
+            logger.error(f"Failed to clear character voice: {e}")
+            raise ValueError(f"Failed to clear voice: {str(e)}")
 
     async def extract_characters(
         self, screenplay_json_path: str
@@ -1101,8 +1268,12 @@ class VoiceCastingService:
         if not session:
             raise ValueError(f"Session {session_id} not found")
 
-        logger.info(f"DEBUG: Session data - screenplay_source_path: {session.screenplay_source_path}")
-        logger.info(f"DEBUG: Session data - screenplay_json_path: {session.screenplay_json_path}")
+        logger.info(
+            f"DEBUG: Session data - screenplay_source_path: {session.screenplay_source_path}"
+        )
+        logger.info(
+            f"DEBUG: Session data - screenplay_json_path: {session.screenplay_json_path}"
+        )
         logger.info(f"DEBUG: Current working directory: {Path.cwd()}")
 
         if not session.screenplay_source_path:
@@ -1113,7 +1284,7 @@ class VoiceCastingService:
         # Write YAML content to temporary file
         logger.info(f"DEBUG: YAML content length: {len(yaml_content)}")
         logger.info(f"DEBUG: YAML content preview: {yaml_content[:200]}...")
-        
+
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".yaml", delete=False, encoding="utf-8"
         ) as tmp_yaml:
@@ -1122,10 +1293,10 @@ class VoiceCastingService:
 
         logger.info(f"DEBUG: Temp YAML path: {tmp_yaml_path}")
         logger.info(f"DEBUG: Temp YAML exists: {tmp_yaml_path.exists()}")
-        
+
         # Read back and verify temp YAML content
         if tmp_yaml_path.exists():
-            with open(tmp_yaml_path, 'r') as f:
+            with open(tmp_yaml_path, "r") as f:
                 temp_content = f.read()
             logger.info(f"DEBUG: Temp YAML content length: {len(temp_content)}")
 
@@ -1147,7 +1318,7 @@ class VoiceCastingService:
                 tmp_yaml_path,
                 prompt_path,
             )
-            
+
             logger.info(f"DEBUG: Function returned output_path: {output_path}")
             logger.info(f"DEBUG: Output path exists: {output_path.exists()}")
             logger.info(f"DEBUG: Output path absolute: {output_path.absolute()}")
@@ -1157,14 +1328,20 @@ class VoiceCastingService:
             try:
                 with open(output_path, "r", encoding="utf-8") as f:
                     prompt_content = f.read()
-                logger.info(f"DEBUG: Successfully read prompt content, length: {len(prompt_content)}")
+                logger.info(
+                    f"DEBUG: Successfully read prompt content, length: {len(prompt_content)}"
+                )
             except FileNotFoundError as e:
                 logger.error(f"DEBUG: FileNotFoundError reading output: {e}")
                 logger.error(f"DEBUG: Attempted path: {output_path}")
                 logger.error(f"DEBUG: Path exists check: {output_path.exists()}")
-                logger.error(f"DEBUG: Current directory contents: {list(Path.cwd().iterdir())}")
+                logger.error(
+                    f"DEBUG: Current directory contents: {list(Path.cwd().iterdir())}"
+                )
                 if Path.cwd().joinpath("input").exists():
-                    logger.error(f"DEBUG: Input directory contents: {list(Path.cwd().joinpath('input').iterdir())}")
+                    logger.error(
+                        f"DEBUG: Input directory contents: {list(Path.cwd().joinpath('input').iterdir())}"
+                    )
                 raise
 
             # Note: We don't delete the output file here to allow for potential multiple reads
@@ -1274,7 +1451,7 @@ class VoiceCastingService:
         """
         session_id = str(uuid.uuid4())
         screenplay_name = Path(screenplay_json_path).stem
-        
+
         # Generate initial YAML using the CLI's function
         try:
             # Use the CLI's generate_yaml_config to create initial YAML template
@@ -1283,16 +1460,16 @@ class VoiceCastingService:
             yaml_output_path = generate_yaml_config(
                 input_json_path,
                 provider=None,  # Don't specify provider for multi-provider support
-                include_optional_fields=False
+                include_optional_fields=False,
             )
-            
+
             # Read the generated YAML content
-            with open(yaml_output_path, 'r', encoding='utf-8') as f:
+            with open(yaml_output_path, "r", encoding="utf-8") as f:
                 initial_yaml_content = f.read()
-            
+
             # Clean up the temporary file
             yaml_output_path.unlink(missing_ok=True)
-            
+
         except Exception as e:
             logger.warning(f"Failed to generate initial YAML template: {e}")
             # Fallback to empty YAML if generation fails
@@ -1312,6 +1489,7 @@ class VoiceCastingService:
 
         self._sessions[session_id] = session
         logger.info(f"Created voice casting session {session_id} for {screenplay_name}")
+        logger.info(f"Total sessions in memory after creation: {len(self._sessions)}")
 
         return session
 
@@ -1398,6 +1576,81 @@ class VoiceCastingService:
             session.updated_at = datetime.utcnow()
             logger.info(f"Updated screenplay source path for session {session_id}")
         return session
+
+    async def get_recent_sessions(self, limit: int = 5) -> List[Dict[str, Any]]:
+        """
+        Get recent voice casting sessions sorted by update time.
+
+        Args:
+            limit: Maximum number of sessions to return
+
+        Returns:
+            List of session data with progress information
+        """
+        logger.info(
+            f"Getting recent sessions. Total sessions in memory: {len(self._sessions)}"
+        )
+
+        # Get all sessions and sort by updated_at (most recent first)
+        sorted_sessions = sorted(
+            self._sessions.values(), key=lambda s: s.updated_at, reverse=True
+        )
+
+        # Take only the requested number
+        recent_sessions = sorted_sessions[:limit]
+
+        logger.info(f"Returning {len(recent_sessions)} recent sessions")
+
+        # Build response with progress information
+        result = []
+        for session in recent_sessions:
+            # Calculate assignment progress from YAML content
+            assigned_count = 0
+            total_count = 0
+
+            if session.yaml_content:
+                try:
+                    # Parse YAML to count assignments
+                    yaml = YAML(typ="safe")
+                    data = yaml.load(StringIO(session.yaml_content))
+
+                    if isinstance(data, dict):
+                        # Count characters (excluding 'default' key)
+                        characters = [k for k in data.keys() if k != "default"]
+                        total_count = len(characters)
+
+                        # Count assigned characters (those with provider and voice/sts_id)
+                        for char, config in data.items():
+                            if char != "default" and isinstance(config, dict):
+                                if config.get("provider") and (
+                                    config.get("voice") or config.get("sts_id")
+                                ):
+                                    assigned_count += 1
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to parse YAML for session {session.session_id}: {e}"
+                    )
+
+            # Determine status based on progress
+            status = (
+                "completed"
+                if total_count > 0 and assigned_count == total_count
+                else "in-progress"
+            )
+
+            result.append(
+                {
+                    "session_id": session.session_id,
+                    "screenplay_name": session.screenplay_name,
+                    "status": status,
+                    "assigned_count": assigned_count,
+                    "total_count": total_count,
+                    "updated_at": session.updated_at.isoformat(),
+                    "created_at": session.created_at.isoformat(),
+                }
+            )
+
+        return result
 
     async def cleanup_expired_sessions(self, expiry_hours: int = 24) -> int:
         """

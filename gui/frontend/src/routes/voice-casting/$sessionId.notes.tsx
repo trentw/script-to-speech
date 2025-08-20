@@ -28,8 +28,10 @@ import {
 } from '@/components/voice-casting';
 import { useGenerateCharacterNotesPrompt } from '@/hooks/mutations/useGenerateCharacterNotesPrompt';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
+import { useUpdateSessionYaml } from '@/hooks/mutations/useUpdateSessionYaml';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { apiService } from '@/services/api';
-import { type CharacterInfo, useVoiceCasting } from '@/stores/appStore';
+import type { CharacterInfo } from '@/types/voice-casting';
 import { yamlUtils } from '@/utils/yamlUtils';
 
 export const Route = createFileRoute('/voice-casting/$sessionId/notes')({
@@ -47,9 +49,6 @@ function CharacterNotesGeneration() {
   const [copiedResponse, setCopiedResponse] = useState(false);
   const [showPrivacyWarning, setShowPrivacyWarning] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
-
-  const { getActiveSession, importAssignments, setYamlContent } =
-    useVoiceCasting();
 
   // Fetch session data
   const {
@@ -69,6 +68,8 @@ function CharacterNotesGeneration() {
 
   const generatePromptMutation = useGenerateCharacterNotesPrompt();
   const parseYamlMutation = useParseYaml();
+  const updateSessionYamlMutation = useUpdateSessionYaml();
+  const { data: sessionData } = useSessionAssignments(sessionId);
 
   // Navigate back to main casting page
   const handleBack = () => {
@@ -77,8 +78,7 @@ function CharacterNotesGeneration() {
 
   // Function to export current assignments or screenplay characters to YAML format
   const exportToYaml = useCallback(async (): Promise<string> => {
-    const activeSession = getActiveSession();
-    const assignments = activeSession?.assignments || new Map();
+    const assignments = sessionData?.assignments || new Map();
 
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
@@ -108,7 +108,7 @@ function CharacterNotesGeneration() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  }, [getActiveSession, session?.screenplay_json_path]);
+  }, [sessionData, session?.screenplay_json_path]);
 
   // Step 1: Generate prompt
   const generatePromptInternal = useCallback(async () => {
@@ -116,8 +116,7 @@ function CharacterNotesGeneration() {
     // If we have assignments, use them, otherwise create YAML from screenplay character data
     let yamlContent = '';
 
-    const activeSession = getActiveSession();
-    const assignments = activeSession?.assignments || new Map();
+    const assignments = sessionData?.assignments || new Map();
 
     if (assignments.size > 0) {
       // Get character info for the YAML generation
@@ -155,16 +154,11 @@ function CharacterNotesGeneration() {
     if (result) {
       setPromptText(result.prompt_content);
     }
-  }, [
-    getActiveSession,
-    session,
-    exportToYaml,
-    sessionId,
-    setPromptText,
-  ]);
+  }, [sessionData, session, exportToYaml, sessionId, generatePromptMutation]);
 
   const handleGeneratePrompt = useCallback(async () => {
-    if (!session?.screenplay_json_path || generatePromptMutation.isPending) return;
+    if (!session?.screenplay_json_path || generatePromptMutation.isPending)
+      return;
 
     // Show privacy warning first
     if (!privacyAccepted) {
@@ -173,7 +167,12 @@ function CharacterNotesGeneration() {
     }
 
     await generatePromptInternal();
-  }, [session?.screenplay_json_path, privacyAccepted, generatePromptInternal, generatePromptMutation.isPending]);
+  }, [
+    session?.screenplay_json_path,
+    privacyAccepted,
+    generatePromptInternal,
+    generatePromptMutation.isPending,
+  ]);
 
   const handlePrivacyAccept = async () => {
     setPrivacyAccepted(true);
@@ -194,13 +193,17 @@ function CharacterNotesGeneration() {
 
     try {
       // Use the centralized yamlUtils converter with allowPartial for character notes
-      const newAssignments = await yamlUtils.yamlToAssignments(yamlResponse, { 
-        allowPartial: true 
+      // No longer need to store assignments locally as they're managed server-side
+      await yamlUtils.yamlToAssignments(yamlResponse, {
+        allowPartial: true,
       });
 
-      // Import the assignments to the store
-      importAssignments(newAssignments);
-      setYamlContent(yamlResponse);
+      // Update the session with the new YAML content
+      await updateSessionYamlMutation.mutateAsync({
+        sessionId: sessionId,
+        yamlContent: yamlResponse,
+        versionId: sessionData?.yamlVersionId || 0,
+      });
 
       setShowSuccess(true);
       setTimeout(() => {
@@ -220,8 +223,7 @@ function CharacterNotesGeneration() {
 
   // Auto-generate prompt on mount if we have the necessary data
   useEffect(() => {
-    const activeSession = getActiveSession();
-    const assignments = activeSession?.assignments || new Map();
+    const assignments = sessionData?.assignments || new Map();
 
     if (
       session?.screenplay_json_path &&
@@ -235,7 +237,7 @@ function CharacterNotesGeneration() {
   }, [
     session?.screenplay_json_path,
     session?.screenplay_source_path,
-    getActiveSession,
+    sessionData,
     privacyAccepted,
     handleGeneratePrompt,
     promptText,

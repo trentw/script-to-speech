@@ -1,4 +1,4 @@
-import type { CharacterInfo, VoiceAssignment } from '@/stores/appStore';
+import type { CharacterInfo, VoiceAssignment } from '@/types/voice-casting';
 
 export interface VoiceUsageInfo {
   character: string;

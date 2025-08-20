@@ -21,27 +21,38 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
+import { useUpdateSessionYaml } from '@/hooks/mutations/useUpdateSessionYaml';
 import { useValidateYaml } from '@/hooks/mutations/useValidateYaml';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useVoiceCasting, type VoiceAssignment } from '@/stores/appStore';
-import { yamlUtils } from '@/utils/yamlUtils';
 
 interface YamlImportPanelProps {
+  sessionId: string;
   onBack: () => void;
   onImportSuccess: () => void;
 }
 
 export function YamlImportPanel({
+  sessionId,
   onBack,
   onImportSuccess,
 }: YamlImportPanelProps) {
   const [yamlInput, setYamlInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { importAssignments, setYamlContent, getActiveSession } = useVoiceCasting();
 
+  // Fetch session data using React Query
+  const {
+    data: sessionData,
+    isLoading: sessionLoading,
+    error: sessionError,
+  } = useSessionAssignments(sessionId);
+
+  // Mutations
   const parseYamlMutation = useParseYaml();
   const validateYamlMutation = useValidateYaml();
+  const updateSessionYamlMutation = useUpdateSessionYaml();
 
   // Debounce the YAML input to avoid excessive API calls
   const debouncedYamlInput = useDebounce(yamlInput, 500);
@@ -52,9 +63,8 @@ export function YamlImportPanel({
       // Parse the YAML
       parseYamlMutation.mutate({ yamlContent: debouncedYamlInput });
 
-      // Validate if we have a screenplay JSON path
-      const activeSession = getActiveSession();
-      const screenplayJsonPath = activeSession?.screenplayJsonPath;
+      // Validate if we have a screenplay JSON path from session data
+      const screenplayJsonPath = sessionData?.screenplayJsonPath;
 
       if (screenplayJsonPath) {
         validateYamlMutation.mutate({
@@ -63,7 +73,12 @@ export function YamlImportPanel({
         });
       }
     }
-  }, [debouncedYamlInput]); // Only depend on debounced input to avoid infinite loop
+  }, [
+    debouncedYamlInput,
+    sessionData?.screenplayJsonPath,
+    parseYamlMutation,
+    validateYamlMutation,
+  ]); // Depend on debounced input and screenplay path
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -77,39 +92,70 @@ export function YamlImportPanel({
   };
 
   const handleImport = async () => {
-    if (yamlInput.trim().length > 0) {
+    if (yamlInput.trim().length > 0 && sessionData?.yamlVersionId) {
       try {
-        // Use the centralized yamlUtils converter
-        const assignmentsMap = await yamlUtils.yamlToAssignments(yamlInput);
-        
-        console.log('[YamlImport] Importing assignments:', {
-          assignmentCount: assignmentsMap.size,
-          assignments: Array.from(assignmentsMap.entries()).map(([k, v]) => ({
-            character: k,
-            provider: v.provider,
-            sts_id: v.sts_id,
-            voiceEntry: v.voiceEntry,
-          })),
+        await updateSessionYamlMutation.mutateAsync({
+          sessionId,
+          yamlContent: yamlInput,
+          versionId: sessionData.yamlVersionId,
         });
-        
-        importAssignments(assignmentsMap);
-        // IMPORTANT: Store the YAML content as source of truth
-        setYamlContent(yamlInput);
         onImportSuccess();
       } catch (error) {
-        console.error('Failed to import YAML:', error);
-        // Error handling is already done by parseYamlMutation and displayed in UI
+        // Handle version conflict (409 error)
+        if (error?.response?.status === 409) {
+          setImportWarnings([
+            'The session has been modified by another process.',
+            'Please refresh and try again.',
+          ]);
+        } else {
+          console.error('Failed to import YAML:', error);
+        }
+        // Error handling is also displayed via mutation error state
       }
     }
   };
 
   const isLoading =
-    parseYamlMutation.isPending || validateYamlMutation.isPending;
+    parseYamlMutation.isPending ||
+    validateYamlMutation.isPending ||
+    updateSessionYamlMutation.isPending;
   const parseError = parseYamlMutation.error;
   const validationResult = validateYamlMutation.data;
   const hasErrors = validationResult && !validationResult.is_valid;
   const canImport =
-    yamlInput.trim().length > 0 && !isLoading && !parseError && !hasErrors;
+    yamlInput.trim().length > 0 &&
+    !isLoading &&
+    !parseError &&
+    !hasErrors &&
+    !!sessionData?.yamlVersionId;
+
+  // Handle session loading/error states
+  if (sessionLoading) {
+    return (
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load session data: {sessionError.message}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-6xl space-y-6 p-6">
@@ -125,6 +171,31 @@ export function YamlImportPanel({
           </p>
         </div>
       </div>
+
+      {/* Import Warnings */}
+      {importWarnings.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <div className="space-y-1">
+              {importWarnings.map((warning, idx) => (
+                <p key={idx}>{warning}</p>
+              ))}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Mutation Error */}
+      {updateSessionYamlMutation.error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to import configuration:{' '}
+            {updateSessionYamlMutation.error.message}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="paste" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">

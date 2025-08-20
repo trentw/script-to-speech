@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
-import type { VoiceAssignment } from '@/stores/appStore';
 import type { VoiceEntry } from '@/types';
+import type { VoiceAssignment } from '@/types/voice-casting';
 
 interface ParsedYamlResponse {
   assignments: Record<

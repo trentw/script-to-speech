@@ -1,47 +1,44 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
-import type {
-  VoiceAssignment,
-  VoiceCastingSession,
-} from '@/types/voice-casting';
+import type { VoiceCastingSession } from '@/types/voice-casting';
 
-interface AssignVoiceRequest {
+interface ClearVoiceRequest {
   sessionId: string;
   character: string;
-  assignment: VoiceAssignment;
   versionId: number;
 }
 
-interface AssignVoiceResponse {
+interface ClearVoiceResponse {
   session: VoiceCastingSession;
   success: boolean;
 }
 
 /**
- * Assigns a voice from the library to a character.
+ * Clears voice assignment from a character while preserving metadata.
  *
- * This mutation only modifies voice-related fields (provider, sts_id, provider_config)
- * and preserves all character metadata stored as YAML comments (casting notes, role, etc.).
+ * This mutation calls the dedicated DELETE /voice endpoint which removes only
+ * voice-related fields (provider, sts_id, provider_config) while preserving
+ * all character metadata stored as YAML comments (casting notes, role, line counts).
+ * The backend uses ruamel.yaml with careful comment preservation.
  *
  * @example
- * const assignVoice = useAssignVoice();
- * assignVoice.mutate({
+ * const clearVoice = useClearVoice();
+ * clearVoice.mutate({
  *   sessionId: 'abc-123',
  *   character: 'ALICE',
- *   assignment: { provider: 'openai', sts_id: 'alloy' },
  *   versionId: 1
  * });
  */
-export function useAssignVoice() {
+export function useClearVoice() {
   const queryClient = useQueryClient();
 
-  return useMutation<AssignVoiceResponse, Error, AssignVoiceRequest>({
+  return useMutation<ClearVoiceResponse, Error, ClearVoiceRequest>({
     mutationFn: async (data) => {
-      const response = await apiService.updateCharacterAssignment(
+      // Call the dedicated clear voice endpoint which preserves metadata
+      const response = await apiService.clearCharacterVoice(
         data.sessionId,
         data.character,
-        data.assignment,
         data.versionId
       );
 

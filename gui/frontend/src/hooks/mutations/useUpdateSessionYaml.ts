@@ -18,7 +18,11 @@ interface UpdateSessionYamlResponse {
 export function useUpdateSessionYaml() {
   const queryClient = useQueryClient();
 
-  return useMutation<UpdateSessionYamlResponse, Error, UpdateSessionYamlRequest>({
+  return useMutation<
+    UpdateSessionYamlResponse,
+    Error,
+    UpdateSessionYamlRequest
+  >({
     mutationFn: async (data) => {
       const response = await apiService.updateSessionYaml(
         data.sessionId,
@@ -28,8 +32,13 @@ export function useUpdateSessionYaml() {
 
       if (response.error) {
         // Handle version conflicts (409 status) specifically
-        if (response.error.includes('409') || response.error.includes('version')) {
-          throw new Error('The session has been updated by another user. Please refresh and try again.');
+        if (
+          response.error.includes('409') ||
+          response.error.includes('version')
+        ) {
+          throw new Error(
+            'The session has been updated by another user. Please refresh and try again.'
+          );
         }
         throw new Error(response.error);
       }
@@ -39,13 +48,13 @@ export function useUpdateSessionYaml() {
     onMutate: async (variables) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ['session', variables.sessionId]
+        queryKey: ['session', variables.sessionId],
       });
 
       // Snapshot the previous value
       const previousSession = queryClient.getQueryData<VoiceCastingSession>([
         'session',
-        variables.sessionId
+        variables.sessionId,
       ]);
 
       // Optimistically update the cache
@@ -53,12 +62,12 @@ export function useUpdateSessionYaml() {
         const optimisticSession = produce(previousSession, (draft) => {
           // Update the YAML content optimistically
           draft.yaml_content = variables.yamlContent;
-          
+
           // Update version for optimistic locking
           if (draft.yaml_version_id !== undefined) {
             draft.yaml_version_id = variables.versionId + 1;
           }
-          
+
           draft.updated_at = new Date().toISOString();
         });
 
@@ -81,20 +90,20 @@ export function useUpdateSessionYaml() {
       }
     },
     onSuccess: (data, variables) => {
-      // Update the session cache with the server response
-      queryClient.setQueryData(
-        ['session', variables.sessionId],
-        data.session
-      );
-
-      // Invalidate related queries to ensure consistency
+      // Simply invalidate to trigger a refetch
+      // This ensures the query runs its full transformation logic
       queryClient.invalidateQueries({
-        queryKey: ['session', variables.sessionId]
+        queryKey: ['session', variables.sessionId],
       });
 
       // Also invalidate any parsed YAML queries that might depend on this session
       queryClient.invalidateQueries({
-        queryKey: ['parseYaml']
+        queryKey: ['parseYaml'],
+      });
+
+      // Also invalidate the sessions list to update counts/status
+      queryClient.invalidateQueries({
+        queryKey: ['voice-casting-sessions'],
       });
     },
   });

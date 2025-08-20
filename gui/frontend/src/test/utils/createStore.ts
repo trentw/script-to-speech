@@ -18,7 +18,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     // Layout slice defaults
     viewportSize: 'desktop',
     sidebarExpanded: true,
-    rightPanelExpanded: true,
     activeModal: null,
 
     // Screenplay slice defaults
@@ -59,9 +58,6 @@ export function createStore(initialState?: Partial<AppStore>) {
     setSidebarExpanded: (expanded) => set({ sidebarExpanded: expanded }),
     toggleSidebar: () =>
       set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
-    setRightPanelExpanded: (expanded) => set({ rightPanelExpanded: expanded }),
-    toggleRightPanel: () =>
-      set((state) => ({ rightPanelExpanded: !state.rightPanelExpanded })),
     setActiveModal: (modal) => set({ activeModal: modal }),
     closeModal: () => set({ activeModal: null }),
 

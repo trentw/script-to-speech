@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
-import type { CharacterInfo } from '@/stores/appStore';
+import type { CharacterInfo } from '@/types/voice-casting';
 
 interface ScreenplayCharactersResponse {
   characters: Record<string, CharacterInfo>;

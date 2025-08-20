@@ -1,6 +1,7 @@
 import { useNavigate } from '@tanstack/react-router';
 import { MousePointer, Wand2 } from 'lucide-react';
 import React from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,7 +19,6 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useVoiceCasting } from '@/stores/appStore';
 
 interface CastingMethodSelectorProps {
   sessionId: string;
@@ -32,10 +32,11 @@ export function CastingMethodSelector({
   onOpenChange,
 }: CastingMethodSelectorProps) {
   const navigate = useNavigate();
-  const { getActiveSession, setCastingMethod } = useVoiceCasting();
 
-  const activeSession = getActiveSession();
-  const castingMethod = activeSession?.castingMethod || 'manual';
+  // Local state for casting method selection
+  const [castingMethod, setCastingMethod] = useState<'manual' | 'llm-assisted'>(
+    'manual'
+  );
 
   const handleContinue = () => {
     if (castingMethod === 'llm-assisted') {

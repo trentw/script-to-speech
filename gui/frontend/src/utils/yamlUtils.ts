@@ -1,5 +1,5 @@
 import { apiService } from '@/services/api';
-import type { VoiceAssignment as StoreVoiceAssignment } from '@/stores/appStore';
+import type { VoiceAssignment as StoreVoiceAssignment } from '@/types/voice-casting';
 import type {
   CharacterInfo,
   VoiceAssignment as ApiVoiceAssignment,
@@ -136,7 +136,6 @@ export const yamlUtils = {
     // Reuse transformation logic
     return yamlUtils.transformApiResponseToStore(result.assignments);
   },
-
 
   /**
    * Export screenplay character data to YAML format when no assignments exist

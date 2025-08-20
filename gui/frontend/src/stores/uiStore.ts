@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { useShallow } from 'zustand/react/shallow';
 
 // UI-only store for interface state (no server state)
 interface UIStore {
@@ -18,7 +19,6 @@ interface UIStore {
   // Layout & Modal State
   layout: {
     sidebarExpanded: boolean;
-    rightPanelExpanded: boolean;
     activeModal: 'settings' | 'history' | 'export' | null;
   };
 
@@ -36,8 +36,6 @@ interface UIStore {
   // Actions - Layout
   setSidebarExpanded: (expanded: boolean) => void;
   toggleSidebar: () => void;
-  setRightPanelExpanded: (expanded: boolean) => void;
-  toggleRightPanel: () => void;
   setActiveModal: (modal: 'settings' | 'history' | 'export' | null) => void;
   closeModal: () => void;
 
@@ -57,7 +55,6 @@ const initialState = {
   },
   layout: {
     sidebarExpanded: true,
-    rightPanelExpanded: false,
     activeModal: null,
   },
 };
@@ -105,7 +102,8 @@ const useUIStore = create<UIStore>()(
 
       toggleShowOnlyUnassigned: () =>
         set((state) => {
-          state.voiceCasting.showOnlyUnassigned = !state.voiceCasting.showOnlyUnassigned;
+          state.voiceCasting.showOnlyUnassigned =
+            !state.voiceCasting.showOnlyUnassigned;
         }),
 
       clearAllExpanded: () =>
@@ -127,16 +125,6 @@ const useUIStore = create<UIStore>()(
       toggleSidebar: () =>
         set((state) => {
           state.layout.sidebarExpanded = !state.layout.sidebarExpanded;
-        }),
-
-      setRightPanelExpanded: (expanded) =>
-        set((state) => {
-          state.layout.rightPanelExpanded = expanded;
-        }),
-
-      toggleRightPanel: () =>
-        set((state) => {
-          state.layout.rightPanelExpanded = !state.layout.rightPanelExpanded;
         }),
 
       setActiveModal: (modal) =>
@@ -169,26 +157,35 @@ export default useUIStore;
 
 // Selector hooks for specific UI slices
 export const useVoiceCastingUI = () =>
-  useUIStore((state) => ({
-    ...state.voiceCasting,
-    setSelectedTab: state.setSelectedTab,
-    toggleCharacterExpanded: state.toggleCharacterExpanded,
-    setSearchQuery: state.setSearchQuery,
-    setFilterProvider: state.setFilterProvider,
-    setSortBy: state.setSortBy,
-    toggleSortDirection: state.toggleSortDirection,
-    toggleShowOnlyUnassigned: state.toggleShowOnlyUnassigned,
-    clearAllExpanded: state.clearAllExpanded,
-    expandAllCharacters: state.expandAllCharacters,
-  }));
+  useUIStore(
+    useShallow((state) => ({
+      selectedTab: state.voiceCasting.selectedTab,
+      expandedCharacters: state.voiceCasting.expandedCharacters,
+      searchQuery: state.voiceCasting.searchQuery,
+      filterProvider: state.voiceCasting.filterProvider,
+      sortBy: state.voiceCasting.sortBy,
+      sortDirection: state.voiceCasting.sortDirection,
+      showOnlyUnassigned: state.voiceCasting.showOnlyUnassigned,
+      setSelectedTab: state.setSelectedTab,
+      toggleCharacterExpanded: state.toggleCharacterExpanded,
+      setSearchQuery: state.setSearchQuery,
+      setFilterProvider: state.setFilterProvider,
+      setSortBy: state.setSortBy,
+      toggleSortDirection: state.toggleSortDirection,
+      toggleShowOnlyUnassigned: state.toggleShowOnlyUnassigned,
+      clearAllExpanded: state.clearAllExpanded,
+      expandAllCharacters: state.expandAllCharacters,
+    }))
+  );
 
 export const useLayoutUI = () =>
-  useUIStore((state) => ({
-    ...state.layout,
-    setSidebarExpanded: state.setSidebarExpanded,
-    toggleSidebar: state.toggleSidebar,
-    setRightPanelExpanded: state.setRightPanelExpanded,
-    toggleRightPanel: state.toggleRightPanel,
-    setActiveModal: state.setActiveModal,
-    closeModal: state.closeModal,
-  }));
+  useUIStore(
+    useShallow((state) => ({
+      sidebarExpanded: state.layout.sidebarExpanded,
+      activeModal: state.layout.activeModal,
+      setSidebarExpanded: state.setSidebarExpanded,
+      toggleSidebar: state.toggleSidebar,
+      setActiveModal: state.setActiveModal,
+      closeModal: state.closeModal,
+    }))
+  );

@@ -8,13 +8,9 @@ import { createRoot } from 'react-dom/client';
 
 import App from './App.tsx';
 import { queryClient } from './lib/queryClient';
-import { logFeatureFlags } from './lib/featureFlags';
 
 // Enable Map/Set support for immer (required for Zustand store)
 enableMapSet();
-
-// Log feature flags in development
-logFeatureFlags();
 
 const rootElement = document.getElementById('root');
 
@@ -33,9 +29,9 @@ createRoot(rootElement).render(
       <App />
       {/* React Query DevTools - only in development */}
       {isDevelopment && (
-        <ReactQueryDevtools 
+        <ReactQueryDevtools
           initialIsOpen={false}
-          position="bottom-right"
+          position="bottom"
           buttonPosition="bottom-right"
         />
       )}

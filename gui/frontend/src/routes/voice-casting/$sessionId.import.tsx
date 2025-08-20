@@ -23,6 +23,7 @@ function YamlImportRoute() {
 
   return (
     <YamlImportPanel
+      sessionId={sessionId}
       onBack={handleBack}
       onImportSuccess={handleImportSuccess}
     />

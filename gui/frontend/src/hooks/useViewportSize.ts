@@ -9,12 +9,7 @@ const BREAKPOINTS = {
 };
 
 export function useViewportSize() {
-  const {
-    viewportSize,
-    setViewportSize,
-    setSidebarExpanded,
-    setRightPanelExpanded,
-  } = useLayout();
+  const { viewportSize, setViewportSize, setSidebarExpanded } = useLayout();
 
   useEffect(() => {
     function updateViewportSize() {
@@ -56,23 +51,6 @@ export function useViewportSize() {
             motionTokens.responsiveSidebar.stagger * 1000
           );
         }
-
-        // Auto-hide right panel when switching to mobile
-        if (newSize === 'mobile' && previousSize !== 'mobile') {
-          // Right panel closes first, then layout reorganizes
-          setRightPanelExpanded(false);
-        }
-        // Auto-show right panel when switching to desktop/tablet from mobile
-        else if (
-          (newSize === 'desktop' || newSize === 'tablet') &&
-          previousSize === 'mobile'
-        ) {
-          // Layout reorganizes first, then right panel slides in
-          setTimeout(
-            () => setRightPanelExpanded(true),
-            motionTokens.panelTransition.stagger * 1000
-          );
-        }
       }
     }
 
@@ -84,12 +62,7 @@ export function useViewportSize() {
 
     // Cleanup
     return () => window.removeEventListener('resize', updateViewportSize);
-  }, [
-    viewportSize,
-    setViewportSize,
-    setSidebarExpanded,
-    setRightPanelExpanded,
-  ]);
+  }, [viewportSize, setViewportSize, setSidebarExpanded]);
 
   return {
     viewportSize,

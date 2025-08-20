@@ -6,10 +6,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from script_to_speech.utils.logging import get_screenplay_logger
+
 from ..services.screenplay_service import screenplay_service
 from ..services.voice_casting_service import (
     CharacterInfo,
@@ -108,7 +109,7 @@ async def parse_yaml(request: ParseYamlRequest) -> ParseYamlResponse:
     """Parse YAML configuration and extract voice assignments."""
     try:
         return await voice_casting_service.parse_yaml(
-            request.yaml_content, allow_partial=request.allow_partial
+            request.yaml_content, allow_partial=request.allow_partial or False
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to parse YAML: {str(e)}")
@@ -140,28 +141,32 @@ class GenerateVoiceLibraryPromptRequest(BaseModel):
 
 class UpdateYamlRequest(BaseModel):
     """Request to update session YAML content."""
-    
+
     yaml_content: str = Field(..., description="YAML configuration content")
-    version_id: int = Field(..., description="Current version ID for optimistic locking")
+    version_id: int = Field(
+        ..., description="Current version ID for optimistic locking"
+    )
 
 
 class UpdateYamlResponse(BaseModel):
     """Response from YAML update."""
-    
+
     session: VoiceCastingSession
     warnings: List[str] = Field(default_factory=list)
 
 
 class UpdateAssignmentRequest(BaseModel):
     """Request to update a single character assignment."""
-    
+
     assignment: VoiceAssignment = Field(..., description="Voice assignment data")
-    version_id: int = Field(..., description="Current version ID for optimistic locking")
+    version_id: int = Field(
+        ..., description="Current version ID for optimistic locking"
+    )
 
 
 class UpdateAssignmentResponse(BaseModel):
     """Response from assignment update."""
-    
+
     session: VoiceCastingSession
     success: bool = True
 
@@ -353,6 +358,30 @@ async def get_session(session_id: str) -> VoiceCastingSession:
     return session
 
 
+class RecentSessionsResponse(BaseModel):
+    """Response containing recent voice casting sessions."""
+
+    sessions: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of recent sessions with progress information",
+    )
+
+
+@router.get("/sessions", response_model=RecentSessionsResponse)
+async def get_recent_sessions(limit: int = 5) -> RecentSessionsResponse:
+    """
+    Get recent voice casting sessions.
+
+    Args:
+        limit: Maximum number of sessions to return (default: 5)
+
+    Returns:
+        RecentSessionsResponse with list of recent sessions
+    """
+    sessions = await voice_casting_service.get_recent_sessions(limit)
+    return RecentSessionsResponse(sessions=sessions)
+
+
 @router.post(
     "/session/{session_id}/screenplay-source", response_model=VoiceCastingSession
 )
@@ -447,40 +476,34 @@ async def upload_screenplay_source(
 
 @router.put("/session/{session_id}/yaml", response_model=UpdateYamlResponse)
 async def update_session_yaml(
-    session_id: str,
-    request: UpdateYamlRequest
+    session_id: str, request: UpdateYamlRequest
 ) -> UpdateYamlResponse:
     """
     Save YAML content for a voice casting session.
     Returns warnings but doesn't block the save.
-    
+
     Args:
         session_id: The session UUID
         request: YAML content and version information
-        
+
     Returns:
         UpdateYamlResponse with session and validation warnings
-        
+
     Raises:
         HTTPException: If session not found, version conflict, or invalid YAML
     """
     try:
         session, warnings = await voice_casting_service.update_yaml_content(
-            session_id,
-            request.yaml_content,
-            request.version_id
+            session_id, request.yaml_content, request.version_id
         )
-        
+
         # Export to filesystem for CLI compatibility
         path = await voice_casting_service.export_to_filesystem(session_id)
-        
+
         logger.info(f"Updated and exported YAML for session {session_id} to {path}")
-        
-        return UpdateYamlResponse(
-            session=session,
-            warnings=warnings
-        )
-        
+
+        return UpdateYamlResponse(session=session, warnings=warnings)
+
     except ValueError as e:
         error_msg = str(e)
         if "modified by another source" in error_msg:
@@ -490,49 +513,44 @@ async def update_session_yaml(
         else:
             raise HTTPException(status_code=404, detail=error_msg)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to update YAML: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to update YAML: {str(e)}")
 
 
-@router.put("/session/{session_id}/assignment/{character}", response_model=UpdateAssignmentResponse)
+@router.put(
+    "/session/{session_id}/assignment/{character}",
+    response_model=UpdateAssignmentResponse,
+)
 async def update_character_assignment(
-    session_id: str,
-    character: str,
-    request: UpdateAssignmentRequest
+    session_id: str, character: str, request: UpdateAssignmentRequest
 ) -> UpdateAssignmentResponse:
     """
     Update a single character's voice assignment while preserving YAML structure and comments.
-    
+
     Args:
         session_id: The session UUID
         character: Character name to update
         request: Assignment data and version information
-        
+
     Returns:
         UpdateAssignmentResponse with updated session
-        
+
     Raises:
         HTTPException: If session not found, version conflict, or update fails
     """
     try:
         session = await voice_casting_service.update_character_assignment(
-            session_id,
-            character,
-            request.assignment.dict(),
-            request.version_id
+            session_id, character, request.assignment.dict(), request.version_id
         )
-        
+
         # Export to filesystem for CLI compatibility
         path = await voice_casting_service.export_to_filesystem(session_id)
-        
-        logger.info(f"Updated assignment for {character} in session {session_id}, exported to {path}")
-        
-        return UpdateAssignmentResponse(
-            session=session,
-            success=True
+
+        logger.info(
+            f"Updated assignment for {character} in session {session_id}, exported to {path}"
         )
-        
+
+        return UpdateAssignmentResponse(session=session, success=True)
+
     except ValueError as e:
         error_msg = str(e)
         if "modified by another source" in error_msg:
@@ -545,3 +563,55 @@ async def update_character_assignment(
         raise HTTPException(
             status_code=500, detail=f"Failed to update assignment: {str(e)}"
         )
+
+
+@router.delete(
+    "/session/{session_id}/assignment/{character}/voice",
+    response_model=UpdateAssignmentResponse,
+)
+async def clear_character_voice(
+    session_id: str,
+    character: str,
+    version_id: int = Query(
+        ..., description="Current YAML version ID for optimistic locking"
+    ),
+) -> UpdateAssignmentResponse:
+    """
+    Clear voice assignment from a character while preserving metadata (YAML comments).
+    Only removes voice-related fields but keeps all metadata stored as YAML comments.
+
+    Args:
+        session_id: The session UUID
+        character: Character name to clear voice from
+        version_id: Current version ID for optimistic locking
+
+    Returns:
+        UpdateAssignmentResponse with updated session
+
+    Raises:
+        HTTPException: If session not found, version conflict, or clear fails
+    """
+    try:
+        session = await voice_casting_service.clear_character_voice(
+            session_id, character, version_id
+        )
+
+        # Export to filesystem for CLI compatibility
+        path = await voice_casting_service.export_to_filesystem(session_id)
+
+        logger.info(
+            f"Cleared voice for {character} in session {session_id}, exported to {path}"
+        )
+
+        return UpdateAssignmentResponse(session=session, success=True)
+
+    except ValueError as e:
+        error_msg = str(e)
+        if "modified by another source" in error_msg:
+            raise HTTPException(status_code=409, detail=error_msg)
+        elif "not found" in error_msg.lower():
+            raise HTTPException(status_code=404, detail=error_msg)
+        else:
+            raise HTTPException(status_code=400, detail=error_msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear voice: {str(e)}")

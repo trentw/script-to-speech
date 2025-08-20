@@ -310,9 +310,9 @@ class ApiService {
       '/voice-casting/parse-yaml',
       {
         method: 'POST',
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           yaml_content: params.yamlContent,
-          allow_partial: params.allowPartial 
+          allow_partial: params.allowPartial,
         }),
       }
     );
@@ -447,17 +447,22 @@ class ApiService {
     sessionId: string,
     yamlContent: string,
     versionId: number
-  ): Promise<ApiResponse<{ session: import('../types/voice-casting').VoiceCastingSession; warnings: string[] }>> {
-    return this.request<{ session: import('../types/voice-casting').VoiceCastingSession; warnings: string[] }>(
-      `/voice-casting/session/${sessionId}/yaml`,
-      {
-        method: 'PUT',
-        body: JSON.stringify({
-          yaml_content: yamlContent,
-          version_id: versionId,
-        }),
-      }
-    );
+  ): Promise<
+    ApiResponse<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      warnings: string[];
+    }>
+  > {
+    return this.request<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      warnings: string[];
+    }>(`/voice-casting/session/${sessionId}/yaml`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        yaml_content: yamlContent,
+        version_id: versionId,
+      }),
+    });
   }
 
   async updateCharacterAssignment(
@@ -465,8 +470,16 @@ class ApiService {
     character: string,
     assignment: import('../types/voice-casting').VoiceAssignment,
     versionId: number
-  ): Promise<ApiResponse<{ session: import('../types/voice-casting').VoiceCastingSession; success: boolean }>> {
-    return this.request<{ session: import('../types/voice-casting').VoiceCastingSession; success: boolean }>(
+  ): Promise<
+    ApiResponse<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      success: boolean;
+    }>
+  > {
+    return this.request<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      success: boolean;
+    }>(
       `/voice-casting/session/${sessionId}/assignment/${encodeURIComponent(character)}`,
       {
         method: 'PUT',
@@ -476,6 +489,53 @@ class ApiService {
         }),
       }
     );
+  }
+
+  async clearCharacterVoice(
+    sessionId: string,
+    character: string,
+    versionId: number
+  ): Promise<
+    ApiResponse<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      success: boolean;
+    }>
+  > {
+    return this.request<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      success: boolean;
+    }>(
+      `/voice-casting/session/${sessionId}/assignment/${encodeURIComponent(character)}/voice?version_id=${versionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  }
+
+  async getRecentSessions(limit: number = 5): Promise<
+    ApiResponse<{
+      sessions: Array<{
+        session_id: string;
+        screenplay_name: string;
+        status: 'in-progress' | 'completed';
+        assigned_count: number;
+        total_count: number;
+        updated_at: string;
+        created_at: string;
+      }>;
+    }>
+  > {
+    return this.request<{
+      sessions: Array<{
+        session_id: string;
+        screenplay_name: string;
+        status: 'in-progress' | 'completed';
+        assigned_count: number;
+        total_count: number;
+        updated_at: string;
+        created_at: string;
+      }>;
+    }>(`/voice-casting/sessions?limit=${limit}`);
   }
 
   // Utility methods

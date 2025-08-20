@@ -29,9 +29,10 @@ import {
 } from '@/components/voice-casting';
 import { useGenerateVoiceLibraryPrompt } from '@/hooks/mutations/useGenerateVoiceLibraryPrompt';
 import { useParseYaml } from '@/hooks/mutations/useParseYaml';
+import { useUpdateSessionYaml } from '@/hooks/mutations/useUpdateSessionYaml';
 import { useProviders } from '@/hooks/queries';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { apiService } from '@/services/api';
-import { useVoiceCasting } from '@/stores/appStore';
 import { yamlUtils } from '@/utils/yamlUtils';
 
 export const Route = createFileRoute('/voice-casting/$sessionId/library')({
@@ -50,9 +51,6 @@ function VoiceLibraryCasting() {
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  const { getActiveSession, importAssignments, setYamlContent } =
-    useVoiceCasting();
 
   // Fetch session data
   const {
@@ -73,6 +71,8 @@ function VoiceLibraryCasting() {
   const { data: providers } = useProviders();
   const generatePromptMutation = useGenerateVoiceLibraryPrompt();
   const parseYamlMutation = useParseYaml();
+  const updateSessionYamlMutation = useUpdateSessionYaml();
+  const { data: sessionData } = useSessionAssignments(sessionId);
 
   // Initialize selected providers when providers load
   useEffect(() => {
@@ -97,8 +97,7 @@ function VoiceLibraryCasting() {
 
   // Function to export current assignments or screenplay characters to YAML format
   const exportToYaml = useCallback(async (): Promise<string> => {
-    const activeSession = getActiveSession();
-    const assignments = activeSession?.assignments || new Map();
+    const assignments = sessionData?.assignments || new Map();
 
     // If we have assignments, use them with character info
     if (assignments && assignments.size > 0) {
@@ -128,7 +127,7 @@ function VoiceLibraryCasting() {
     }
 
     return await yamlUtils.charactersToYaml(session.screenplay_json_path);
-  }, [getActiveSession, session?.screenplay_json_path]);
+  }, [sessionData, session?.screenplay_json_path]);
 
   // Step 1: Generate prompt
   const handleGeneratePrompt = async () => {
@@ -290,11 +289,15 @@ function VoiceLibraryCasting() {
 
     try {
       // Use the centralized yamlUtils converter
-      const newAssignments = await yamlUtils.yamlToAssignments(yamlResponse);
+      // No longer need to store assignments locally as they're managed server-side
+      await yamlUtils.yamlToAssignments(yamlResponse);
 
-      // Import the assignments to the store
-      importAssignments(newAssignments);
-      setYamlContent(yamlResponse);
+      // Update the session with the new YAML content
+      await updateSessionYamlMutation.mutateAsync({
+        sessionId: sessionId,
+        yamlContent: yamlResponse,
+        versionId: sessionData?.yamlVersionId || 0,
+      });
 
       setShowSuccess(true);
       setTimeout(() => {

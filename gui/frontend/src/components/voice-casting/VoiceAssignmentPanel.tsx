@@ -11,9 +11,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useAssignVoice } from '@/hooks/mutations/useAssignVoice';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
-import { useVoiceCasting } from '@/stores/appStore';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
+import { useVoiceCastingUI } from '@/stores/uiStore';
 import type { VoiceEntry } from '@/types';
+import type { VoiceAssignment } from '@/types/voice-casting';
 import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
 
 import { CustomVoiceCard } from './CustomVoiceCard';
@@ -36,6 +39,7 @@ interface CharacterData {
 }
 
 interface VoiceAssignmentPanelProps {
+  sessionId: string;
   characterName: string;
   character: CharacterData;
   onBack: () => void;
@@ -43,6 +47,7 @@ interface VoiceAssignmentPanelProps {
 }
 
 export function VoiceAssignmentPanel({
+  sessionId,
   characterName,
   character,
   onBack,
@@ -55,22 +60,25 @@ export function VoiceAssignmentPanel({
     error: providersError,
   } = useProviders();
 
-  const { setCharacterVoice, getActiveSession } = useVoiceCasting();
-  const activeSession = getActiveSession();
+  // Fetch session data using React Query
+  const {
+    data: sessionData,
+    isLoading: sessionLoading,
+    error: sessionError,
+  } = useSessionAssignments(sessionId);
 
-  // Safely access session data with fallbacks
-  const screenplayData = activeSession?.screenplayData;
+  // Voice assignment mutation
+  const assignVoiceMutation = useAssignVoice();
 
-  // Memoize assignments to prevent dependency issues
-  const assignments = useMemo(
-    () => activeSession?.assignments || new Map(),
-    [activeSession?.assignments]
-  );
-  const currentAssignment = assignments.get(characterName);
+  // UI state for filters (stored in UI store)
+  const { filterProvider, setFilterProvider } = useVoiceCastingUI();
+
+  // Get current assignment from session data
+  const currentAssignment = sessionData?.assignments?.get(characterName);
 
   // Initialize state with current assignment or stable provider default
   const [selectedProvider, setSelectedProvider] = useState<string>(
-    currentAssignment?.provider || 'openai'
+    currentAssignment?.provider || filterProvider || 'openai'
   );
 
   const [customVoiceConfig, setCustomVoiceConfig] = useState<
@@ -90,6 +98,11 @@ export function VoiceAssignmentPanel({
     }
   }, [providers, currentAssignment?.provider]);
 
+  // Update UI store filter when provider changes
+  useEffect(() => {
+    setFilterProvider(selectedProvider);
+  }, [selectedProvider, setFilterProvider]);
+
   // Load voices for the selected provider
   const {
     data: providerVoices,
@@ -102,42 +115,109 @@ export function VoiceAssignmentPanel({
 
   // Calculate voice usage map
   const voiceUsageMap = useMemo(() => {
-    if (!activeSession) return new Map();
+    if (!sessionData) return new Map();
     return calculateVoiceUsage(
-      assignments,
-      screenplayData?.characters,
+      sessionData.assignments || new Map(),
+      sessionData.characters || new Map(),
       characterName
     );
-  }, [activeSession, assignments, screenplayData?.characters, characterName]);
+  }, [sessionData, characterName]);
 
-  // Guard against no active session AFTER all hooks
-  if (!activeSession) {
+  // Guard against loading and error states AFTER all hooks
+  if (sessionLoading) {
     return (
-      <div className="space-y-4">
-        <Alert>
-          <AlertDescription>
-            No active session. Please select or create a session first.
-          </AlertDescription>
-        </Alert>
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <div className="flex h-64 items-center justify-center">
+          <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+        </div>
       </div>
     );
   }
 
-  const handleLibraryVoiceAssign = (voice: VoiceEntry) => {
-    setCharacterVoice(characterName, {
-      sts_id: voice.sts_id,
+  if (sessionError) {
+    return (
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load session data: {sessionError.message}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+    );
+  }
+
+  if (!sessionData) {
+    return (
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        <Alert>
+          <AlertDescription>
+            No session data available. Please select or create a session first.
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+    );
+  }
+
+  const handleLibraryVoiceAssign = async (voice: VoiceEntry) => {
+    if (!sessionData.yamlVersionId) {
+      console.error('Cannot assign voice: missing version ID');
+      return;
+    }
+
+    const assignment: VoiceAssignment = {
+      character: characterName,
       provider: selectedProvider,
-      voiceEntry: voice,
-    });
-    onAssign();
+      sts_id: voice.sts_id,
+    };
+
+    try {
+      await assignVoiceMutation.mutateAsync({
+        sessionId,
+        character: characterName,
+        assignment,
+        versionId: sessionData.yamlVersionId,
+      });
+      onAssign();
+    } catch (error) {
+      console.error('Failed to assign voice:', error);
+      // Error handling is managed by the mutation
+    }
   };
 
-  const handleCustomVoiceAssign = (config: Record<string, unknown>) => {
-    setCharacterVoice(characterName, {
+  const handleCustomVoiceAssign = async (config: Record<string, unknown>) => {
+    if (!sessionData.yamlVersionId) {
+      console.error('Cannot assign voice: missing version ID');
+      return;
+    }
+
+    const assignment: VoiceAssignment = {
+      character: characterName,
       provider: selectedProvider,
+      sts_id: '', // Empty string for custom voices as per backend model
       provider_config: config,
-    });
-    onAssign();
+    };
+
+    try {
+      await assignVoiceMutation.mutateAsync({
+        sessionId,
+        character: characterName,
+        assignment,
+        versionId: sessionData.yamlVersionId,
+      });
+      onAssign();
+    } catch (error) {
+      console.error('Failed to assign custom voice:', error);
+      // Error handling is managed by the mutation
+    }
   };
 
   const isLoading = providersLoading || voicesLoading;
@@ -184,6 +264,16 @@ export function VoiceAssignmentPanel({
               </p>
             )}
           </div>
+        )}
+
+        {/* Assignment Mutation Error */}
+        {assignVoiceMutation.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Failed to assign voice: {assignVoiceMutation.error.message}
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* Provider Selection */}

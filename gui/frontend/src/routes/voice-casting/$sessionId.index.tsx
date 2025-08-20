@@ -12,7 +12,7 @@ import {
   Loader2,
   Upload,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { RouteError } from '@/components/errors';
@@ -22,9 +22,9 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CharacterCard } from '@/components/voice-casting';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useVoiceCastingNavigation } from '@/hooks/useVoiceCastingNavigation';
 import { apiService } from '@/services/api';
-import { type CharacterInfo, type VoiceAssignment, useVoiceCasting } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 import { yamlUtils } from '@/utils/yamlUtils';
 
@@ -78,102 +78,29 @@ function VoiceCastingSessionIndex() {
     error,
   } = useScreenplayCharacters(session?.screenplay_json_path);
 
-  // Connect to voice casting store
-  const { getActiveSession, selectOrCreateSession, updateVersionId } = useVoiceCasting();
+  // Fetch session assignments using React Query
+  const {
+    data: sessionData,
+    isLoading: sessionDataLoading,
+    error: sessionDataError,
+  } = useSessionAssignments(sessionId);
 
   // Data loss prevention state - DISABLED FOR DEBUGGING
   // const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // Effect 1: Initialize session and parse YAML (one-time setup when session loads)
-  useEffect(() => {
-    const initializeSession = async () => {
-      if (!session) return;
-
-      // Prepare core session data that's always available with session
-      const coreSessionData = {
-        screenplayName: session.screenplay_name,
-        screenplayJsonPath: session.screenplay_json_path,
-      };
-
-      // If session has YAML content, parse it to get assignments (only when session changes)
-      if (session.yaml_content && session.yaml_content.trim() !== '') {
-        try {
-          console.log('[Session Load] Parsing initial YAML:', {
-            yamlLength: session.yaml_content.length,
-            yamlPreview: session.yaml_content.substring(0, 200),
-          });
-          
-          const assignmentsMap = await yamlUtils.yamlToAssignments(
-            session.yaml_content, 
-            { allowPartial: true }
-          );
-          
-          console.log('[Session Load] Parsed assignments:', {
-            assignmentCount: assignmentsMap.size,
-            assignments: Array.from(assignmentsMap.entries()).map(([k, v]) => ({
-              character: k,
-              provider: v.provider,
-              sts_id: v.sts_id,
-            })),
-          });
-          
-          // Update session with parsed assignments and version ID
-          selectOrCreateSession(session.session_id, {
-            ...coreSessionData,
-            assignments: assignmentsMap,
-            yamlContent: session.yaml_content,
-            yaml_version_id: session.yaml_version_id || 1,
-          });
-        } catch (error) {
-          console.warn('Failed to parse YAML content:', error);
-          // Continue without assignments if YAML parsing fails
-          selectOrCreateSession(session.session_id, {
-            ...coreSessionData,
-            yaml_version_id: session.yaml_version_id || 1,
-          });
-        }
-      } else {
-        // No YAML content, create session with just core data
-        selectOrCreateSession(session.session_id, {
-          ...coreSessionData,
-          yaml_version_id: session.yaml_version_id || 1,
-        });
-      }
-    };
-
-    initializeSession();
-  }, [session, selectOrCreateSession]); // Only depends on session, not charactersData
-
-  // Effect 2: Update character data when it loads (separate from YAML parsing)
-  useEffect(() => {
-    // Need both character data and a valid session ID to proceed
-    if (!charactersData || !session?.session_id) return;
-
-    // Convert character data to Map format expected by store
-    const charactersMap = new Map<string, CharacterInfo>();
-    Object.entries(charactersData.characters).forEach(([name, info]) => {
-      charactersMap.set(name, info);
-    });
-
-    // Only update the character data, not assignments or YAML
-    selectOrCreateSession(session.session_id, {
-      screenplayData: { characters: charactersMap },
-    });
-  }, [charactersData, session?.session_id, selectOrCreateSession]); // Only depends on character data
 
   // Check for recovery data after session loads - DISABLED FOR DEBUGGING
   // useEffect(() => {
   //   // Only check for recovery after session data and characters have loaded
   //   if (!session || !charactersData) return;
-  //   
+  //
   //   const recoveryKey = `yaml_recovery_${sessionId}`;
   //   const recoveryData = localStorage.getItem(recoveryKey);
-  //   
+  //
   //   if (recoveryData) {
   //     try {
   //       const data = JSON.parse(recoveryData);
   //       const age = Date.now() - data.timestamp;
-  //       
+  //
   //       // Only offer recovery for data less than 1 hour old
   //       if (age < 3600000) { // 1 hour = 3600000ms
   //         const timeStr = new Date(data.timestamp).toLocaleTimeString();
@@ -181,7 +108,7 @@ function VoiceCastingSessionIndex() {
   //           `Found unsaved work from ${timeStr}. Would you like to recover it?\n\n` +
   //           'This will replace any current assignments with your unsaved changes.'
   //         );
-  //         
+  //
   //         if (shouldRecover && data.assignments) {
   //           // Restore assignments from recovery data
   //           const recoveredAssignments = new Map(data.assignments);
@@ -208,15 +135,11 @@ function VoiceCastingSessionIndex() {
   //       localStorage.removeItem(recoveryKey);
   //     }
   //   }
-  // }, [session, charactersData, sessionId, getActiveSession, selectOrCreateSession]);
+  // }, [session, charactersData, sessionId]);
 
-  // Get active session at component level for proper reactivity
-  const activeSession = getActiveSession();
-  const currentAssignments = activeSession?.assignments;
-  
   // // Keep track of the initial assignments to detect changes - DISABLED FOR DEBUGGING
   // const [initialAssignments, setInitialAssignments] = useState<Map<string, VoiceAssignment> | null>(null);
-  
+
   // // Set initial assignments when session first loads
   // useEffect(() => {
   //   if (session && currentAssignments && !initialAssignments) {
@@ -229,15 +152,15 @@ function VoiceCastingSessionIndex() {
   // // Detect actual changes to assignments
   // useEffect(() => {
   //   if (!initialAssignments || !currentAssignments) return;
-  //   
+  //
   //   // Compare current assignments with initial state
-  //   const hasChanges = 
+  //   const hasChanges =
   //     currentAssignments.size !== initialAssignments.size ||
   //     Array.from(currentAssignments.entries()).some(([character, assignment]) => {
   //       const initial = initialAssignments.get(character);
   //       return !initial || JSON.stringify(assignment) !== JSON.stringify(initial);
   //     });
-  //   
+  //
   //   setHasUnsavedChanges(hasChanges);
   // }, [currentAssignments, initialAssignments]);
 
@@ -264,7 +187,7 @@ function VoiceCastingSessionIndex() {
   //       return 'You have unsaved changes. Click Export to save.';
   //     }
   //   };
-  //   
+  //
   //   window.addEventListener('beforeunload', handleBeforeUnload);
   //   return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   // }, [hasUnsavedChanges]);
@@ -272,13 +195,15 @@ function VoiceCastingSessionIndex() {
   // Transform character data for display
   const characters = useMemo(() => {
     if (!charactersData) return [];
-    if (!activeSession) return [];
+    if (!sessionData) return [];
 
-    const assignments = activeSession.assignments;
+    // Defensive check for assignments - it should always be a Map from useSessionAssignments
+    // but during cache updates it might be temporarily undefined
+    const assignments = sessionData.assignments || new Map();
 
     return Object.entries(charactersData.characters).map(([name, char]) => {
       const assignment = assignments.get(name);
-      const characterInfo: CharacterInfo = {
+      const characterInfo = {
         name,
         displayName: name === 'default' ? 'Narrator' : name,
         lineCount: char.lineCount,
@@ -289,17 +214,20 @@ function VoiceCastingSessionIndex() {
         castingNotes: assignment?.castingNotes,
         role: assignment?.role,
         // Only mark as assigned if there's actual voice data (not just empty provider)
-        assignedVoice: assignment && assignment.provider && (assignment.sts_id || assignment.provider_config)
-          ? {
-              provider: assignment.provider,
-              voiceName: assignment.voiceEntry?.sts_id || assignment.sts_id,
-              voiceId: assignment.sts_id,
-            }
-          : null,
+        assignedVoice:
+          assignment &&
+          assignment.provider &&
+          (assignment.sts_id || assignment.provider_config)
+            ? {
+                provider: assignment.provider,
+                voiceName: assignment.voiceEntry?.sts_id || assignment.sts_id,
+                voiceId: assignment.sts_id,
+              }
+            : null,
       };
       return characterInfo;
     });
-  }, [charactersData, activeSession]);
+  }, [charactersData, sessionData]);
 
   // Calculate assignment progress
   const assignedCount = characters.filter((char) => char.assignedVoice).length;
@@ -320,9 +248,7 @@ function VoiceCastingSessionIndex() {
   };
 
   const handleExportYaml = async () => {
-    const activeSession = getActiveSession();
-    
-    if (!activeSession || !session) {
+    if (!sessionData || !session) {
       toast.error('No active session found');
       return;
     }
@@ -333,72 +259,69 @@ function VoiceCastingSessionIndex() {
     }
 
     setIsExporting(true);
-    
+
     try {
       // Use the stored YAML content as source of truth
       // If no YAML content exists (shouldn't happen), fall back to generating
-      let yamlContent = activeSession.yamlContent;
-      
+      let yamlContent = sessionData.yamlContent;
+
       if (!yamlContent || yamlContent.trim() === '') {
         // This should rarely happen since backend generates initial YAML
         // But if it does, we can generate a basic structure
         toast.warning('No stored YAML found, generating from assignments');
         yamlContent = await yamlUtils.assignmentsToYaml(
-          activeSession.assignments,
+          sessionData.assignments || new Map(),
           characters
         );
       }
-      
+
       // Save to backend with version control
-      const versionId = activeSession.yaml_version_id || 1;
+      const versionId = sessionData.yamlVersionId || 1;
       const response = await apiService.updateSessionYaml(
         sessionId,
         yamlContent,
         versionId
       );
-      
+
       if (response.error) {
         // Check for version conflict errors
-        if (response.error.includes('409') || 
-            response.error.includes('modified') || 
-            response.error.includes('concurrent')) {
-          toast.error('Session was modified by another source. Please refresh and try again.');
+        if (
+          response.error.includes('409') ||
+          response.error.includes('modified') ||
+          response.error.includes('concurrent')
+        ) {
+          toast.error(
+            'Session was modified by another source. Please refresh and try again.'
+          );
           return;
         }
         throw new Error(response.error);
       }
-      
+
       // Show validation warnings if present (non-blocking)
       if (response.data?.warnings && response.data.warnings.length > 0) {
         const warningMessages = response.data.warnings.slice(0, 3); // Limit to first 3 warnings
-        toast.warning(`Export completed with warnings:\n${warningMessages.join('\n')}`, {
-          duration: 6000,
-        });
+        toast.warning(
+          `Export completed with warnings:\n${warningMessages.join('\n')}`,
+          {
+            duration: 6000,
+          }
+        );
       } else {
         toast.success('Configuration exported successfully!');
       }
-      
+
       // Download the YAML file
       const filename = `${session.screenplay_name}_voice_config.yaml`;
       yamlUtils.downloadYamlFile(yamlContent, filename);
-      
-      // Update local version ID after successful save
-      if (response.data?.session.yaml_version_id) {
-        updateVersionId(response.data.session.yaml_version_id);
-      }
-      
+
       // Clear unsaved changes flag and recovery data on successful export - DISABLED FOR DEBUGGING
       // setHasUnsavedChanges(false);
       // localStorage.removeItem(`yaml_recovery_${sessionId}`);
-      
-      // // Update initial assignments to current state after successful export
-      // if (currentAssignments) {
-      //   setInitialAssignments(new Map(currentAssignments));
-      // }
-      
-    } catch (error: any) {
+    } catch (error) {
       console.error('Export failed:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Export failed';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Export failed';
       toast.error(`Export failed: ${errorMessage}`);
     } finally {
       setIsExporting(false);
@@ -418,7 +341,7 @@ function VoiceCastingSessionIndex() {
   };
 
   // Loading state
-  if (isLoading || sessionLoading) {
+  if (isLoading || sessionLoading || sessionDataLoading) {
     return (
       <div className="container mx-auto max-w-6xl space-y-6 p-6">
         <div className="flex h-64 items-center justify-center">
@@ -434,14 +357,16 @@ function VoiceCastingSessionIndex() {
   }
 
   // Error state
-  if (error || sessionError) {
+  if (error || sessionError || sessionDataError) {
     return (
       <div className="container mx-auto max-w-6xl space-y-6 p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Failed to load voice casting session:{' '}
-            {error?.message || sessionError?.message}
+            {error?.message ||
+              sessionError?.message ||
+              sessionDataError?.message}
           </AlertDescription>
         </Alert>
         <Button variant="outline" onClick={handleBack}>
@@ -482,8 +407,8 @@ function VoiceCastingSessionIndex() {
             <Eye className="mr-2 h-4 w-4" />
             Preview YAML
           </Button>
-          <Button 
-            onClick={handleExportYaml} 
+          <Button
+            onClick={handleExportYaml}
             disabled={assignedCount === 0 || isExporting}
           >
             {isExporting ? (
@@ -512,7 +437,7 @@ function VoiceCastingSessionIndex() {
           </Badge>
         </div>
         <Progress value={progressPercentage} className="h-2" />
-        
+
         {/* Unsaved changes indicator - DISABLED FOR DEBUGGING */}
         {/* {hasUnsavedChanges && (
           <div className="flex items-center gap-2 text-amber-600 text-sm">
@@ -568,6 +493,7 @@ function VoiceCastingSessionIndex() {
             <CharacterCard
               key={character.name}
               character={character}
+              sessionId={sessionId}
               onAssignVoice={() => handleAssignVoice(character.name)}
             />
           ))}

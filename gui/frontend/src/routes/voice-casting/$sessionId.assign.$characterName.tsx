@@ -7,9 +7,9 @@ import { RouteError } from '@/components/errors';
 import { Button } from '@/components/ui/button';
 import { VoiceAssignmentPanel } from '@/components/voice-casting';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
+import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useVoiceCastingNavigation } from '@/hooks/useVoiceCastingNavigation';
 import { apiService } from '@/services/api';
-import { useVoiceCasting } from '@/stores/appStore';
 
 export const Route = createFileRoute(
   '/voice-casting/$sessionId/assign/$characterName'
@@ -46,8 +46,8 @@ function VoiceAssignmentRoute() {
     error,
   } = useScreenplayCharacters(session?.screenplay_json_path);
 
-  // Connect to voice casting store
-  const { getActiveSession } = useVoiceCasting();
+  // Get session assignments
+  const { data: sessionData } = useSessionAssignments(sessionId);
 
   // Transform character data for display
   const character = useMemo(() => {
@@ -56,8 +56,7 @@ function VoiceAssignmentRoute() {
     const characterInfo = charactersData.characters[characterName];
     if (!characterInfo) return null;
 
-    const activeSession = getActiveSession();
-    const assignments = activeSession?.assignments || new Map();
+    const assignments = sessionData?.assignments || new Map();
     const assignment = assignments.get(characterName);
 
     return {
@@ -77,7 +76,7 @@ function VoiceAssignmentRoute() {
           }
         : null,
     };
-  }, [charactersData, characterName, getActiveSession]);
+  }, [charactersData, characterName, sessionData]);
 
   const handleBack = () => {
     navigateToSession(sessionId);
@@ -122,6 +121,7 @@ function VoiceAssignmentRoute() {
 
   return (
     <VoiceAssignmentPanel
+      sessionId={sessionId}
       characterName={characterName}
       character={character}
       onBack={handleBack}

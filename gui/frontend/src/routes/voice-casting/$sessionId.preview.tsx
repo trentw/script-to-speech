@@ -17,5 +17,5 @@ function YamlPreviewRoute() {
     navigateToSession(sessionId);
   };
 
-  return <YamlPreview onBack={handleBack} />;
+  return <YamlPreview sessionId={sessionId} onBack={handleBack} />;
 }

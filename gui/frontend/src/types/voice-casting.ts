@@ -1,8 +1,12 @@
 export interface CharacterInfo {
   name: string;
-  line_count: number;
-  total_characters: number;
-  longest_dialogue: number;
+  lineCount: number;
+  firstAppearance?: number;
+  totalCharacters?: number;
+  longestDialogue?: number;
+  isNarrator?: boolean;
+  description?: string;
+  notes?: string;
   casting_notes?: string;
   role?: string;
 }

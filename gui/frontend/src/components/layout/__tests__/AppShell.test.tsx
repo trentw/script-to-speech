@@ -1,43 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useLayout } from '@/stores/appStore';
 import { render, screen } from '@/test/utils/render';
 
 import { AppShell } from '../AppShell';
 
-// Mock the store
-vi.mock('@/stores/appStore', () => ({
-  useLayout: vi.fn(() => ({
-    rightPanelExpanded: false,
-  })),
-}));
-
-// Mock framer-motion to avoid animation complexities in tests
-vi.mock('framer-motion', () => ({
-  motion: {
-    aside: ({
-      children,
-      className,
-      style,
-    }: {
-      children: React.ReactNode;
-      className?: string;
-      style?: React.CSSProperties;
-    }) => (
-      <aside className={className} style={style} data-testid="motion-aside">
-        {children}
-      </aside>
-    ),
-  },
-}));
-
 describe('AppShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset store mock to default state
-    vi.mocked(useLayout).mockReturnValue({
-      rightPanelExpanded: false,
-    });
   });
 
   describe('Basic Rendering', () => {
@@ -168,38 +137,25 @@ describe('AppShell', () => {
   });
 
   describe('Panel Behavior', () => {
-    it('should render panel with initial width based on rightPanelExpanded', () => {
-      // Arrange
-      vi.mocked(useLayout).mockReturnValue({
-        rightPanelExpanded: true,
-      });
-
-      // Act
+    it('should render panel when provided', () => {
+      // Arrange & Act
       const { container } = render(
         <AppShell main={<div>Main</div>} panel={<div>Panel Content</div>} />
       );
 
       // Assert
-      const panel = container.querySelector('[data-testid="motion-aside"]');
+      const panel = container.querySelector('.grid-area-panel');
       expect(panel).toBeInTheDocument();
-      // Initial style should be set by framer-motion
-      expect(panel).toHaveStyle({ overflow: 'hidden' });
+      expect(panel).toHaveTextContent('Panel Content');
     });
 
-    it('should handle panel collapse state', () => {
-      // Arrange
-      vi.mocked(useLayout).mockReturnValue({
-        rightPanelExpanded: false,
-      });
-
-      // Act
-      const { container } = render(
-        <AppShell main={<div>Main</div>} panel={<div>Panel Content</div>} />
-      );
+    it('should not render panel when not provided', () => {
+      // Arrange & Act
+      const { container } = render(<AppShell main={<div>Main</div>} />);
 
       // Assert
-      const panel = container.querySelector('[data-testid="motion-aside"]');
-      expect(panel).toBeInTheDocument();
+      const panel = container.querySelector('.grid-area-panel');
+      expect(panel).not.toBeInTheDocument();
     });
   });
 

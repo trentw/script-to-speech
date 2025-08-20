@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import {
   AlertCircle,
@@ -24,11 +24,8 @@ import {
   VoiceCastingHistoryList,
 } from '@/components/voice-casting';
 import { useRecentScreenplays } from '@/hooks/queries/useRecentScreenplays';
-import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
 import { useVoiceCastingSessions } from '@/hooks/useVoiceCastingSessions';
 import { apiService } from '@/services/api';
-import { useVoiceCasting } from '@/stores/appStore';
-
 type VoiceCastingSearch = {
   method?: 'select';
 };
@@ -37,9 +34,10 @@ export const Route = createFileRoute('/voice-casting/')<{
   Search: VoiceCastingSearch;
 }>({
   validateSearch: (search: Record<string, unknown>): VoiceCastingSearch => {
-    return {
-      method: search.method === 'select' ? 'select' : undefined,
-    };
+    if (search.method === 'select') {
+      return { method: 'select' };
+    }
+    return {};
   },
   component: VoiceCastingUpload,
   errorComponent: RouteError,
@@ -51,7 +49,6 @@ function VoiceCastingUpload() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [creatingSession, setCreatingSession] = useState<string | null>(null);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
-  const { selectOrCreateSession } = useVoiceCasting();
 
   // Show method selector based on search parameter
   const showMethodSelector = method === 'select';
@@ -60,7 +57,7 @@ function VoiceCastingUpload() {
   const { data: screenplays, isLoading } = useRecentScreenplays(5);
 
   // Fetch recent voice casting sessions
-  const recentSessions = useVoiceCastingSessions(5);
+  const { data: recentSessions = [] } = useVoiceCastingSessions(5);
 
   // Mutation for uploading JSON file
   const uploadJsonMutation = useMutation({
@@ -74,7 +71,7 @@ function VoiceCastingUpload() {
     onSuccess: (data) => {
       // Show method selector instead of navigating directly
       setPendingSessionId(data.session_id);
-      navigate({ search: { method: 'select' } });
+      navigate({ to: '.', search: { method: 'select' } });
     },
   });
 
@@ -114,7 +111,7 @@ function VoiceCastingUpload() {
 
       // Show method selector for recent screenplays too
       setPendingSessionId(response.data.session_id);
-      navigate({ search: { method: 'select' } });
+      navigate({ to: '.', search: { method: 'select' } });
     } catch (error) {
       // Failed to create session from task
       console.error('Failed to create session from task:', error);
@@ -124,34 +121,14 @@ function VoiceCastingUpload() {
   };
 
   const handleResumeSession = (sessionId: string) => {
-    // Set the session as active and navigate directly to it
-    selectOrCreateSession(sessionId);
+    // Navigate directly to the session
     navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
   };
 
-  // Get session data for the method selector
-  const { data: sessionData } = useQuery({
-    queryKey: ['voice-casting-session', pendingSessionId],
-    queryFn: async () => {
-      if (!pendingSessionId) return null;
-      const response =
-        await apiService.getVoiceCastingSession(pendingSessionId);
-      if (response.error) {
-        throw new Error(response.error);
-      }
-      return response.data;
-    },
-    enabled: !!pendingSessionId && showMethodSelector,
-  });
-
-  // Get character count for the method selector
-  const { data: _charactersData } = useScreenplayCharacters(
-    sessionData?.screenplay_json_path,
-    { enabled: !!sessionData?.screenplay_json_path && showMethodSelector }
-  );
+  // Session data queries removed - not needed for method selector
 
   const handleMethodSelectorClose = () => {
-    navigate({ search: {} }); // Clear search parameters
+    navigate({ to: '.', search: {} }); // Clear search parameters
     setPendingSessionId(null);
     setSelectedFile(null);
   };
