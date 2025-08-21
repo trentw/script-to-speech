@@ -10,8 +10,15 @@ export function useVoiceCastingNavigation() {
     navigate({ to: '/voice-casting' });
   };
 
-  const navigateToSession = (sessionId: string) => {
-    navigate({ to: '/voice-casting/$sessionId', params: { sessionId } });
+  const navigateToSession = (
+    sessionId: string,
+    options?: { highlightCharacter?: string }
+  ) => {
+    navigate({
+      to: '/voice-casting/$sessionId',
+      params: { sessionId },
+      state: options,
+    });
   };
 
   const navigateToAssign = (sessionId: string, characterName: string) => {

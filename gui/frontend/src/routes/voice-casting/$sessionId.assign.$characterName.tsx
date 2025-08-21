@@ -83,7 +83,7 @@ function VoiceAssignmentRoute() {
   };
 
   const handleAssign = () => {
-    navigateToSession(sessionId);
+    navigateToSession(sessionId, { highlightCharacter: characterName });
   };
 
   // Loading state

@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
 import {
   AlertCircle,
   ArrowLeft,
@@ -12,7 +16,7 @@ import {
   Loader2,
   Upload,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { RouteError } from '@/components/errors';
@@ -46,6 +50,7 @@ export const Route = createFileRoute('/voice-casting/$sessionId/')({
 function VoiceCastingSessionIndex() {
   const { sessionId } = Route.useParams();
   const [isExporting, setIsExporting] = useState(false);
+  const navigate = useNavigate();
   const {
     navigateToIndex,
     navigateToAssign,
@@ -54,6 +59,47 @@ function VoiceCastingSessionIndex() {
     navigateToNotes,
     navigateToLibrary,
   } = useVoiceCastingNavigation();
+
+  // Get highlight character from location state
+  const location = useRouterState({ select: (s) => s.location });
+  const highlightCharacter = location.state?.highlightCharacter;
+
+  // Handle character highlighting effect
+  useEffect(() => {
+    if (highlightCharacter) {
+      // Wait for DOM to be ready, then scroll to the highlighted character
+      const scrollToCharacter = () => {
+        const characterElement = document.querySelector(
+          `[data-character-name="${highlightCharacter}"]`
+        );
+        if (characterElement) {
+          characterElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      };
+
+      // Use requestAnimationFrame to ensure DOM is ready
+      const frameId = requestAnimationFrame(() => {
+        setTimeout(scrollToCharacter, 50); // Small delay for layout
+      });
+
+      // Clear highlight state after animation completes (2.5 seconds)
+      const timer = setTimeout(() => {
+        navigate({
+          to: '.',
+          replace: true,
+          state: {},
+        });
+      }, 2500);
+
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(frameId);
+      };
+    }
+  }, [highlightCharacter, navigate]);
 
   // Fetch session data
   const {
@@ -517,6 +563,7 @@ function VoiceCastingSessionIndex() {
               yamlVersionId={sessionData?.yamlVersionId}
               voiceUsageMap={voiceUsageMaps.get(character.name) || new Map()}
               onAssignVoice={() => handleAssignVoice(character.name)}
+              shouldHighlight={character.name === highlightCharacter}
             />
           ))}
         </div>

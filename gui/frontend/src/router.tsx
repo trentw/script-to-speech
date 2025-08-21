@@ -32,6 +32,7 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     history: hashHistory,
     defaultPreload: 'intent',
+    scrollRestoration: true,
     context: {
       queryClient,
     },

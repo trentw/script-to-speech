@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Hash, MessageSquare, User } from 'lucide-react';
 import { useMemo } from 'react';
 
@@ -38,6 +39,7 @@ interface CharacterCardProps {
   yamlVersionId?: number;
   voiceUsageMap: Map<string, number>;
   onAssignVoice: () => void;
+  shouldHighlight?: boolean;
 }
 
 export function CharacterCard({
@@ -47,6 +49,7 @@ export function CharacterCard({
   yamlVersionId,
   voiceUsageMap,
   onAssignVoice,
+  shouldHighlight,
 }: CharacterCardProps) {
   // Resolve voice entry if we have an assignment but no voiceEntry
   const resolvedVoice = useResolveVoiceEntry(
@@ -83,127 +86,153 @@ export function CharacterCard({
     });
   };
 
+  // Animation variants for highlight effect
+  const cardVariants = {
+    normal: {
+      backgroundColor: 'rgba(255, 255, 255, 0)',
+    },
+    highlight: {
+      backgroundColor: [
+        'rgba(255, 255, 255, 0)',
+        'rgba(34, 197, 94, 0.1)',
+        'rgba(255, 255, 255, 0)',
+      ],
+      transition: {
+        duration: 2.5,
+        times: [0, 0.3, 1],
+        ease: 'easeInOut',
+      },
+    },
+  };
+
   return (
     <TooltipProvider>
-      <Card
-        className={cn(
-          'relative h-full transition-all hover:shadow-md',
-          isAssigned && 'border-green-500/30'
-        )}
+      <motion.div
+        variants={cardVariants}
+        initial="normal"
+        animate={shouldHighlight ? 'highlight' : 'normal'}
+        data-character-name={character.name}
       >
-        {/* Assignment Status Indicator */}
-        <div className="absolute top-3 right-3 z-10">
-          {isAssigned ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Assigned</p>
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Circle className="text-muted-foreground h-4 w-4" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Unassigned</p>
-              </TooltipContent>
-            </Tooltip>
+        <Card
+          className={cn(
+            'relative h-full transition-all hover:shadow-md',
+            isAssigned && 'border-green-500/30'
           )}
-        </div>
-
-        <CardContent className="flex h-full flex-col px-4 py-3">
-          {/* Header */}
-          <div className="mb-3 flex items-start justify-between">
-            <div className="flex min-w-0 flex-1 items-center gap-3">
+        >
+          {/* Assignment Status Indicator */}
+          <div className="absolute top-3 right-3 z-10">
+            {isAssigned ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div
-                    className={cn(
-                      'shrink-0 rounded-full p-2',
-                      character.isNarrator ? 'bg-primary/10' : 'bg-muted'
-                    )}
-                  >
-                    <User className="h-4 w-4" />
-                  </div>
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{character.isNarrator ? 'Narrator' : 'Character'}</p>
+                  <p>Assigned</p>
                 </TooltipContent>
               </Tooltip>
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-base font-semibold">
-                  {character.displayName}
-                </h3>
-                <div className="text-muted-foreground flex items-center gap-3 text-xs">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1">
-                        <MessageSquare className="h-3 w-3" />
-                        <span>{character.lineCount}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total lines</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center gap-1">
-                        <Hash className="h-3 w-3" />
-                        <span>
-                          {character.totalCharacters.toLocaleString()}
-                        </span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Total characters</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Character Notes/Role - This will grow to fill available space */}
-          <div className="flex-grow">
-            {(character.role || character.castingNotes) && (
-              <div className="bg-muted/50 space-y-1 rounded-md p-2">
-                {character.role && (
-                  <p className="text-xs">
-                    <span className="text-muted-foreground">Role:</span>{' '}
-                    <span className="font-medium">{character.role}</span>
-                  </p>
-                )}
-                {character.castingNotes && (
-                  <p className="text-muted-foreground text-xs">
-                    {character.castingNotes}
-                  </p>
-                )}
-              </div>
+            ) : (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Circle className="text-muted-foreground h-4 w-4" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Unassigned</p>
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
 
-          {/* Voice Card - Always at the bottom */}
-          <div className="mt-3">
-            <VoiceCard
-              provider={assignment?.provider || 'openai'}
-              voiceEntry={voiceEntry || undefined}
-              sts_id={assignment?.sts_id}
-              isCustom={
-                !!(assignment && assignment.provider && !assignment?.sts_id)
-              }
-              onAssignVoice={onAssignVoice}
-              onRemoveAssignment={isAssigned ? handleClearVoice : undefined}
-              showRemoveButton={isAssigned}
-              voiceUsageMap={voiceUsageMap}
-              currentCharacter={character.name}
-            />
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent className="flex h-full flex-col px-4 py-3">
+            {/* Header */}
+            <div className="mb-3 flex items-start justify-between">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div
+                      className={cn(
+                        'shrink-0 rounded-full p-2',
+                        character.isNarrator ? 'bg-primary/10' : 'bg-muted'
+                      )}
+                    >
+                      <User className="h-4 w-4" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{character.isNarrator ? 'Narrator' : 'Character'}</p>
+                  </TooltipContent>
+                </Tooltip>
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-base font-semibold">
+                    {character.displayName}
+                  </h3>
+                  <div className="text-muted-foreground flex items-center gap-3 text-xs">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>{character.lineCount}</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Total lines</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-1">
+                          <Hash className="h-3 w-3" />
+                          <span>
+                            {character.totalCharacters.toLocaleString()}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Total characters</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Character Notes/Role - This will grow to fill available space */}
+            <div className="flex-grow">
+              {(character.role || character.castingNotes) && (
+                <div className="bg-muted/50 space-y-1 rounded-md p-2">
+                  {character.role && (
+                    <p className="text-xs">
+                      <span className="text-muted-foreground">Role:</span>{' '}
+                      <span className="font-medium">{character.role}</span>
+                    </p>
+                  )}
+                  {character.castingNotes && (
+                    <p className="text-muted-foreground text-xs">
+                      {character.castingNotes}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Voice Card - Always at the bottom */}
+            <div className="mt-3">
+              <VoiceCard
+                provider={assignment?.provider || 'openai'}
+                voiceEntry={voiceEntry || undefined}
+                sts_id={assignment?.sts_id}
+                isCustom={
+                  !!(assignment && assignment.provider && !assignment?.sts_id)
+                }
+                onAssignVoice={onAssignVoice}
+                onRemoveAssignment={isAssigned ? handleClearVoice : undefined}
+                showRemoveButton={isAssigned}
+                voiceUsageMap={voiceUsageMap}
+                currentCharacter={character.name}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </TooltipProvider>
   );
 }
