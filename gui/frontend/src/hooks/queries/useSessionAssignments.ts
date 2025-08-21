@@ -39,21 +39,21 @@ export function useSessionAssignments(sessionId: string | undefined) {
         throw new Error('Session ID is required');
       }
 
-      // 1. Fetch session data from backend
-      const sessionResponse =
-        await apiService.getVoiceCastingSession(sessionId);
+      // Fetch combined session and character data in a single call
+      const detailsResponse =
+        await apiService.getSessionWithCharacters(sessionId);
 
-      if (sessionResponse.error) {
-        throw new Error(sessionResponse.error);
+      if (detailsResponse.error) {
+        throw new Error(detailsResponse.error);
       }
 
-      const session = sessionResponse.data!;
+      const { session, characters: charactersList } = detailsResponse.data!;
 
-      // 2. Initialize assignments and characters maps
+      // Initialize assignments and characters maps
       let assignments = new Map<string, VoiceAssignment>();
       const characters = new Map<string, CharacterInfo>();
 
-      // 3. Parse YAML content if it exists
+      // Parse YAML content if it exists
       if (session.yaml_content?.trim()) {
         try {
           // Parse YAML to get assignments
@@ -69,34 +69,20 @@ export function useSessionAssignments(sessionId: string | undefined) {
         }
       }
 
-      // 4. Extract characters from screenplay if session has screenplay path
-      if (session.screenplay_json_path) {
-        try {
-          const extractResponse = await apiService.extractCharacters(
-            session.screenplay_json_path
-          );
-
-          if (extractResponse.data) {
-            // Convert character array to Map
-            extractResponse.data.characters.forEach((char) => {
-              characters.set(char.name, {
-                name: char.name,
-                lineCount: char.line_count,
-                totalCharacters: char.total_characters,
-                longestDialogue: char.longest_dialogue,
-                isNarrator:
-                  char.name.toLowerCase() === 'default' ||
-                  char.name.toLowerCase() === 'narrator',
-                description: char.casting_notes,
-                notes: char.role,
-              });
-            });
-          }
-        } catch (error) {
-          // Log character extraction error but don't fail the query
-          console.warn('Failed to extract characters:', error);
-        }
-      }
+      // Convert character array to Map
+      charactersList.forEach((char) => {
+        characters.set(char.name, {
+          name: char.name,
+          lineCount: char.line_count,
+          totalCharacters: char.total_characters,
+          longestDialogue: char.longest_dialogue,
+          isNarrator:
+            char.name.toLowerCase() === 'default' ||
+            char.name.toLowerCase() === 'narrator',
+          description: char.casting_notes,
+          notes: char.role,
+        });
+      });
 
       // 5. Compute derived state
       const totalCount = characters.size;

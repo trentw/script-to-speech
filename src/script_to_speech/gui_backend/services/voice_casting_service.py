@@ -46,6 +46,10 @@ class VoiceCastingSession(BaseModel):
     yaml_content: str = ""  # Current YAML content stored as text
     yaml_version_id: int = 1  # Version counter for optimistic locking
 
+    # Progress tracking fields (cached for performance)
+    assigned_count: int = 0  # Number of characters with voice assignments
+    total_count: int = 0  # Total number of characters in screenplay
+
     created_at: datetime
     updated_at: datetime
     status: str = "active"  # active, completed, expired
@@ -126,6 +130,15 @@ class GenerateVoiceLibraryPromptResponse(BaseModel):
 
     prompt_content: str
     privacy_notice: str
+
+
+class SessionDetailsResponse(BaseModel):
+    """Response with session and character details combined."""
+
+    session: VoiceCastingSession
+    characters: List[CharacterInfo]
+    total_lines: int
+    default_lines: int
 
 
 # Constants for YAML comment parsing
@@ -323,7 +336,7 @@ class VoiceCastingService:
         # Syntactic validation - YAML must be parseable
         try:
             yaml = YAML(typ="safe")
-            yaml.load(StringIO(yaml_content))
+            yaml_data = yaml.load(StringIO(yaml_content))
         except Exception as e:
             raise ValueError(f"Invalid YAML format: {e}")
 
@@ -335,14 +348,20 @@ class VoiceCastingService:
         except Exception as e:
             warnings.append(f"Could not validate against screenplay: {e}")
 
-        # Update content and increment version
+        # Calculate assignment counts from parsed YAML data
+        assigned_count, total_count = self._calculate_assignment_counts(yaml_data)
+
+        # Update content, counts, and increment version
         session.yaml_content = yaml_content
+        session.assigned_count = assigned_count
+        session.total_count = total_count
         session.yaml_version_id += 1
         session.updated_at = datetime.utcnow()
 
         logger.info(
             f"Updated YAML for session {session_id}: "
-            f"v{session.yaml_version_id}, {len(yaml_content)} bytes"
+            f"v{session.yaml_version_id}, {len(yaml_content)} bytes, "
+            f"assigned: {assigned_count}/{total_count}"
         )
 
         return session, warnings
@@ -429,11 +448,34 @@ class VoiceCastingService:
 
         return session, yaml, yaml_data
 
+    def _calculate_assignment_counts(self, yaml_data: CommentedMap) -> Tuple[int, int]:
+        """
+        Calculate assignment counts from YAML data.
+
+        Args:
+            yaml_data: Parsed YAML data
+
+        Returns:
+            Tuple of (assigned_count, total_count)
+        """
+        total_count = len(yaml_data) if yaml_data else 0
+        assigned_count = 0
+
+        if yaml_data:
+            for character, config in yaml_data.items():
+                if isinstance(config, dict) and config.get("provider"):
+                    # Consider assigned if has provider and either sts_id or custom config
+                    if config.get("sts_id") or len(config) > 1:
+                        assigned_count += 1
+
+        return assigned_count, total_count
+
     def _save_session_yaml(
         self, session: VoiceCastingSession, yaml: YAML, yaml_data: CommentedMap
     ) -> VoiceCastingSession:
         """
         Save YAML data back to session and increment version.
+        Also updates assignment counts for performance optimization.
 
         Args:
             session: Session model to update
@@ -441,16 +483,21 @@ class VoiceCastingService:
             yaml_data: Modified YAML data to save
 
         Returns:
-            Updated VoiceCastingSession
+            Updated VoiceCastingSession with updated counts
         """
         # Convert back to string
         output = StringIO()
         yaml.dump(yaml_data, output)
         updated_yaml = output.getvalue()
 
-        # Update session
+        # Calculate assignment progress using helper method
+        assigned_count, total_count = self._calculate_assignment_counts(yaml_data)
+
+        # Update session with YAML and counts
         session.yaml_content = updated_yaml
         session.yaml_version_id += 1
+        session.assigned_count = assigned_count
+        session.total_count = total_count
         session.updated_at = datetime.utcnow()
 
         return session
@@ -1475,6 +1522,17 @@ class VoiceCastingService:
             # Fallback to empty YAML if generation fails
             initial_yaml_content = ""
 
+        # Count characters in the initial YAML
+        initial_total_count = 0
+        if initial_yaml_content:
+            try:
+                yaml = YAML(typ="safe")
+                data = yaml.load(StringIO(initial_yaml_content))
+                if isinstance(data, dict):
+                    initial_total_count = len(data)
+            except Exception:
+                pass  # Use 0 if parsing fails
+
         session = VoiceCastingSession(
             session_id=session_id,
             screenplay_json_path=screenplay_json_path,
@@ -1482,6 +1540,8 @@ class VoiceCastingService:
             screenplay_source_path=screenplay_source_path,
             yaml_content=initial_yaml_content,  # Store the initial YAML
             yaml_version_id=1,
+            assigned_count=0,  # No assignments initially
+            total_count=initial_total_count,  # Total characters from screenplay
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             status="active",
@@ -1537,6 +1597,59 @@ class VoiceCastingService:
             VoiceCastingSession if found, None otherwise
         """
         return self._sessions.get(session_id)
+
+    async def get_session_with_characters(
+        self, session_id: str
+    ) -> SessionDetailsResponse:
+        """
+        Get session details with character information in a single call.
+        This eliminates the need for multiple sequential API calls from the frontend.
+
+        Args:
+            session_id: Session UUID
+
+        Returns:
+            SessionDetailsResponse with session and character data
+
+        Raises:
+            ValueError: If session not found or screenplay path is invalid
+        """
+        # Get the session
+        session = await self.get_session(session_id)
+        if not session:
+            raise ValueError(f"Session {session_id} not found")
+
+        # Extract characters if screenplay path exists
+        if not session.screenplay_json_path:
+            # Return empty character list if no screenplay
+            return SessionDetailsResponse(
+                session=session,
+                characters=[],
+                total_lines=0,
+                default_lines=0,
+            )
+
+        try:
+            # Get character information
+            character_response = await self.extract_characters(
+                session.screenplay_json_path
+            )
+
+            return SessionDetailsResponse(
+                session=session,
+                characters=character_response.characters,
+                total_lines=character_response.total_lines,
+                default_lines=character_response.default_lines,
+            )
+        except Exception as e:
+            logger.error(f"Failed to extract characters for session {session_id}: {e}")
+            # Return session with empty characters on error
+            return SessionDetailsResponse(
+                session=session,
+                characters=[],
+                total_lines=0,
+                default_lines=0,
+            )
 
     async def update_session(
         self, session_id: str, status: str
@@ -1604,32 +1717,9 @@ class VoiceCastingService:
         # Build response with progress information
         result = []
         for session in recent_sessions:
-            # Calculate assignment progress from YAML content
-            assigned_count = 0
-            total_count = 0
-
-            if session.yaml_content:
-                try:
-                    # Parse YAML to count assignments
-                    yaml = YAML(typ="safe")
-                    data = yaml.load(StringIO(session.yaml_content))
-
-                    if isinstance(data, dict):
-                        # Count characters (excluding 'default' key)
-                        characters = [k for k in data.keys() if k != "default"]
-                        total_count = len(characters)
-
-                        # Count assigned characters (those with provider and voice/sts_id)
-                        for char, config in data.items():
-                            if char != "default" and isinstance(config, dict):
-                                if config.get("provider") and (
-                                    config.get("voice") or config.get("sts_id")
-                                ):
-                                    assigned_count += 1
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to parse YAML for session {session.session_id}: {e}"
-                    )
+            # Use cached counts for performance
+            assigned_count = session.assigned_count
+            total_count = session.total_count
 
             # Determine status based on progress
             status = (

@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { apiService } from '@/services/api';
 import type { VoiceCastingSession } from '@/types/voice-casting';
+import { handleApiError } from '@/utils/apiErrorHandler';
 
 interface ClearVoiceRequest {
   sessionId: string;
@@ -43,16 +44,7 @@ export function useClearVoice() {
       );
 
       if (response.error) {
-        // Handle version conflicts (409 status) specifically
-        if (
-          response.error.includes('409') ||
-          response.error.includes('version')
-        ) {
-          throw new Error(
-            'The session has been updated by another user. Please refresh and try again.'
-          );
-        }
-        throw new Error(response.error);
+        throw handleApiError(response);
       }
 
       return response.data!;

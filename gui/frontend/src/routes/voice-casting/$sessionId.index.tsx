@@ -26,6 +26,7 @@ import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useVoiceCastingNavigation } from '@/hooks/useVoiceCastingNavigation';
 import { apiService } from '@/services/api';
 import type { RouteStaticData } from '@/types/route-metadata';
+import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
 import { yamlUtils } from '@/utils/yamlUtils';
 
 export const Route = createFileRoute('/voice-casting/$sessionId/')({
@@ -234,6 +235,24 @@ function VoiceCastingSessionIndex() {
   const totalCount = characters.length;
   const progressPercentage =
     totalCount > 0 ? (assignedCount / totalCount) * 100 : 0;
+
+  // Memoize voice usage calculations to avoid O(n²) complexity
+  const voiceUsageMaps = useMemo(() => {
+    if (!sessionData) return new Map();
+
+    const maps = new Map();
+    characters.forEach((character) => {
+      maps.set(
+        character.name,
+        calculateVoiceUsage(
+          sessionData.assignments || new Map(),
+          sessionData.characters || new Map(),
+          character.name
+        )
+      );
+    });
+    return maps;
+  }, [sessionData, characters]);
 
   const handleBack = () => {
     navigateToIndex();
@@ -494,6 +513,9 @@ function VoiceCastingSessionIndex() {
               key={character.name}
               character={character}
               sessionId={sessionId}
+              assignment={sessionData?.assignments?.get(character.name)}
+              yamlVersionId={sessionData?.yamlVersionId}
+              voiceUsageMap={voiceUsageMaps.get(character.name) || new Map()}
               onAssignVoice={() => handleAssignVoice(character.name)}
             />
           ))}

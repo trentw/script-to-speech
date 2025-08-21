@@ -9,10 +9,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useClearVoice } from '@/hooks/mutations/useClearVoice';
-import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { cn } from '@/lib/utils';
-import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
+import type { VoiceAssignment } from '@/types/voice-casting';
 
 import { VoiceCard } from './VoiceCard';
 
@@ -35,25 +34,20 @@ interface CharacterData {
 interface CharacterCardProps {
   character: CharacterData;
   sessionId: string;
+  assignment?: VoiceAssignment;
+  yamlVersionId?: number;
+  voiceUsageMap: Map<string, number>;
   onAssignVoice: () => void;
 }
 
 export function CharacterCard({
   character,
   sessionId,
+  assignment,
+  yamlVersionId,
+  voiceUsageMap,
   onAssignVoice,
 }: CharacterCardProps) {
-  // Fetch session data and assignments using React Query
-  const {
-    data: sessionData,
-    isLoading,
-    error,
-  } = useSessionAssignments(sessionId);
-
-  // Get assignment for this character
-  // Defensive check: assignments should always be a Map, but during cache updates it might be undefined
-  const assignment = sessionData?.assignments?.get(character.name);
-
   // Resolve voice entry if we have an assignment but no voiceEntry
   const resolvedVoice = useResolveVoiceEntry(
     assignment?.provider,
@@ -64,75 +58,20 @@ export function CharacterCard({
   const clearVoiceMutation = useClearVoice();
 
   // Calculate assignment status - memoized for performance
-  const assignmentData = useMemo(() => {
-    if (!sessionData) {
-      return { isAssigned: false, assignment: null };
-    }
-
+  const isAssigned = useMemo(() => {
     // Only consider assigned if there's actual voice data (not just empty provider)
-    const isAssigned = !!(
+    return !!(
       assignment &&
       assignment.provider &&
       (assignment.sts_id || assignment.provider_config)
     );
-
-    return { isAssigned, assignment };
-  }, [sessionData, assignment]);
-
-  // Calculate voice usage map
-  const voiceUsageMap = useMemo(() => {
-    if (!sessionData) return new Map();
-    return calculateVoiceUsage(
-      sessionData.assignments || new Map(),
-      sessionData.characters || new Map(),
-      character.name
-    );
-  }, [sessionData, character.name]);
-
-  // Guard against loading/error states AFTER all hooks
-  if (isLoading) {
-    return (
-      <Card className="col-span-1">
-        <CardContent className="p-4">
-          <div className="animate-pulse space-y-3">
-            <div className="bg-muted h-4 w-3/4 rounded"></div>
-            <div className="bg-muted h-3 w-1/2 rounded"></div>
-            <div className="bg-muted h-16 rounded"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="col-span-1">
-        <CardContent className="p-4">
-          <p className="text-destructive text-sm">
-            Failed to load session data
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!sessionData) {
-    return (
-      <Card className="col-span-1">
-        <CardContent className="p-4">
-          <p className="text-muted-foreground text-sm">No session data</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const { isAssigned } = assignmentData;
+  }, [assignment]);
 
   // Use assignment.voiceEntry first, fall back to resolved
   const voiceEntry = assignment?.voiceEntry || resolvedVoice;
 
   const handleClearVoice = () => {
-    if (!sessionData.yamlVersionId) {
+    if (!yamlVersionId) {
       console.error('Cannot clear voice: missing version ID');
       return;
     }
@@ -140,7 +79,7 @@ export function CharacterCard({
     clearVoiceMutation.mutate({
       sessionId,
       character: character.name,
-      versionId: sessionData.yamlVersionId,
+      versionId: yamlVersionId,
     });
   };
 

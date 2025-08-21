@@ -19,6 +19,7 @@ from ..services.voice_casting_service import (
     GenerateVoiceLibraryPromptResponse,
     GenerateYamlResponse,
     ParseYamlResponse,
+    SessionDetailsResponse,
     ValidateYamlResponse,
     VoiceAssignment,
     VoiceCastingSession,
@@ -356,6 +357,36 @@ async def get_session(session_id: str) -> VoiceCastingSession:
         )
 
     return session
+
+
+@router.get("/session/{session_id}/details", response_model=SessionDetailsResponse)
+async def get_session_details(session_id: str) -> SessionDetailsResponse:
+    """
+    Get session with character details in a single call.
+    This endpoint combines session data and character extraction to eliminate
+    multiple sequential API calls from the frontend.
+
+    Args:
+        session_id: The session UUID
+
+    Returns:
+        SessionDetailsResponse with session and character data
+
+    Raises:
+        HTTPException: If session not found or character extraction fails
+    """
+    try:
+        details = await voice_casting_service.get_session_with_characters(session_id)
+        return details
+    except ValueError as e:
+        if "not found" in str(e):
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to get session details: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get session details: {str(e)}"
+        )
 
 
 class RecentSessionsResponse(BaseModel):

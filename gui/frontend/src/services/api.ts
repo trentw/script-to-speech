@@ -37,6 +37,7 @@ class ApiService {
         return {
           error:
             errorData.detail || errorData.error || `HTTP ${response.status}`,
+          status: response.status,
         };
       }
 
@@ -390,6 +391,22 @@ class ApiService {
     return this.request<import('../types/voice-casting').VoiceCastingSession>(
       `/voice-casting/session/${sessionId}`
     );
+  }
+
+  async getSessionWithCharacters(sessionId: string): Promise<
+    ApiResponse<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      characters: import('../types/voice-casting').CharacterInfo[];
+      total_lines: number;
+      default_lines: number;
+    }>
+  > {
+    return this.request<{
+      session: import('../types/voice-casting').VoiceCastingSession;
+      characters: import('../types/voice-casting').CharacterInfo[];
+      total_lines: number;
+      default_lines: number;
+    }>(`/voice-casting/session/${sessionId}/details`);
   }
 
   async createSessionFromTask(

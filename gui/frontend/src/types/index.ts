@@ -159,6 +159,7 @@ export interface AppState {
 export interface ApiResponse<T> {
   data?: T;
   error?: string;
+  status?: number;
 }
 
 // Voice Library Types
