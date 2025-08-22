@@ -20,6 +20,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
+import { downloadText } from '@/utils/downloadService';
 
 interface YamlPreviewProps {
   sessionId: string;
@@ -41,16 +42,9 @@ export function YamlPreview({ sessionId, onBack, onExport }: YamlPreviewProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([yamlContent], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${sessionData?.session.screenplay_name || 'voice_config'}.yaml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownload = async () => {
+    const filename = `${sessionData?.session.screenplay_name || 'voice_config'}.yaml`;
+    await downloadText(yamlContent, filename, 'text/yaml');
   };
 
   if (isLoading) {

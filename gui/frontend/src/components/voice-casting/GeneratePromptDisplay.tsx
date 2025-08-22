@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { downloadText } from '@/utils/downloadService';
 
 interface GeneratePromptDisplayProps {
   promptText: string;
@@ -29,16 +30,9 @@ export function GeneratePromptDisplay({
     setTimeout(() => setCopiedPrompt(false), 2000);
   };
 
-  const handleDownloadPrompt = () => {
-    const blob = new Blob([promptText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${filePrefix}-${sessionId}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const handleDownloadPrompt = async () => {
+    const filename = `${filePrefix}-${sessionId}.txt`;
+    await downloadText(promptText, filename, 'text/plain');
   };
 
   if (isGenerating) {

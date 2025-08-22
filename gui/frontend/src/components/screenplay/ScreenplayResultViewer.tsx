@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { apiService } from '@/services/api';
 import type { ScreenplayResult } from '@/types';
+import { downloadFile } from '@/utils/downloadService';
 
 interface ScreenplayResultViewerProps {
   result: ScreenplayResult | null;
@@ -21,19 +22,25 @@ export function ScreenplayResultViewer({
   const { analysis, files, screenplay_name, original_filename, log_file } =
     result;
 
-  const downloadFile = (fileType: 'json' | 'text' | 'log') => {
+  const handleDownload = async (fileType: 'json' | 'text' | 'log') => {
     if (!taskId) {
       console.error('Task ID is required for downloading files');
       return;
     }
 
-    // Create a download link using the centralized API service
-    const link = document.createElement('a');
-    link.href = apiService.getScreenplayDownloadUrl(taskId, fileType);
-    link.target = '_blank'; // Open in new tab to trigger download
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Generate appropriate filename
+    const fileExtension =
+      fileType === 'log' ? 'log' : fileType === 'json' ? 'json' : 'txt';
+    const filename = `${screenplay_name || 'screenplay'}_${fileType}.${fileExtension}`;
+
+    // Get download URL from API service
+    const url = apiService.getScreenplayDownloadUrl(taskId, fileType);
+
+    // Use centralized download service
+    await downloadFile(url, filename, {
+      showDialog: true,
+      defaultPath: filename,
+    });
   };
 
   return (
@@ -56,7 +63,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => downloadFile('json')}
+                onClick={() => handleDownload('json')}
               >
                 <FileJson className="mr-2 h-4 w-4" />
                 Download JSON
@@ -68,7 +75,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => downloadFile('text')}
+                onClick={() => handleDownload('text')}
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Download Text
@@ -80,7 +87,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => downloadFile('log')}
+                onClick={() => handleDownload('log')}
               >
                 <FileCode className="mr-2 h-4 w-4" />
                 Download Logs
