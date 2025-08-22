@@ -30,12 +30,16 @@ export function SelectorCard<T>({
       }`}
     >
       <div className="flex items-center gap-3">
-        {/* Avatar */}
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-sm font-semibold text-white">
-          {renderAvatar
-            ? renderAvatar(item)
-            : renderPrimary(item).charAt(0).toUpperCase()}
-        </div>
+        {/* Avatar - renderAvatar should return a JSX element */}
+        {renderAvatar ? (
+          renderAvatar(item)
+        ) : (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-gray-200/50 bg-white p-1">
+            <span className="text-sm font-semibold text-gray-700">
+              {renderPrimary(item).charAt(0).toUpperCase()}
+            </span>
+          </div>
+        )}
 
         {/* Content */}
         <div className="min-w-0 flex-1">

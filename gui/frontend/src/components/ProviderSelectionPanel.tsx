@@ -1,6 +1,7 @@
 import { Search } from 'lucide-react';
 import React, { useState } from 'react';
 
+import { ProviderLogo } from '@/components/ui/provider-logo';
 import { SelectorCard, SelectorPanel } from '@/components/ui/selector';
 
 import type { ProviderInfo, VoiceEntry } from '../types';
@@ -76,7 +77,7 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
   };
 
   const getProviderAvatar = (provider: ProviderInfo) => {
-    return provider.name.charAt(0).toUpperCase();
+    return <ProviderLogo provider={provider.identifier} size="md" />;
   };
 
   const handleProviderSelect = (provider: ProviderInfo) => {
