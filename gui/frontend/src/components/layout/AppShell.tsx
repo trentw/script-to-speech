@@ -26,33 +26,34 @@ export function AppShell({
     <div
       className={cn(
         'app-shell',
+        'h-screen overflow-hidden', // Ensure shell is exactly viewport height with no scrolling
         hasNav && 'has-nav',
         hasPanel && 'has-panel',
         className
       )}
     >
       {navigation && (
-        <aside className="grid-area-nav border-border bg-background border-r">
+        <aside className="grid-area-nav border-border bg-background flex flex-col overflow-hidden border-r">
           {navigation}
         </aside>
       )}
 
       {header && (
-        <header className="grid-area-header border-border bg-background border-b">
+        <header className="grid-area-header border-border bg-background flex-shrink-0 border-b">
           {header}
         </header>
       )}
 
-      <main className="grid-area-main overflow-hidden">{main}</main>
+      <main className="grid-area-main overflow-auto">{main}</main>
 
       {panel && (
-        <aside className="grid-area-panel border-border bg-muted/30 border-l">
+        <aside className="grid-area-panel border-border bg-muted/30 flex flex-col overflow-hidden border-l">
           {panel}
         </aside>
       )}
 
       {footer && (
-        <footer className="grid-area-footer border-border bg-background border-t">
+        <footer className="grid-area-footer border-border bg-background flex-shrink-0 border-t">
           {footer}
         </footer>
       )}

@@ -131,7 +131,7 @@ export function ScreenplayResultViewer({
         <TabsContent value="speakers" className="space-y-4">
           <Card className="p-6">
             <h4 className="mb-4 text-lg font-semibold">Speaker Line Counts</h4>
-            <div className="max-h-[400px] space-y-2 overflow-y-auto pr-2">
+            <div className="space-y-2">
               {Object.entries(analysis.speaker_counts)
                 .sort(([, a], [, b]) => (b as number) - (a as number))
                 .map(([speaker, count]) => (

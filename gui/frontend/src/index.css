@@ -106,8 +106,7 @@
   /* Responsive grid templates using container queries */
   .app-shell {
     display: grid;
-    grid-template-rows: 1fr auto;
-    min-height: 100vh;
+    height: 100vh; /* Changed from min-height to height for strict viewport constraint */
     width: 100%;
     /* Smooth grid layout transitions for responsive changes */
     transition:
@@ -121,8 +120,8 @@
       'nav header header'
       'nav main panel'
       'nav footer footer';
-    grid-template-columns: auto minmax(500px, 1fr) 500px;
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr) 500px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   /* Desktop: Navigation + header + main only */
@@ -131,8 +130,8 @@
       'nav header'
       'nav main'
       'nav footer';
-    grid-template-columns: auto minmax(500px, 1fr);
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   /* Desktop: Header + main + panel only */
@@ -141,8 +140,8 @@
       'header header'
       'main panel'
       'footer footer';
-    grid-template-columns: minmax(500px, 1fr) 500px;
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr) 500px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   /* Desktop: Header + main only */
@@ -151,8 +150,8 @@
       'header'
       'main'
       'footer';
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
   }
 
   /* Tablet breakpoint: Collapse navigation, keep panel */
@@ -162,8 +161,8 @@
         'header header'
         'main panel'
         'footer footer';
-      grid-template-columns: minmax(400px, 2fr) 500px;
-      grid-template-rows: auto 1fr auto;
+      grid-template-columns: minmax(0, 2fr) 500px;
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
 
     .app-shell:not(.has-panel) {
@@ -171,8 +170,8 @@
         'header'
         'main'
         'footer';
-      grid-template-columns: minmax(400px, 1fr);
-      grid-template-rows: auto 1fr auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
   }
 
@@ -183,8 +182,8 @@
         'header'
         'main'
         'footer';
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr auto;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
     }
   }
 

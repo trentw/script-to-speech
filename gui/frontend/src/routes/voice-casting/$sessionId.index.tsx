@@ -443,129 +443,135 @@ function VoiceCastingSessionIndex() {
   }
 
   return (
-    <div className="container mx-auto max-w-6xl space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Voice Casting</h1>
-            <p className="text-muted-foreground">
-              {session?.screenplay_name ||
-                charactersData?.screenplay_name ||
-                'Screenplay'}
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleImport}>
-            <Upload className="mr-2 h-4 w-4" />
-            Import
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handlePreviewYaml}
-            disabled={assignedCount === 0}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            Preview YAML
-          </Button>
-          <Button
-            onClick={handleExportYaml}
-            disabled={assignedCount === 0 || isExporting}
-          >
-            {isExporting ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="mr-2 h-4 w-4" />
-            )}
-            {isExporting ? 'Exporting...' : 'Export Configuration'}
-          </Button>
-        </div>
-      </div>
-
-      {/* Progress */}
-      <div className="bg-card space-y-3 rounded-lg border p-4">
+    <div className="flex h-full flex-col overflow-x-hidden overflow-y-auto">
+      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium">Assignment Progress</p>
-            <p className="text-muted-foreground text-xs">
-              {assignedCount} of {totalCount} characters assigned
-            </p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleBack}>
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold">Voice Casting</h1>
+              <p className="text-muted-foreground">
+                {session?.screenplay_name ||
+                  charactersData?.screenplay_name ||
+                  'Screenplay'}
+              </p>
+            </div>
           </div>
-          <Badge
-            variant={assignedCount === totalCount ? 'default' : 'secondary'}
-          >
-            {Math.round(progressPercentage)}% Complete
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleImport}>
+              <Upload className="mr-2 h-4 w-4" />
+              Import
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handlePreviewYaml}
+              disabled={assignedCount === 0}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              Preview YAML
+            </Button>
+            <Button
+              onClick={handleExportYaml}
+              disabled={assignedCount === 0 || isExporting}
+            >
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {isExporting ? 'Exporting...' : 'Export Configuration'}
+            </Button>
+          </div>
         </div>
-        <Progress value={progressPercentage} className="h-2" />
 
-        {/* Unsaved changes indicator - DISABLED FOR DEBUGGING */}
-        {/* {hasUnsavedChanges && (
+        {/* Progress */}
+        <div className="bg-card space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Assignment Progress</p>
+              <p className="text-muted-foreground text-xs">
+                {assignedCount} of {totalCount} characters assigned
+              </p>
+            </div>
+            <Badge
+              variant={assignedCount === totalCount ? 'default' : 'secondary'}
+            >
+              {Math.round(progressPercentage)}% Complete
+            </Badge>
+          </div>
+          <Progress value={progressPercentage} className="h-2" />
+
+          {/* Unsaved changes indicator - DISABLED FOR DEBUGGING */}
+          {/* {hasUnsavedChanges && (
           <div className="flex items-center gap-2 text-amber-600 text-sm">
             <AlertCircle className="h-4 w-4" />
             <span>⚠️ Unsaved changes - Click Export to save</span>
           </div>
         )} */}
-      </div>
+        </div>
 
-      {/* LLM-Assisted Features */}
-      <div className="bg-card space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="flex items-center gap-2 text-sm font-medium">
-              <Brain className="h-4 w-4" />
-              LLM-Assisted Features
-            </p>
-            <p className="text-muted-foreground text-xs">
-              Use AI to analyze characters and suggest voice assignments
-            </p>
+        {/* LLM-Assisted Features */}
+        <div className="bg-card space-y-3 rounded-lg border p-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="flex items-center gap-2 text-sm font-medium">
+                <Brain className="h-4 w-4" />
+                LLM-Assisted Features
+              </p>
+              <p className="text-muted-foreground text-xs">
+                Use AI to analyze characters and suggest voice assignments
+              </p>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleLLMCharacterNotes}>
-            <FileText className="mr-2 h-4 w-4" />
-            Character Analysis
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleLLMVoiceLibrary}>
-            <Brain className="mr-2 h-4 w-4" />
-            Voice Suggestions
-          </Button>
-        </div>
-      </div>
-
-      {/* Character List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Characters</h2>
-          <div className="text-muted-foreground flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-green-500" />
-              <span>Assigned</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Circle className="h-4 w-4" />
-              <span>Unassigned</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLLMCharacterNotes}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Character Analysis
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLLMVoiceLibrary}>
+              <Brain className="mr-2 h-4 w-4" />
+              Voice Suggestions
+            </Button>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {characters.map((character) => (
-            <CharacterCard
-              key={character.name}
-              character={character}
-              sessionId={sessionId}
-              assignment={sessionData?.assignments?.get(character.name)}
-              yamlVersionId={sessionData?.yamlVersionId}
-              voiceUsageMap={voiceUsageMaps.get(character.name) || new Map()}
-              onAssignVoice={() => handleAssignVoice(character.name)}
-              shouldHighlight={character.name === highlightCharacter}
-            />
-          ))}
+        {/* Character List */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Characters</h2>
+            <div className="text-muted-foreground flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <span>Assigned</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Circle className="h-4 w-4" />
+                <span>Unassigned</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {characters.map((character) => (
+              <CharacterCard
+                key={character.name}
+                character={character}
+                sessionId={sessionId}
+                assignment={sessionData?.assignments?.get(character.name)}
+                yamlVersionId={sessionData?.yamlVersionId}
+                voiceUsageMap={voiceUsageMaps.get(character.name) || new Map()}
+                onAssignVoice={() => handleAssignVoice(character.name)}
+                shouldHighlight={character.name === highlightCharacter}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </div>

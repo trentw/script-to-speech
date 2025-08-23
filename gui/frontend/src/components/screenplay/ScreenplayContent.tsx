@@ -116,20 +116,21 @@ export function ScreenplayContent({
   }, [currentTaskId, viewMode, setViewMode, setStoreViewMode]);
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="px-6 pt-6 pb-4">
-        <h2 className="text-2xl font-bold">Screenplay Parser</h2>
-        <p className="text-muted-foreground mt-2">
-          Upload and parse screenplays from PDF or TXT files into structured
-          JSON format
-        </p>
-      </div>
+    <div className="flex h-full flex-col overflow-x-hidden overflow-y-auto">
+      {/* All content scrolls together */}
+      <div className="flex-shrink-0">
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4">
+          <h2 className="text-2xl font-bold">Screenplay Parser</h2>
+          <p className="text-muted-foreground mt-2">
+            Upload and parse screenplays from PDF or TXT files into structured
+            JSON format
+          </p>
+        </div>
 
-      <Separator />
+        <Separator />
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+        {/* Main Content */}
         <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-3">
           {/* Left Column - Upload/Status/Result */}
           <div className="space-y-6 lg:col-span-2">
