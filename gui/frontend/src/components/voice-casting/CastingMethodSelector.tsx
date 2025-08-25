@@ -17,8 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { interactiveCardVariants } from '@/components/ui/interactive.variants';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 
 interface CastingMethodSelectorProps {
   sessionId: string;
@@ -69,14 +71,23 @@ export function CastingMethodSelector({
         >
           <div className="space-y-4">
             <Card
-              className={castingMethod === 'manual' ? 'border-primary' : ''}
+              className={cn(
+                interactiveCardVariants({ variant: 'action' }),
+                castingMethod === 'manual' && 'border-primary bg-accent'
+              )}
+              onClick={() => setCastingMethod('manual')}
             >
               <CardHeader className="space-y-1">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="manual" id="manual" />
+                  <RadioGroupItem
+                    value="manual"
+                    id="manual"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <Label
                     htmlFor="manual"
                     className="flex cursor-pointer items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <MousePointer className="h-4 w-4" />
                     <span className="font-semibold">Manual Assignment</span>
@@ -92,16 +103,23 @@ export function CastingMethodSelector({
             </Card>
 
             <Card
-              className={
-                castingMethod === 'llm-assisted' ? 'border-primary' : ''
-              }
+              className={cn(
+                interactiveCardVariants({ variant: 'action' }),
+                castingMethod === 'llm-assisted' && 'border-primary bg-accent'
+              )}
+              onClick={() => setCastingMethod('llm-assisted')}
             >
               <CardHeader className="space-y-1">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="llm-assisted" id="llm-assisted" />
+                  <RadioGroupItem
+                    value="llm-assisted"
+                    id="llm-assisted"
+                    onClick={(e) => e.stopPropagation()}
+                  />
                   <Label
                     htmlFor="llm-assisted"
                     className="flex cursor-pointer items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <Wand2 className="h-4 w-4" />
                     <span className="font-semibold">LLM-Assisted</span>

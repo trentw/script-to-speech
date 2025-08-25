@@ -35,8 +35,8 @@ interface CharacterData {
 interface CharacterCardProps {
   character: CharacterData;
   sessionId: string;
-  assignment?: VoiceAssignment;
-  yamlVersionId?: number;
+  assignment?: VoiceAssignment | undefined;
+  yamlVersionId?: number | undefined;
   voiceUsageMap: Map<string, number>;
   onAssignVoice: () => void;
   shouldHighlight?: boolean;

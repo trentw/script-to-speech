@@ -1,7 +1,7 @@
 import { CheckCircle2, Copy, Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Textarea } from '@/components/ui/textarea';
 import { downloadText } from '@/utils/downloadService';
 
@@ -52,7 +52,13 @@ export function GeneratePromptDisplay({
           className="h-48 font-mono text-sm"
         />
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleCopyPrompt}>
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'sm',
+            })}
+            onClick={handleCopyPrompt}
+          >
             {copiedPrompt ? (
               <>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
@@ -64,11 +70,17 @@ export function GeneratePromptDisplay({
                 Copy
               </>
             )}
-          </Button>
-          <Button size="sm" variant="outline" onClick={handleDownloadPrompt}>
+          </button>
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'sm',
+            })}
+            onClick={handleDownloadPrompt}
+          >
             <Download className="mr-2 h-4 w-4" />
             Download
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -76,7 +88,15 @@ export function GeneratePromptDisplay({
 
   return (
     <div className="py-8 text-center">
-      <Button onClick={onGenerate}>{generateButtonText}</Button>
+      <button
+        className={appButtonVariants({
+          variant: 'primary',
+          size: 'default',
+        })}
+        onClick={onGenerate}
+      >
+        {generateButtonText}
+      </button>
     </div>
   );
 }

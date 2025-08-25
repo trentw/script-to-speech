@@ -23,6 +23,7 @@ import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Progress } from '@/components/ui/progress';
 import { CharacterCard } from '@/components/voice-casting';
 import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters';
@@ -132,113 +133,6 @@ function VoiceCastingSessionIndex() {
     error: sessionDataError,
   } = useSessionAssignments(sessionId);
 
-  // Data loss prevention state - DISABLED FOR DEBUGGING
-  // const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
-  // Check for recovery data after session loads - DISABLED FOR DEBUGGING
-  // useEffect(() => {
-  //   // Only check for recovery after session data and characters have loaded
-  //   if (!session || !charactersData) return;
-  //
-  //   const recoveryKey = `yaml_recovery_${sessionId}`;
-  //   const recoveryData = localStorage.getItem(recoveryKey);
-  //
-  //   if (recoveryData) {
-  //     try {
-  //       const data = JSON.parse(recoveryData);
-  //       const age = Date.now() - data.timestamp;
-  //
-  //       // Only offer recovery for data less than 1 hour old
-  //       if (age < 3600000) { // 1 hour = 3600000ms
-  //         const timeStr = new Date(data.timestamp).toLocaleTimeString();
-  //         const shouldRecover = window.confirm(
-  //           `Found unsaved work from ${timeStr}. Would you like to recover it?\n\n` +
-  //           'This will replace any current assignments with your unsaved changes.'
-  //         );
-  //
-  //         if (shouldRecover && data.assignments) {
-  //           // Restore assignments from recovery data
-  //           const recoveredAssignments = new Map(data.assignments);
-  //           const activeSession = getActiveSession();
-  //           if (activeSession) {
-  //             selectOrCreateSession(sessionId, {
-  //               ...activeSession,
-  //               assignments: recoveredAssignments,
-  //               yamlContent: data.yaml || activeSession.yamlContent,
-  //               yaml_version_id: data.versionId || activeSession.yaml_version_id,
-  //             });
-  //             setHasUnsavedChanges(true);
-  //             toast.info('Recovered unsaved work. Remember to click Export to save.');
-  //           }
-  //         } else {
-  //           localStorage.removeItem(recoveryKey);
-  //         }
-  //       } else {
-  //         // Remove stale recovery data
-  //         localStorage.removeItem(recoveryKey);
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to parse recovery data:', error);
-  //       localStorage.removeItem(recoveryKey);
-  //     }
-  //   }
-  // }, [session, charactersData, sessionId]);
-
-  // // Keep track of the initial assignments to detect changes - DISABLED FOR DEBUGGING
-  // const [initialAssignments, setInitialAssignments] = useState<Map<string, VoiceAssignment> | null>(null);
-
-  // // Set initial assignments when session first loads
-  // useEffect(() => {
-  //   if (session && currentAssignments && !initialAssignments) {
-  //     // Create a deep copy of the assignments to track the initial state
-  //     setInitialAssignments(new Map(currentAssignments));
-  //     setHasUnsavedChanges(false); // Reset unsaved changes when loading fresh session
-  //   }
-  // }, [session, currentAssignments, initialAssignments]);
-
-  // // Detect actual changes to assignments
-  // useEffect(() => {
-  //   if (!initialAssignments || !currentAssignments) return;
-  //
-  //   // Compare current assignments with initial state
-  //   const hasChanges =
-  //     currentAssignments.size !== initialAssignments.size ||
-  //     Array.from(currentAssignments.entries()).some(([character, assignment]) => {
-  //       const initial = initialAssignments.get(character);
-  //       return !initial || JSON.stringify(assignment) !== JSON.stringify(initial);
-  //     });
-  //
-  //   setHasUnsavedChanges(hasChanges);
-  // }, [currentAssignments, initialAssignments]);
-
-  // // Auto-save to localStorage for recovery
-  // useEffect(() => {
-  //   const activeSession = getActiveSession();
-  //   if (activeSession && hasUnsavedChanges && currentAssignments) {
-  //     const recovery = {
-  //       yaml: activeSession.yamlContent || '',
-  //       assignments: Array.from(currentAssignments.entries()),
-  //       timestamp: Date.now(),
-  //       versionId: activeSession.yaml_version_id || 1
-  //     };
-  //     localStorage.setItem(`yaml_recovery_${sessionId}`, JSON.stringify(recovery));
-  //   }
-  // }, [sessionId, currentAssignments, hasUnsavedChanges, getActiveSession]);
-
-  // // Warn before navigation if there are unsaved changes
-  // useEffect(() => {
-  //   const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-  //     if (hasUnsavedChanges) {
-  //       e.preventDefault();
-  //       e.returnValue = 'You have unsaved changes. Click Export to save.';
-  //       return 'You have unsaved changes. Click Export to save.';
-  //     }
-  //   };
-  //
-  //   window.addEventListener('beforeunload', handleBeforeUnload);
-  //   return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  // }, [hasUnsavedChanges]);
-
   // Transform character data for display
   const characters = useMemo(() => {
     if (!charactersData) return [];
@@ -258,17 +152,20 @@ function VoiceCastingSessionIndex() {
         longestDialogue: char.longestDialogue || 0,
         isNarrator: char.isNarrator || false,
         // Assignments are the single source of truth for user-editable metadata
-        castingNotes: assignment?.castingNotes,
-        role: assignment?.role,
+        ...(assignment?.casting_notes && {
+          castingNotes: assignment.casting_notes,
+        }),
+        ...(assignment?.role && { role: assignment.role }),
         // Only mark as assigned if there's actual voice data (not just empty provider)
         assignedVoice:
           assignment &&
           assignment.provider &&
+          assignment.sts_id && // Ensure sts_id exists
           (assignment.sts_id || assignment.provider_config)
             ? {
                 provider: assignment.provider,
-                voiceName: assignment.voiceEntry?.sts_id || assignment.sts_id,
-                voiceId: assignment.sts_id,
+                voiceName: assignment.sts_id,
+                voiceId: assignment.sts_id, // Now guaranteed to be string
               }
             : null,
       };
@@ -461,19 +358,32 @@ function VoiceCastingSessionIndex() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleImport}>
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              })}
+              onClick={handleImport}
+            >
               <Upload className="mr-2 h-4 w-4" />
               Import
-            </Button>
-            <Button
-              variant="outline"
+            </button>
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              })}
               onClick={handlePreviewYaml}
               disabled={assignedCount === 0}
             >
               <Eye className="mr-2 h-4 w-4" />
               Preview YAML
-            </Button>
-            <Button
+            </button>
+            <button
+              className={appButtonVariants({
+                variant: 'primary',
+                size: 'sm',
+              })}
               onClick={handleExportYaml}
               disabled={assignedCount === 0 || isExporting}
             >
@@ -483,7 +393,7 @@ function VoiceCastingSessionIndex() {
                 <Download className="mr-2 h-4 w-4" />
               )}
               {isExporting ? 'Exporting...' : 'Export Configuration'}
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -527,18 +437,26 @@ function VoiceCastingSessionIndex() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              })}
               onClick={handleLLMCharacterNotes}
             >
               <FileText className="mr-2 h-4 w-4" />
               Character Analysis
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLLMVoiceLibrary}>
+            </button>
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              })}
+              onClick={handleLLMVoiceLibrary}
+            >
               <Brain className="mr-2 h-4 w-4" />
               Voice Suggestions
-            </Button>
+            </button>
           </div>
         </div>
 

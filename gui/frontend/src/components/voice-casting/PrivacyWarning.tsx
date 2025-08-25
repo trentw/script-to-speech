@@ -2,7 +2,7 @@ import { AlertTriangle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -98,12 +98,25 @@ export function PrivacyWarning({
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={handleCancel}>
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'default',
+              })}
+              onClick={handleCancel}
+            >
               Cancel
-            </Button>
-            <Button onClick={handleAccept} disabled={!localChecked}>
+            </button>
+            <button
+              className={appButtonVariants({
+                variant: 'primary',
+                size: 'default',
+              })}
+              onClick={handleAccept}
+              disabled={!localChecked}
+            >
               Continue
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,8 +1,11 @@
-import { BarChart3, FileCode, FileJson, FileText } from 'lucide-react';
+import { BarChart3, FileCode, FileJson, FileText, Wand2 } from 'lucide-react';
+import { useState } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CastingMethodSelector } from '@/components/voice-casting';
+import { useVoiceCastingSession } from '@/hooks/useVoiceCastingSession';
 import { apiService } from '@/services/api';
 import type { ScreenplayResult } from '@/types';
 import { downloadFile } from '@/utils/downloadService';
@@ -17,6 +20,10 @@ export function ScreenplayResultViewer({
   result,
   taskId,
 }: ScreenplayResultViewerProps) {
+  const { createSessionFromTask, isCreating } = useVoiceCastingSession();
+  const [showCastingModal, setShowCastingModal] = useState(false);
+  const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+
   if (!result) return null;
 
   const { analysis, files, screenplay_name, original_filename, log_file } =
@@ -43,6 +50,26 @@ export function ScreenplayResultViewer({
     });
   };
 
+  const handleCastVoices = async () => {
+    if (!taskId) {
+      console.error('Task ID is required for voice casting');
+      return;
+    }
+
+    try {
+      const sessionId = await createSessionFromTask(taskId);
+      setPendingSessionId(sessionId);
+      setShowCastingModal(true);
+    } catch (error) {
+      console.error('Failed to create voice casting session:', error);
+    }
+  };
+
+  const handleCastingModalClose = () => {
+    setShowCastingModal(false);
+    setPendingSessionId(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -55,8 +82,22 @@ export function ScreenplayResultViewer({
             </p>
           </div>
 
-          {/* Download buttons on new line */}
+          {/* Action buttons on new line */}
           <div className="flex flex-wrap gap-2">
+            {/* Primary action - Cast Voices */}
+            <button
+              className={appButtonVariants({
+                variant: 'primary',
+                size: 'default',
+              })}
+              onClick={handleCastVoices}
+              disabled={isCreating}
+            >
+              <Wand2 className="mr-2 h-4 w-4" />
+              {isCreating ? 'Creating Session...' : 'Cast Voices'}
+            </button>
+
+            {/* Secondary actions - Downloads */}
             {files.json && (
               <button
                 className={appButtonVariants({
@@ -174,6 +215,15 @@ export function ScreenplayResultViewer({
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Casting Method Selector Modal */}
+      {showCastingModal && pendingSessionId && (
+        <CastingMethodSelector
+          sessionId={pendingSessionId}
+          open={showCastingModal}
+          onOpenChange={handleCastingModalClose}
+        />
+      )}
     </div>
   );
 }

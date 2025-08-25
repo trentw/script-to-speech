@@ -123,14 +123,18 @@ export function AdaptiveNavigation({
                 key={item.id}
                 {...item.linkOptions}
                 activeProps={{
-                  className:
-                    'bg-primary text-primary-foreground hover:bg-primary/90',
+                  className: cn(
+                    // Bold inverted style: black background with white text/icon
+                    'bg-gray-900 text-white hover:bg-gray-800 shadow-md',
+                    // Rounded corners for more prominent appearance
+                    'rounded-lg'
+                  ),
                 }}
                 className={cn(
                   'flex w-full items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors',
                   'hover:bg-accent hover:text-accent-foreground',
                   'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                  !isExpanded && 'px-2'
+                  !isExpanded && 'justify-center px-2'
                 )}
               >
                 <IconComponent className="h-4 w-4 flex-shrink-0" />

@@ -1,6 +1,7 @@
 import { CheckCircle2, Circle, Wand2 } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
+import { interactiveCardVariants } from '@/components/ui/interactive.variants';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -44,8 +45,11 @@ export function VoiceCastingHistoryList({
             <Card
               key={session.sessionId}
               className={cn(
-                'hover:bg-accent cursor-pointer p-4 transition-colors',
-                isSelected && 'border-primary bg-accent'
+                'p-4',
+                interactiveCardVariants({
+                  variant: 'action',
+                  state: isSelected ? 'selected' : 'idle',
+                })
               )}
               onClick={() => onSelect(session.sessionId)}
             >

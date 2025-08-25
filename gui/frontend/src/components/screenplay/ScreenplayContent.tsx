@@ -82,10 +82,20 @@ export function ScreenplayContent({
         return; // Exit early since we're navigating away
       }
 
-      // Switch to result view when completed (from any mode)
-      if (taskStatus.status === 'completed' && setViewMode) {
-        setViewMode('result');
-        setStoreViewMode('result');
+      // Switch to result view when completed and navigate if we're not already on task page
+      if (taskStatus.status === 'completed') {
+        // Navigate to task page if we're not already there
+        if (!window.location.hash.includes(`/screenplay/${currentTaskId}`)) {
+          navigate({
+            to: '/screenplay/$taskId',
+            params: { taskId: currentTaskId! },
+          });
+        }
+        // Update view mode to show results
+        if (setViewMode) {
+          setViewMode('result');
+          setStoreViewMode('result');
+        }
       }
       // Switch to status view when backend starts processing (pending or processing)
       else if (
@@ -105,6 +115,7 @@ export function ScreenplayContent({
     setStoreViewMode,
     onTaskCreated,
     currentTaskId,
+    navigate,
   ]);
 
   // Reset to upload mode when no task is selected

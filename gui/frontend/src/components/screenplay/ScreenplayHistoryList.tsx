@@ -1,6 +1,7 @@
 import { FileText, MessageSquare, Users } from 'lucide-react';
 
 import { Card } from '@/components/ui/card';
+import { interactiveCardVariants } from '@/components/ui/interactive.variants';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { RecentScreenplay } from '@/types';
 
@@ -35,8 +36,11 @@ export function ScreenplayHistoryList({
             <Card
               key={screenplay.task_id}
               className={cn(
-                'hover:bg-accent cursor-pointer p-4 transition-colors',
-                isSelected && 'border-primary bg-accent'
+                'p-4',
+                interactiveCardVariants({
+                  variant: 'action',
+                  state: isSelected ? 'selected' : 'idle',
+                })
               )}
               onClick={() => onSelect(screenplay)}
             >

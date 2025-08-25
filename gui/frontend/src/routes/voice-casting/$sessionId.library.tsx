@@ -13,6 +13,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
   CardContent,
@@ -367,10 +368,16 @@ function VoiceLibraryCasting() {
               : String(sessionError)}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={handleBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'default',
+          })}
+          onClick={handleBack}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
-        </Button>
+        </button>
       </div>
     );
   }
@@ -426,24 +433,28 @@ function VoiceLibraryCasting() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  className={appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })}
                   onClick={() =>
                     setSelectedProviders(providers.map((p) => p.identifier))
                   }
                   disabled={selectedProviders.length === providers.length}
                 >
                   Select All
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
+                </button>
+                <button
+                  className={appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })}
                   onClick={() => setSelectedProviders([])}
                   disabled={selectedProviders.length === 0}
                 >
                   Clear All
-                </Button>
+                </button>
               </div>
               <div className="space-y-2">
                 {providers.map((provider, index) => (
@@ -517,10 +528,11 @@ function VoiceLibraryCasting() {
                 className="min-h-[200px] font-mono text-sm"
               />
               {yamlResponse && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute top-2 right-2"
+                <button
+                  className={`${appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })} absolute top-2 right-2`}
                   onClick={handleCopyResponse}
                 >
                   {copiedResponse ? (
@@ -534,15 +546,18 @@ function VoiceLibraryCasting() {
                       Copy
                     </>
                   )}
-                </Button>
+                </button>
               )}
             </div>
           </div>
 
-          <Button
+          <button
+            className={`${appButtonVariants({
+              variant: 'primary',
+              size: 'default',
+            })} w-full`}
             onClick={handleParseResponse}
             disabled={!yamlResponse.trim() || parseYamlMutation.isPending}
-            className="w-full"
           >
             {parseYamlMutation.isPending ? (
               <>
@@ -552,7 +567,7 @@ function VoiceLibraryCasting() {
             ) : (
               'Import Voice Assignments'
             )}
-          </Button>
+          </button>
 
           {parseYamlMutation.error && (
             <Alert variant="destructive">

@@ -19,6 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { FileUploadZone } from '@/components/ui/file-upload-zone';
+import { interactiveCardVariants } from '@/components/ui/interactive.variants';
 import {
   CastingMethodSelector,
   VoiceCastingHistoryList,
@@ -85,11 +87,12 @@ function VoiceCastingUpload() {
       date: new Date(screenplay.created_at).toLocaleDateString(),
     })) || [];
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-    }
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
   };
 
   const handleUpload = async () => {
@@ -157,34 +160,21 @@ function VoiceCastingUpload() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-border space-y-4 rounded-lg border-2 border-dashed p-8 text-center">
-                <FileJson className="text-muted-foreground mx-auto h-12 w-12" />
-                <div className="space-y-2">
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <span className="text-primary hover:underline">
-                      Choose a file
-                    </span>
-                    <input
-                      id="file-upload"
-                      type="file"
-                      accept=".json"
-                      onChange={handleFileSelect}
-                      className="sr-only"
-                    />
-                  </label>
-                  <p className="text-muted-foreground text-sm">
-                    or drag and drop your screenplay JSON here
-                  </p>
-                </div>
-                {selectedFile && (
-                  <div className="bg-muted rounded-md p-3">
-                    <p className="text-sm font-medium">{selectedFile.name}</p>
-                    <p className="text-muted-foreground text-xs">
-                      {(selectedFile.size / 1024).toFixed(1)} KB
-                    </p>
-                  </div>
-                )}
-              </div>
+              <FileUploadZone
+                onFileSelect={handleFileSelect}
+                accept={{
+                  'application/json': ['.json'],
+                }}
+                maxSize={10 * 1024 * 1024} // 10MB for JSON files
+                disabled={uploadJsonMutation.isPending}
+                loading={uploadJsonMutation.isPending}
+                selectedFile={selectedFile}
+                onClearFile={handleClearFile}
+                title="Drag & drop your screenplay JSON here"
+                subtitle="or click to select a file"
+                icon={<FileJson className="text-muted-foreground h-12 w-12" />}
+                loadingText="Uploading..."
+              />
               <Button
                 onClick={handleUpload}
                 disabled={!selectedFile || uploadJsonMutation.isPending}
@@ -237,9 +227,9 @@ function VoiceCastingUpload() {
                 {recentScreenplays.map((screenplay) => (
                   <Card
                     key={screenplay.id}
-                    className={`hover:bg-accent cursor-pointer transition-colors ${
-                      creatingSession === screenplay.id ? 'opacity-60' : ''
-                    }`}
+                    className={`${interactiveCardVariants({
+                      variant: 'action',
+                    })} ${creatingSession === screenplay.id ? 'opacity-60' : ''}`}
                     onClick={() =>
                       !creatingSession && handleSelectRecent(screenplay.id)
                     }

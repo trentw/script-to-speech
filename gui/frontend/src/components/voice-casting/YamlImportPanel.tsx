@@ -73,7 +73,12 @@ export function YamlImportPanel({
         });
       }
     }
-  }, [debouncedYamlInput, sessionData?.screenplayJsonPath]); // Depend on debounced input and screenplay path
+  }, [
+    debouncedYamlInput,
+    sessionData?.screenplayJsonPath,
+    parseYamlMutation,
+    validateYamlMutation,
+  ]); // Depend on debounced input and screenplay path
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>

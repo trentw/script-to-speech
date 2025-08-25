@@ -61,7 +61,9 @@ export function VoiceCard({
     return (
       <div
         className={cn(
-          'border-muted-foreground/25 bg-muted/30 hover:border-muted-foreground/40 hover:bg-muted/50 cursor-pointer rounded-lg border-2 border-dashed p-4 text-center transition-all',
+          'border-muted-foreground/25 bg-muted/30 rounded-lg border-2 border-dashed p-4 text-center',
+          'cursor-pointer transition-colors duration-200',
+          'hover:text-foreground hover:bg-gray-100',
           className
         )}
         onClick={onAssignVoice}

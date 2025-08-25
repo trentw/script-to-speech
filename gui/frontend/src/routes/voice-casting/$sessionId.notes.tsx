@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
   CardContent,
@@ -262,10 +263,16 @@ function CharacterNotesGeneration() {
             Failed to load session: {sessionError.message}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={handleBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'default',
+          })}
+          onClick={handleBack}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
-        </Button>
+        </button>
       </div>
     );
   }
@@ -331,9 +338,11 @@ function CharacterNotesGeneration() {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
+                <button
+                  className={appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })}
                   onClick={() => {
                     // Reset the screenplay source path to show upload again
                     queryClient.setQueryData(
@@ -346,7 +355,7 @@ function CharacterNotesGeneration() {
                   }}
                 >
                   Change File
-                </Button>
+                </button>
               </div>
             </div>
           ) : (
@@ -424,10 +433,11 @@ function CharacterNotesGeneration() {
                 className="min-h-[200px] font-mono text-sm"
               />
               {yamlResponse && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute top-2 right-2"
+                <button
+                  className={`${appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })} absolute top-2 right-2`}
                   onClick={handleCopyResponse}
                 >
                   {copiedResponse ? (
@@ -441,15 +451,18 @@ function CharacterNotesGeneration() {
                       Copy
                     </>
                   )}
-                </Button>
+                </button>
               )}
             </div>
           </div>
 
-          <Button
+          <button
+            className={`${appButtonVariants({
+              variant: 'primary',
+              size: 'default',
+            })} w-full`}
             onClick={handleParseResponse}
             disabled={!yamlResponse.trim() || parseYamlMutation.isPending}
-            className="w-full"
           >
             {parseYamlMutation.isPending ? (
               <>
@@ -459,7 +472,7 @@ function CharacterNotesGeneration() {
             ) : (
               'Import Character Notes'
             )}
-          </Button>
+          </button>
 
           {parseYamlMutation.error && (
             <Alert variant="destructive">
