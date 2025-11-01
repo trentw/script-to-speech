@@ -29,21 +29,12 @@ export function ScreenplayResultViewer({
   const { analysis, files, screenplay_name, original_filename, log_file } =
     result;
 
-  const handleDownload = async (fileType: 'json' | 'text' | 'log') => {
-    if (!taskId) {
-      console.error('Task ID is required for downloading files');
-      return;
-    }
+  const handleDownload = async (filePath: string) => {
+    // Extract actual filename from file path (e.g., "/path/to/screenplay.json" -> "screenplay.json")
+    const filename = filePath.split('/').pop() || 'download';
 
-    // Generate appropriate filename
-    const fileExtension =
-      fileType === 'log' ? 'log' : fileType === 'json' ? 'json' : 'txt';
-    const filename = `${screenplay_name || 'screenplay'}_${fileType}.${fileExtension}`;
-
-    // Get download URL from API service
-    const url = apiService.getScreenplayDownloadUrl(taskId, fileType);
-
-    // Use centralized download service
+    // Download file from path
+    const url = apiService.getScreenplayDownloadFromPathUrl(filePath, filename);
     await downloadFile(url, filename, {
       showDialog: true,
       defaultPath: filename,
@@ -104,7 +95,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => handleDownload('json')}
+                onClick={() => handleDownload(files.json!)}
               >
                 <FileJson className="mr-2 h-4 w-4" />
                 Download JSON
@@ -116,7 +107,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => handleDownload('text')}
+                onClick={() => handleDownload(files.text!)}
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Download Text
@@ -128,7 +119,7 @@ export function ScreenplayResultViewer({
                   variant: 'secondary',
                   size: 'sm',
                 })}
-                onClick={() => handleDownload('log')}
+                onClick={() => handleDownload(log_file)}
               >
                 <FileCode className="mr-2 h-4 w-4" />
                 Download Logs

@@ -167,6 +167,14 @@ class ApiService {
     return `${API_BASE_URL}/screenplay/download/${taskId}/${fileType}`;
   }
 
+  getScreenplayDownloadFromPathUrl(filePath: string, filename: string): string {
+    const params = new URLSearchParams({
+      file_path: filePath,
+      filename: filename,
+    });
+    return `${API_BASE_URL}/screenplay/download-from-path?${params}`;
+  }
+
   async listAudioFiles(): Promise<ApiResponse<AudioFilesResponse>> {
     return this.request<AudioFilesResponse>('/files');
   }

@@ -254,6 +254,30 @@ async def delete_parsing_task(task_id: str, delete_files: bool = False) -> dict:
         raise HTTPException(status_code=500, detail=f"Failed to delete task: {str(e)}")
 
 
+def _serve_screenplay_file(file_path: str, filename: str) -> FileResponse:
+    """Helper function to serve a screenplay file with proper validation.
+
+    Args:
+        file_path: Full path to the file to serve
+        filename: Filename to use in the download
+
+    Returns:
+        FileResponse with the requested file
+
+    Raises:
+        HTTPException: If file doesn't exist
+    """
+    # Verify file exists
+    path_obj = Path(file_path)
+    if not path_obj.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+
+    # Return the file
+    return FileResponse(
+        path=file_path, filename=filename, media_type="application/octet-stream"
+    )
+
+
 @router.get("/download/{task_id}/{file_type}")
 async def download_screenplay_file(task_id: str, file_type: str) -> FileResponse:
     """Download a specific file from a completed screenplay parsing task.
@@ -292,16 +316,42 @@ async def download_screenplay_file(task_id: str, file_type: str) -> FileResponse
                 detail=f"File type '{file_type}' not found for task {task_id}",
             )
 
-        # Verify file exists
-        path_obj = Path(file_path)
-        if not path_obj.exists():
-            raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+        # Use helper to serve the file
+        return _serve_screenplay_file(file_path, filename)
 
-        # Return the file
-        return FileResponse(
-            path=file_path, filename=filename, media_type="application/octet-stream"
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to download file: {str(e)}"
         )
 
+
+@router.get("/download-from-path")
+async def download_screenplay_file_from_path(
+    file_path: str = Query(..., description="Full path to the screenplay file"),
+    filename: str = Query(..., description="Filename to use for the download"),
+) -> FileResponse:
+    """Download a screenplay file from a known filesystem path (for project mode).
+
+    Args:
+        file_path: Full path to the screenplay file
+        filename: Filename to use in the download
+
+    Returns:
+        FileResponse with the requested file
+    """
+    try:
+        # Validate the file path for security
+        validator = PathSecurityValidator(settings.STS_ROOT_DIR)
+        safe_path = validator.validate_existing_path(Path(file_path))
+
+        # Use helper to serve the file
+        return _serve_screenplay_file(str(safe_path), filename)
+
+    except ValueError as e:
+        # Path validation failed
+        raise HTTPException(status_code=400, detail=str(e))
     except HTTPException:
         raise
     except Exception as e:
