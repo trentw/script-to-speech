@@ -413,6 +413,50 @@ async def get_recent_sessions(limit: int = 5) -> RecentSessionsResponse:
     return RecentSessionsResponse(sessions=sessions)
 
 
+class CreateSessionFromProjectRequest(BaseModel):
+    """Request to create a session from a project path."""
+
+    input_path: str = Field(..., description="Path to the project input directory")
+    screenplay_name: str = Field(
+        ..., description="Name of the screenplay without extension"
+    )
+
+
+@router.post("/create-session-from-project", response_model=VoiceCastingSession)
+async def create_session_from_project(
+    request: CreateSessionFromProjectRequest,
+) -> VoiceCastingSession:
+    """
+    Create or retrieve voice casting session for a project.
+
+    This endpoint is used by Project Mode to create a session from files on disk.
+    If a session already exists for the given path, it will be returned instead of
+    creating a duplicate.
+
+    Args:
+        request: Contains input_path and screenplay_name
+
+    Returns:
+        VoiceCastingSession - either existing or newly created
+
+    Raises:
+        HTTPException: If path validation fails or files cannot be read
+    """
+    try:
+        # Use the new method that checks for existing sessions
+        session = await voice_casting_service.create_session_from_project_path(
+            request.input_path, request.screenplay_name
+        )
+        return session
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to create session from project: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create session from project: {str(e)}"
+        )
+
+
 @router.post(
     "/session/{session_id}/screenplay-source", response_model=VoiceCastingSession
 )

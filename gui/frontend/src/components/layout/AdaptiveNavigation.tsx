@@ -1,20 +1,18 @@
 import type { LinkOptions } from '@tanstack/react-router';
-import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import React, { useMemo } from 'react';
 
+import { ManualModeNavigation } from '@/components/navigation/ManualModeNavigation';
+import { ProjectModeNavigation } from '@/components/navigation/ProjectModeNavigation';
+import { ModeSelector } from '@/components/project/ModeSelector';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { type RouteIds } from '@/lib/navigation';
 import { buildNavigationItems } from '@/lib/navigation-builder';
 import { cn } from '@/lib/utils';
+import { useProject, useUIState } from '@/stores/appStore';
 
 interface NavigationItem {
   id: string;
@@ -37,10 +35,26 @@ export function AdaptiveNavigation({
   className,
 }: AdaptiveNavigationProps) {
   const { isMobile, isTablet } = useViewportSize();
+  const { setError } = useUIState();
+  const { mode } = useProject();
 
   // Generate navigation items dynamically from route metadata (lazy initialization)
   const defaultItems = useMemo(() => buildNavigationItems(), []);
   const navigationItems = items || defaultItems;
+
+  // Handle project selection from ModeSelector
+  const handleProjectSelect = (project: {
+    inputPath: string;
+    screenplayName: string;
+  }) => {
+    // Could add navigation logic here if needed
+    console.log('Project selected:', project);
+  };
+
+  // Handle errors from ModeSelector
+  const handleModeError = (error: string) => {
+    setError(error);
+  };
 
   return (
     <>
@@ -87,79 +101,56 @@ export function AdaptiveNavigation({
           containerName: 'navigation',
         }}
       >
-        {/* Header */}
-        <div className="border-border flex items-center justify-between border-b bg-white p-4">
-          <h1
-            className={cn(
-              'overflow-hidden text-lg font-bold whitespace-nowrap',
-              !isExpanded && 'w-0 opacity-0'
-            )}
-          >
-            Script to Speech
-          </h1>
-
-          {onToggleExpanded && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleExpanded}
-              className="h-8 w-8 flex-shrink-0 p-0"
-            >
-              {isExpanded ? (
-                <PanelLeftClose className="h-4 w-4" />
-              ) : (
-                <PanelLeftOpen className="h-4 w-4" />
+        {/* Header with Mode Selector */}
+        <div className="border-border flex flex-col space-y-3 border-b bg-white p-4">
+          <div className="flex items-center justify-between">
+            {/* Mode Selector or collapsed title */}
+            <div
+              className={cn(
+                'flex-1',
+                !isExpanded && 'w-0 overflow-hidden opacity-0'
               )}
-            </Button>
-          )}
+            >
+              {isExpanded && (
+                <ModeSelector
+                  onProjectSelect={handleProjectSelect}
+                  onError={handleModeError}
+                />
+              )}
+            </div>
+
+            {/* Collapsed state title when not expanded */}
+            {!isExpanded && (
+              <h1 className="text-lg font-bold whitespace-nowrap">STS</h1>
+            )}
+
+            {onToggleExpanded && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onToggleExpanded}
+                className="ml-2 h-8 w-8 flex-shrink-0 p-0"
+              >
+                {isExpanded ? (
+                  <PanelLeftClose className="h-4 w-4" />
+                ) : (
+                  <PanelLeftOpen className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Navigation Items */}
-        <div className="flex-1 space-y-1 bg-white p-2">
-          {navigationItems.map((item) => {
-            const IconComponent = item.icon;
-            const linkContent = (
-              <Link
-                key={item.id}
-                {...item.linkOptions}
-                activeProps={{
-                  className: cn(
-                    // Bold inverted style: black background with white text/icon
-                    'bg-gray-900 text-white hover:bg-gray-800 shadow-md',
-                    // Rounded corners for more prominent appearance
-                    'rounded-lg'
-                  ),
-                }}
-                className={cn(
-                  'flex w-full items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  'hover:bg-accent hover:text-accent-foreground',
-                  'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-                  !isExpanded && 'justify-center px-2'
-                )}
-              >
-                <IconComponent className="h-4 w-4 flex-shrink-0" />
-                <span
-                  className={cn(
-                    'ml-2 overflow-hidden whitespace-nowrap',
-                    !isExpanded && 'w-0 opacity-0'
-                  )}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            );
-
-            if (!isExpanded) {
-              return (
-                <Tooltip key={item.id}>
-                  <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return linkContent;
-          })}
+        <div className="flex-1 bg-white p-2">
+          {mode === 'manual' ? (
+            <ManualModeNavigation
+              items={navigationItems}
+              isExpanded={isExpanded}
+            />
+          ) : (
+            <ProjectModeNavigation isExpanded={isExpanded} />
+          )}
         </div>
 
         {/* Footer */}

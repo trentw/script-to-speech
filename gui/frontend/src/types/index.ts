@@ -245,3 +245,13 @@ export interface RecentScreenplay {
   completed_at?: string;
   analysis?: ScreenplayAnalysis;
 }
+
+// Re-export project types
+export type {
+  CreateProjectRequest,
+  CreateProjectResponse,
+  GenerateOptionalConfigRequest,
+  GenerateOptionalConfigResponse,
+  ProjectMeta,
+  ProjectStatus,
+} from './project';

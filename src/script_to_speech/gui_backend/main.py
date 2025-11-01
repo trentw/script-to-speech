@@ -16,6 +16,7 @@ from script_to_speech.gui_backend.config import settings
 from script_to_speech.gui_backend.routers import (
     files,
     generation,
+    projects,
     providers,
     screenplay,
     voice_casting,
@@ -82,7 +83,11 @@ app = FastAPI(
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "tauri://localhost"],  # Vite and Tauri
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "tauri://localhost",
+    ],  # Vite and Tauri
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -93,6 +98,7 @@ app.include_router(providers.router, prefix="/api", tags=["providers"])
 app.include_router(voice_library.router, prefix="/api", tags=["voice-library"])
 app.include_router(generation.router, prefix="/api", tags=["generation"])
 app.include_router(files.router, prefix="/api", tags=["files"])
+app.include_router(projects.router, prefix="/api", tags=["projects"])
 app.include_router(screenplay.router, prefix="/api/screenplay", tags=["screenplay"])
 app.include_router(
     voice_casting.router, prefix="/api/voice-casting", tags=["voice-casting"]

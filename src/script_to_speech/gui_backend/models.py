@@ -166,3 +166,79 @@ class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
     code: Optional[str] = None
+
+
+# Project Mode Models
+
+
+class ApiResponse(BaseModel):
+    """Standard API response envelope."""
+
+    ok: bool
+    data: Optional[Any] = None
+    error: Optional[str] = None
+    details: Optional[Dict[str, Any]] = None
+
+
+class ProjectMeta(BaseModel):
+    """Project metadata for discovered projects."""
+
+    name: str
+    input_path: str
+    output_path: str
+    has_json: bool
+    has_voice_config: bool
+    last_modified: str
+
+
+class ProjectStatus(BaseModel):
+    """Detailed project status with file existence and parse errors."""
+
+    # File existence checks
+    has_pdf: bool
+    has_json: bool
+    has_voice_config: bool
+    has_optional_config: bool
+    has_output_mp3: bool
+
+    # Derived states
+    screenplay_parsed: bool
+    voices_cast: bool
+    audio_generated: bool
+
+    # Metadata (if files exist)
+    speaker_count: Optional[int] = None
+    dialogue_chunks: Optional[int] = None
+    voices_assigned: Optional[int] = None
+
+    # Error states for corrupt files
+    json_error: Optional[str] = None
+    voice_config_error: Optional[str] = None
+
+
+# Additional models for project creation API
+
+
+class ProjectDiscovery(BaseModel):
+    """Discovered project information."""
+
+    name: str
+    inputPath: str
+    outputPath: str
+    hasJson: bool = False
+    hasVoiceConfig: bool = False
+    lastModified: Optional[str] = None
+
+
+class NewProjectRequest(BaseModel):
+    """Request to create a new project."""
+
+    sourceFile: str  # Path to uploaded temporary file
+
+
+class NewProjectResponse(BaseModel):
+    """Response from creating a new project."""
+
+    inputPath: str
+    outputPath: str
+    screenplayName: str

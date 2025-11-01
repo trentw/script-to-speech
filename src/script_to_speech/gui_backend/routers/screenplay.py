@@ -1,11 +1,16 @@
 """Screenplay parsing API routes."""
 
+import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
+from script_to_speech.utils.dialogue_stats_utils import get_speaker_statistics
+from script_to_speech.utils.file_system_utils import PathSecurityValidator
+
+from ..config import settings
 from ..models import TaskResponse, TaskStatusResponse
 from ..services.screenplay_service import screenplay_service
 
@@ -102,6 +107,107 @@ async def get_parsing_result(task_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get parsing result: {str(e)}"
+        )
+
+
+@router.get("/result-from-path")
+async def get_screenplay_result_from_path(
+    input_path: str = Query(..., description="Path to the project input directory"),
+    screenplay_name: str = Query(
+        ..., description="Name of the screenplay without extension"
+    ),
+) -> Dict[str, Any]:
+    """Load and analyze screenplay from project path.
+
+    Args:
+        input_path: Path to the project's input directory
+        screenplay_name: Name of the screenplay (without extension)
+
+    Returns:
+        ScreenplayResult compatible object with analysis and file paths
+    """
+    try:
+        # Use existing PathSecurityValidator
+        validator = PathSecurityValidator(settings.STS_ROOT_DIR)
+
+        # Validate the input path
+        safe_input_path = validator.validate_existing_path(Path(input_path))
+
+        # Build paths
+        json_path = safe_input_path / f"{screenplay_name}.json"
+        text_path = safe_input_path / f"{screenplay_name}.txt"
+
+        # Check if JSON file exists
+        if not json_path.exists():
+            raise HTTPException(
+                status_code=404, detail=f"Screenplay JSON file not found at {json_path}"
+            )
+
+        # Read and parse JSON file
+        with open(json_path, "r", encoding="utf-8") as f:
+            chunks = json.load(f)
+
+        # Analyze the screenplay using existing utilities
+        if not isinstance(chunks, list):
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid screenplay JSON format - expected list of chunks",
+            )
+
+        # Get speaker statistics
+        stats = get_speaker_statistics(chunks) if chunks else {}
+
+        # Build analysis object
+        analysis: Dict[str, Any] = {
+            "total_chunks": len(chunks),
+            "total_distinct_speakers": len(stats.get("speakers", {})),
+            "total_lines": len(chunks),
+            "speaker_counts": stats.get("speakers", {}),
+            "chunk_type_counts": {},
+        }
+
+        # Count chunk types
+        chunk_types: Dict[str, int] = {}
+        for chunk in chunks:
+            chunk_type = chunk.get("type", "unknown")
+            chunk_types[chunk_type] = chunk_types.get(chunk_type, 0) + 1
+        analysis["chunk_type_counts"] = chunk_types
+
+        # Build result object
+        result = {
+            "screenplay_name": screenplay_name,
+            "original_filename": f"{screenplay_name}.pdf",
+            "analysis": analysis,
+            "files": {
+                "json": str(json_path),
+                "text": str(text_path) if text_path.exists() else None,
+            },
+            "text_only": False,
+            "chunks": (
+                chunks[:10] if chunks else []
+            ),  # Include first 10 chunks as preview
+        }
+
+        # Add log file path if it exists
+        output_log_path = (
+            Path(input_path).parent.parent
+            / "output"
+            / screenplay_name
+            / "logs"
+            / f"{screenplay_name}.log"
+        )
+        if output_log_path.exists():
+            result["log_file"] = str(output_log_path)
+
+        return result
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to load screenplay from path: {str(e)}"
         )
 
 

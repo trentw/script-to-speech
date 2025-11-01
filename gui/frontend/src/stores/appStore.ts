@@ -74,12 +74,34 @@ interface ScreenplaySlice {
   resetScreenplayState: () => void;
 }
 
-// Combined store type - NO MORE VoiceCastingSlice!
+// Project mode types using discriminated union for better type safety
+import type { ProjectMetaStore as ProjectMeta } from '../types/project';
+
+// True discriminated union - state shape changes with mode
+type ProjectState =
+  | { mode: 'manual'; recentProjects: string[] }
+  | { mode: 'project'; project: ProjectMeta; recentProjects: string[] };
+
+// Project slice - handles project mode state and recent projects
+interface ProjectSlice {
+  // State is now a discriminated union
+  projectState: ProjectState;
+
+  // Actions
+  setProject: (project: ProjectMeta | null) => void;
+  setMode: (mode: 'manual') => void;
+  addRecentProject: (path: string) => void;
+  clearRecentProjects: () => void;
+  resetProjectState: () => void;
+}
+
+// Combined store type
 type AppStore = ConfigurationSlice &
   UserInputSlice &
   UISlice &
   LayoutSlice &
-  ScreenplaySlice;
+  ScreenplaySlice &
+  ProjectSlice;
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -238,6 +260,107 @@ const useAppStore = create<AppStore>()(
             'screenplay/resetScreenplayState'
           );
         },
+
+        // Project slice implementation
+        projectState: { mode: 'manual', recentProjects: [] } as ProjectState,
+
+        setProject: (project) => {
+          set(
+            (draft) => {
+              if (project) {
+                // Switch to project mode, preserving recent projects
+                draft.projectState = {
+                  mode: 'project',
+                  project,
+                  recentProjects: draft.projectState.recentProjects,
+                };
+              } else {
+                // Switch to manual mode, preserving recent projects
+                draft.projectState = {
+                  mode: 'manual',
+                  recentProjects: draft.projectState.recentProjects,
+                };
+              }
+            },
+            false,
+            'project/setProject'
+          );
+        },
+
+        setMode: (mode) => {
+          set(
+            (draft) => {
+              if (mode === 'manual') {
+                // Switch to manual mode, preserving recent projects
+                draft.projectState = {
+                  mode: 'manual',
+                  recentProjects: draft.projectState.recentProjects,
+                };
+              }
+            },
+            false,
+            'project/setMode'
+          );
+        },
+
+        addRecentProject: (path) => {
+          set(
+            (draft) => {
+              // LRU: Move to front if exists, add to front if new
+              const currentRecent = draft.projectState.recentProjects;
+              const newRecent = [
+                path,
+                ...currentRecent.filter((p) => p !== path),
+              ].slice(0, 10); // Keep max 10 recent projects
+
+              // Update recentProjects while preserving mode
+              if (draft.projectState.mode === 'project') {
+                draft.projectState = {
+                  ...draft.projectState,
+                  recentProjects: newRecent,
+                };
+              } else {
+                draft.projectState = {
+                  mode: 'manual',
+                  recentProjects: newRecent,
+                };
+              }
+            },
+            false,
+            'project/addRecentProject'
+          );
+        },
+
+        clearRecentProjects: () => {
+          set(
+            (draft) => {
+              if (draft.projectState.mode === 'project') {
+                draft.projectState = {
+                  ...draft.projectState,
+                  recentProjects: [],
+                };
+              } else {
+                draft.projectState = {
+                  mode: 'manual',
+                  recentProjects: [],
+                };
+              }
+            },
+            false,
+            'project/clearRecentProjects'
+          );
+        },
+
+        // Reset project state - useful for testing and cleanup
+        resetProjectState: () => {
+          set(
+            (draft) => {
+              draft.projectState = { mode: 'manual', recentProjects: [] };
+            },
+            false,
+            'project/resetProjectState'
+          );
+        },
       })),
       {
         name: 'app-store',
@@ -250,6 +373,9 @@ const useAppStore = create<AppStore>()(
 
           // Persist layout preferences
           sidebarExpanded: state.sidebarExpanded,
+
+          // Persist project mode state (entire discriminated union)
+          projectState: state.projectState,
         }),
       }
     )
@@ -315,6 +441,25 @@ export const useScreenplay = () =>
       resetScreenplayState: state.resetScreenplayState,
     }))
   );
+
+// Project mode selector hook with full type safety
+export const useProject = () =>
+  useAppStore(
+    useShallow((state) => ({
+      // Spread the discriminated union state
+      ...state.projectState,
+      // Include actions
+      setProject: state.setProject,
+      setMode: state.setMode,
+      addRecentProject: state.addRecentProject,
+      clearRecentProjects: state.clearRecentProjects,
+      resetProjectState: state.resetProjectState,
+    }))
+  );
+
+// Export types for external use
+export type { ProjectState };
+export type { ProjectMetaStore as ProjectMeta } from '../types/project';
 
 // Export the store for debugging
 export default useAppStore;

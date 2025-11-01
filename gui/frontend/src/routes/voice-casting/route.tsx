@@ -1,4 +1,5 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useLocation } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
 import { Wand2 } from 'lucide-react';
 
 import { RouteError } from '@/components/errors';
@@ -26,5 +27,21 @@ export const Route = createFileRoute('/voice-casting')({
 });
 
 function VoiceCastingLayout() {
-  return <Outlet />;
+  const location = useLocation();
+  const pageVariants = {
+    initial: { opacity: 0, x: -20 },
+    animate: { opacity: 1, x: 0 },
+  };
+
+  return (
+    <motion.div
+      key={location.pathname}
+      initial="initial"
+      animate="animate"
+      variants={pageVariants}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+    >
+      <Outlet />
+    </motion.div>
+  );
 }

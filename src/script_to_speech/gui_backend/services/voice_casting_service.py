@@ -159,6 +159,8 @@ class VoiceCastingService:
         """Initialize the voice casting service."""
         self._voice_library = VoiceLibrary()
         self._sessions: Dict[str, VoiceCastingSession] = {}  # In-memory session storage
+        # Map project paths to session IDs to prevent duplicates
+        self._project_path_to_session: Dict[str, str] = {}
         # Initialize path validator for secure file access
         self._path_validator = PathSecurityValidator(settings.STS_ROOT_DIR)
 
@@ -1584,6 +1586,45 @@ class VoiceCastingService:
         logger.info(
             f"Created voice casting session {session.session_id} from parsing task"
         )
+        return session
+
+    async def create_session_from_project_path(
+        self, input_path: str, screenplay_name: str
+    ) -> VoiceCastingSession:
+        """
+        Create or retrieve existing session for a project path.
+
+        Args:
+            input_path: Path to the project input directory
+            screenplay_name: Name of the screenplay (without extension)
+
+        Returns:
+            VoiceCastingSession - either existing or newly created
+        """
+        # Build the JSON file path
+        json_path = f"{input_path}/{screenplay_name}.json"
+
+        # Check if we already have a session for this path
+        if json_path in self._project_path_to_session:
+            session_id = self._project_path_to_session[json_path]
+            if session_id in self._sessions:
+                # Return existing session
+                logger.info(f"Reusing existing session {session_id} for {json_path}")
+                return self._sessions[session_id]
+            else:
+                # Session was cleaned up, remove stale mapping
+                del self._project_path_to_session[json_path]
+                logger.info(f"Removed stale session mapping for {json_path}")
+
+        # Create new session using existing method
+        session = await self.create_session(json_path)
+
+        # Store the mapping
+        self._project_path_to_session[json_path] = session.session_id
+        logger.info(
+            f"Created new session {session.session_id} for project at {json_path}"
+        )
+
         return session
 
     async def get_session(self, session_id: str) -> Optional[VoiceCastingSession]:
