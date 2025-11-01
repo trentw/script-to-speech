@@ -164,7 +164,7 @@ class VoiceCastingService:
         # Initialize path validator for secure file access
         self._path_validator = PathSecurityValidator(settings.STS_ROOT_DIR)
 
-    def _load_screenplay_data(self, screenplay_json_path: str) -> Dict[str, Any]:
+    def _load_screenplay_data(self, screenplay_json_path: str) -> List[Dict[str, Any]]:
         """
         Load screenplay data from JSON file.
 
@@ -172,10 +172,10 @@ class VoiceCastingService:
             screenplay_json_path: Path to screenplay JSON file
 
         Returns:
-            Parsed screenplay JSON data
+            List of dialogue chunks (each chunk is a dict with type, speaker, text, etc.)
 
         Raises:
-            ValueError: If path is invalid or file cannot be read
+            ValueError: If path is invalid, file cannot be read, or format is incorrect
         """
         # Validate and resolve path to prevent traversal attacks
         try:
@@ -187,18 +187,25 @@ class VoiceCastingService:
 
         # Load JSON from file
         with open(safe_path, "r", encoding="utf-8") as f:
-            data: Dict[str, Any] = json.load(f)
+            data = json.load(f)
+
+            if not isinstance(data, list):
+                raise ValueError(
+                    f"Invalid screenplay JSON: expected list of dialogue chunks, "
+                    f"got {type(data).__name__}. File may be corrupted or in wrong format."
+                )
+
             return data
 
     async def validate_yaml_warnings(
-        self, yaml_content: str, screenplay_data: Dict[str, Any]
+        self, yaml_content: str, screenplay_data: List[Dict[str, Any]]
     ) -> List[str]:
         """
         Validate YAML content and return warnings (non-blocking validation).
 
         Args:
             yaml_content: YAML configuration content
-            screenplay_data: Parsed screenplay JSON data
+            screenplay_data: List of dialogue chunks from screenplay JSON
 
         Returns:
             List of validation warning messages
@@ -211,8 +218,14 @@ class VoiceCastingService:
                 get_speaker_statistics,
             )
 
-            # Extract dialogues list from screenplay data
-            dialogues = screenplay_data.get("dialogues", [])
+            # Screenplay data is always a list of dialogue chunks
+            # Validate the format as a safety check
+            if not isinstance(screenplay_data, list):
+                raise ValueError(
+                    f"Invalid screenplay format: expected list of dialogues, got {type(screenplay_data).__name__}"
+                )
+
+            dialogues = screenplay_data
             speaker_stats = get_speaker_statistics(dialogues)
             speakers_in_script = set(speaker_stats.keys())
 
