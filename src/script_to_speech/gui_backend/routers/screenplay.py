@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
-from script_to_speech.utils.dialogue_stats_utils import get_speaker_statistics
+from script_to_speech.parser.analyze import analyze_chunks
 from script_to_speech.utils.file_system_utils import PathSecurityValidator
 
 from ..config import settings
@@ -154,24 +154,8 @@ async def get_screenplay_result_from_path(
                 detail="Invalid screenplay JSON format - expected list of chunks",
             )
 
-        # Get speaker statistics
-        stats = get_speaker_statistics(chunks) if chunks else {}
-
-        # Build analysis object
-        analysis: Dict[str, Any] = {
-            "total_chunks": len(chunks),
-            "total_distinct_speakers": len(stats.get("speakers", {})),
-            "total_lines": len(chunks),
-            "speaker_counts": stats.get("speakers", {}),
-            "chunk_type_counts": {},
-        }
-
-        # Count chunk types
-        chunk_types: Dict[str, int] = {}
-        for chunk in chunks:
-            chunk_type = chunk.get("type", "unknown")
-            chunk_types[chunk_type] = chunk_types.get(chunk_type, 0) + 1
-        analysis["chunk_type_counts"] = chunk_types
+        # Use the same analysis function as manual mode for consistency (DRY)
+        analysis = analyze_chunks(chunks, log_results=False) if chunks else {}
 
         # Build result object
         result = {
