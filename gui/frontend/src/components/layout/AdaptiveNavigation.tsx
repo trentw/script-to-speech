@@ -102,43 +102,48 @@ export function AdaptiveNavigation({
         }}
       >
         {/* Header with Mode Selector */}
-        <div className="border-border flex flex-col space-y-3 border-b bg-white p-4">
-          <div className="flex items-center justify-between">
-            {/* Mode Selector or collapsed title */}
-            <div
-              className={cn(
-                'flex-1',
-                !isExpanded && 'w-0 overflow-hidden opacity-0'
-              )}
-            >
-              {isExpanded && (
+        <div
+          className={cn(
+            'border-border relative flex flex-col border-b bg-white',
+            isExpanded ? 'space-y-3 p-4' : 'items-center justify-center p-2'
+          )}
+        >
+          {isExpanded ? (
+            <div className="flex items-center justify-between">
+              {/* Mode Selector */}
+              <div className="flex-1">
                 <ModeSelector
                   onProjectSelect={handleProjectSelect}
                   onError={handleModeError}
                 />
+              </div>
+
+              {/* Toggle button when expanded */}
+              {onToggleExpanded && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggleExpanded}
+                  className="ml-2 flex-shrink-0"
+                  aria-label="Collapse sidebar"
+                >
+                  <PanelLeftClose className="h-4 w-4" />
+                </Button>
               )}
             </div>
-
-            {/* Collapsed state title when not expanded */}
-            {!isExpanded && (
-              <h1 className="text-lg font-bold whitespace-nowrap">STS</h1>
-            )}
-
-            {onToggleExpanded && (
+          ) : (
+            /* Toggle button when collapsed - centered */
+            onToggleExpanded && (
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={onToggleExpanded}
-                className="ml-2 h-8 w-8 flex-shrink-0 p-0"
+                aria-label="Expand sidebar"
               >
-                {isExpanded ? (
-                  <PanelLeftClose className="h-4 w-4" />
-                ) : (
-                  <PanelLeftOpen className="h-4 w-4" />
-                )}
+                <PanelLeftOpen className="h-4 w-4" />
               </Button>
-            )}
-          </div>
+            )
+          )}
         </div>
 
         {/* Navigation Items */}
