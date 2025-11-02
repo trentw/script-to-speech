@@ -577,8 +577,8 @@ class VoiceCastingService:
                 if value is not None and value != "":
                     yaml_data[character][key] = value
                 elif key in yaml_data[character]:
-                    # Remove empty values
-                    del yaml_data[character][key]
+                    # Remove empty values using safe deletion to preserve comments
+                    self._safe_delete_yaml_field(yaml_data[character], key)
 
             # Save updated YAML using shared helper
             updated_session = self._save_session_yaml(session, yaml, yaml_data)
@@ -671,8 +671,8 @@ class VoiceCastingService:
             self._ensure_character_exists(yaml_data, character)
 
             # Clear voice assignment to match CLI-generated template
-            # 1. Set provider to empty string (CLI-consistent)
-            yaml_data[character]["provider"] = ""
+            # 1. Set provider to null (produces 'provider:' without quotes)
+            yaml_data[character]["provider"] = None
 
             # 2. Remove additional voice fields using safe deletion to preserve comments
             voice_fields_to_remove = ["sts_id", "provider_config"]

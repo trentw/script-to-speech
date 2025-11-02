@@ -144,8 +144,8 @@ class TestYamlCommentPreservation:
         yaml = YAML()
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify BARBRA has empty provider and no sts_id
-        assert yaml_data["BARBRA"]["provider"] == ""
+        # Verify BARBRA has null provider and no sts_id
+        assert yaml_data["BARBRA"]["provider"] is None
         assert "sts_id" not in yaml_data["BARBRA"]
 
         # Verify HARRY's comments are preserved in the output
@@ -181,8 +181,8 @@ class TestYamlCommentPreservation:
         yaml = YAML()
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify HARRY has empty provider and no sts_id
-        assert yaml_data["HARRY"]["provider"] == ""
+        # Verify HARRY has null provider and no sts_id
+        assert yaml_data["HARRY"]["provider"] is None
         assert "sts_id" not in yaml_data["HARRY"]
 
         # Verify TOM's comments are preserved
@@ -217,8 +217,8 @@ class TestYamlCommentPreservation:
         yaml = YAML()
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify TOM has empty provider and no sts_id
-        assert yaml_data["TOM"]["provider"] == ""
+        # Verify TOM has null provider and no sts_id
+        assert yaml_data["TOM"]["provider"] is None
         assert "sts_id" not in yaml_data["TOM"]
 
         # Verify TOM's own comments are still present
@@ -260,8 +260,8 @@ class TestYamlCommentPreservation:
         yaml.preserve_quotes = True
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify WOMAN #1 has empty provider
-        assert yaml_data["WOMAN #1"]["provider"] == ""
+        # Verify WOMAN #1 has null provider
+        assert yaml_data["WOMAN #1"]["provider"] is None
 
         # Verify WOMAN #2's comments are preserved
         lines = result.yaml_content.split("\n")
@@ -305,8 +305,8 @@ class TestYamlCommentPreservation:
         yaml.preserve_quotes = True
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify WOMAN #1 has empty provider and nothing else
-        assert yaml_data["WOMAN #1"]["provider"] == ""
+        # Verify WOMAN #1 has null provider and nothing else
+        assert yaml_data["WOMAN #1"]["provider"] is None
         assert len(yaml_data["WOMAN #1"]) == 1  # Only provider field
 
         # Verify next character's comments are still preserved
@@ -347,8 +347,8 @@ class TestYamlCommentPreservation:
         yaml = YAML()
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify HERO has empty provider and no provider_config
-        assert yaml_data["HERO"]["provider"] == ""
+        # Verify HERO has null provider and no provider_config
+        assert yaml_data["HERO"]["provider"] is None
         assert "provider_config" not in yaml_data["HERO"]
 
         # Verify HERO's own comments are preserved
@@ -391,8 +391,8 @@ class TestYamlCommentPreservation:
         yaml.preserve_quotes = True
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify TOM: has empty provider and no sts_id
-        assert yaml_data["TOM:"]["provider"] == ""
+        # Verify TOM: has null provider and no sts_id
+        assert yaml_data["TOM:"]["provider"] is None
         assert "sts_id" not in yaml_data["TOM:"]
 
         # Verify TOM:'s comments are preserved
@@ -442,9 +442,9 @@ class TestYamlCommentPreservation:
         yaml = YAML()
         yaml_data = yaml.load(StringIO(result.yaml_content))
 
-        # Verify character was created with empty provider
+        # Verify character was created with null provider
         assert "NONEXISTENT" in yaml_data
-        assert yaml_data["NONEXISTENT"]["provider"] == ""
+        assert yaml_data["NONEXISTENT"]["provider"] is None
 
     @pytest.mark.asyncio
     async def test_clear_voice_increments_version(
