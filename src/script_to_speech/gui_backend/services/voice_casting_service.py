@@ -1513,29 +1513,58 @@ class VoiceCastingService:
         """
         session_id = str(uuid.uuid4())
         screenplay_name = Path(screenplay_json_path).stem
+        input_json_path = Path(screenplay_json_path)
 
-        # Generate initial YAML using the CLI's function
-        try:
-            # Use the CLI's generate_yaml_config to create initial YAML template
-            # This ensures consistency with CLI and includes character metadata in comments
-            input_json_path = Path(screenplay_json_path)
-            yaml_output_path = generate_yaml_config(
-                input_json_path,
-                provider=None,  # Don't specify provider for multi-provider support
-                include_optional_fields=False,
+        # Determine expected voice_config path (CLI standard location)
+        expected_voice_config_path = (
+            input_json_path.parent / f"{screenplay_name}_voice_config.yaml"
+        )
+
+        # Check if this is an existing project with voice casting work
+        if expected_voice_config_path.exists():
+            # Load existing voice_config (preserves user's work)
+            logger.info(
+                f"Loading existing voice_config from {expected_voice_config_path}"
             )
+            try:
+                with open(expected_voice_config_path, "r", encoding="utf-8") as f:
+                    initial_yaml_content = f.read()
+            except Exception as e:
+                logger.error(f"Failed to load existing voice_config: {e}")
+                # Fall back to empty YAML on read error
+                initial_yaml_content = ""
+        else:
+            # New project - generate initial YAML template
+            try:
+                # Use the CLI's generate_yaml_config to create initial YAML template
+                # This ensures consistency with CLI and includes character metadata in comments
+                yaml_output_path = generate_yaml_config(
+                    input_json_path,
+                    provider=None,  # Don't specify provider for multi-provider support
+                    include_optional_fields=False,
+                )
 
-            # Read the generated YAML content
-            with open(yaml_output_path, "r", encoding="utf-8") as f:
-                initial_yaml_content = f.read()
+                # Read the generated YAML content
+                with open(yaml_output_path, "r", encoding="utf-8") as f:
+                    initial_yaml_content = f.read()
 
-            # Clean up the temporary file
-            yaml_output_path.unlink(missing_ok=True)
+                # Delete the temporary file ONLY if it's not at the expected location
+                # generate_yaml_config writes to the expected location, so we want to keep it
+                if yaml_output_path != expected_voice_config_path:
+                    yaml_output_path.unlink(missing_ok=True)
+                    logger.info(
+                        f"Generated temporary voice_config at {yaml_output_path}"
+                    )
+                else:
+                    # File is already at correct location, keep it for CLI compatibility
+                    logger.info(
+                        f"Generated voice_config at {expected_voice_config_path}"
+                    )
 
-        except Exception as e:
-            logger.warning(f"Failed to generate initial YAML template: {e}")
-            # Fallback to empty YAML if generation fails
-            initial_yaml_content = ""
+            except Exception as e:
+                logger.warning(f"Failed to generate initial YAML template: {e}")
+                # Fallback to empty YAML if generation fails
+                initial_yaml_content = ""
 
         # Count characters in the initial YAML
         initial_total_count = 0
