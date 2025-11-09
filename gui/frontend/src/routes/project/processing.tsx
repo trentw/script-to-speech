@@ -13,6 +13,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
@@ -44,12 +45,16 @@ function ProjectTextProcessing() {
       {/* Header */}
       <div className="mb-6">
         <div className="mb-4 flex items-center gap-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/project">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Overview
-            </Link>
-          </Button>
+          <Link
+            to="/project"
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'sm',
+            })}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Overview
+          </Link>
         </div>
 
         <div className="flex items-center gap-3">

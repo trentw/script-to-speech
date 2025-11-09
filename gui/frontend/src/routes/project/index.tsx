@@ -10,7 +10,7 @@ import {
 
 import { RouteError } from '@/components/errors';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
   CardContent,
@@ -227,18 +227,31 @@ function ProjectToolCard({
         <CardDescription className="text-sm">{description}</CardDescription>
       </CardHeader>
       <CardContent className="pt-0">
-        <Button
-          asChild={!isDisabled}
-          variant="outline"
-          className="w-full"
-          disabled={isDisabled}
-        >
-          {isDisabled ? (
-            <span>Not Available Yet</span>
-          ) : (
-            <a href={`#${href}`}>Open Tool</a>
-          )}
-        </Button>
+        {isDisabled ? (
+          <button
+            className={
+              appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              }) + ' w-full'
+            }
+            disabled={true}
+          >
+            Not Available Yet
+          </button>
+        ) : (
+          <a
+            href={`#${href}`}
+            className={
+              appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              }) + ' w-full'
+            }
+          >
+            Open Tool
+          </a>
+        )}
       </CardContent>
     </Card>
   );

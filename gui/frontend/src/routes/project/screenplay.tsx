@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { ScreenplayResultViewer } from '@/components/screenplay/ScreenplayResultViewer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { useProject } from '@/stores/appStore';
@@ -142,16 +143,24 @@ function ProjectScreenplayInfo() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/project">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Overview
-              </Link>
-            </Button>
+            <Link
+              to="/project"
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'icon',
+              })}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Screenplay Information
+            </h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'sm',
+            })}
             onClick={handleReparse}
             disabled={isReparsing}
           >
@@ -166,12 +175,8 @@ function ProjectScreenplayInfo() {
                 Re-parse
               </>
             )}
-          </Button>
+          </button>
         </div>
-
-        <h1 className="mt-4 text-3xl font-bold tracking-tight">
-          Screenplay Information
-        </h1>
         <p className="text-muted-foreground mt-2">
           Detailed analysis of your parsed screenplay structure and content.
         </p>

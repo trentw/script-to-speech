@@ -22,7 +22,6 @@ import { toast } from 'sonner';
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Progress } from '@/components/ui/progress';
 import { CharacterCard } from '@/components/voice-casting';
@@ -331,10 +330,16 @@ function VoiceCastingSessionIndex() {
               sessionDataError?.message}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={handleBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'sm',
+          })}
+          onClick={handleBack}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Voice Casting
-        </Button>
+        </button>
       </div>
     );
   }
@@ -345,9 +350,15 @@ function VoiceCastingSessionIndex() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleBack}>
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'icon',
+              })}
+              onClick={handleBack}
+            >
               <ArrowLeft className="h-4 w-4" />
-            </Button>
+            </button>
             <div>
               <h1 className="text-2xl font-bold">Voice Casting</h1>
               <p className="text-muted-foreground">

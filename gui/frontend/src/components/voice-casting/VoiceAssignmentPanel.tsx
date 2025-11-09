@@ -8,7 +8,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useAssignVoice } from '@/hooks/mutations/useAssignVoice';
@@ -143,10 +143,16 @@ export function VoiceAssignmentPanel({
             Failed to load session data: {sessionError.message}
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={onBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'sm',
+          })}
+          onClick={onBack}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
-        </Button>
+        </button>
       </div>
     );
   }
@@ -159,10 +165,16 @@ export function VoiceAssignmentPanel({
             No session data available. Please select or create a session first.
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={onBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'sm',
+          })}
+          onClick={onBack}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
-        </Button>
+        </button>
       </div>
     );
   }
@@ -227,9 +239,15 @@ export function VoiceAssignmentPanel({
       <div className="container mx-auto max-w-6xl space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'icon',
+            })}
+            onClick={onBack}
+          >
             <ArrowLeft className="h-4 w-4" />
-          </Button>
+          </button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">
               {character.displayName}: Assign Voice

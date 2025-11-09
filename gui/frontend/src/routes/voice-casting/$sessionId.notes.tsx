@@ -11,7 +11,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
@@ -281,9 +280,15 @@ function CharacterNotesGeneration() {
     <div className="container mx-auto max-w-4xl space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={handleBack}>
+        <button
+          className={appButtonVariants({
+            variant: 'secondary',
+            size: 'icon',
+          })}
+          onClick={handleBack}
+        >
           <ArrowLeft className="h-4 w-4" />
-        </Button>
+        </button>
         <div>
           <h1 className="text-2xl font-bold">Generate Character Notes</h1>
           <p className="text-muted-foreground">

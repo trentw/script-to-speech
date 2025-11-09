@@ -10,6 +10,7 @@ import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
   CardContent,
@@ -75,15 +76,16 @@ export function YamlPreview({ sessionId, onBack, onExport }: YamlPreviewProps) {
       <div className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              className={appButtonVariants({
+                variant: 'secondary',
+                size: 'sm',
+              })}
               onClick={onBack}
-              className="gap-2"
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="mr-2 h-4 w-4" />
               Back
-            </Button>
+            </button>
             <div>
               <h1 className="text-lg font-semibold">YAML Configuration</h1>
               <p className="text-muted-foreground text-sm">
