@@ -5,7 +5,8 @@ import React, { useMemo } from 'react';
 
 import { ManualModeNavigation } from '@/components/navigation/ManualModeNavigation';
 import { ProjectModeNavigation } from '@/components/navigation/ProjectModeNavigation';
-import { ModeSelector } from '@/components/project/ModeSelector';
+import { ManualModeToggle } from '@/components/project/ManualModeToggle';
+import { ProjectControls } from '@/components/project/ProjectControls';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -106,7 +107,7 @@ export function AdaptiveNavigation({
           containerName: 'navigation',
         }}
       >
-        {/* Header with Mode Selector */}
+        {/* Header with Project Controls */}
         <div
           className={cn(
             'border-border relative flex flex-col border-b bg-white',
@@ -115,9 +116,9 @@ export function AdaptiveNavigation({
         >
           {isExpanded ? (
             <div className="flex items-center justify-between">
-              {/* Mode Selector */}
+              {/* Project Controls */}
               <div className="flex-1">
-                <ModeSelector
+                <ProjectControls
                   onProjectSelect={handleProjectSelect}
                   onError={handleModeError}
                 />
@@ -177,6 +178,15 @@ export function AdaptiveNavigation({
         {/* Footer */}
         <div className="border-border border-t bg-white p-4">
           <Separator className="mb-4" />
+
+          {/* Manual Mode Toggle */}
+          {isExpanded && (
+            <div className="mb-4">
+              <ManualModeToggle />
+            </div>
+          )}
+
+          {/* Version Info */}
           <p
             className={cn(
               'text-muted-foreground overflow-hidden text-xs whitespace-nowrap',
