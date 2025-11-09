@@ -11,7 +11,7 @@ import {
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { getNavigationItemClassName } from '@/lib/navigation-styles';
 import { cn } from '@/lib/utils';
-import { useProject } from '@/stores/appStore';
+import { useHasProject, useProject } from '@/stores/appStore';
 
 interface NavigationItem {
   label: string;
@@ -37,9 +37,33 @@ export function ProjectModeNavigation({
   isExpanded = true,
   className,
 }: ProjectModeNavigationProps) {
+  const hasProject = useHasProject();
   const { mode, project } = useProject();
-  const projectInputPath = mode === 'project' ? project?.inputPath : undefined;
+  const projectInputPath =
+    mode === 'project' && project ? project.inputPath : undefined;
   const { status } = useProjectStatus(projectInputPath);
+
+  // Centralized helper: Determine if an item should be disabled
+  const shouldDisableItem = (item: NavigationItem): boolean => {
+    // If no project loaded, disable everything except Overview
+    if (!hasProject && item.to !== '/project') {
+      return true;
+    }
+
+    // Otherwise use the item's own enabled status
+    return !item.enabled;
+  };
+
+  // Centralized helper: Get tooltip text for disabled items
+  const getDisabledTooltip = (item: NavigationItem): string | undefined => {
+    // If no project loaded and not Overview
+    if (!hasProject && item.to !== '/project') {
+      return 'Select or create a project first';
+    }
+
+    // Otherwise use the item's own tooltip
+    return item.tooltip;
+  };
 
   const sections: NavigationSection[] = [
     {
@@ -101,9 +125,23 @@ export function ProjectModeNavigation({
     },
   ];
 
+  // Apply centralized disable logic to all sections
+  const sectionsWithDisableLogic: NavigationSection[] = sections.map(
+    (section) => ({
+      ...section,
+      items: section.items.map((item) => ({
+        ...item,
+        enabled: !shouldDisableItem(item),
+        tooltip: shouldDisableItem(item)
+          ? getDisabledTooltip(item)
+          : item.tooltip,
+      })),
+    })
+  );
+
   return (
     <div className={cn('space-y-4', className)}>
-      {sections.map((section) => (
+      {sectionsWithDisableLogic.map((section) => (
         <NavigationSection
           key={section.title}
           section={section}

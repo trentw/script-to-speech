@@ -78,9 +78,10 @@ interface ScreenplaySlice {
 import type { ProjectMetaStore as ProjectMeta } from '../types/project';
 
 // True discriminated union - state shape changes with mode
+// In project mode, project can be null (empty project state)
 type ProjectState =
   | { mode: 'manual'; recentProjects: string[] }
-  | { mode: 'project'; project: ProjectMeta; recentProjects: string[] };
+  | { mode: 'project'; project: ProjectMeta | null; recentProjects: string[] };
 
 // Project slice - handles project mode state and recent projects
 interface ProjectSlice {
@@ -89,7 +90,7 @@ interface ProjectSlice {
 
   // Actions
   setProject: (project: ProjectMeta | null) => void;
-  setMode: (mode: 'manual') => void;
+  setMode: (mode: 'manual' | 'project') => void;
   addRecentProject: (path: string) => void;
   clearRecentProjects: () => void;
   resetProjectState: () => void;
@@ -296,6 +297,13 @@ const useAppStore = create<AppStore>()(
                   mode: 'manual',
                   recentProjects: draft.projectState.recentProjects,
                 };
+              } else if (mode === 'project') {
+                // Switch to project mode without a project, preserving recent projects
+                draft.projectState = {
+                  mode: 'project',
+                  project: null,
+                  recentProjects: draft.projectState.recentProjects,
+                };
               }
             },
             false,
@@ -456,6 +464,14 @@ export const useProject = () =>
       resetProjectState: state.resetProjectState,
     }))
   );
+
+// Derived selector: check if a project is currently loaded
+export const useHasProject = (): boolean => {
+  return useAppStore((state) => {
+    const { projectState } = state;
+    return projectState.mode === 'project' && projectState.project !== null;
+  });
+};
 
 // Export types for external use
 export type { ProjectState };

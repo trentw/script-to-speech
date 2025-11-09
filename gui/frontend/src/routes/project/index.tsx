@@ -62,13 +62,9 @@ function ProjectOverview() {
       })
     : null;
 
-  // Safety check - this should not happen if route layout is working correctly
+  // Don't render if no project (route guard will handle redirect)
   if (!project) {
-    return (
-      <div className="container mx-auto p-6">
-        <p>Loading project data...</p>
-      </div>
-    );
+    return null;
   }
 
   return (

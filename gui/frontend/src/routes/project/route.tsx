@@ -1,53 +1,69 @@
 import {
   createFileRoute,
   Outlet,
+  redirect,
   useLocation,
-  useNavigate,
 } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { ProjectNotFoundAlert } from '@/components/project/ProjectNotFoundAlert';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
-import { useProject } from '@/stores/appStore';
+import useAppStore, { useProject } from '@/stores/appStore';
 import type { ProjectStatus } from '@/types/project';
 
 // Define project route context interface
 export interface ProjectRouteContext {
-  project: import('@/stores/appStore').ProjectMeta;
+  project: import('@/stores/appStore').ProjectMeta | null;
   status?: ProjectStatus; // From backend API
 }
 
 export const Route = createFileRoute('/project')({
   component: ProjectLayout,
   errorComponent: RouteError,
+  beforeLoad: ({ location }) => {
+    // Access Zustand store state synchronously
+    const projectState = useAppStore.getState().projectState;
+
+    // Only enforce mode validation when navigating TO project routes
+    // Don't interfere when navigating AWAY from project routes
+    const isNavigatingToProject = location.pathname.startsWith('/project');
+    if (!isNavigatingToProject) {
+      return; // Allow leaving project routes without validation
+    }
+
+    // Not in project mode - redirect to TTS
+    if (projectState.mode !== 'project') {
+      throw redirect({ to: '/tts', replace: true });
+    }
+
+    // In project mode but no project loaded - only allow /project/welcome
+    if (
+      projectState.project === null &&
+      location.pathname !== '/project/welcome'
+    ) {
+      throw redirect({ to: '/project/welcome', replace: true });
+    }
+  },
 });
 
 function ProjectLayout() {
   const projectState = useProject();
-  const navigate = useNavigate();
   const location = useLocation();
 
-  // Get inputPath before conditional logic (hooks must be called unconditionally)
+  // Get inputPath
   const inputPath =
-    projectState.mode === 'project'
+    projectState.mode === 'project' && projectState.project
       ? projectState.project.inputPath
       : undefined;
 
-  // Use the project status hook (must be called unconditionally)
+  // Use the project status hook
   const { status, error } = useProjectStatus(inputPath);
 
-  // Route guard: Redirect to home if not in project mode
-  useEffect(() => {
-    if (projectState.mode !== 'project') {
-      navigate({ to: '/', replace: true });
-    }
-  }, [projectState.mode, navigate]);
-
-  // Don't render anything if not in project mode
-  if (projectState.mode !== 'project') {
-    return null;
+  // No mode checking needed - beforeLoad handles it
+  // Render welcome screen if no project loaded
+  if (projectState.project === null) {
+    return <Outlet />;
   }
 
   // Handle project not found (fixed error detection)

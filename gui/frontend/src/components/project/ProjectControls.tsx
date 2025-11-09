@@ -33,7 +33,7 @@ export function ProjectControls({
 
   // Get current project name for display
   const projectName =
-    projectState.mode === 'project'
+    projectState.mode === 'project' && projectState.project
       ? projectState.project.screenplayName
       : null;
 
