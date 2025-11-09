@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/tooltip';
 import { type RouteIds } from '@/lib/navigation';
 import { buildNavigationItems } from '@/lib/navigation-builder';
+import { getNavigationItemClassName } from '@/lib/navigation-styles';
 import { cn } from '@/lib/utils';
 
 interface NavigationItem {
@@ -42,19 +43,17 @@ export function ManualModeNavigation({
             key={item.id}
             {...item.linkOptions}
             activeProps={{
-              className: cn(
-                // Bold inverted style: black background with white text/icon
-                'bg-gray-900 text-white hover:bg-gray-800 shadow-md',
-                // Rounded corners for more prominent appearance
-                'rounded-lg'
-              ),
+              className: getNavigationItemClassName({
+                isActive: true,
+                isCollapsed: !isExpanded,
+              }),
             }}
-            className={cn(
-              'flex w-full items-center justify-start rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              'hover:bg-accent hover:text-accent-foreground',
-              'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-              !isExpanded && 'justify-center px-2'
-            )}
+            inactiveProps={{
+              className: getNavigationItemClassName({
+                isActive: false,
+                isCollapsed: !isExpanded,
+              }),
+            }}
             aria-label={item.label}
             aria-current={
               item.linkOptions.to === window.location.hash.slice(1)

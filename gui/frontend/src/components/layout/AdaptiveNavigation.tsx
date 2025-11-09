@@ -8,6 +8,11 @@ import { ProjectModeNavigation } from '@/components/navigation/ProjectModeNaviga
 import { ModeSelector } from '@/components/project/ModeSelector';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { type RouteIds } from '@/lib/navigation';
 import { buildNavigationItems } from '@/lib/navigation-builder';
@@ -120,28 +125,39 @@ export function AdaptiveNavigation({
 
               {/* Toggle button when expanded */}
               {onToggleExpanded && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onToggleExpanded}
-                  className="ml-2 flex-shrink-0"
-                  aria-label="Collapse sidebar"
-                >
-                  <PanelLeftClose className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={onToggleExpanded}
+                      className="ml-2 flex-shrink-0 hover:bg-gray-100 hover:shadow-md active:scale-95 active:shadow-inner"
+                      aria-label="Collapse sidebar"
+                    >
+                      <PanelLeftClose className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">Collapse sidebar</TooltipContent>
+                </Tooltip>
               )}
             </div>
           ) : (
             /* Toggle button when collapsed - centered */
             onToggleExpanded && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggleExpanded}
-                aria-label="Expand sidebar"
-              >
-                <PanelLeftOpen className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onToggleExpanded}
+                    className="hover:bg-gray-100 hover:shadow-md active:scale-95 active:shadow-inner"
+                    aria-label="Expand sidebar"
+                  >
+                    <PanelLeftOpen className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">Expand sidebar</TooltipContent>
+              </Tooltip>
             )
           )}
         </div>
