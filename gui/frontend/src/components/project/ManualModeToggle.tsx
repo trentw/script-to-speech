@@ -34,22 +34,22 @@ export function ManualModeToggle({ className }: ManualModeToggleProps) {
   };
 
   return (
-    <div className={cn('manual-mode-toggle space-y-2', className)}>
+    <div className={cn('manual-mode-toggle space-y-0.5', className)}>
       {/* Toggle with Label - shadcn pattern */}
       <Tooltip>
         <TooltipTrigger asChild>
           <div className="flex items-center space-x-2">
-            <Switch
-              id="manual-mode-switch"
-              checked={isManualMode}
-              onCheckedChange={handleToggle}
-            />
             <Label
               htmlFor="manual-mode-switch"
               className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
               Manual Mode
             </Label>
+            <Switch
+              id="manual-mode-switch"
+              checked={isManualMode}
+              onCheckedChange={handleToggle}
+            />
           </div>
         </TooltipTrigger>
         <TooltipContent side="right" sideOffset={8}>
