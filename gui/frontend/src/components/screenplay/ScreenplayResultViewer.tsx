@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import { BarChart3, FileCode, FileJson, FileText, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -7,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CastingMethodSelector } from '@/components/voice-casting';
 import { useVoiceCastingSession } from '@/hooks/useVoiceCastingSession';
 import { apiService } from '@/services/api';
+import { useProject } from '@/stores/appStore';
 import type { ScreenplayResult } from '@/types';
 import { downloadFile } from '@/utils/downloadService';
 
@@ -23,6 +25,10 @@ export function ScreenplayResultViewer({
   const { createSessionFromTask, isCreating } = useVoiceCastingSession();
   const [showCastingModal, setShowCastingModal] = useState(false);
   const [pendingSessionId, setPendingSessionId] = useState<string | null>(null);
+
+  // Use standard pattern for detecting project mode
+  const { mode } = useProject();
+  const isProjectMode = mode === 'project';
 
   if (!result) return null;
 
@@ -76,17 +82,33 @@ export function ScreenplayResultViewer({
           {/* Action buttons on new line */}
           <div className="flex flex-wrap gap-2">
             {/* Primary action - Cast Voices */}
-            <button
-              className={appButtonVariants({
-                variant: 'primary',
-                size: 'default',
-              })}
-              onClick={handleCastVoices}
-              disabled={isCreating}
-            >
-              <Wand2 className="mr-2 h-4 w-4" />
-              {isCreating ? 'Creating Session...' : 'Cast Voices'}
-            </button>
+            {isProjectMode ? (
+              // Project mode: Navigate to /project/voices which handles session creation
+              <Link to="/project/voices">
+                <button
+                  className={appButtonVariants({
+                    variant: 'primary',
+                    size: 'default',
+                  })}
+                >
+                  <Wand2 className="mr-2 h-4 w-4" />
+                  Cast Voices
+                </button>
+              </Link>
+            ) : (
+              // Manual mode: Create session via API and show modal
+              <button
+                className={appButtonVariants({
+                  variant: 'primary',
+                  size: 'default',
+                })}
+                onClick={handleCastVoices}
+                disabled={isCreating}
+              >
+                <Wand2 className="mr-2 h-4 w-4" />
+                {isCreating ? 'Creating Session...' : 'Cast Voices'}
+              </button>
+            )}
 
             {/* Secondary actions - Downloads */}
             {files.json && (
@@ -148,12 +170,14 @@ export function ScreenplayResultViewer({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-muted-foreground text-sm">Total Chunks</p>
-                <p className="text-2xl font-bold">{analysis.total_chunks}</p>
+                <p className="text-2xl font-bold">
+                  {analysis?.total_chunks || 0}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Total Speakers</p>
                 <p className="text-2xl font-bold">
-                  {analysis.total_distinct_speakers}
+                  {analysis?.total_distinct_speakers || 0}
                 </p>
               </div>
             </div>
@@ -164,7 +188,7 @@ export function ScreenplayResultViewer({
           <Card className="p-6">
             <h4 className="mb-4 text-lg font-semibold">Speaker Line Counts</h4>
             <div className="space-y-2">
-              {Object.entries(analysis.speaker_counts)
+              {Object.entries(analysis?.speaker_counts || {})
                 .sort(([, a], [, b]) => (b as number) - (a as number))
                 .map(([speaker, count]) => (
                   <div
@@ -187,7 +211,7 @@ export function ScreenplayResultViewer({
               Chunk Type Distribution
             </h4>
             <div className="space-y-2">
-              {Object.entries(analysis.chunk_type_counts)
+              {Object.entries(analysis?.chunk_type_counts || {})
                 .sort(([, a], [, b]) => (b as number) - (a as number))
                 .map(([type, count]) => (
                   <div
