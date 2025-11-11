@@ -62,14 +62,11 @@ export function ManualModeNavigation({
             }
           >
             <IconComponent className="h-4 w-4 flex-shrink-0" />
-            <span
-              className={cn(
-                'ml-2 overflow-hidden whitespace-nowrap',
-                !isExpanded && 'w-0 opacity-0'
-              )}
-            >
-              {item.label}
-            </span>
+            {isExpanded && (
+              <span className="ml-2 overflow-hidden whitespace-nowrap">
+                {item.label}
+              </span>
+            )}
           </Link>
         );
 
