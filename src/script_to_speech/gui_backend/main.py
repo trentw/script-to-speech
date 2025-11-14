@@ -125,13 +125,27 @@ async def health() -> dict[str, str]:
 
 def main() -> None:
     """Run the FastAPI server."""
-    uvicorn.run(
-        "script_to_speech.gui_backend.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level=settings.LOG_LEVEL.lower(),
-    )
+    # Detect if running as PyInstaller bundle
+    is_frozen = getattr(sys, "frozen", False)
+
+    if is_frozen:
+        # Production: use app object (reload doesn't work with app object)
+        uvicorn.run(
+            app,
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=False,
+            log_level=settings.LOG_LEVEL.lower(),
+        )
+    else:
+        # Development: use string import (enables reload/workers)
+        uvicorn.run(
+            "script_to_speech.gui_backend.main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=settings.DEBUG,
+            log_level=settings.LOG_LEVEL.lower(),
+        )
 
 
 if __name__ == "__main__":

@@ -4,12 +4,59 @@ PyInstaller build script for the Script-to-Speech GUI backend.
 
 This script creates a standalone executable that can be bundled with the Tauri app
 for self-contained distribution without requiring Python/uv to be installed.
+
+The executable is renamed with a platform-specific target triple suffix (e.g.,
+sts-gui-backend-x86_64-apple-darwin) to comply with Tauri's sidecar naming convention.
 """
 
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+
+def get_target_triple():
+    """
+    Detect the platform target triple for Tauri sidecar naming.
+
+    Returns:
+        str: Target triple (e.g., 'x86_64-apple-darwin', 'x86_64-pc-windows-msvc')
+
+    Raises:
+        RuntimeError: If target triple cannot be determined
+    """
+    try:
+        # Try to get target triple from rustc (most reliable)
+        result = subprocess.run(
+            ["rustc", "-vV"], capture_output=True, text=True, check=True
+        )
+
+        # Parse output for "host: <target-triple>"
+        match = re.search(r"host:\s+(\S+)", result.stdout)
+        if match:
+            return match.group(1)
+
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        # Fallback: detect from platform
+        print("⚠️  rustc not found, falling back to platform detection...")
+        import platform
+
+        system = platform.system().lower()
+        machine = platform.machine().lower()
+
+        # Map to common target triples
+        if system == "darwin":
+            if machine == "arm64" or machine == "aarch64":
+                return "aarch64-apple-darwin"
+            else:
+                return "x86_64-apple-darwin"
+        elif system == "windows":
+            return "x86_64-pc-windows-msvc"
+        elif system == "linux":
+            return "x86_64-unknown-linux-gnu"
+
+    raise RuntimeError("Could not determine platform target triple")
 
 
 def main():
@@ -60,10 +107,30 @@ def main():
         f"{src_dir / 'script_to_speech' / 'voice_library' / 'voice_library_data'}:script_to_speech/voice_library/voice_library_data",
         "--add-data",
         f"{src_dir / 'script_to_speech' / 'text_processors' / 'configs'}:script_to_speech/text_processors/configs",
+        "--add-data",
+        f"{src_dir / 'script_to_speech' / 'tts_providers'}:script_to_speech/tts_providers",
         "--hidden-import",
         "script_to_speech.gui_backend",
         "--hidden-import",
         "script_to_speech.tts_providers",
+        "--hidden-import",
+        "script_to_speech.tts_providers.base",
+        "--hidden-import",
+        "script_to_speech.tts_providers.openai",
+        "--hidden-import",
+        "script_to_speech.tts_providers.elevenlabs",
+        "--hidden-import",
+        "script_to_speech.tts_providers.cartesia",
+        "--hidden-import",
+        "script_to_speech.tts_providers.minimax",
+        "--hidden-import",
+        "script_to_speech.tts_providers.zonos",
+        "--hidden-import",
+        "script_to_speech.tts_providers.dummy_common",
+        "--hidden-import",
+        "script_to_speech.tts_providers.dummy_stateful",
+        "--hidden-import",
+        "script_to_speech.tts_providers.dummy_stateless",
         "--hidden-import",
         "script_to_speech.voice_library",
         "--hidden-import",
@@ -81,11 +148,44 @@ def main():
         result = subprocess.run(cmd, check=True, capture_output=True, text=True)
         print("✅ Build completed successfully!")
 
-        # Check if executable was created
-        executable = dist_dir / "sts-gui-backend"
-        if executable.exists():
-            print(f"📦 Executable created: {executable}")
-            print(f"   Size: {executable.stat().st_size / 1024 / 1024:.1f} MB")
+        # Get platform target triple for Tauri sidecar naming
+        try:
+            target_triple = get_target_triple()
+            print(f"🎯 Detected target triple: {target_triple}")
+        except RuntimeError as e:
+            print(f"❌ Error: {e}")
+            sys.exit(1)
+
+        # Check if executable was created and rename with target triple
+        base_executable = dist_dir / "sts-gui-backend"
+
+        # Add .exe extension for Windows
+        if sys.platform == "win32":
+            base_executable = dist_dir / "sts-gui-backend.exe"
+
+        if base_executable.exists():
+            # Create new name with target triple suffix
+            extension = ".exe" if sys.platform == "win32" else ""
+            new_executable = dist_dir / f"sts-gui-backend-{target_triple}{extension}"
+
+            # Rename the file
+            base_executable.rename(new_executable)
+
+            print(f"📦 Executable created: {new_executable}")
+            print(f"   Size: {new_executable.stat().st_size / 1024 / 1024:.1f} MB")
+
+            # Copy to Tauri binaries directory for bundling
+            tauri_binaries_dir = (
+                project_root / "gui" / "frontend" / "src-tauri" / "binaries"
+            )
+            tauri_binaries_dir.mkdir(parents=True, exist_ok=True)
+            tauri_binary_path = (
+                tauri_binaries_dir / f"sts-gui-backend-{target_triple}{extension}"
+            )
+
+            shutil.copy2(new_executable, tauri_binary_path)
+            print(f"📋 Copied to Tauri binaries: {tauri_binary_path}")
+            print(f"✨ Ready for Tauri sidecar bundling!")
         else:
             print("⚠️  Warning: Executable not found in expected location")
 

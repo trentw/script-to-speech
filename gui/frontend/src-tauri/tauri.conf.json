@@ -7,7 +7,7 @@
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build && cd ../../../ && uv run python build_backend.py"
+    "beforeBuildCommand": "npm run build && cd ../../ && uv run python build_backend.py"
   },
   "app": {
     "windows": [
@@ -33,6 +33,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["../../../dist/sts-gui-backend"]
+    "externalBin": ["binaries/sts-gui-backend"]
   }
 }
