@@ -1,4 +1,4 @@
-.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-backend kill-server
+.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-debug gui-build-release gui-build-backend kill-server
 .PHONY: frontend-test frontend-test-ui frontend-test-coverage frontend-lint frontend-lint-fix
 .PHONY: frontend-format frontend-type-check frontend-analyze frontend-type-coverage help
 
@@ -6,9 +6,11 @@ help: ## Show available commands
 	@echo "Script-to-Speech GUI Commands:"
 	@echo "  make gui-server         - Start FastAPI backend server"
 	@echo "  make kill-server        - Stop FastAPI backend server"
-	@echo "  make gui-dev            - Start React frontend (web, recommended for development)"  
+	@echo "  make gui-dev            - Start React frontend (web, recommended for development)"
 	@echo "  make gui-desktop        - Start desktop app in development mode"
-	@echo "  make gui-build          - Build production desktop app with bundled backend"
+	@echo "  make gui-build          - Build production desktop app (debug mode, default)"
+	@echo "  make gui-build-debug    - Build production desktop app (debug mode, with console)"
+	@echo "  make gui-build-release  - Build production desktop app (release mode, optimized)"
 	@echo "  make gui-build-backend  - Build standalone backend executable only"
 	@echo ""
 	@echo "Frontend Development Commands:"
@@ -46,8 +48,19 @@ gui-dev: ## Start React frontend for web development
 gui-desktop: ## Start desktop app in development mode  
 	cd gui/frontend && npx tauri dev
 
-gui-build: ## Build production desktop app
-	cd gui/frontend && npx tauri build
+gui-build: gui-build-debug ## Build production desktop app (defaults to debug mode)
+
+gui-build-debug: ## Build production desktop app with debug mode (console access)
+	@echo "🔨 Building backend executable..."
+	@uv run python build_backend.py
+	@echo "🏗️  Building Tauri app (debug mode - has console for easier debugging)..."
+	@cd gui/frontend && npx tauri build --debug
+
+gui-build-release: ## Build production desktop app (optimized release)
+	@echo "🔨 Building backend executable..."
+	@uv run python build_backend.py
+	@echo "🏗️  Building Tauri app (release mode - optimized)..."
+	@cd gui/frontend && npx tauri build
 
 gui-build-backend: ## Build standalone backend executable
 	uv run python build_backend.py

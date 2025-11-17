@@ -3,7 +3,6 @@
 import json
 import logging
 import os
-import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,18 +19,36 @@ logger = logging.getLogger(__name__)
 class ProjectService:
     """Service for project discovery and status checking."""
 
-    def __init__(self) -> None:
-        """Initialize the project service."""
-        # Use absolute paths from the project root
-        self.project_root = Path.cwd()
-        self.input_dir = self.project_root / "input"
-        self.output_dir = self.project_root / "output"
-        self.source_screenplays_dir = self.project_root / "source_screenplays"
+    def __init__(self, workspace_dir: Optional[Path] = None) -> None:
+        """Initialize the project service.
+
+        Args:
+            workspace_dir: Root directory for project workspace. If None, uses settings.WORKSPACE_DIR.
+        """
+        # Use provided workspace_dir or fall back to settings
+        if workspace_dir is None:
+            workspace_dir = settings.WORKSPACE_DIR
+
+        if workspace_dir is None:
+            raise ValueError(
+                "Workspace directory is not configured. Set STS_WORKSPACE_DIR environment variable."
+            )
+
+        self.workspace_dir = Path(workspace_dir)
+        self.input_dir = self.workspace_dir / "input"
+        self.output_dir = self.workspace_dir / "output"
+        self.source_screenplays_dir = self.workspace_dir / "source_screenplays"
 
         # Ensure directories exist
-        self.input_dir.mkdir(exist_ok=True)
-        self.output_dir.mkdir(exist_ok=True)
-        self.source_screenplays_dir.mkdir(exist_ok=True)
+        try:
+            self.input_dir.mkdir(parents=True, exist_ok=True)
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            self.source_screenplays_dir.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            logger.error(
+                f"Failed to create workspace directories at {self.workspace_dir}: {e}"
+            )
+            raise
 
     def _validate_path_security(self, path: str) -> Path:
         """Validate and resolve path to prevent directory traversal attacks.
@@ -383,7 +400,7 @@ class ProjectService:
         return sanitized
 
     def _run_cli_parser(self, screenplay_path: Path) -> None:
-        """Run the CLI screenplay parser.
+        """Run the screenplay parser directly.
 
         Args:
             screenplay_path: Path to the screenplay file to parse
@@ -392,32 +409,23 @@ class ProjectService:
             RuntimeError: If parsing fails
         """
         try:
-            # Run the CLI parser
-            cmd = ["uv", "run", "sts-parse-screenplay", str(screenplay_path)]
+            # Import parser function directly
+            from script_to_speech.parser.process import process_screenplay
 
-            result = subprocess.run(
-                cmd,
-                cwd=self.project_root,
-                capture_output=True,
-                text=True,
-                timeout=300,  # 5 minute timeout
+            # Call parser function with workspace as base_path
+            result = process_screenplay(
+                input_file=str(screenplay_path),
+                base_path=self.workspace_dir,
+                text_only=False,
             )
 
-            if result.returncode != 0:
-                error_msg = f"CLI parser failed with exit code {result.returncode}"
-                if result.stderr:
-                    error_msg += f": {result.stderr}"
-                raise RuntimeError(error_msg)
-
             logger.info(f"Successfully parsed screenplay: {screenplay_path}")
+            logger.debug(f"Parser result: {result}")
 
-            if result.stdout:
-                logger.debug(f"Parser output: {result.stdout}")
-
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("Screenplay parsing timed out after 5 minutes")
         except Exception as e:
-            raise RuntimeError(f"Failed to run CLI parser: {str(e)}")
+            error_msg = f"Screenplay parsing failed: {str(e)}"
+            logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg)
 
 
 # Create service instance

@@ -2,6 +2,7 @@
  * Project API service for interacting with project endpoints
  */
 
+import { API_BASE_URL } from '../config/api';
 import type { ProjectStatus } from '../types/project';
 
 interface ApiResponse<T = unknown> {
@@ -27,7 +28,7 @@ interface ProjectCreateData {
 }
 
 class ProjectApiService {
-  private baseUrl = '/api';
+  private baseUrl = API_BASE_URL;
 
   /**
    * Discover existing projects in the workspace

@@ -9,6 +9,16 @@
     "fs:default",
     "fs:write-all",
     "fs:read-all",
-    "upload:default"
+    "upload:default",
+    {
+      "identifier": "shell:allow-execute",
+      "allow": [
+        {
+          "name": "binaries/sts-gui-backend",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    }
   ]
 }

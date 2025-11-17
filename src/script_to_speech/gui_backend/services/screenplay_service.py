@@ -45,18 +45,39 @@ class ScreenplayParsingTask:
 class ScreenplayService:
     """Service for managing screenplay parsing tasks."""
 
-    def __init__(self) -> None:
-        """Initialize the screenplay service."""
+    def __init__(self, workspace_dir: Optional[Path] = None) -> None:
+        """Initialize the screenplay service.
+
+        Args:
+            workspace_dir: Root directory for project workspace. If None, uses settings.WORKSPACE_DIR.
+        """
         self._tasks: Dict[str, ScreenplayParsingTask] = {}
         self._lock = threading.Lock()
+
+        # Use provided workspace_dir or fall back to settings
+        if workspace_dir is None:
+            workspace_dir = settings.WORKSPACE_DIR
+
+        if workspace_dir is None:
+            raise ValueError(
+                "Workspace directory is not configured. Set STS_WORKSPACE_DIR environment variable."
+            )
+
+        self.workspace_dir = Path(workspace_dir)
 
         # Ensure upload directory exists
         self.upload_dir = Path(settings.UPLOAD_DIR)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
-        # Ensure source_screenplays directory exists - use absolute path
-        self.source_screenplays_dir = Path.cwd() / "source_screenplays"
-        self.source_screenplays_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure source_screenplays directory exists in workspace
+        self.source_screenplays_dir = self.workspace_dir / "source_screenplays"
+        try:
+            self.source_screenplays_dir.mkdir(parents=True, exist_ok=True)
+        except (PermissionError, OSError) as e:
+            logger.error(
+                f"Failed to create source_screenplays directory at {self.source_screenplays_dir}: {e}"
+            )
+            raise
 
     async def create_parsing_task(
         self, file: UploadFile, text_only: bool = False
@@ -133,8 +154,8 @@ class ScreenplayService:
             # Use the secure process_screenplay function with base_path
             from script_to_speech.parser.process import process_screenplay
 
-            # Set the working directory as the base path for security validation
-            base_path = Path.cwd()
+            # Set the workspace directory as the base path for security validation
+            base_path = self.workspace_dir
 
             try:
                 # Process the screenplay using the secure function
@@ -277,7 +298,7 @@ class ScreenplayService:
             # If task.output_dir doesn't work, try standard output path structure
             if not logs_dir or not logs_dir.exists():
                 screenplay_name = result.get("screenplay_name", "unknown")
-                potential_output_dir = Path.cwd() / "output" / screenplay_name
+                potential_output_dir = self.workspace_dir / "output" / screenplay_name
                 logs_dir = potential_output_dir / "logs"
 
             if logs_dir and logs_dir.exists():

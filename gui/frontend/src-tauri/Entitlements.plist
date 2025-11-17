@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- NO APP SANDBOX
+	     App Sandbox (com.apple.security.app-sandbox) was causing signal 5 (SIGTRAP)
+	     when attempting to spawn the PyInstaller sidecar. Removing it allows the
+	     sidecar to launch successfully while still maintaining necessary permissions. -->
+
+	<!-- Allow outgoing network connections for the backend server -->
+	<key>com.apple.security.network.client</key>
+	<true/>
+
+	<!-- Allow incoming network connections for the backend server -->
+	<key>com.apple.security.network.server</key>
+	<true/>
+
+	<!-- Allow loading dynamic libraries (for PyInstaller backend) -->
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+
+	<!-- CRITICAL: Disable library validation for sidecar executables
+	     This fixes the "different Team IDs" error when PyInstaller loads Python framework -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+
+	<!-- Allow read/write access to files selected by user via file dialogs -->
+	<!-- This enables "Export Audio" and "Import Screenplay" functionality -->
+	<key>com.apple.security.files.user-selected.read-write</key>
+	<true/>
+</dict>
+</plist>

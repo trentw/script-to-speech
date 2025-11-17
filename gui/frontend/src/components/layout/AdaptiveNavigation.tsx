@@ -186,15 +186,18 @@ export function AdaptiveNavigation({
             </div>
           )}
 
-          {/* Version Info */}
-          <p
+          {/* Version Info and Debug Controls */}
+          <div
             className={cn(
-              'text-muted-foreground overflow-hidden text-xs whitespace-nowrap',
-              !isExpanded && 'w-0 opacity-0'
+              'flex flex-col gap-2',
+              !isExpanded && 'w-0 overflow-hidden opacity-0'
             )}
           >
-            v0.1.0
-          </p>
+            {/* Version */}
+            <p className="text-muted-foreground text-xs whitespace-nowrap">
+              v0.1.0
+            </p>
+          </div>
         </div>
       </motion.nav>
     </>

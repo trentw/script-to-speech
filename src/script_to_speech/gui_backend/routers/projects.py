@@ -181,10 +181,12 @@ async def create_new_project(request: NewProjectRequest) -> ApiResponse:
     except RuntimeError as e:
         # Server error - CLI parsing failed
         logger.error(f"CLI parsing failed for project creation: {e}")
+        # Include full error details in the error field so frontend displays it
+        full_error = f"Failed to parse screenplay: {str(e)}"
         return ApiResponse(
             ok=False,
-            error="Failed to parse screenplay",
-            details={"error_message": str(e)},
+            error=full_error,
+            details={"error_message": str(e), "error_type": "RuntimeError"},
         )
 
     except Exception as e:

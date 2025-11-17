@@ -137,6 +137,23 @@ def main():
         "script_to_speech.text_processors",
         "--hidden-import",
         "script_to_speech.audio_generation",
+        "--hidden-import",
+        "script_to_speech.parser",
+        "--hidden-import",
+        "script_to_speech.parser.process",
+        "--hidden-import",
+        "script_to_speech.parser.screenplay_parser",
+        "--hidden-import",
+        "script_to_speech.parser.analyze",
+        # Python 3.13+ built-in modules that PyInstaller may miss
+        "--hidden-import",
+        "_contextvars",  # Required for asyncio in Python 3.13
+        "--hidden-import",
+        "_hashlib",  # Required for hashlib algorithms
+        "--hidden-import",
+        "_ssl",  # Required for SSL/TLS support
+        "--collect-all",
+        "hashlib",  # Ensure all hash algorithms are included
         "--console",  # Console app for debugging
         str(main_script),
     ]
@@ -156,33 +173,41 @@ def main():
             print(f"❌ Error: {e}")
             sys.exit(1)
 
-        # Check if executable was created and rename with target triple
+        # Rename the generated executable with platform target triple
         base_executable = dist_dir / "sts-gui-backend"
 
-        # Add .exe extension for Windows
-        if sys.platform == "win32":
-            base_executable = dist_dir / "sts-gui-backend.exe"
-
         if base_executable.exists():
-            # Create new name with target triple suffix
-            extension = ".exe" if sys.platform == "win32" else ""
-            new_executable = dist_dir / f"sts-gui-backend-{target_triple}{extension}"
+            # Rename with target triple suffix
+            new_executable = dist_dir / f"sts-gui-backend-{target_triple}"
 
-            # Rename the file
+            # Remove existing file if it exists
+            if new_executable.exists():
+                new_executable.unlink()
+
+            # Rename the executable
             base_executable.rename(new_executable)
 
+            # Get file size
+            file_size = new_executable.stat().st_size
+
             print(f"📦 Executable created: {new_executable}")
-            print(f"   Size: {new_executable.stat().st_size / 1024 / 1024:.1f} MB")
+            print(f"   Size: {file_size / 1024 / 1024:.1f} MB")
 
             # Copy to Tauri binaries directory for bundling
             tauri_binaries_dir = (
                 project_root / "gui" / "frontend" / "src-tauri" / "binaries"
             )
             tauri_binaries_dir.mkdir(parents=True, exist_ok=True)
-            tauri_binary_path = (
-                tauri_binaries_dir / f"sts-gui-backend-{target_triple}{extension}"
-            )
+            tauri_binary_path = tauri_binaries_dir / f"sts-gui-backend-{target_triple}"
 
+            # Remove existing file or directory if it exists
+            if tauri_binary_path.exists():
+                if tauri_binary_path.is_dir():
+                    shutil.rmtree(tauri_binary_path)
+                else:
+                    tauri_binary_path.unlink()
+
+            # Copy the single executable file
             shutil.copy2(new_executable, tauri_binary_path)
             print(f"📋 Copied to Tauri binaries: {tauri_binary_path}")
             print(f"✨ Ready for Tauri sidecar bundling!")

@@ -1,7 +1,6 @@
 """FastAPI backend server for Script-to-Speech GUI."""
 
 import asyncio
-import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -123,12 +122,48 @@ async def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
+@app.get("/api/workspace")
+async def get_workspace_info() -> dict[str, str | bool | list[str] | None]:
+    """Get workspace directory information."""
+    workspace_dir = settings.WORKSPACE_DIR
+    if workspace_dir is None:
+        return {
+            "workspace_dir": "Not configured",
+            "exists": False,
+            "error": "Workspace directory is not set",
+        }
+
+    # Comprehensive debug information for troubleshooting
+    is_production = "--production" in sys.argv
+
+    return {
+        "workspace_dir": str(workspace_dir),
+        "exists": workspace_dir.exists(),
+        "input_dir": str(workspace_dir / "input"),
+        "output_dir": str(workspace_dir / "output"),
+        "source_screenplays_dir": str(workspace_dir / "source_screenplays"),
+        # Production detection
+        "is_production": is_production,
+        "detection_method": "tauri_flag",
+        # Debug: All arguments received by Python
+        "sys_argv": sys.argv,
+        "production_flag_present": "--production" in sys.argv,
+        # Debug: PyInstaller state (for comparison)
+        "sys_frozen": getattr(sys, "frozen", None),
+        "sys_meipass": getattr(sys, "_MEIPASS", None),
+        # Platform info
+        "sys_platform": sys.platform,
+    }
+
+
 def main() -> None:
     """Run the FastAPI server."""
-    # Detect if running as PyInstaller bundle
-    is_frozen = getattr(sys, "frozen", False)
+    print(f"Backend starting with workspace: {settings.WORKSPACE_DIR}")
 
-    if is_frozen:
+    # Check if running in production mode (Tauri passes --production flag)
+    production_mode = "--production" in sys.argv
+
+    if production_mode:
         # Production: use app object (reload doesn't work with app object)
         uvicorn.run(
             app,
