@@ -127,10 +127,14 @@ function RootComponent() {
     navigate({ to: '/screenplay' });
   };
 
-  if (!backendStatus) {
+  // Show loading state while:
+  // 1. Query hasn't returned yet (initial load)
+  // 2. Backend is starting up (Tauri mode: waiting for ready signal)
+  if (!backendStatus || backendStatus.isStarting) {
     return <AppLoading />;
   }
 
+  // Only show "Disconnected" after backend was ready and then lost connection
   if (!backendStatus.connected) {
     return <AppStatus connected={false} />;
   }
