@@ -2,11 +2,12 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { BACKEND_URL } from '@/config';
 import { server } from '@/test/setup';
 
 import { useBackendStatus } from '../useBackendStatus';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = BACKEND_URL;
 
 describe('useBackendStatus', () => {
   beforeEach(() => {

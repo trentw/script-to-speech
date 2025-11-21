@@ -1,15 +1,19 @@
 """FastAPI backend server for Script-to-Speech GUI."""
 
+import argparse
 import asyncio
+import multiprocessing
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Callable
 
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from uvicorn import Config, Server
 
 from script_to_speech.gui_backend.config import settings
 from script_to_speech.gui_backend.routers import (
@@ -27,6 +31,10 @@ from script_to_speech.gui_backend.services.voice_casting_service import (
 from script_to_speech.utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("gui_backend")
+
+# Required for PyInstaller multiprocessing support on macOS/Windows
+if getattr(sys, "frozen", False):
+    multiprocessing.freeze_support()
 
 
 # Background task for session cleanup
@@ -156,32 +164,126 @@ async def get_workspace_info() -> dict[str, str | bool | list[str] | None]:
     }
 
 
+async def monitor_parent_stdin(shutdown_callback: Callable[[], Any]) -> None:
+    """
+    Monitor stdin for parent process death (pipe closure).
+
+    When Tauri spawns the backend as a sidecar with piped stdin,
+    this function blocks until Tauri crashes/exits and the pipe closes.
+    Upon EOF, triggers graceful shutdown via the callback.
+
+    Works on Windows, macOS, and Linux with zero dependencies.
+    """
+
+    def watch_stdin() -> None:
+        try:
+            # CRITICAL: No size argument - blocks until EOF
+            # Binary mode avoids Unicode errors on Windows
+            sys.stdin.buffer.read()
+            logger.warning("stdin pipe closed - parent died, triggering shutdown")
+        except Exception as e:
+            logger.error(f"stdin monitor error: {e}")
+
+    loop = asyncio.get_running_loop()  # Not deprecated get_event_loop()
+    await loop.run_in_executor(None, watch_stdin)
+    await shutdown_callback()
+
+
+async def run_server_with_monitoring(
+    host: str, port: int, ignore_stdin: bool = False
+) -> None:
+    """Run uvicorn server with graceful shutdown on parent death.
+
+    Args:
+        host: Host address to bind to
+        port: Port number to listen on
+        ignore_stdin: If True, disable stdin monitoring (for manual testing only)
+    """
+    config = Config(
+        app,
+        host=host,
+        port=port,
+        log_level=settings.LOG_LEVEL.lower(),
+        lifespan="on",  # Ensure cleanup runs
+    )
+    server = Server(config)
+
+    async def shutdown_gracefully() -> None:
+        logger.info("Initiating graceful server shutdown...")
+        server.should_exit = True
+
+    # Start stdin monitor (unless disabled for manual testing)
+    monitor_task = None
+    if not ignore_stdin:
+        monitor_task = asyncio.create_task(monitor_parent_stdin(shutdown_gracefully))
+        logger.info("stdin monitoring enabled (parent death detection active)")
+    else:
+        logger.warning(
+            "stdin monitoring DISABLED - backend will not auto-terminate on parent death"
+        )
+
+    # Run server (blocks until shutdown)
+    try:
+        await server.serve()
+    finally:
+        # Cancel monitor task to prevent resource leak
+        if monitor_task:
+            monitor_task.cancel()
+            try:
+                await monitor_task
+            except asyncio.CancelledError:
+                pass
+        logger.info("Server shutdown complete")
+
+
 def main() -> None:
     """Run the FastAPI server."""
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Script-to-Speech GUI Backend")
+    parser.add_argument(
+        "--production",
+        action="store_true",
+        help="Run in production mode (disables reload)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=None,
+        help="Port to listen on (default: auto-detect based on mode)",
+    )
+    parser.add_argument(
+        "--ignore-stdin",
+        action="store_true",
+        help="Disable stdin monitoring (for manual backend testing only - not for Tauri sidecar use)",
+    )
+    # Use parse_known_args() to ignore unknown arguments from Python multiprocessing
+    # (e.g., when uvicorn spawns workers with -B -S -I -c ... args)
+    args, unknown = parser.parse_known_args()
+
+    # Determine the port: use explicit --port if provided, otherwise use settings default
+    port = args.port if args.port else settings.PORT
+
     print(f"Backend starting with workspace: {settings.WORKSPACE_DIR}")
+    mode = "production" if args.production else "development"
+    logger.info(f"Starting backend on port {port} in {mode} mode")
 
-    # Check if running in production mode (Tauri passes --production flag)
-    production_mode = "--production" in sys.argv
-
-    if production_mode:
-        # Production: use app object (reload doesn't work with app object)
-        uvicorn.run(
-            app,
-            host=settings.HOST,
-            port=settings.PORT,
-            reload=False,
-            log_level=settings.LOG_LEVEL.lower(),
-        )
+    if args.production:
+        # Production: async server with stdin monitoring for graceful shutdown
+        # Detects parent process death and triggers cleanup before exiting
+        # Use --ignore-stdin flag to disable monitoring for manual testing
+        asyncio.run(run_server_with_monitoring(settings.HOST, port, args.ignore_stdin))
     else:
         # Development: use string import (enables reload/workers)
         uvicorn.run(
             "script_to_speech.gui_backend.main:app",
             host=settings.HOST,
-            port=settings.PORT,
+            port=port,
             reload=settings.DEBUG,
             log_level=settings.LOG_LEVEL.lower(),
         )
 
 
 if __name__ == "__main__":
+    # MUST be first call for frozen executables (PyInstaller)
+    multiprocessing.freeze_support()
     main()

@@ -1,12 +1,13 @@
 import { http, HttpResponse } from 'msw';
 
+import { BACKEND_URL } from '@/config';
 import {
   TEST_PROVIDERS,
   TEST_TASK_PENDING,
   TEST_VOICES,
 } from '@/test/utils/test-data';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = BACKEND_URL;
 
 export const handlers = [
   // Success handlers

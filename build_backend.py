@@ -152,8 +152,8 @@ def main():
         "_hashlib",  # Required for hashlib algorithms
         "--hidden-import",
         "_ssl",  # Required for SSL/TLS support
-        "--collect-all",
-        "hashlib",  # Ensure all hash algorithms are included
+        "--hidden-import",
+        "unicodedata",  # Required for tqdm and other text processing
         "--console",  # Console app for debugging
         str(main_script),
     ]

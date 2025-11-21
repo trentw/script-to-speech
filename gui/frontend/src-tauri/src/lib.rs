@@ -4,10 +4,79 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use tauri::{AppHandle, Manager, State};
-use tauri_plugin_shell::{process::CommandEvent, ShellExt};
+use tauri_plugin_shell::{process::CommandChild, ShellExt};
+
+#[cfg(debug_assertions)]
+use tauri_plugin_shell::process::CommandEvent;
+
+// Port configuration constants
+const DEV_PORT: u16 = 8000;
+const PROD_PORT: u16 = 58735;
+
+/// Represents the backend process, which can be either:
+/// - Dev: Manually spawned via `uv run` (std::process::Child)
+/// - Sidecar: Tauri-managed executable bundled with the app (CommandChild)
+enum BackendChild {
+    Dev(std::process::Child),
+    Sidecar(CommandChild),
+}
+
+impl BackendChild {
+    /// Attempt to kill the backend process
+    ///
+    /// Note: For Sidecar variant, this consumes the CommandChild since its kill() method takes ownership.
+    /// The caller should ensure they take() the Option<BackendChild> from the Mutex before calling this.
+    fn kill(self) -> std::io::Result<()> {
+        match self {
+            BackendChild::Dev(mut child) => child.kill(),
+            BackendChild::Sidecar(child) => {
+                // CommandChild::kill() takes ownership and returns Result<(), Error>
+                child.kill().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))
+            }
+        }
+    }
+
+    /// Check if the process has exited (only works for Dev variant)
+    fn try_wait(&mut self) -> std::io::Result<Option<std::process::ExitStatus>> {
+        match self {
+            BackendChild::Dev(child) => child.try_wait(),
+            BackendChild::Sidecar(_) => {
+                // For sidecar, we can't easily check exit status synchronously
+                // Return Ok(None) to indicate "still running" or "unknown"
+                Ok(None)
+            }
+        }
+    }
+
+    /// Get the process ID
+    fn pid(&self) -> u32 {
+        match self {
+            BackendChild::Dev(child) => child.id(),
+            BackendChild::Sidecar(child) => child.pid(),
+        }
+    }
+}
 
 // Global state to track the backend process
-struct BackendProcess(Mutex<Option<std::process::Child>>);
+struct BackendProcess(Mutex<Option<BackendChild>>);
+
+/// Helper function to shutdown backend process
+/// Extracts common cleanup logic used in stop_backend and RunEvent::Exit
+fn shutdown_backend(app_handle: &AppHandle) {
+    let state: State<BackendProcess> = app_handle.state();
+    let mut guard = state.0.lock().unwrap();
+    if let Some(child) = guard.take() {
+        let pid = child.pid();
+        info!("Killing backend process (PID: {})...", pid);
+        if let Err(e) = child.kill() {
+            warn!("Failed to kill backend process: {}", e);
+        } else {
+            info!("Backend process killed successfully");
+        }
+    } else {
+        debug!("No backend process to clean up");
+    }
+}
 
 /// Get the workspace directory path for the application.
 /// Uses runtime detection: bundled apps use Application Support, dev mode uses project root.
@@ -39,21 +108,26 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
     info!("Starting FastAPI backend server");
 
     let backend_state: State<BackendProcess> = app_handle.state();
-    let mut process_guard = backend_state.0.lock().unwrap();
 
-    // Check if we already have a process running
-    if let Some(ref mut child) = *process_guard {
+    // Hold lock through check and spawn to prevent race condition
+    // If two threads call start_backend simultaneously, only one will spawn
+    let mut process = backend_state.0.lock().unwrap();
+
+    // Check if backend is already running
+    if let Some(ref mut child) = *process {
         match child.try_wait() {
-            Ok(Some(_)) => {
-                // Process has exited, remove it
-                *process_guard = None;
-            }
             Ok(None) => {
                 // Process is still running
-                return Ok("Backend is already running".to_string());
+                info!("Backend process already running (PID: {}), skipping spawn", child.pid());
+                return Ok("Backend already running".to_string());
+            }
+            Ok(Some(status)) => {
+                info!("Previous backend exited with status: {:?}", status);
+                // Process exited, we'll spawn a new one
             }
             Err(e) => {
-                return Err(format!("Failed to check process status: {}", e));
+                warn!("Error checking backend status: {}", e);
+                // Assume process is dead, spawn new one
             }
         }
     }
@@ -68,15 +142,18 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
             let workspace_dir = get_workspace_dir(&app_handle, true)?;
             debug!("Using workspace directory: {:?}", workspace_dir);
 
-            // Spawn sidecar with --production flag
-            // Python backend will use this flag to determine production mode
+            // Spawn sidecar with --production flag and port
+            // Python backend will use these flags to determine production mode and port
+            // NOTE: Tauri sidecars automatically get stdin piped (can use child.write())
+            // This enables stdin EOF monitoring for parent death detection
             let (mut rx, sidecar_child) = sidecar_cmd
-                .args(["--production"])
+                .args(["--production", "--port", &PROD_PORT.to_string()])
                 .spawn()
                 .map_err(|e| format!("Failed to spawn sidecar: {}", e))?;
 
-            info!("Backend sidecar started with PID: {}", sidecar_child.pid());
-            debug!("Arguments: [\"--production\"]");
+            let pid = sidecar_child.pid();
+            info!("Backend sidecar started with PID: {}", pid);
+            debug!("Arguments: [\"--production\", \"--port\", \"{}\"]", PROD_PORT);
 
             // Capture sidecar output for debugging - only in debug builds
             #[cfg(debug_assertions)]
@@ -112,8 +189,12 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
                 drop(rx);
             }
 
-            // Note: We don't store the sidecar child in state as Tauri manages its lifecycle
-            // The sidecar will be automatically cleaned up when the app exits
+            // CRITICAL: Store the sidecar process handle for lifecycle management
+            // Tauri does NOT automatically clean up sidecar processes on exit
+            // Lock is already held from the check above
+            *process = Some(BackendChild::Sidecar(sidecar_child));
+            info!("Sidecar backend stored in state for manual lifecycle management");
+
             Ok("Backend started successfully (production)".to_string())
         }
         Err(e) => {
@@ -125,17 +206,18 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
             let workspace_dir = get_workspace_dir(&app_handle, false)?;
             debug!("Using workspace directory: {:?}", workspace_dir);
 
-            // Start the FastAPI backend using uv
+            // Start the FastAPI backend using uv (dev mode uses port 8000)
             // Python will independently determine the same workspace path
             let mut child = Command::new("uv")
-                .args(&["run", "sts-gui-server"])
+                .args(&["run", "sts-gui-server", "--port", &DEV_PORT.to_string()])
                 .current_dir(&workspace_dir)
+                .stdin(Stdio::piped())  // CRITICAL: Pipe stdin for parent death detection
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
                 .spawn()
                 .map_err(|e| format!("Failed to start backend from {:?}: {}", workspace_dir, e))?;
 
-            info!("Backend server started with PID: {}", child.id());
+            info!("Backend server started with PID: {} on port {}", child.id(), DEV_PORT);
 
             // Capture stdout/stderr in background threads - only in debug builds
             #[cfg(debug_assertions)]
@@ -171,7 +253,12 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
                 child.stderr.take();
             }
 
-            *process_guard = Some(child);
+            let pid = child.id();
+
+            // Store the dev process using the BackendChild enum
+            // Lock is already held from the check above
+            *process = Some(BackendChild::Dev(child));
+            info!("Dev backend stored in state for manual lifecycle management (PID: {})", pid);
 
             Ok("Backend started successfully (development)".to_string())
         }
@@ -182,17 +269,9 @@ async fn start_backend(app_handle: AppHandle) -> Result<String, String> {
 async fn stop_backend(app_handle: AppHandle) -> Result<String, String> {
     info!("Stopping FastAPI backend server");
 
-    let backend_state: State<BackendProcess> = app_handle.state();
-    let mut process_guard = backend_state.0.lock().unwrap();
+    shutdown_backend(&app_handle);
 
-    if let Some(mut child) = process_guard.take() {
-        child.kill().map_err(|e| format!("Failed to kill process: {}", e))?;
-        child.wait().map_err(|e| format!("Failed to wait for process: {}", e))?;
-        info!("Backend server stopped successfully");
-        Ok("Backend stopped successfully".to_string())
-    } else {
-        Ok("Backend was not running".to_string())
-    }
+    Ok("Backend stopped successfully".to_string())
 }
 
 #[tauri::command]
@@ -227,29 +306,20 @@ pub fn run() {
 
             Ok(())
         })
-        .on_window_event(|window, event| {
-            // Graceful shutdown for development mode
-            if let tauri::WindowEvent::Destroyed = event {
-                // Check if we have a backend process in state (only exists in dev mode)
-                let app_handle = window.app_handle();
-                let backend_state: State<BackendProcess> = app_handle.state();
-                let mut process_guard = backend_state.0.lock().unwrap();
-
-                if let Some(mut child) = process_guard.take() {
-                    info!("Window destroyed - cleaning up backend");
-                    debug!("Killing backend process with PID: {}", child.id());
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    info!("Backend server stopped gracefully");
-                }
-                // Note: In bundled mode, Tauri automatically cleans up sidecar processes
-            }
-        })
         .invoke_handler(tauri::generate_handler![
             start_backend,
             stop_backend,
             get_workspace_path
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            match event {
+                tauri::RunEvent::Exit => {
+                    info!("App exiting, cleaning up backend process...");
+                    shutdown_backend(app_handle);
+                }
+                _ => {}
+            }
+        });
 }

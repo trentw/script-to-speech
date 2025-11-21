@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
+import { BACKEND_URL } from '@/config';
+
 // Check if we're running in Tauri
 interface TauriWindow extends Window {
   __TAURI__?: unknown;
@@ -31,7 +33,7 @@ export const BackendStatus: React.FC<BackendStatusProps> = ({
 
   const checkBackendStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/health');
+      const response = await fetch(`${BACKEND_URL}/health`);
       const running = response.ok;
       setIsRunning(running);
       onStatusChange?.(running);

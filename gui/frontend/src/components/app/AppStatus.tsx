@@ -1,3 +1,5 @@
+import { BACKEND_URL } from '@/config';
+
 export const AppStatus = ({ connected }: { connected: boolean }) => {
   if (connected) {
     return null;
@@ -11,13 +13,11 @@ export const AppStatus = ({ connected }: { connected: boolean }) => {
           Backend Disconnected
         </h1>
         <p className="text-muted-foreground mb-4">
-          Cannot connect to the TTS backend server at http://127.0.0.1:8000
+          Cannot connect to the TTS backend server at {BACKEND_URL}
         </p>
         <p className="text-muted-foreground text-sm">
           Make sure the backend server is running:{' '}
-          <code className="bg-muted rounded px-1 py-0.5">
-            cd gui/backend && uv run sts-gui-server
-          </code>
+          <code className="bg-muted rounded px-1 py-0.5">make gui-server</code>
         </p>
       </div>
     </div>

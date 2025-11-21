@@ -3,6 +3,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { BACKEND_URL } from '@/config';
 import { server } from '@/test/setup';
 import { createWrapper } from '@/test/utils/render';
 import { TEST_PROVIDERS } from '@/test/utils/test-data';
@@ -54,7 +55,7 @@ describe('useProviders Hook', () => {
       const emptyProviders: ProviderInfo[] = [];
 
       server.use(
-        http.get('http://127.0.0.1:8000/api/providers/info', () => {
+        http.get(`${BACKEND_URL}/api/providers/info`, () => {
           return HttpResponse.json(emptyProviders);
         })
       );

@@ -63,9 +63,16 @@ class Settings(BaseSettings):
 
     # Server settings
     HOST: str = "127.0.0.1"
-    PORT: int = 8000
+    # Port configuration: dev mode uses 8000, production uses 58735
+    DEV_PORT: int = 8000
+    PROD_PORT: int = 58735
     DEBUG: bool = True
     LOG_LEVEL: str = "INFO"
+
+    @property
+    def PORT(self) -> int:
+        """Get the appropriate port based on mode (dev=8000, prod=58735)."""
+        return self.PROD_PORT if is_production() else self.DEV_PORT
 
     # Workspace directory - can be set via environment variable or CLI arg
     # Priority: STS_WORKSPACE_DIR env var > default location
@@ -126,19 +133,45 @@ class Settings(BaseSettings):
             ) from e
 
 
-# Create settings instance
-settings = Settings()
+# Initialization guard to prevent duplicate setup in multiprocessing child processes
+_initialized = False
 
-# Initialize workspace directories (creates input/, output/, source_screenplays/)
-try:
-    settings.initialize_workspace()
-except (PermissionError, OSError) as e:
-    # Log the error but don't fail - let the services handle it gracefully
+
+def _initialize_settings_once() -> None:
+    """Initialize settings and workspace only once, even across re-imports.
+
+    This guard is MANDATORY for PyInstaller + multiprocessing to prevent:
+    - Duplicate logging messages
+    - Multiple workspace initialization attempts
+    - Resource conflicts in child processes
+    """
+    global _initialized
+    if _initialized:
+        return
+
+    _initialized = True
+
+    # Log configuration information
     import logging
 
     logger = logging.getLogger(__name__)
-    logger.error(f"Failed to initialize workspace: {e}")
+    mode = "production" if is_production() else "development"
+    logger.info(f"Backend configured for {mode} mode on port {settings.PORT}")
 
-# Ensure legacy directories exist for backward compatibility (development mode)
-settings.AUDIO_OUTPUT_DIR.mkdir(exist_ok=True)
-settings.UPLOAD_DIR.mkdir(exist_ok=True)
+    # Initialize workspace directories (creates input/, output/, source_screenplays/)
+    try:
+        settings.initialize_workspace()
+    except (PermissionError, OSError) as e:
+        # Log the error but don't fail - let the services handle it gracefully
+        logger.error(f"Failed to initialize workspace: {e}")
+
+    # Ensure legacy directories exist for backward compatibility (development mode)
+    settings.AUDIO_OUTPUT_DIR.mkdir(exist_ok=True)
+    settings.UPLOAD_DIR.mkdir(exist_ok=True)
+
+
+# Create settings instance
+settings = Settings()
+
+# Initialize settings once (guarded against multiprocessing re-imports)
+_initialize_settings_once()
