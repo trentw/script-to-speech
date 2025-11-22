@@ -91,71 +91,22 @@ def main():
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    # PyInstaller command
+    # Path to the .spec file (contains all build configuration)
+    spec_file = project_root / "sts-gui-backend.spec"
+
+    if not spec_file.exists():
+        print(f"❌ Error: .spec file not found at {spec_file}")
+        sys.exit(1)
+
+    # PyInstaller command using .spec file
+    # The .spec file contains all configuration including hidden imports via collect_submodules()
     cmd = [
         "pyinstaller",
-        "--onefile",  # Single executable file
-        "--name",
-        "sts-gui-backend",  # Executable name
+        str(spec_file),
         "--distpath",
         str(dist_dir),
         "--workpath",
         str(build_dir),
-        "--specpath",
-        str(project_root),
-        "--add-data",
-        f"{src_dir / 'script_to_speech' / 'voice_library' / 'voice_library_data'}:script_to_speech/voice_library/voice_library_data",
-        "--add-data",
-        f"{src_dir / 'script_to_speech' / 'text_processors' / 'configs'}:script_to_speech/text_processors/configs",
-        "--add-data",
-        f"{src_dir / 'script_to_speech' / 'tts_providers'}:script_to_speech/tts_providers",
-        "--hidden-import",
-        "script_to_speech.gui_backend",
-        "--hidden-import",
-        "script_to_speech.tts_providers",
-        "--hidden-import",
-        "script_to_speech.tts_providers.base",
-        "--hidden-import",
-        "script_to_speech.tts_providers.openai",
-        "--hidden-import",
-        "script_to_speech.tts_providers.elevenlabs",
-        "--hidden-import",
-        "script_to_speech.tts_providers.cartesia",
-        "--hidden-import",
-        "script_to_speech.tts_providers.minimax",
-        "--hidden-import",
-        "script_to_speech.tts_providers.zonos",
-        "--hidden-import",
-        "script_to_speech.tts_providers.dummy_common",
-        "--hidden-import",
-        "script_to_speech.tts_providers.dummy_stateful",
-        "--hidden-import",
-        "script_to_speech.tts_providers.dummy_stateless",
-        "--hidden-import",
-        "script_to_speech.voice_library",
-        "--hidden-import",
-        "script_to_speech.text_processors",
-        "--hidden-import",
-        "script_to_speech.audio_generation",
-        "--hidden-import",
-        "script_to_speech.parser",
-        "--hidden-import",
-        "script_to_speech.parser.process",
-        "--hidden-import",
-        "script_to_speech.parser.screenplay_parser",
-        "--hidden-import",
-        "script_to_speech.parser.analyze",
-        # Python 3.13+ built-in modules that PyInstaller may miss
-        "--hidden-import",
-        "_contextvars",  # Required for asyncio in Python 3.13
-        "--hidden-import",
-        "_hashlib",  # Required for hashlib algorithms
-        "--hidden-import",
-        "_ssl",  # Required for SSL/TLS support
-        "--hidden-import",
-        "unicodedata",  # Required for tqdm and other text processing
-        "--console",  # Console app for debugging
-        str(main_script),
     ]
 
     print(f"🚀 Running PyInstaller...")

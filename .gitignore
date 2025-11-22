@@ -29,8 +29,8 @@ MANIFEST
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
+#  NOTE: In this project, .spec files are hand-maintained configuration, not auto-generated
 *.manifest
-*.spec
 
 # Installer logs
 pip-log.txt
@@ -206,3 +206,7 @@ Thumbs.db
 
 # pnpm
 pnpm-lock.yaml
+
+# Tauri output
+gui/frontend/src-tauri/binaries/
+
