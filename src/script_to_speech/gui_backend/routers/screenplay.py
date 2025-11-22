@@ -128,7 +128,7 @@ async def get_screenplay_result_from_path(
     """
     try:
         # Use existing PathSecurityValidator
-        validator = PathSecurityValidator(settings.STS_ROOT_DIR)
+        validator = PathSecurityValidator(settings.WORKSPACE_DIR)
 
         # Validate the input path
         safe_input_path = validator.validate_existing_path(Path(input_path))
@@ -343,7 +343,7 @@ async def download_screenplay_file_from_path(
     """
     try:
         # Validate the file path for security
-        validator = PathSecurityValidator(settings.STS_ROOT_DIR)
+        validator = PathSecurityValidator(settings.WORKSPACE_DIR)
         safe_path = validator.validate_existing_path(Path(file_path))
 
         # Use helper to serve the file

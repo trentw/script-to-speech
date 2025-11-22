@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { API_BASE_URL } from '@/config/api';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { useProject } from '@/stores/appStore';
 import type { ScreenplayResult } from '@/types';
@@ -58,7 +59,7 @@ function ProjectScreenplayInfo() {
       try {
         // Fetch from the new backend endpoint
         const response = await fetch(
-          `/api/screenplay/result-from-path?` +
+          `${API_BASE_URL}/screenplay/result-from-path?` +
             `input_path=${encodeURIComponent(inputPath)}&` +
             `screenplay_name=${encodeURIComponent(screenplayName)}`
         );

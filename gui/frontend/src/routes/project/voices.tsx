@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { API_BASE_URL } from '@/config/api';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
@@ -56,7 +57,7 @@ function ProjectVoiceCasting() {
       if (!inputPath || !screenplayName) return null;
 
       const response = await fetch(
-        '/api/voice-casting/create-session-from-project',
+        `${API_BASE_URL}/voice-casting/create-session-from-project`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

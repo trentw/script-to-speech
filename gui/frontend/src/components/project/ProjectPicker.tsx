@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { interactiveCardVariants } from '@/components/ui/interactive.variants';
 import { Skeleton } from '@/components/ui/skeleton';
+import { API_BASE_URL } from '@/config/api';
 import { getProjectProgressStatus } from '@/lib/project-status';
 import { cn } from '@/lib/utils';
 
@@ -59,7 +60,9 @@ export function ProjectPicker({
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/projects/discover?limit=20');
+      const response = await fetch(
+        `${API_BASE_URL}/projects/discover?limit=20`
+      );
       const result = await response.json();
 
       if (!result.ok) {

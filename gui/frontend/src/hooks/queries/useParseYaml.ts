@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 
+import { API_BASE_URL } from '@/config/api';
 import { apiService } from '@/services/api';
 import type { VoiceEntry } from '@/types';
 import type { VoiceAssignment } from '@/types/voice-casting';
@@ -37,7 +38,7 @@ export function useParseYaml(yamlContent: string | undefined) {
       };
 
       // POST to parse endpoint (you may need to add this to your backend)
-      const response = await fetch('/api/screenplay/parse-yaml', {
+      const response = await fetch(`${API_BASE_URL}/screenplay/parse-yaml`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

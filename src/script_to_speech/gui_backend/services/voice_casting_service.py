@@ -162,7 +162,7 @@ class VoiceCastingService:
         # Map project paths to session IDs to prevent duplicates
         self._project_path_to_session: Dict[str, str] = {}
         # Initialize path validator for secure file access
-        self._path_validator = PathSecurityValidator(settings.STS_ROOT_DIR)
+        self._path_validator = PathSecurityValidator(settings.WORKSPACE_DIR)
 
     def _load_screenplay_data(self, screenplay_json_path: str) -> List[Dict[str, Any]]:
         """

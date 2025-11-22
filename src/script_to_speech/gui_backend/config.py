@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -76,7 +76,10 @@ class Settings(BaseSettings):
 
     # Workspace directory - can be set via environment variable or CLI arg
     # Priority: STS_WORKSPACE_DIR env var > default location
-    WORKSPACE_DIR: Optional[Path] = None
+    # Note: Initialized as None, but field validator ensures it's always converted to Path.
+    # This is a standard Pydantic pattern where validators enforce non-None at runtime,
+    # but mypy cannot track the transformation, requiring the type: ignore annotation.
+    WORKSPACE_DIR: Path = None  # type: ignore[assignment]
 
     # Legacy paths (kept for backward compatibility in development)
     STS_ROOT_DIR: Path = Path(__file__).parent.parent.parent.parent
@@ -97,11 +100,19 @@ class Settings(BaseSettings):
 
     @field_validator("WORKSPACE_DIR", mode="before")
     @classmethod
-    def set_default_workspace(cls, v: Optional[str]) -> Path:
-        """Set default workspace directory if not provided."""
-        if v is None:
+    def validate_workspace_dir(cls, v: Optional[str] | Path) -> Path:
+        """Ensure workspace directory is always set to a valid Path.
+
+        Handles:
+        - None or empty string: Uses default workspace directory
+        - String path: Converts to Path (e.g., from STS_WORKSPACE_DIR env var)
+        - Path object: Returns as-is
+        """
+        if v is None or v == "":
             return get_default_workspace_dir()
-        return Path(v)
+        if isinstance(v, str):
+            return Path(v)
+        return v
 
     def initialize_workspace(self) -> None:
         """Initialize workspace directories, creating them if they don't exist.
@@ -110,9 +121,6 @@ class Settings(BaseSettings):
             PermissionError: If unable to create directories due to permissions
             OSError: If directory creation fails for other reasons
         """
-        if self.WORKSPACE_DIR is None:
-            raise ValueError("WORKSPACE_DIR is not set")
-
         try:
             # Create main workspace directory
             self.WORKSPACE_DIR.mkdir(parents=True, exist_ok=True)
