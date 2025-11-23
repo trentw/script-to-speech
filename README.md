@@ -2,11 +2,21 @@
 
 Convert screenplays into multi-voiced audiobooks using various Text-to-Speech (TTS) providers.
 
-## Overview
+Script to Speech is available in two versions:
 
-Script to Speech is a command-line tool that transforms screenplay files (PDF or TXT) into audiobooks with multiple voices. It handles screenplay parsing, speaker attribution, text processing, and audio generation through a flexible pipeline that supports combining multiple TTS providers to produce an audiobook.
+1.  **Desktop GUI (Experimental)**: A modern, easy-to-use desktop application. Recommended for new users.
+2.  **Command Line Interface (CLI)**: The core, feature-complete tool. Recommended for advanced users and automation.
 
-### Key Features
+| Feature | Desktop GUI | CLI |
+| :--- | :--- | :--- |
+| **Ease of Use** | ⭐⭐⭐⭐⭐ | ⭐⭐ |
+| **Features** | Core Features | All Features |
+| **Stability** | Experimental | Stable |
+| **Documentation** | [GUI User Guide](docs/GUI_USER_GUIDE.md) | [CLI Documentation](#cli-usage) |
+
+---
+
+## Key Features
 
 - **Multi-provider support**: Use OpenAI, ElevenLabs, Cartesia, Minimax, Zonos, or custom TTS providers. TTS providers can be set at a per-speaker level
 - **Text processing pipeline**: Customize how text is processed before audio generation
@@ -26,6 +36,12 @@ Script to Speech is a command-line tool that transforms screenplay files (PDF or
 **Important**: Before using any TTS provider or LLM service, review their privacy policies, data retention practices, and training data policies to ensure they align with your privacy requirements.
 
 See our [Privacy Policy](PRIVACY.md) for detailed information about data flows, recommendations for privacy-conscious usage, and contact information.
+
+---
+
+## CLI Usage
+
+The following documentation covers the **Command Line Interface**. For GUI instructions, please see the [GUI User Guide](docs/GUI_USER_GUIDE.md).
 
 ## CLI Commands
 
