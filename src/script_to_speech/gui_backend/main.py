@@ -5,9 +5,26 @@ import asyncio
 import multiprocessing
 import os
 import sys
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Callable
+
+# CRITICAL FIX: Handle multiprocessing.resource_tracker which uses -c
+# This MUST be the very first thing that runs in the frozen executable.
+# PyInstaller's freeze_support() ignores -c, causing the entire script to re-run.
+if getattr(sys, "frozen", False) and len(sys.argv) > 1 and "-c" in sys.argv:
+    try:
+        c_index = sys.argv.index("-c")
+        if c_index + 1 < len(sys.argv):
+            code = sys.argv[c_index + 1]
+            # Execute the resource tracker code
+            exec(code)
+            sys.exit(0)
+    except Exception as e:
+        sys.stderr.write(f"[FROZEN] Failed to execute -c command: {e}\n")
+        traceback.print_exc()
+        sys.exit(1)
 
 import uvicorn
 from fastapi import FastAPI
@@ -263,6 +280,12 @@ def main() -> None:
     # Determine the port: use explicit --port if provided, otherwise use settings default
     port = args.port if args.port else settings.PORT
 
+    # CRITICAL FIX: Disable reload in frozen builds (PyInstaller)
+    # uvicorn reload is incompatible with packaged executables and causes
+    # recursive process spawning when DEBUG=True (default)
+    is_frozen = getattr(sys, "frozen", False)
+    should_reload = settings.DEBUG and not is_frozen
+
     print(f"Backend starting with workspace: {settings.WORKSPACE_DIR}")
     mode = "production" if args.production else "development"
     logger.info(f"Starting backend on port {port} in {mode} mode")
@@ -278,7 +301,7 @@ def main() -> None:
             "script_to_speech.gui_backend.main:app",
             host=settings.HOST,
             port=port,
-            reload=settings.DEBUG,
+            reload=should_reload,
             log_level=settings.LOG_LEVEL.lower(),
         )
 
@@ -286,4 +309,31 @@ def main() -> None:
 if __name__ == "__main__":
     # MUST be first call for frozen executables (PyInstaller)
     multiprocessing.freeze_support()
+
+    # CRITICAL FIX: Handle multiprocessing.resource_tracker which uses -c
+    # freeze_support() only handles --multiprocessing-fork, ignoring -c
+    # This must be checked here because the module-level check might be bypassed
+    # or insufficient depending on how the process is spawned.
+    if getattr(sys, "frozen", False) and len(sys.argv) > 1 and "-c" in sys.argv:
+        try:
+            # Re-import logger here to ensure it's available if module-level import failed
+            # (though it shouldn't have)
+            import logging
+
+            logger = logging.getLogger("gui_backend")
+
+            logger.info(f"[FROZEN] Intercepted -c command in __main__: {sys.argv}")
+            c_index = sys.argv.index("-c")
+            if c_index + 1 < len(sys.argv):
+                code = sys.argv[c_index + 1]
+                # Execute the resource tracker code
+                exec(code)
+                sys.exit(0)
+        except Exception as e:
+            print(f"[FROZEN] Failed to execute -c command: {e}")
+            import traceback
+
+            traceback.print_exc()
+            sys.exit(1)
+
     main()

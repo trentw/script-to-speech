@@ -24,8 +24,9 @@ def is_production() -> bool:
 def get_default_workspace_dir() -> Path:
     """Get the platform-specific workspace directory.
 
-    Uses fixed, platform-appropriate paths that match Tauri's Application Support directory.
-    Rust (Tauri) determines dev/prod mode and passes --production flag to Python in production.
+    Uses sys.frozen to detect production builds (PyInstaller executables).
+    This is more reliable than --production flag for multiprocessing workers,
+    as sys.frozen persists across all processes but sys.argv doesn't on macOS.
 
     Development mode: Project root
     Production mode: Platform-specific Application Support directory
@@ -36,8 +37,9 @@ def get_default_workspace_dir() -> Path:
     Returns:
         Path to the workspace directory.
     """
-    # Check if Tauri passed the --production flag
-    if not is_production():
+    # Check if running as PyInstaller frozen executable
+    # This works in both main process and multiprocessing workers
+    if not getattr(sys, "frozen", False):
         # Development mode: use project root (4 levels up from this file)
         # gui_backend/config.py -> gui_backend -> script_to_speech -> src -> project root
         return Path(__file__).parent.parent.parent.parent
