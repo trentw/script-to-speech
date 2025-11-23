@@ -39,7 +39,7 @@ export const HeaderContent = ({
   const appName = getRouteTitle();
   const subAppName = '';
 
-  // Only show action buttons on mobile for TTS view
+  // Show action buttons on mobile for TTS view
   const showActionButtons = isMobile && activeView === 'tts';
 
   return (
@@ -48,13 +48,13 @@ export const HeaderContent = ({
       subAppName={subAppName}
       showNavToggle={true}
       onNavToggle={toggleSidebar}
-      onSettingsClick={
-        showActionButtons ? () => setActiveModal('settings') : undefined
-      }
+      // Settings button always available (shows on desktop and mobile)
+      onSettingsClick={() => setActiveModal('settings')}
+      // History button only on mobile TTS view
       onHistoryClick={
         showActionButtons ? () => setActiveModal('history') : undefined
       }
-      showActionButtons={showActionButtons}
+      showActionButtons={true}
     >
       {/* Parse New Screenplay Button - Right aligned */}
       {activeView === 'screenplay' && showParseNewButton && onParseNew && (

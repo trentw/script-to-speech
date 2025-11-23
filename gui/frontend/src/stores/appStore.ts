@@ -74,6 +74,15 @@ interface ScreenplaySlice {
   resetScreenplayState: () => void;
 }
 
+// Settings slice - handles API key validation status cache
+interface SettingsSlice {
+  apiKeyStatus: Record<string, boolean>;
+
+  // Actions
+  setApiKeyStatus: (status: Record<string, boolean>) => void;
+  clearApiKeyStatus: () => void;
+}
+
 // Project mode types using discriminated union for better type safety
 import type { ProjectMetaStore as ProjectMeta } from '../types/project';
 
@@ -102,6 +111,7 @@ type AppStore = ConfigurationSlice &
   UISlice &
   LayoutSlice &
   ScreenplaySlice &
+  SettingsSlice &
   ProjectSlice;
 
 // Create the store with domain slices
@@ -260,6 +270,17 @@ const useAppStore = create<AppStore>()(
             false,
             'screenplay/resetScreenplayState'
           );
+        },
+
+        // Settings slice implementation
+        apiKeyStatus: {},
+
+        setApiKeyStatus: (status) => {
+          set({ apiKeyStatus: status }, false, 'settings/setApiKeyStatus');
+        },
+
+        clearApiKeyStatus: () => {
+          set({ apiKeyStatus: {} }, false, 'settings/clearApiKeyStatus');
         },
 
         // Project slice implementation
@@ -462,6 +483,16 @@ export const useProject = () =>
       addRecentProject: state.addRecentProject,
       clearRecentProjects: state.clearRecentProjects,
       resetProjectState: state.resetProjectState,
+    }))
+  );
+
+// Settings selector hook
+export const useSettings = () =>
+  useAppStore(
+    useShallow((state) => ({
+      apiKeyStatus: state.apiKeyStatus,
+      setApiKeyStatus: state.setApiKeyStatus,
+      clearApiKeyStatus: state.clearApiKeyStatus,
     }))
   );
 

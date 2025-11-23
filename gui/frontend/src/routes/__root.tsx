@@ -22,6 +22,7 @@ import {
   MobileDrawer,
   ResponsivePanel,
 } from '../components/layout';
+import { SettingsDialog } from '../components/settings/SettingsDialog';
 import { useAllVoiceCounts } from '../hooks/queries/useAllVoiceCounts';
 import { useBackendStatus } from '../hooks/queries/useBackendStatus';
 import { useProviders } from '../hooks/queries/useProviders';
@@ -208,6 +209,9 @@ function RootComponent() {
             <HistoryContent />
           </MobileDrawer>
         )}
+
+      {/* Settings Dialog - works on all platforms */}
+      <SettingsDialog />
 
       <ErrorDisplay />
       <Toaster />

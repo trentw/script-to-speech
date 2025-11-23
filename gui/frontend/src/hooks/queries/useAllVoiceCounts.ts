@@ -36,7 +36,7 @@ export const useAllVoiceCounts = (providers: ProviderInfo[]) => {
         }
         return response.data!;
       },
-      enabled: !!provider.identifier && !voiceLibraryProvidersLoading,
+      enabled: !!provider.identifier,
       staleTime: 1000 * 60 * 60 * 24, // 24 hours - voice data rarely changes
       gcTime: 1000 * 60 * 60 * 2, // 2 hours in memory
     })),

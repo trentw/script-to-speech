@@ -39,15 +39,23 @@ from script_to_speech.gui_backend.routers import (
     projects,
     providers,
     screenplay,
+)
+from script_to_speech.gui_backend.routers import settings as settings_router
+from script_to_speech.gui_backend.routers import (
     voice_casting,
     voice_library,
 )
 from script_to_speech.gui_backend.services.voice_casting_service import (
     voice_casting_service,
 )
+from script_to_speech.utils.env_utils import load_environment_variables
 from script_to_speech.utils.logging import get_screenplay_logger
 
 logger = get_screenplay_logger("gui_backend")
+
+# Load .env file before any other initialization
+# This ensures API keys are available in os.environ for validation
+load_environment_variables()
 
 # Required for PyInstaller multiprocessing support on macOS/Windows
 if getattr(sys, "frozen", False):
@@ -127,6 +135,7 @@ app.include_router(screenplay.router, prefix="/api/screenplay", tags=["screenpla
 app.include_router(
     voice_casting.router, prefix="/api/voice-casting", tags=["voice-casting"]
 )
+app.include_router(settings_router.router, tags=["settings"])
 
 # Mount static files directory for generated audio
 if settings.AUDIO_OUTPUT_DIR.exists():

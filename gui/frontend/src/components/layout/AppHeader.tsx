@@ -2,6 +2,7 @@ import { Bug, History, Menu, Settings } from 'lucide-react';
 import React from 'react';
 
 import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Dialog,
   DialogContent,
@@ -122,30 +123,32 @@ export function AppHeader({
 
             {/* Settings Button */}
             {onSettingsClick && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'icon',
+                })}
                 onClick={onSettingsClick}
-                className="h-9 w-9 p-0"
                 title="Settings"
               >
                 <Settings className="h-4 w-4" />
                 <span className="sr-only">Settings</span>
-              </Button>
+              </button>
             )}
 
             {/* History Button */}
             {onHistoryClick && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'icon',
+                })}
                 onClick={onHistoryClick}
-                className="h-9 w-9 p-0"
                 title="History"
               >
                 <History className="h-4 w-4" />
                 <span className="sr-only">History</span>
-              </Button>
+              </button>
             )}
           </>
         )}
