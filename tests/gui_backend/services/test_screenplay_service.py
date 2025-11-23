@@ -442,9 +442,10 @@ class TestProcessingTask:
         service._tasks[task_id] = task
 
         with patch(
-            "script_to_speech.gui_backend.services.screenplay_service.sanitize_name"
+            "script_to_speech.gui_backend.services.screenplay_service.sanitize_filename"
         ) as mock_sanitize:
-            mock_sanitize.return_value = "My_Script"
+            # pathvalidate.sanitize_filename preserves more characters than sanitize_name
+            mock_sanitize.return_value = "My Script!@#$%^&*()"
 
             # Act
             await service._process_parsing_task(task)

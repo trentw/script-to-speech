@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import UploadFile
+from pathvalidate import sanitize_filename
 
 from script_to_speech.utils.file_system_utils import sanitize_name
 
@@ -137,7 +138,7 @@ class ScreenplayService:
 
             # Get sanitized name from original filename
             original_name = Path(task.original_filename).stem
-            sanitized_name = sanitize_name(original_name)
+            sanitized_name = sanitize_filename(original_name)
 
             # First, copy the file to source_screenplays directory
             if task.temp_file_path is None:

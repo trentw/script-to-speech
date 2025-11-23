@@ -125,7 +125,9 @@ async def upload_file(file: UploadFile = File(...)) -> ApiResponse:
 
         logger.info(f"Uploaded file {file.filename} to temporary path: {temp_path}")
 
-        return ApiResponse(ok=True, data={"tempPath": temp_path})
+        return ApiResponse(
+            ok=True, data={"tempPath": temp_path, "originalFilename": file.filename}
+        )
 
     except Exception as e:
         logger.error(f"Failed to upload file: {e}")
@@ -160,7 +162,7 @@ async def create_new_project(request: NewProjectRequest) -> ApiResponse:
 
         # Create project
         project_data = project_service.create_new_project_from_upload(
-            request.sourceFile
+            request.sourceFile, request.originalFilename
         )
 
         # Clean up temp file

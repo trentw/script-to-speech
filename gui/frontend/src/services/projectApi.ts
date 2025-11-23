@@ -85,7 +85,9 @@ class ProjectApiService {
   /**
    * Upload a screenplay file to temporary storage
    */
-  async uploadFile(file: File): Promise<string> {
+  async uploadFile(
+    file: File
+  ): Promise<{ tempPath: string; originalFilename: string }> {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -94,7 +96,10 @@ class ProjectApiService {
       body: formData,
     });
 
-    const result: ApiResponse<{ tempPath: string }> = await response.json();
+    const result: ApiResponse<{
+      tempPath: string;
+      originalFilename: string;
+    }> = await response.json();
 
     if (!result.ok) {
       throw new Error(result.error || 'Failed to upload file');
@@ -104,19 +109,25 @@ class ProjectApiService {
       throw new Error('No temporary path returned from upload');
     }
 
-    return result.data.tempPath;
+    return {
+      tempPath: result.data.tempPath,
+      originalFilename: result.data.originalFilename,
+    };
   }
 
   /**
    * Create a new project from an uploaded screenplay file
    */
-  async createProject(sourceFile: string): Promise<ProjectCreateData> {
+  async createProject(
+    sourceFile: string,
+    originalFilename?: string
+  ): Promise<ProjectCreateData> {
     const response = await fetch(`${this.baseUrl}/project/new`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ sourceFile }),
+      body: JSON.stringify({ sourceFile, originalFilename }),
     });
 
     const result: ApiResponse<ProjectCreateData> = await response.json();
@@ -137,11 +148,11 @@ class ProjectApiService {
    */
   async createProjectFromFile(file: File): Promise<ProjectCreateData> {
     // Step 1: Upload file to temporary storage
-    const tempPath = await this.uploadFile(file);
+    const { tempPath, originalFilename } = await this.uploadFile(file);
 
     try {
       // Step 2: Create project from uploaded file
-      const projectData = await this.createProject(tempPath);
+      const projectData = await this.createProject(tempPath, originalFilename);
       return projectData;
     } catch (error) {
       // Clean up temp file on error if possible

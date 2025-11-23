@@ -234,6 +234,7 @@ class NewProjectRequest(BaseModel):
     """Request to create a new project."""
 
     sourceFile: str  # Path to uploaded temporary file
+    originalFilename: Optional[str] = None  # Original filename from upload
 
 
 class NewProjectResponse(BaseModel):

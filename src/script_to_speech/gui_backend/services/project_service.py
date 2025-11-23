@@ -306,11 +306,14 @@ class ProjectService:
             logger.error(f"Error getting project status for {input_path}: {e}")
             raise
 
-    def create_new_project_from_upload(self, source_file_path: str) -> Dict[str, str]:
+    def create_new_project_from_upload(
+        self, source_file_path: str, original_filename: Optional[str] = None
+    ) -> Dict[str, str]:
         """Create a new project from an uploaded screenplay file.
 
         Args:
             source_file_path: Path to the uploaded screenplay file
+            original_filename: Original filename from the upload (optional, if not provided uses source_file_path)
 
         Returns:
             Dictionary with project metadata (inputPath, outputPath, screenplayName)
@@ -330,8 +333,11 @@ class ProjectService:
                     f"Invalid file type. Only PDF and TXT files are allowed."
                 )
 
-            # Generate screenplay name from filename
-            screenplay_name = self._sanitize_filename(source_path.stem)
+            # Generate screenplay name from original filename if provided, otherwise from temp file
+            if original_filename:
+                screenplay_name = self._sanitize_filename(Path(original_filename).stem)
+            else:
+                screenplay_name = self._sanitize_filename(source_path.stem)
             if not screenplay_name:
                 raise ValueError("Invalid filename - cannot generate project name")
 
@@ -388,16 +394,12 @@ class ProjectService:
         Returns:
             Sanitized filename safe for filesystem use
         """
-        # Remove or replace invalid characters
-        import re
+        # Use pathvalidate for consistent sanitization with CLI
+        from pathvalidate import sanitize_filename
 
-        # Keep alphanumeric, spaces, hyphens, underscores
-        sanitized = re.sub(r"[^\w\s-]", "", filename)
-        # Replace spaces with underscores
-        sanitized = re.sub(r"\s+", "_", sanitized.strip())
-        # Remove leading/trailing underscores and limit length
-        sanitized = sanitized.strip("_")[:50]
-        return sanitized
+        sanitized = sanitize_filename(filename)
+        # Limit length for practicality
+        return str(sanitized[:200]) if sanitized else ""
 
     def _run_cli_parser(self, screenplay_path: Path) -> None:
         """Run the screenplay parser directly.
