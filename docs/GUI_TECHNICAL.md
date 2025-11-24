@@ -82,3 +82,128 @@ make gui-build-release
 - `gui/frontend/src`: React source code.
 - `gui/frontend/src-tauri`: Rust Tauri configuration and code.
 - `src/script_to_speech/gui_backend`: FastAPI backend application.
+- `dist/`: Built backend executables (created by `make gui-build-backend`).
+- `gui/frontend/src-tauri/target/`: Tauri build artifacts.
+
+## Build Artifacts
+
+After running `make gui-build-debug` or `make gui-build-release`, find the built applications at:
+
+**macOS:**
+- `gui/frontend/src-tauri/target/release/bundle/macos/Script to Speech.app` - Application bundle (includes bundled backend sidecar)
+- `gui/frontend/src-tauri/target/release/bundle/dmg/Script to Speech_0.1.0_aarch64.dmg` - Installer
+
+**Standalone Backend Executable:**
+The backend can also be built independently:
+```bash
+make gui-build-backend
+```
+
+This creates platform-specific executables in the `dist/` directory (~34MB):
+- macOS (Apple Silicon): `dist/sts-gui-backend-aarch64-apple-darwin`
+- macOS (Intel): `dist/sts-gui-backend-x86_64-apple-darwin`
+- Windows: `dist/sts-gui-backend-x86_64-pc-windows-msvc.exe`
+- Linux: `dist/sts-gui-backend-x86_64-unknown-linux-gnu`
+
+The backend sidecar is automatically bundled inside the Tauri application and managed by Tauri's sidecar API.
+
+## Port Configuration
+
+The backend runs on different ports depending on the environment:
+
+- **Development**: Port `8000` (used by `make gui-server`)
+- **Production**: Port `58735` (used by Tauri sidecar)
+
+The frontend automatically detects which environment it's running in and connects to the appropriate port.
+
+## Backend Lifecycle Management
+
+The Tauri desktop app uses **stdin EOF monitoring** for robust backend process lifecycle management.
+
+### Problem Solved
+- PyInstaller's `--onefile` mode creates a bootloader parent + Python child process
+- Tauri's `child.kill()` only kills the bootloader, leaving the Python process orphaned
+- Orphaned processes block ports and accumulate on repeated app launches
+
+### Solution Implemented
+- Backend monitors stdin for EOF in an async executor thread
+- When Tauri closes, stdin pipe closes → EOF detected → graceful shutdown triggered
+- FastAPI lifespan cleanup hooks run before process termination
+- Works cross-platform (Windows, macOS, Linux) with zero external dependencies
+
+### Key Implementation Details
+- **Python**: `monitor_parent_stdin()` in `src/script_to_speech/gui_backend/main.py` blocks on `sys.stdin.buffer.read()` until EOF
+- **Rust**: `.stdin(Stdio::piped())` required in both dev and sidecar modes (`gui/frontend/src-tauri/src/lib.rs`)
+- **Production**: Uses `uvicorn.Server()` instead of `uvicorn.run()` for shutdown control
+- **Manual Testing**: Use `--ignore-stdin` flag to disable monitoring when testing the backend manually
+
+**Important:** Never use `--ignore-stdin` when running as a Tauri sidecar - it disables the orphan prevention mechanism.
+
+### Manual Backend Testing
+
+For manual backend testing (outside of Tauri), use the `--ignore-stdin` flag:
+
+```bash
+# Run backend manually for testing
+./dist/sts-gui-backend-aarch64-apple-darwin --production --port 58735 --ignore-stdin
+
+# Without --ignore-stdin, the backend expects to be spawned by Tauri with a piped stdin
+# and will immediately shut down when stdin closes (which happens in manual shell execution)
+```
+
+## Testing
+
+The frontend uses [Playwright](https://playwright.dev/) for end-to-end testing.
+
+**Run tests:**
+```bash
+cd gui/frontend
+npm test
+```
+
+**Test utilities:**
+- `src/test/router-helpers.ts` - Navigation and routing test helpers
+- `src/hooks/__tests__/` - Hook testing examples
+
+## Troubleshooting
+
+### Orphaned Backend Processes
+
+If the backend process doesn't shut down properly (rare with stdin monitoring):
+
+```bash
+# Find and kill processes on the production port
+lsof -ti:58735 | xargs kill -9
+
+# Or on the development port
+lsof -ti:8000 | xargs kill -9
+```
+
+### Port Conflicts
+
+If you see errors about port already in use:
+1. Check for orphaned processes (see above)
+2. Ensure you're not running multiple instances of the backend
+3. Check if another application is using port 8000 or 58735
+
+### API Key Configuration
+
+The backend requires API keys for TTS providers. Configure them via:
+- **Development**: `.env` file in project root
+- **Production**: GUI Settings panel (keys stored securely on local machine)
+
+### Backend Won't Start
+
+If the Tauri app launches but the backend doesn't respond:
+1. Check the console logs (in debug builds)
+2. Ensure all Python dependencies are bundled correctly in `sts-gui-backend.spec`
+3. Verify the backend executable has execute permissions
+4. Test the backend manually with `--ignore-stdin` flag to see error messages
+
+### Build Issues
+
+**PyInstaller hidden imports:**
+If the backend fails to start after building, you may need to add hidden imports to `sts-gui-backend.spec`.
+
+**Tauri sidecar not found:**
+Ensure the backend executable name matches the target triple expected by Tauri (e.g., `sts-gui-backend-aarch64-apple-darwin` for Apple Silicon Mac).

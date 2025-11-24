@@ -171,6 +171,7 @@ codemcp.toml
 .cursorrules
 .claude
 .mcp.json
+AGENTS.md
 
 # Project directories
 output/
@@ -209,4 +210,3 @@ pnpm-lock.yaml
 
 # Tauri output
 gui/frontend/src-tauri/binaries/
-

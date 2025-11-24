@@ -6,8 +6,19 @@ The Script to Speech GUI provides a user-friendly interface for generating audio
 
 ### Installation
 
-Currently, the GUI is distributed as a standalone application. 
-*(Note: Installation instructions will be updated as distribution methods are finalized)*
+The GUI is distributed as a standalone desktop application.
+
+**Building from Source:**
+
+To build the application yourself, see the [Building for Production](GUI_TECHNICAL.md#building-for-production) section in the technical documentation.
+
+**Locating Built Applications:**
+
+After building, you can find the application at:
+- **macOS**: `gui/frontend/src-tauri/target/release/bundle/macos/Script to Speech.app`
+- **macOS Installer**: `gui/frontend/src-tauri/target/release/bundle/dmg/Script to Speech_0.1.0_aarch64.dmg`
+
+Simply double-click the `.app` file or install via the `.dmg` to launch the application.
 
 ### Launching the App
 
@@ -88,4 +99,36 @@ Once implemented, you will be able to:
 
 ## Troubleshooting
 
-- **API Errors**: Ensure your API keys are correctly configured in the settings or `.env` file.
+### API Errors
+
+If you encounter errors when trying to use TTS providers:
+1. **Configure API Keys**: Open Settings (gear icon) and enter your API keys for the providers you want to use.
+2. **Verify Keys**: Ensure the keys are valid and have sufficient credits/quota.
+3. **Check Provider Status**: Verify the provider's service is operational (check their status page).
+
+### Backend Connection Issues
+
+If the app launches but features don't work:
+1. **Check Backend Status**: The app should show a connection indicator if the backend is running.
+2. **Port Conflicts**: Another application might be using port 58735. Close other applications and restart.
+3. **Permissions**: Ensure the app has necessary file system permissions on macOS.
+
+### Audio Playback Issues
+
+If voice samples don't play in the Voice Casting or Test Voices screens:
+1. **Check Volume**: Ensure your system volume is not muted.
+2. **Audio Codec**: Verify your system supports MP3 playback (should work on all modern systems).
+3. **Reload**: Try refreshing the voice library or restarting the app.
+
+### Performance Issues
+
+If the app feels slow or unresponsive:
+1. **Large Projects**: Processing very long screenplays may take time. Be patient during parsing operations.
+2. **Memory**: Ensure sufficient free RAM is available (recommended: 4GB+).
+3. **Close Other Apps**: Free up system resources by closing unnecessary applications.
+
+### Getting More Help
+
+For advanced troubleshooting and technical details, see the [Technical Documentation](GUI_TECHNICAL.md#troubleshooting).
+
+If you encounter bugs or have feature requests, please report them at the [GitHub Issues](https://github.com/tmbdev/script-to-speech/issues) page.
