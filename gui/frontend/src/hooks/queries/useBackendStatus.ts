@@ -29,6 +29,10 @@ export const useBackendStatus = () => {
         connected,
       };
     },
+    // CRITICAL: This query must run even when "offline" to detect backend readiness
+    // Without this, onlineManager.setOnline(false) would pause this query too,
+    // creating a chicken-and-egg problem where we can never detect the backend
+    networkMode: 'always',
     refetchInterval: hasEverConnected ? 5000 : 1000, // Poll faster during startup
     refetchIntervalInBackground: true,
     staleTime: 0,

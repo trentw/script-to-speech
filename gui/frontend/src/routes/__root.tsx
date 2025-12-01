@@ -4,12 +4,10 @@ import {
   useNavigate,
   useRouterState,
 } from '@tanstack/react-router';
-import { useEffect } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Toaster } from '@/components/ui/sonner';
 
-import { AppLoading, AppStatus } from '../components/app/AppStatus';
 import { ErrorDisplay } from '../components/app/ErrorDisplay';
 import { FooterContent } from '../components/app/FooterContent';
 import { HeaderContent } from '../components/app/HeaderContent';
@@ -24,7 +22,6 @@ import {
 } from '../components/layout';
 import { SettingsDialog } from '../components/settings/SettingsDialog';
 import { useAllVoiceCounts } from '../hooks/queries/useAllVoiceCounts';
-import { useBackendStatus } from '../hooks/queries/useBackendStatus';
 import { useProviders } from '../hooks/queries/useProviders';
 import { useVoiceLibrary } from '../hooks/queries/useVoiceLibrary';
 import { useViewportSize } from '../hooks/useViewportSize';
@@ -78,15 +75,12 @@ function RootComponent() {
     setSelectedVoice,
     setCurrentConfig,
   } = useConfiguration();
-  const { setError, clearError } = useUIState();
+  const { clearError } = useUIState();
 
   // Use TanStack Query hooks for server state
-  const { data: backendStatus } = useBackendStatus();
-  const {
-    data: providers,
-    isPending: providersLoading,
-    error: providersError,
-  } = useProviders();
+  // Note: Queries are paused by onlineManager until backend is ready,
+  // so we don't need to handle startup errors here.
+  const { data: providers, isPending: providersLoading } = useProviders();
   const { data: voiceLibraryData } = useVoiceLibrary(selectedProvider || '');
 
   // Get voice counts for all providers dynamically
@@ -99,12 +93,6 @@ function RootComponent() {
       : {};
 
   // Navigation items are now generated at module level in AdaptiveNavigation
-
-  useEffect(() => {
-    if (providersError) {
-      setError(providersError.message);
-    }
-  }, [providersError, setError]);
 
   const handleProviderChange = (provider: string) => {
     clearError(); // Clear any existing errors
@@ -128,17 +116,8 @@ function RootComponent() {
     navigate({ to: '/screenplay' });
   };
 
-  // Show loading state while:
-  // 1. Query hasn't returned yet (initial load)
-  // 2. Backend is starting up (Tauri mode: waiting for ready signal)
-  if (!backendStatus || backendStatus.isStarting) {
-    return <AppLoading />;
-  }
-
-  // Only show "Disconnected" after backend was ready and then lost connection
-  if (!backendStatus.connected) {
-    return <AppStatus connected={false} />;
-  }
+  // Backend status checks are now handled by BackendGate in App.tsx
+  // This component can assume backend is ready
 
   return (
     <>
