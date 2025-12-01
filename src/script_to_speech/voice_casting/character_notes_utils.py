@@ -52,10 +52,10 @@ def generate_voice_casting_prompt_file(
     if prompt_file_path and not prompt_file_path.is_file():
         raise FileNotFoundError(f"Custom prompt file not found: {prompt_file_path}")
 
-    # Determine screenplay name and input directory
+    # Determine screenplay name and output directory
+    # Use source file's parent directory - this is already the correct workspace location
     screenplay_name = source_screenplay_path.stem
-    input_dir = Path.cwd() / "input" / screenplay_name
-    input_dir.mkdir(parents=True, exist_ok=True)
+    input_dir = source_screenplay_path.parent
 
     # Determine output file path
     output_file_name = f"{screenplay_name}_character_notes_prompt.txt"

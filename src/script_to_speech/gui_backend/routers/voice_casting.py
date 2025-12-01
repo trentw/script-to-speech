@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field
 
 from script_to_speech.utils.logging import get_screenplay_logger
 
+from ..config import settings
 from ..services.screenplay_service import screenplay_service
 from ..services.voice_casting_service import (
     CharacterInfo,
@@ -257,8 +258,8 @@ async def upload_json(file: UploadFile = File(...)) -> VoiceCastingSession:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Create uploads directory if it doesn't exist
-    uploads_dir = Path("uploads")
+    # Use settings.UPLOAD_DIR for consistent dev/prod path handling
+    uploads_dir = settings.UPLOAD_DIR
     uploads_dir.mkdir(exist_ok=True)
 
     # Generate unique filename
@@ -509,8 +510,8 @@ async def upload_screenplay_source(
                 status_code=400, detail="TXT file must be valid UTF-8 encoded text"
             )
 
-    # Create uploads directory if it doesn't exist
-    uploads_dir = Path("uploads")
+    # Use settings.UPLOAD_DIR for consistent dev/prod path handling
+    uploads_dir = settings.UPLOAD_DIR
     uploads_dir.mkdir(exist_ok=True)
 
     # Generate unique filename using session ID and timestamp

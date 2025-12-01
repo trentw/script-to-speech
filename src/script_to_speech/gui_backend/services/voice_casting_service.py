@@ -1630,6 +1630,61 @@ class VoiceCastingService:
         )
         return session
 
+    def _discover_screenplay_source(
+        self, input_path: str, screenplay_name: str
+    ) -> Optional[str]:
+        """
+        Discover the original screenplay source file (PDF/TXT) for a project.
+
+        Checks standard locations where source files may be stored.
+        Search order (first match wins):
+        1. {input_path}/{screenplay_name}.pdf - Project-local PDF
+        2. {input_path}/{screenplay_name}.txt - Project-local TXT
+        3. {workspace_dir}/source_screenplays/{screenplay_name}.pdf - Global PDF
+        4. {workspace_dir}/source_screenplays/{screenplay_name}.txt - Global TXT
+
+        PDF is prioritized over TXT because it preserves better structural context
+        (scene headers, character cues) for LLM analysis.
+
+        Args:
+            input_path: Project input directory path
+            screenplay_name: Name of the screenplay (without extension)
+
+        Returns:
+            Path to source file if found and validated, None otherwise
+        """
+        # Locations to check, in order of preference
+        candidates = [
+            # Project input directory (local to this project)
+            Path(input_path) / f"{screenplay_name}.pdf",
+            Path(input_path) / f"{screenplay_name}.txt",
+            # Source screenplays directory (global repository)
+            Path(settings.WORKSPACE_DIR)
+            / "source_screenplays"
+            / f"{screenplay_name}.pdf",
+            Path(settings.WORKSPACE_DIR)
+            / "source_screenplays"
+            / f"{screenplay_name}.txt",
+        ]
+
+        for candidate in candidates:
+            if candidate.exists() and candidate.is_file():
+                # Validate path is within allowed workspace to prevent traversal attacks
+                try:
+                    validated_path = self._path_validator.validate_existing_path(
+                        candidate
+                    )
+                    logger.info(f"Auto-discovered screenplay source: {validated_path}")
+                    return str(validated_path)
+                except ValueError as e:
+                    logger.warning(
+                        f"Discovered file {candidate} failed validation: {e}"
+                    )
+                    continue
+
+        logger.debug(f"No screenplay source found for {screenplay_name}")
+        return None
+
     async def create_session_from_project_path(
         self, input_path: str, screenplay_name: str
     ) -> VoiceCastingSession:
@@ -1658,13 +1713,19 @@ class VoiceCastingService:
                 del self._project_path_to_session[json_path]
                 logger.info(f"Removed stale session mapping for {json_path}")
 
-        # Create new session using existing method
-        session = await self.create_session(json_path)
+        # Discover source screenplay file (PDF/TXT) if available
+        source_path = self._discover_screenplay_source(input_path, screenplay_name)
+
+        # Create new session with source path if found
+        session = await self.create_session(
+            json_path, screenplay_source_path=source_path
+        )
 
         # Store the mapping
         self._project_path_to_session[json_path] = session.session_id
         logger.info(
             f"Created new session {session.session_id} for project at {json_path}"
+            + (f" with source: {source_path}" if source_path else "")
         )
 
         return session

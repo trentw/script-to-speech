@@ -36,6 +36,7 @@ a = Analysis(
         (str(src_dir / 'script_to_speech' / 'voice_library' / 'voice_library_data'), 'script_to_speech/voice_library/voice_library_data'),
         (str(src_dir / 'script_to_speech' / 'text_processors' / 'configs'), 'script_to_speech/text_processors/configs'),
         (str(src_dir / 'script_to_speech' / 'tts_providers'), 'script_to_speech/tts_providers'),
+        (str(src_dir / 'script_to_speech' / 'voice_casting'), 'script_to_speech/voice_casting'),
     ],
     hiddenimports=hiddenimports,
     hookspath=[],

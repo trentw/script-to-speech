@@ -1,4 +1,10 @@
-import { AlertCircle, CheckCircle2, FileText, Loader2 } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  Upload,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
