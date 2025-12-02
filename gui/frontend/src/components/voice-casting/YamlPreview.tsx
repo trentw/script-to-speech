@@ -9,7 +9,6 @@ import {
 import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import {
   Card,
@@ -74,48 +73,21 @@ export function YamlPreview({ sessionId, onBack, onExport }: YamlPreviewProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              className={appButtonVariants({
-                variant: 'secondary',
-                size: 'sm',
-              })}
-              onClick={onBack}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </button>
-            <div>
-              <h1 className="text-lg font-semibold">YAML Configuration</h1>
-              <p className="text-muted-foreground text-sm">
-                Preview and export voice casting configuration
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCopy}
-              className="gap-2"
-            >
-              {copied ? (
-                <Check className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              {copied ? 'Copied!' : 'Copy'}
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={onExport || handleDownload}
-              className="gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </Button>
+        <div className="flex items-center gap-4">
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'icon',
+            })}
+            onClick={onBack}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <h1 className="text-lg font-semibold">YAML Configuration</h1>
+            <p className="text-muted-foreground text-sm">
+              Preview and export voice casting configuration
+            </p>
           </div>
         </div>
       </div>
@@ -130,11 +102,41 @@ export function YamlPreview({ sessionId, onBack, onExport }: YamlPreviewProps) {
 
           <TabsContent value="yaml" className="mt-4 flex-1 overflow-hidden">
             <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-base">Configuration File</CardTitle>
-                <CardDescription>
-                  Voice casting configuration in YAML format
-                </CardDescription>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                <div className="space-y-1.5">
+                  <CardTitle className="text-base">
+                    Configuration File
+                  </CardTitle>
+                  <CardDescription>
+                    Voice casting configuration in YAML format
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    className={appButtonVariants({
+                      variant: 'secondary',
+                      size: 'sm',
+                    })}
+                    onClick={handleCopy}
+                  >
+                    {copied ? (
+                      <Check className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Copy className="mr-2 h-4 w-4" />
+                    )}
+                    {copied ? 'Copied!' : 'Copy'}
+                  </button>
+                  <button
+                    className={appButtonVariants({
+                      variant: 'primary',
+                      size: 'sm',
+                    })}
+                    onClick={onExport || handleDownload}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </button>
+                </div>
               </CardHeader>
               <CardContent className="h-[calc(100%-5rem)]">
                 <ScrollArea className="bg-muted/50 h-full rounded-md border p-4">

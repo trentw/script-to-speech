@@ -225,11 +225,34 @@ export function YamlImportPanel({
 
         <TabsContent value="paste" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Paste YAML Configuration</CardTitle>
-              <CardDescription>
-                Paste your voice configuration YAML below
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="space-y-1.5">
+                <CardTitle>Paste YAML Configuration</CardTitle>
+                <CardDescription>
+                  Paste your voice configuration YAML below
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className={appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })}
+                  onClick={onBack}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={appButtonVariants({
+                    variant: 'primary',
+                    size: 'sm',
+                  })}
+                  onClick={handleImport}
+                  disabled={!canImport}
+                >
+                  Import
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -248,11 +271,34 @@ export function YamlImportPanel({
 
         <TabsContent value="upload" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Upload YAML File</CardTitle>
-              <CardDescription>
-                Select a YAML configuration file from your computer
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="space-y-1.5">
+                <CardTitle>Upload YAML File</CardTitle>
+                <CardDescription>
+                  Select a YAML configuration file from your computer
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  className={appButtonVariants({
+                    variant: 'secondary',
+                    size: 'sm',
+                  })}
+                  onClick={onBack}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={appButtonVariants({
+                    variant: 'primary',
+                    size: 'sm',
+                  })}
+                  onClick={handleImport}
+                  disabled={!canImport}
+                >
+                  Import
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-col items-center justify-center space-y-4 rounded-lg border-2 border-dashed p-8">
@@ -423,16 +469,6 @@ export function YamlImportPanel({
           </CardContent>
         </Card>
       )}
-
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={onBack}>
-          Cancel
-        </Button>
-        <Button onClick={handleImport} disabled={!canImport}>
-          Import Configuration
-        </Button>
-      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type {
   CharacterInfo,
   VoiceAssignment as ApiVoiceAssignment,
 } from '@/types/voice-casting';
+import { downloadText } from '@/utils/downloadService';
 
 /**
  * Centralized YAML utilities for voice casting
@@ -187,18 +188,14 @@ export const yamlUtils = {
 
   /**
    * Download YAML content as a file
+   * Uses centralized downloadService for Tauri compatibility with native save dialog
    * @param yamlContent YAML content to download
    * @param filename Filename for the download
    */
-  downloadYamlFile: (yamlContent: string, filename: string): void => {
-    const blob = new Blob([yamlContent], { type: 'application/x-yaml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  downloadYamlFile: async (
+    yamlContent: string,
+    filename: string
+  ): Promise<void> => {
+    return downloadText(yamlContent, filename, 'application/x-yaml');
   },
 };

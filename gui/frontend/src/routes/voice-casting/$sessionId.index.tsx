@@ -49,7 +49,7 @@ export const Route = createFileRoute('/voice-casting/$sessionId/')({
 
 function VoiceCastingSessionIndex() {
   const { sessionId } = Route.useParams();
-  const [isExporting, setIsExporting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
   const {
     navigateToIndex,
@@ -208,18 +208,18 @@ function VoiceCastingSessionIndex() {
     navigateToPreview(sessionId);
   };
 
-  const handleExportYaml = async () => {
+  const handleDownloadYaml = async () => {
     if (!sessionData || !session) {
       toast.error('No active session found');
       return;
     }
 
     if (assignedCount === 0) {
-      toast.error('No voice assignments to export');
+      toast.error('No voice assignments to download');
       return;
     }
 
-    setIsExporting(true);
+    setIsDownloading(true);
 
     try {
       // Use the stored YAML content as source of truth
@@ -263,29 +263,29 @@ function VoiceCastingSessionIndex() {
       if (response.data?.warnings && response.data.warnings.length > 0) {
         const warningMessages = response.data.warnings.slice(0, 3); // Limit to first 3 warnings
         toast.warning(
-          `Export completed with warnings:\n${warningMessages.join('\n')}`,
+          `Download completed with warnings:\n${warningMessages.join('\n')}`,
           {
             duration: 6000,
           }
         );
       } else {
-        toast.success('Configuration exported successfully!');
+        toast.success('Configuration downloaded successfully!');
       }
 
-      // Download the YAML file
+      // Download the YAML file (now uses native save dialog in Tauri)
       const filename = `${session.screenplay_name}_voice_config.yaml`;
-      yamlUtils.downloadYamlFile(yamlContent, filename);
+      await yamlUtils.downloadYamlFile(yamlContent, filename);
 
       // Clear unsaved changes flag and recovery data on successful export - DISABLED FOR DEBUGGING
       // setHasUnsavedChanges(false);
       // localStorage.removeItem(`yaml_recovery_${sessionId}`);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Download failed:', error);
       const errorMessage =
-        error instanceof Error ? error.message : 'Export failed';
-      toast.error(`Export failed: ${errorMessage}`);
+        error instanceof Error ? error.message : 'Download failed';
+      toast.error(`Download failed: ${errorMessage}`);
     } finally {
-      setIsExporting(false);
+      setIsDownloading(false);
     }
   };
 
@@ -395,15 +395,15 @@ function VoiceCastingSessionIndex() {
                 variant: 'primary',
                 size: 'sm',
               })}
-              onClick={handleExportYaml}
-              disabled={assignedCount === 0 || isExporting}
+              onClick={handleDownloadYaml}
+              disabled={assignedCount === 0 || isDownloading}
             >
-              {isExporting ? (
+              {isDownloading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Download className="mr-2 h-4 w-4" />
               )}
-              {isExporting ? 'Exporting...' : 'Export Configuration'}
+              {isDownloading ? 'Downloading...' : 'Download Configuration'}
             </button>
           </div>
         </div>
