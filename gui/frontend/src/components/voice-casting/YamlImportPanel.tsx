@@ -50,9 +50,20 @@ export function YamlImportPanel({
     error: sessionError,
   } = useSessionAssignments(sessionId);
 
-  // Mutations
-  const parseYamlMutation = useParseYaml();
-  const validateYamlMutation = useValidateYaml();
+  // Mutations - destructure stable mutate functions to avoid infinite loops in useEffect
+  const {
+    mutate: parseYaml,
+    isPending: parseIsPending,
+    error: parseError,
+    data: parseData,
+  } = useParseYaml();
+
+  const {
+    mutate: validateYaml,
+    isPending: validateIsPending,
+    data: validationResult,
+  } = useValidateYaml();
+
   const updateSessionYamlMutation = useUpdateSessionYaml();
 
   // Debounce the YAML input to avoid excessive API calls
@@ -62,13 +73,13 @@ export function YamlImportPanel({
   useEffect(() => {
     if (debouncedYamlInput.trim().length > 0) {
       // Parse the YAML
-      parseYamlMutation.mutate({ yamlContent: debouncedYamlInput });
+      parseYaml({ yamlContent: debouncedYamlInput });
 
       // Validate if we have a screenplay JSON path from session data
       const screenplayJsonPath = sessionData?.screenplayJsonPath;
 
       if (screenplayJsonPath) {
-        validateYamlMutation.mutate({
+        validateYaml({
           yamlContent: debouncedYamlInput,
           screenplayJsonPath,
         });
@@ -77,9 +88,9 @@ export function YamlImportPanel({
   }, [
     debouncedYamlInput,
     sessionData?.screenplayJsonPath,
-    parseYamlMutation,
-    validateYamlMutation,
-  ]); // Depend on debounced input and screenplay path
+    parseYaml,
+    validateYaml,
+  ]);
 
   const handleFileSelect = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -117,11 +128,7 @@ export function YamlImportPanel({
   };
 
   const isLoading =
-    parseYamlMutation.isPending ||
-    validateYamlMutation.isPending ||
-    updateSessionYamlMutation.isPending;
-  const parseError = parseYamlMutation.error;
-  const validationResult = validateYamlMutation.data;
+    parseIsPending || validateIsPending || updateSessionYamlMutation.isPending;
   const hasErrors = validationResult && !validationResult.is_valid;
   const canImport =
     yamlInput.trim().length > 0 &&
@@ -375,11 +382,11 @@ export function YamlImportPanel({
             ) : null}
 
             {/* Parsed Data Preview */}
-            {parseYamlMutation.data && parseYamlMutation.data.assignments && (
+            {parseData && parseData.assignments && (
               <div className="space-y-2">
                 <h4 className="text-sm font-medium">Parsed Assignments:</h4>
                 <div className="max-h-64 space-y-2 overflow-y-auto rounded-md border p-3">
-                  {parseYamlMutation.data.assignments.map((assignment) => (
+                  {parseData.assignments.map((assignment) => (
                     <div
                       key={assignment.character}
                       className="border-b pb-2 last:border-0 last:pb-0"
