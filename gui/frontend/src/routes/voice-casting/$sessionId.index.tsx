@@ -29,6 +29,7 @@ import { useScreenplayCharacters } from '@/hooks/queries/useScreenplayCharacters
 import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useVoiceCastingNavigation } from '@/hooks/useVoiceCastingNavigation';
 import { apiService } from '@/services/api';
+import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
 import { yamlUtils } from '@/utils/yamlUtils';
@@ -51,6 +52,8 @@ function VoiceCastingSessionIndex() {
   const { sessionId } = Route.useParams();
   const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
+  const { mode } = useProject();
+  const isProjectMode = mode === 'project';
   const {
     navigateToIndex,
     navigateToAssign,
@@ -330,16 +333,18 @@ function VoiceCastingSessionIndex() {
               sessionDataError?.message}
           </AlertDescription>
         </Alert>
-        <button
-          className={appButtonVariants({
-            variant: 'secondary',
-            size: 'sm',
-          })}
-          onClick={handleBack}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Voice Casting
-        </button>
+        {!isProjectMode && (
+          <button
+            className={appButtonVariants({
+              variant: 'secondary',
+              size: 'sm',
+            })}
+            onClick={handleBack}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Voice Casting
+          </button>
+        )}
       </div>
     );
   }
@@ -350,15 +355,17 @@ function VoiceCastingSessionIndex() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button
-              className={appButtonVariants({
-                variant: 'secondary',
-                size: 'icon',
-              })}
-              onClick={handleBack}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
+            {!isProjectMode && (
+              <button
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'icon',
+                })}
+                onClick={handleBack}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            )}
             <div>
               <h1 className="text-2xl font-bold">Voice Casting</h1>
               <p className="text-muted-foreground">
