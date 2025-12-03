@@ -402,8 +402,8 @@ class VoiceCastingService:
         if not session.yaml_content:
             raise ValueError("No YAML content to export")
 
-        # Standard CLI location
-        base_path = Path("input") / session.screenplay_name
+        # Standard CLI location - use workspace directory for correct path in production
+        base_path = settings.WORKSPACE_DIR / "input" / session.screenplay_name
         base_path.mkdir(parents=True, exist_ok=True)
         yaml_path = base_path / f"{session.screenplay_name}_voice_config.yaml"
 
