@@ -1,4 +1,7 @@
-import { appButtonVariants } from '@/components/ui/button-variants';
+import {
+  appButtonVariants,
+  buttonUtils,
+} from '@/components/ui/button-variants';
 import {
   Tooltip,
   TooltipContent,
@@ -6,7 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-import { useUserInput } from '../../stores/appStore';
+import { useConfiguration, useUserInput } from '../../stores/appStore';
 
 export const MainContent = ({
   handleGenerate,
@@ -16,6 +19,20 @@ export const MainContent = ({
   isGenerating: boolean;
 }) => {
   const { text, setText } = useUserInput();
+  const { selectedProvider, selectedVoice } = useConfiguration();
+
+  // Compute disabled state once for clarity
+  const isDisabled =
+    !text.trim() || isGenerating || !selectedProvider || !selectedVoice;
+
+  // Determine tooltip text based on button state (priority: text > provider > voice)
+  const getTooltipText = () => {
+    if (!text.trim()) return 'Add text to generate';
+    if (!selectedProvider) return 'Select a provider to generate';
+    if (!selectedVoice) return 'Select a voice to generate';
+    // When enabled, show keyboard shortcut
+    return `${navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter`;
+  };
 
   return (
     <TooltipProvider>
@@ -70,12 +87,18 @@ export const MainContent = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      className={appButtonVariants({
+                      className={`${appButtonVariants({
                         variant: 'primary',
                         size: 'lg',
-                      })}
-                      onClick={handleGenerate}
-                      disabled={!text.trim() || isGenerating}
+                      })} ${isDisabled ? buttonUtils.ariaDisabled : ''}`}
+                      aria-disabled={isDisabled}
+                      onClick={(e) => {
+                        if (isDisabled) {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleGenerate();
+                      }}
                     >
                       {isGenerating ? (
                         <div className="flex items-center space-x-2">
@@ -88,9 +111,7 @@ export const MainContent = ({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>
-                      {navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'}+Enter
-                    </p>
+                    <p>{getTooltipText()}</p>
                   </TooltipContent>
                 </Tooltip>
               </div>

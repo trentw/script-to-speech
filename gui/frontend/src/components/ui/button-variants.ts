@@ -88,8 +88,13 @@ export const buttonUtils = {
   iconSizing:
     "[&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0",
 
-  // Disabled state
+  // Disabled state (native disabled attribute)
   disabled: 'disabled:pointer-events-none disabled:opacity-50',
+
+  // aria-disabled state (allows tooltips on disabled buttons)
+  // Use with aria-disabled={true} + onClick guard
+  ariaDisabled:
+    'cursor-not-allowed opacity-50 active:scale-100 active:shadow-md',
 };
 
 // Semantic button types for common use cases

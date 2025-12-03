@@ -73,12 +73,12 @@ function TTSView() {
     (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
-        if (selectedProvider && text.trim() && !isGenerating) {
+        if (selectedProvider && selectedVoice && text.trim() && !isGenerating) {
           handleGenerateRequest();
         }
       }
     },
-    [selectedProvider, text, isGenerating, handleGenerateRequest]
+    [selectedProvider, selectedVoice, text, isGenerating, handleGenerateRequest]
   );
 
   useEffect(() => {
