@@ -30,22 +30,22 @@ from .voice_library_service import voice_library_service
 logger = logging.getLogger(__name__)
 
 
-def build_audio_url(filename: str, base_url: str = "http://localhost:8000") -> str:
+def build_audio_url(filename: str, base_url: Optional[str] = None) -> str:
     """Build a full HTTP URL for an audio file.
 
     Args:
         filename: Audio filename (e.g., "elevenlabs--voice--text--timestamp.mp3")
-        base_url: Base URL of the server (default: "http://localhost:8000")
+        base_url: Base URL of the server. If None, uses settings.HOST and settings.PORT.
 
     Returns:
         Full HTTP URL (e.g., "http://localhost:8000/static/filename.mp3")
     """
+    if base_url is None:
+        base_url = f"http://{settings.HOST}:{settings.PORT}"
     return f"{base_url}/static/{filename}"
 
 
-def build_audio_urls(
-    filenames: List[str], base_url: str = "http://localhost:8000"
-) -> List[str]:
+def build_audio_urls(filenames: List[str], base_url: Optional[str] = None) -> List[str]:
     """Build full HTTP URLs for a list of audio files."""
     return [build_audio_url(filename, base_url) for filename in filenames]
 

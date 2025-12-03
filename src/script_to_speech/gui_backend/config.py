@@ -83,10 +83,15 @@ class Settings(BaseSettings):
     # but mypy cannot track the transformation, requiring the type: ignore annotation.
     WORKSPACE_DIR: Path = None  # type: ignore[assignment]
 
-    # Legacy paths (kept for backward compatibility in development)
-    STS_ROOT_DIR: Path = Path(__file__).parent.parent.parent.parent
-    AUDIO_OUTPUT_DIR: Path = STS_ROOT_DIR / "standalone_speech"
-    UPLOAD_DIR: Path = STS_ROOT_DIR / "uploads"
+    @property
+    def AUDIO_OUTPUT_DIR(self) -> Path:
+        """Get the standalone speech output directory (workspace-relative)."""
+        return self.WORKSPACE_DIR / "standalone_speech"
+
+    @property
+    def UPLOAD_DIR(self) -> Path:
+        """Get the uploads directory (workspace-relative)."""
+        return self.WORKSPACE_DIR / "uploads"
 
     # CORS settings
     ALLOWED_ORIGINS: List[str] = [
@@ -175,7 +180,7 @@ def _initialize_settings_once() -> None:
         # Log the error but don't fail - let the services handle it gracefully
         logger.error(f"Failed to initialize workspace: {e}")
 
-    # Ensure legacy directories exist for backward compatibility (development mode)
+    # Ensure additional workspace directories exist
     settings.AUDIO_OUTPUT_DIR.mkdir(exist_ok=True)
     settings.UPLOAD_DIR.mkdir(exist_ok=True)
 
