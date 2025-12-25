@@ -1,0 +1,160 @@
+import { Bug, History, Menu, Settings } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '@/components/ui/button';
+import { appButtonVariants } from '@/components/ui/button-variants';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { WorkspaceDebugInfo } from '@/components/WorkspaceDebugInfo';
+import { useViewportSize } from '@/hooks/useViewportSize';
+import { cn } from '@/lib/utils';
+
+interface AppHeaderProps {
+  appName: string;
+  subAppName: string;
+  showNavToggle?: boolean;
+  onNavToggle?: () => void;
+  onSettingsClick?: () => void;
+  onHistoryClick?: () => void;
+  showActionButtons?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export function AppHeader({
+  appName,
+  subAppName,
+  showNavToggle = true,
+  onNavToggle,
+  onSettingsClick,
+  onHistoryClick,
+  showActionButtons = true,
+  children,
+  className,
+}: AppHeaderProps) {
+  const { isMobile, isTablet } = useViewportSize();
+
+  return (
+    <header
+      className={cn(
+        'border-border bg-background/95 supports-[backdrop-filter]:bg-background/60 h-16 border-b backdrop-blur',
+        'flex items-center justify-between px-4',
+        className
+      )}
+    >
+      {/* Left Section: App Name + Nav Toggle */}
+      <div className="flex max-w-[60%] min-w-0 flex-1 items-center gap-3">
+        {showNavToggle && (isMobile || isTablet) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onNavToggle}
+            className="h-9 w-9 p-0"
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle navigation</span>
+          </Button>
+        )}
+
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="text-foreground truncate text-lg font-bold tracking-tight">
+            {appName}
+          </h1>
+
+          {!isMobile && (
+            <>
+              <Separator orientation="vertical" className="h-6" />
+              <span className="text-muted-foreground text-sm font-medium">
+                {subAppName}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Center Section: Provider Selector and Sub-app (Responsive) */}
+      <div
+        className={cn(
+          'flex items-center gap-4',
+          isMobile && 'hidden' // Hide on mobile to save space
+        )}
+      >
+        {children && <div className="flex items-center gap-2">{children}</div>}
+      </div>
+
+      {/* Right Section: Action Buttons */}
+      <div className="flex items-center gap-2">
+        {/* Backend Status Indicator */}
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <div className="h-2 w-2 rounded-full bg-green-500" />
+          {!isMobile && <span>Connected</span>}
+        </div>
+
+        {/* Debug Info Button */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0"
+              title="Debug Info"
+            >
+              <Bug className="h-4 w-4" />
+              <span className="sr-only">Debug Info</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Workspace Debug Info</DialogTitle>
+            </DialogHeader>
+            <WorkspaceDebugInfo />
+          </DialogContent>
+        </Dialog>
+
+        {showActionButtons && (
+          <>
+            <Separator orientation="vertical" className="h-6" />
+
+            {/* Settings Button */}
+            {onSettingsClick && (
+              <button
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'icon',
+                })}
+                onClick={onSettingsClick}
+                title="Settings"
+              >
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">Settings</span>
+              </button>
+            )}
+
+            {/* History Button */}
+            {onHistoryClick && (
+              <button
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'icon',
+                })}
+                onClick={onHistoryClick}
+                title="History"
+              >
+                <History className="h-4 w-4" />
+                <span className="sr-only">History</span>
+              </button>
+            )}
+          </>
+        )}
+      </div>
+    </header>
+  );
+}
+
+export default AppHeader;

@@ -1,0 +1,59 @@
+import { useNavigate } from '@tanstack/react-router';
+import { FileText, Library } from 'lucide-react';
+import React from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+
+interface LLMWorkflowButtonsProps {
+  sessionId: string;
+}
+
+export function LLMWorkflowButtons({ sessionId }: LLMWorkflowButtonsProps) {
+  const navigate = useNavigate();
+  // For now, we don't track casting method in React Query version
+  const castingMethod = 'manual';
+
+  if (castingMethod !== 'llm-assisted') {
+    return null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <Separator />
+      <div>
+        <h3 className="mb-2 text-lg font-semibold">LLM-Assisted Workflow</h3>
+        <p className="text-muted-foreground mb-4 text-sm">
+          Use AI to help generate character descriptions and suggest voice
+          assignments
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate({
+                to: '/voice-casting/$sessionId/notes',
+                params: { sessionId },
+              })
+            }
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Generate Character Notes
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() =>
+              navigate({
+                to: '/voice-casting/$sessionId/library',
+                params: { sessionId },
+              })
+            }
+          >
+            <Library className="mr-2 h-4 w-4" />
+            Voice Library Casting
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

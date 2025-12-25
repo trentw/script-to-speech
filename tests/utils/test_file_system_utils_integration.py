@@ -28,10 +28,13 @@ def test_create_output_folders_integration(mock_datetime, mock_exists, mock_mkdi
         input_file, run_mode="test_mode"
     )
 
-    # Check that the paths are correct
-    assert main_output_folder == Path("output/test_screenplay")
-    assert cache_folder == Path("output/test_screenplay/cache")
-    assert logs_folder == Path("output/test_screenplay/logs")
+    # Check path relationships (environment-independent)
+    assert main_output_folder.name == "test_screenplay"
+    assert main_output_folder.parent.name == "output"
+    assert cache_folder.name == "cache"
+    assert cache_folder.parent == main_output_folder
+    assert logs_folder.name == "logs"
+    assert logs_folder.parent == main_output_folder
 
     # Check that the log file path is correct
     assert log_file.parent == logs_folder

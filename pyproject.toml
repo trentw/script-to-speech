@@ -27,9 +27,22 @@ dependencies = [
     "cartesia>=2.0.3",
     "requests>=2.32.0",
     "pyperclip>=1.8.2",
+    "pathvalidate>=3.0.0",
+    "audioop-lts>=0.2.1 ; python_full_version >= '3.13'",
 ]
 
 [project.optional-dependencies]
+gui = [
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.0.0",
+    "python-multipart>=0.0.6",
+    "aiofiles>=23.2.1",
+]
+build = [
+    "pyinstaller>=6.0.0",
+]
 dev = [
     "black>=25.1.0",
     "isort>=6.0.1",
@@ -37,6 +50,8 @@ dev = [
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
     "pytest-mock>=3.14.0",
+    "pytest-asyncio>=0.21.0",
+    "httpx>=0.25.0",
     "mypy>=1.10.0",  # Aligned with pre-commit and latest stable
     "types-pyYAML>=6.0.12",
     "types-requests>=2.32.0",
@@ -59,6 +74,7 @@ sts-validate-voice-library-data = "script_to_speech.voice_library.cli_data:main"
 sts-validate-voice-library-config = "script_to_speech.voice_library.cli_config:main"
 sts-voice-library-run-script = "script_to_speech.voice_library.cli_run_script:main"
 sts-validate-voice-library-scripts = "script_to_speech.voice_library.cli_validate_scripts:main"
+sts-gui-server = "script_to_speech.gui_backend.main:main"
 
 
 [tool.hatch.build.targets.wheel]
@@ -136,5 +152,5 @@ ignore_errors = true
 
 # Third-party libraries without stubs
 [[tool.mypy.overrides]]
-module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*"]
+module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*", "pydantic.*", "pydantic_settings.*", "fastapi.*", "uvicorn.*", "pathvalidate.*"]
 ignore_missing_imports = true

@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+coverage/
+.next/
+src-tauri/target/
+src-tauri/gen/
+
+# Generated files
+src/routeTree.gen.ts
+*.gen.ts

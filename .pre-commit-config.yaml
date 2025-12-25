@@ -37,3 +37,20 @@ repos:
         pass_filenames: false
         always_run: false
         files: ^src/script_to_speech/voice_library_data/.*\.yaml$
+      - id: prettier
+        name: prettier
+        entry: scripts/pre-commit-entry.sh prettier --write
+        language: script
+        files: ^gui/frontend/.*\.(js|jsx|ts|tsx|json|css|md)$
+      - id: eslint
+        name: eslint
+        entry: scripts/pre-commit-entry.sh eslint --fix
+        language: script
+        files: ^gui/frontend/.*\.(js|jsx|ts|tsx)$
+      - id: frontend-tests
+        name: frontend-tests
+        entry: scripts/pre-commit-entry.sh vitest run --silent
+        language: script
+        pass_filenames: false
+        files: ^gui/frontend/.*\.(js|jsx|ts|tsx)$
+        types_or: [javascript, jsx, ts, tsx]

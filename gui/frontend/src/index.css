@@ -1,0 +1,192 @@
+@import 'tailwindcss';
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family:
+      'Inter',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      'Roboto',
+      sans-serif;
+  }
+}
+
+/* CSS Grid Layout System */
+@layer components {
+  .app-shell {
+    container-type: inline-size;
+    container-name: shell;
+  }
+
+  /* CSS Grid utilities for named grid areas */
+  .grid-area-nav {
+    grid-area: nav;
+  }
+
+  .grid-area-header {
+    grid-area: header;
+  }
+
+  .grid-area-main {
+    grid-area: main;
+  }
+
+  .grid-area-panel {
+    grid-area: panel;
+  }
+
+  .grid-area-footer {
+    grid-area: footer;
+  }
+
+  /* Responsive grid templates using container queries */
+  .app-shell {
+    display: grid;
+    height: 100vh; /* Changed from min-height to height for strict viewport constraint */
+    width: 100%;
+    /* Smooth grid layout transitions for responsive changes */
+    transition:
+      grid-template-columns 300ms ease-in-out,
+      grid-template-areas 300ms ease-in-out;
+  }
+
+  /* Desktop: Full navigation + header + main + panel */
+  .app-shell.has-nav.has-panel {
+    grid-template-areas:
+      'nav header header'
+      'nav main panel'
+      'nav footer footer';
+    grid-template-columns: auto minmax(0, 1fr) 500px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* Desktop: Navigation + header + main only */
+  .app-shell.has-nav:not(.has-panel) {
+    grid-template-areas:
+      'nav header'
+      'nav main'
+      'nav footer';
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* Desktop: Header + main + panel only */
+  .app-shell.has-panel:not(.has-nav) {
+    grid-template-areas:
+      'header header'
+      'main panel'
+      'footer footer';
+    grid-template-columns: minmax(0, 1fr) 500px;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* Desktop: Header + main only */
+  .app-shell:not(.has-nav):not(.has-panel) {
+    grid-template-areas:
+      'header'
+      'main'
+      'footer';
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  /* Tablet breakpoint: Collapse navigation, keep panel */
+  @container shell (max-width: 1199px) {
+    .app-shell.has-panel {
+      grid-template-areas:
+        'header header'
+        'main panel'
+        'footer footer';
+      grid-template-columns: minmax(0, 2fr) 500px;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+
+    .app-shell:not(.has-panel) {
+      grid-template-areas:
+        'header'
+        'main'
+        'footer';
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+  }
+
+  /* Mobile breakpoint: Single column, panel becomes modal */
+  @container shell (max-width: 767px) {
+    .app-shell {
+      grid-template-areas:
+        'header'
+        'main'
+        'footer';
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr) auto;
+    }
+  }
+
+  /* Component-level container queries */
+  .responsive-panel {
+    container-type: inline-size;
+    container-name: panel;
+  }
+
+  .adaptive-navigation {
+    container-type: inline-size;
+    container-name: navigation;
+  }
+
+  /* Hide elements responsively */
+  @container shell (max-width: 767px) {
+    .hide-mobile {
+      display: none !important;
+    }
+  }
+
+  @container shell (min-width: 768px) {
+    .hide-desktop {
+      display: none !important;
+    }
+  }
+
+  @container shell (max-width: 1199px) {
+    .hide-tablet-down {
+      display: none !important;
+    }
+  }
+}

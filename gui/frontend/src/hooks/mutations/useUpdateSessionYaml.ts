@@ -1,0 +1,102 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { produce } from 'immer';
+
+import { apiService } from '@/services/api';
+import type { VoiceCastingSession } from '@/types/voice-casting';
+import { handleApiError } from '@/utils/apiErrorHandler';
+
+interface UpdateSessionYamlRequest {
+  sessionId: string;
+  yamlContent: string;
+  versionId: number;
+}
+
+interface UpdateSessionYamlResponse {
+  session: VoiceCastingSession;
+  warnings: string[];
+}
+
+export function useUpdateSessionYaml() {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    UpdateSessionYamlResponse,
+    Error,
+    UpdateSessionYamlRequest
+  >({
+    mutationFn: async (data) => {
+      const response = await apiService.updateSessionYaml(
+        data.sessionId,
+        data.yamlContent,
+        data.versionId
+      );
+
+      if (response.error) {
+        throw handleApiError(response);
+      }
+
+      return response.data!;
+    },
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: ['session', variables.sessionId],
+      });
+
+      // Snapshot the previous value
+      const previousSession = queryClient.getQueryData<VoiceCastingSession>([
+        'session',
+        variables.sessionId,
+      ]);
+
+      // Optimistically update the cache
+      if (previousSession) {
+        const optimisticSession = produce(previousSession, (draft) => {
+          // Update the YAML content optimistically
+          draft.yaml_content = variables.yamlContent;
+
+          // Update version for optimistic locking
+          if (draft.yaml_version_id !== undefined) {
+            draft.yaml_version_id = variables.versionId + 1;
+          }
+
+          draft.updated_at = new Date().toISOString();
+        });
+
+        queryClient.setQueryData(
+          ['session', variables.sessionId],
+          optimisticSession
+        );
+      }
+
+      // Return context with previous value for rollback
+      return { previousSession };
+    },
+    onError: (error, variables, context) => {
+      // Rollback optimistic update on error
+      if (context?.previousSession) {
+        queryClient.setQueryData(
+          ['session', variables.sessionId],
+          context.previousSession
+        );
+      }
+    },
+    onSuccess: (data, variables) => {
+      // Simply invalidate to trigger a refetch
+      // This ensures the query runs its full transformation logic
+      queryClient.invalidateQueries({
+        queryKey: ['session', variables.sessionId],
+      });
+
+      // Also invalidate any parsed YAML queries that might depend on this session
+      queryClient.invalidateQueries({
+        queryKey: ['parseYaml'],
+      });
+
+      // Also invalidate the sessions list to update counts/status
+      queryClient.invalidateQueries({
+        queryKey: ['voice-casting-sessions'],
+      });
+    },
+  });
+}

@@ -1,0 +1,46 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Script to Speech",
+  "version": "0.1.0",
+  "identifier": "com.scripttospeech.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build && cd ../../ && uv run python build_backend.py"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Script to Speech",
+        "width": 1400,
+        "height": 850,
+        "minWidth": 900,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": ["binaries/sts-gui-backend"],
+    "macOS": {
+      "entitlements": "Entitlements.plist",
+      "signingIdentity": "-",
+      "minimumSystemVersion": "10.13"
+    }
+  }
+}
