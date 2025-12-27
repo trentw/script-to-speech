@@ -1,9 +1,10 @@
 """Tests for file_system_utils.py."""
 
+import json
 import os
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 import pytest
 
@@ -11,6 +12,7 @@ from script_to_speech.utils.file_system_utils import (
     PathSecurityValidator,
     create_output_folders,
     sanitize_name,
+    save_processed_dialogues,
 )
 
 
@@ -341,3 +343,81 @@ class TestPathSecurityValidator:
         result = validator.validate_and_join("MyFolder", "MyFile.TXT")
         assert "MyFolder" in str(result)
         assert "MyFile" in str(result)
+
+
+class TestSaveProcessedDialogues:
+    """Tests for the save_processed_dialogues function."""
+
+    def test_save_processed_dialogues_success(self):
+        """Test successfully saving processed dialogues."""
+        # Arrange
+        processed_dialogues = [
+            {"type": "dialogue", "text": "Hello", "speaker": "John"},
+            {"type": "action", "text": "John walks away"},
+        ]
+        output_folder = "/output"
+        base_name = "test_screenplay"
+
+        # Act
+        with (
+            patch("builtins.open", mock_open()) as mock_file,
+            patch("json.dump") as mock_json_dump,
+            patch("script_to_speech.utils.file_system_utils.logger") as mock_logger,
+        ):
+            result = save_processed_dialogues(
+                processed_dialogues, output_folder, base_name
+            )
+
+            # Assert
+            expected_path = Path("/output/test_screenplay-text-processed.json")
+            assert result == expected_path
+            mock_file.assert_called_once_with(expected_path, "w", encoding="utf-8")
+            mock_json_dump.assert_called_once()
+            # Verify json.dump was called with correct data
+            call_args = mock_json_dump.call_args
+            assert call_args[0][0] == processed_dialogues
+            assert call_args[1] == {"ensure_ascii": False, "indent": 2}
+            mock_logger.info.assert_called_once()
+
+    def test_save_processed_dialogues_error_returns_none(self):
+        """Test that errors return None instead of raising."""
+        # Arrange
+        processed_dialogues = [{"type": "dialogue", "text": "Hello"}]
+        output_folder = "/output"
+        base_name = "test"
+
+        # Act - should not raise, returns None
+        with (
+            patch(
+                "builtins.open", side_effect=FileNotFoundError("Directory not found")
+            ),
+            patch("script_to_speech.utils.file_system_utils.logger") as mock_logger,
+        ):
+            result = save_processed_dialogues(
+                processed_dialogues, output_folder, base_name
+            )
+
+            # Assert
+            assert result is None
+            mock_logger.error.assert_called_once()
+
+    def test_save_processed_dialogues_returns_path(self):
+        """Test that function returns Path to saved file on success."""
+        # Arrange
+        processed_dialogues = [{"type": "dialogue", "text": "Test"}]
+        output_folder = "/output"
+        base_name = "my_file"
+
+        # Act
+        with (
+            patch("builtins.open", mock_open()),
+            patch("json.dump"),
+            patch("script_to_speech.utils.file_system_utils.logger"),
+        ):
+            result = save_processed_dialogues(
+                processed_dialogues, output_folder, base_name
+            )
+
+            # Assert
+            assert isinstance(result, Path)
+            assert result.name == "my_file-text-processed.json"

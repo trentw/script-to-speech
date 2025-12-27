@@ -143,58 +143,6 @@ class TestParseArguments:
         assert args.dummy_tts_provider_override is True
 
 
-class TestSaveModifiedJson:
-    """Tests for the save_modified_json function."""
-
-    def test_save_modified_json_success(self):
-        """Test successfully saving modified JSON."""
-        # Arrange
-        modified_dialogues = [
-            {"type": "dialogue", "text": "Hello", "speaker": "John"},
-            {"type": "action", "text": "John walks away"},
-        ]
-        output_folder = "/output"
-        input_file = "/input/file.json"
-
-        # Act
-        with (
-            patch("builtins.open", mock_open()) as mock_file,
-            patch("json.dump") as mock_json_dump,
-            patch("src.script_to_speech.script_to_speech.logger") as mock_logger,
-        ):
-            script_to_speech.save_modified_json(
-                modified_dialogues, output_folder, input_file
-            )
-
-            # Assert
-            mock_file.assert_called_once_with(
-                "/output/file-text-processed.json", "w", encoding="utf-8"
-            )
-            mock_json_dump.assert_called_once()
-            mock_logger.info.assert_called_with(
-                "\nProcessed dialogue saved to: /output/file-text-processed.json"
-            )
-
-    def test_save_modified_json_error(self):
-        """Test error handling when saving modified JSON."""
-        # Arrange
-        modified_dialogues = [{"type": "dialogue", "text": "Hello"}]
-        output_folder = "/output"
-        input_file = "/input/file.json"
-
-        # Act
-        with (
-            patch("builtins.open", side_effect=PermissionError("Permission denied")),
-            patch("src.script_to_speech.script_to_speech.logger") as mock_logger,
-        ):
-            script_to_speech.save_modified_json(
-                modified_dialogues, output_folder, input_file
-            )
-
-            # Assert
-            mock_logger.error.assert_called_once()
-
-
 class TestFindOptionalConfig:
     """Tests for the find_optional_config function."""
 
@@ -375,8 +323,8 @@ class TestMain:
             ) as mock_plan,
             patch("sys.exit") as mock_exit,
             patch(
-                "src.script_to_speech.script_to_speech.save_modified_json"
-            ) as mock_save_json,  # Mock save_modified_json
+                "src.script_to_speech.script_to_speech.save_processed_dialogues"
+            ) as mock_save_json,  # Mock save_processed_dialogues
             # Mock the file reading and YAML parsing within script_to_speech.main
             patch(
                 "builtins.open", mock_open(read_data="some yaml data")
@@ -498,7 +446,7 @@ class TestMain:
                 "src.script_to_speech.script_to_speech.print_unified_report"
             ) as mock_report,
             patch(
-                "src.script_to_speech.script_to_speech.save_modified_json"
+                "src.script_to_speech.script_to_speech.save_processed_dialogues"
             ) as mock_save_json,
             # Note: os.path.exists and pathlib.Path.exists are already mocked in mock_setup
         ):
@@ -562,7 +510,7 @@ class TestMain:
                 "src.script_to_speech.script_to_speech.print_unified_report"
             ) as mock_report,
             patch(
-                "src.script_to_speech.script_to_speech.save_modified_json"
+                "src.script_to_speech.script_to_speech.save_processed_dialogues"
             ) as mock_save_json,
             patch(
                 "src.script_to_speech.script_to_speech.fetch_and_cache_audio"
@@ -636,7 +584,7 @@ class TestMain:
                 "src.script_to_speech.script_to_speech.print_unified_report"
             ) as mock_report,
             patch(
-                "src.script_to_speech.script_to_speech.save_modified_json"
+                "src.script_to_speech.script_to_speech.save_processed_dialogues"
             ) as mock_save_json,
             patch(
                 "src.script_to_speech.script_to_speech.apply_cache_overrides"
@@ -703,7 +651,7 @@ class TestMain:
                 "src.script_to_speech.script_to_speech.print_unified_report"
             ) as mock_report,
             patch(
-                "src.script_to_speech.script_to_speech.save_modified_json"
+                "src.script_to_speech.script_to_speech.save_processed_dialogues"
             ) as mock_save,
             patch(
                 "sys.exit", side_effect=SystemExit
@@ -781,25 +729,4 @@ class TestMain:
                 config_data=expected_loaded_config_data,
                 overall_provider=None,  # As per script_to_speech.main's current usage
                 dummy_tts_provider_override=True,  # This is what we're testing
-            )
-
-    def test_modified_json_error_handling(self):
-        """Test error handling when saving modified JSON."""
-        # Arrange
-        test_dialogues = [{"type": "dialogue", "text": "Test"}]
-        test_folder = "/output"
-        test_input = "/input/test.json"
-
-        # Act
-        with (
-            patch("builtins.open", side_effect=IOError("Test IO error")),
-            patch("src.script_to_speech.script_to_speech.logger") as mock_logger,
-        ):
-
-            # Call the function
-            script_to_speech.save_modified_json(test_dialogues, test_folder, test_input)
-
-            # Assert
-            mock_logger.error.assert_called_once_with(
-                "Failed to save modified JSON: Test IO error", exc_info=True
             )

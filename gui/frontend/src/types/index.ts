@@ -255,3 +255,15 @@ export type {
   ProjectMeta,
   ProjectStatus,
 } from './project';
+
+// Re-export audiobook generation types
+export type {
+  AudiobookGenerationMode,
+  AudiobookGenerationPhase,
+  AudiobookGenerationProgress,
+  AudiobookGenerationRequest,
+  AudiobookGenerationResult,
+  AudiobookGenerationStats,
+  AudiobookTaskResponse,
+} from './audiobook-generation';
+export { MODE_DESCRIPTIONS, PHASE_LABELS } from './audiobook-generation';

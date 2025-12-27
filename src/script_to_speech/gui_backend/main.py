@@ -34,6 +34,7 @@ from uvicorn import Config, Server
 
 from script_to_speech.gui_backend.config import settings
 from script_to_speech.gui_backend.routers import (
+    audiobook_generation,
     files,
     generation,
     projects,
@@ -134,6 +135,9 @@ app.include_router(projects.router, prefix="/api", tags=["projects"])
 app.include_router(screenplay.router, prefix="/api/screenplay", tags=["screenplay"])
 app.include_router(
     voice_casting.router, prefix="/api/voice-casting", tags=["voice-casting"]
+)
+app.include_router(
+    audiobook_generation.router, prefix="/api", tags=["audiobook-generation"]
 )
 app.include_router(settings_router.router, tags=["settings"])
 

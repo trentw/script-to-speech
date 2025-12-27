@@ -3,7 +3,26 @@
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+def to_camel(string: str) -> str:
+    """Convert snake_case to camelCase for frontend compatibility."""
+    components = string.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
+
+class CamelModel(BaseModel):
+    """Base model that serializes to camelCase for frontend compatibility.
+
+    Use this for models that are returned to the frontend API.
+    Python code uses snake_case internally, but JSON responses use camelCase.
+    """
+
+    model_config = ConfigDict(
+        alias_generator=to_camel,
+        populate_by_name=True,  # Accept both snake_case and camelCase input
+    )
 
 
 class TaskStatus(str, Enum):
@@ -243,3 +262,116 @@ class NewProjectResponse(BaseModel):
     inputPath: str
     outputPath: str
     screenplayName: str
+
+
+# Audiobook Generation Models
+
+
+class AudiobookGenerationMode(str, Enum):
+    """Audio generation run modes matching CLI options."""
+
+    DRY_RUN = "dry-run"  # Plan only, no generation
+    POPULATE_CACHE = "populate-cache"  # Generate clips, skip concatenation
+    FULL = "full"  # Full generation with final MP3
+
+
+class AudiobookGenerationPhase(str, Enum):
+    """Phases of the audio generation pipeline."""
+
+    PENDING = "pending"
+    PLANNING = "planning"
+    APPLYING_OVERRIDES = "applying_overrides"
+    CHECKING_SILENCE = "checking_silence"
+    GENERATING = "generating"
+    CONCATENATING = "concatenating"
+    FINALIZING = "finalizing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class AudiobookGenerationRequest(BaseModel):
+    """Request to start audiobook generation."""
+
+    project_name: str  # Name of the project
+    input_json_path: str  # Path to parsed screenplay JSON
+    voice_config_path: str  # Path to voice config YAML
+    mode: AudiobookGenerationMode = AudiobookGenerationMode.FULL
+
+    # Optional features
+    silence_threshold: Optional[float] = -40.0  # dBFS, None to disable
+    cache_overrides_dir: Optional[str] = None  # Path to override audio files
+    text_processor_configs: Optional[List[str]] = None
+
+    # Generation settings
+    gap_ms: int = 500  # Gap between clips in ms
+    max_workers: int = 12  # Concurrent download threads
+
+
+class RateLimitedProvider(CamelModel):
+    """Information about a rate-limited provider."""
+
+    provider: str
+    backoff_until: Optional[str] = None
+
+
+class AudiobookGenerationStats(CamelModel):
+    """Statistics from the generation process."""
+
+    total_clips: int = 0
+    cached_clips: int = 0
+    generated_clips: int = 0
+    failed_clips: int = 0
+    skipped_duplicate_clips: int = 0
+    silent_clips: int = 0
+    rate_limited_clips: int = 0
+
+    # Detailed status counts (from TaskStatus enum)
+    by_status: Optional[Dict[str, int]] = None
+
+    # Rate limit info
+    rate_limited_providers: Optional[List[RateLimitedProvider]] = None
+
+
+class AudiobookGenerationProgress(CamelModel):
+    """Current progress of an audiobook generation task."""
+
+    task_id: str
+    status: TaskStatus  # Overall task status
+    phase: AudiobookGenerationPhase
+    phase_progress: float = Field(0.0, ge=0.0, le=1.0)  # 0.0-1.0 within current phase
+    overall_progress: float = Field(0.0, ge=0.0, le=1.0)  # 0.0-1.0 across all phases
+    message: str = ""
+
+    # Statistics (populated during/after GENERATING phase)
+    stats: Optional[AudiobookGenerationStats] = None
+
+    # Timing
+    created_at: Optional[str] = None
+    started_at: Optional[str] = None
+    completed_at: Optional[str] = None
+
+    # Error info
+    error: Optional[str] = None
+
+
+class AudiobookTaskResponse(CamelModel):
+    """Response from creating an audiobook generation task."""
+
+    task_id: str
+    status: str
+    message: str
+
+
+class AudiobookGenerationResult(CamelModel):
+    """Final result of a completed audiobook generation."""
+
+    output_file: Optional[str] = None  # Path to final MP3 (if full mode)
+    cache_folder: str  # Path to cache folder
+    log_file: Optional[str] = None  # Path to generation log
+
+    # Final statistics
+    stats: AudiobookGenerationStats
+
+    # Issues detected (for dry-run or review)
+    cache_misses: List[Dict[str, Any]] = []  # Clips that need generation
+    silent_clips: List[Dict[str, Any]] = []  # Clips detected as silent

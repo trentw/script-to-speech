@@ -5,7 +5,7 @@ import sys
 import threading
 import time
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -117,6 +117,48 @@ class AudioDownloadManager:
                 )
                 self.provider_semaphores[provider] = threading.Semaphore(1)
                 logger.info(f"Provider '{provider}' defaulting to 1 concurrent thread")
+
+    def get_progress_snapshot(self) -> Dict[str, Any]:
+        """
+        Thread-safe snapshot of current progress for GUI polling.
+
+        Returns a dictionary with task counts by status, rate limit info, etc.
+        Safe to call from any thread - uses existing state_lock which is only
+        held during brief operations (< 5ms), never during I/O.
+
+        Returns:
+            Dict with keys:
+                - total_tasks: Total number of tasks
+                - pending_count: Tasks waiting to be processed
+                - completed_count: Tasks that have finished (success or failure)
+                - by_status: Dict mapping status name to count
+                - rate_limited_providers: List of providers currently rate limited
+        """
+        with self.state_lock:
+            # Count tasks by status
+            by_status: Dict[str, int] = {}
+            for status in TaskStatus:
+                by_status[status.name.lower()] = sum(
+                    1 for t in self.tasks if t.status == status
+                )
+
+            # Get rate-limited provider info
+            rate_limited_providers = [
+                {
+                    "provider": provider_id,
+                    "backoff_until": self.provider_backoff_until.get(provider_id),
+                }
+                for provider_id, is_limited in self.provider_rate_limited.items()
+                if is_limited
+            ]
+
+            return {
+                "total_tasks": len(self.tasks),
+                "pending_count": len(self.pending_tasks),
+                "completed_count": len(self.completed_tasks),
+                "by_status": by_status,
+                "rate_limited_providers": rate_limited_providers,
+            }
 
     def _can_process_task(self, task: AudioGenerationTask) -> bool:
         """

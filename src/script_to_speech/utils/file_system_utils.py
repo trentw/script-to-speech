@@ -1,10 +1,11 @@
 """File system utility functions for the script_to_speech package."""
 
+import json
 import os
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pathvalidate import sanitize_filename
 
@@ -163,3 +164,35 @@ def create_output_folders(
     logger.debug(f"Log file path determined: {log_file_full_path.resolve()}")
 
     return main_output_folder, cache_folder, logs_folder, log_file_full_path
+
+
+def save_processed_dialogues(
+    processed_dialogues: List[Dict[str, Any]],
+    output_folder: Union[Path, str],
+    base_name: str,
+) -> Optional[Path]:
+    """Save processed dialogue chunks to a JSON file.
+
+    This saves the text-processed version of the screenplay dialogues,
+    useful for debugging and understanding what text was sent to TTS providers.
+
+    Args:
+        processed_dialogues: List of processed dialogue dictionaries
+        output_folder: Output directory path
+        base_name: Base name for the output file (e.g., "my_screenplay")
+
+    Returns:
+        Path to the saved JSON file, or None if save failed
+    """
+    try:
+        output_folder = Path(output_folder)
+        output_path = output_folder / f"{base_name}-text-processed.json"
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(processed_dialogues, f, ensure_ascii=False, indent=2)
+
+        logger.info(f"Processed dialogue saved to: {output_path}")
+        return output_path
+    except Exception as e:
+        logger.error(f"Failed to save processed dialogues: {e}", exc_info=True)
+        return None

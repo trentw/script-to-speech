@@ -1,6 +1,7 @@
 // Mutation hooks exports
 export * from './useAssignVoice';
 export * from './useClearVoice';
+export * from './useCreateAudiobookTask';
 export * from './useCreateProject';
 export * from './useGenerateYaml';
 export * from './useProviders';

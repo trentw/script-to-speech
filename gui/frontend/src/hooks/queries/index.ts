@@ -1,5 +1,6 @@
 // Query hooks exports
 export * from './useAllVoiceCounts';
+export * from './useAudiobookStatus';
 export * from './useBackendStatus';
 export * from './useDiscoverProjects';
 export * from './useParseYaml';

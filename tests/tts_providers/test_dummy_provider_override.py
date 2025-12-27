@@ -143,7 +143,7 @@ class TestDummyProviderOverride:
                 "script_to_speech.script_to_speech.print_unified_report"
             ) as mock_report,
             patch(
-                "script_to_speech.script_to_speech.save_modified_json"
+                "script_to_speech.script_to_speech.save_processed_dialogues"
             ) as mock_save_json,
             patch("os.makedirs") as mock_makedirs,  # From original test
             patch("sys.exit") as mock_exit,  # To prevent test from exiting

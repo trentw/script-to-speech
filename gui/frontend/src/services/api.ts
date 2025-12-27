@@ -1,6 +1,10 @@
 import { API_BASE_URL } from '../config/api';
 import type {
   ApiResponse,
+  AudiobookGenerationProgress,
+  AudiobookGenerationRequest,
+  AudiobookGenerationResult,
+  AudiobookTaskResponse,
   AudioFilesResponse,
   ExpandedStsIdResponse,
   GenerationRequest,
@@ -560,6 +564,62 @@ class ApiService {
         created_at: string;
       }>;
     }>(`/voice-casting/sessions?limit=${limit}`);
+  }
+
+  // Audiobook Generation endpoints
+  // Backend uses CamelModel for responses, so they come back as camelCase automatically.
+  // Request bodies still need snake_case since AudiobookGenerationRequest uses BaseModel.
+
+  async createAudiobookTask(
+    request: AudiobookGenerationRequest
+  ): Promise<ApiResponse<AudiobookTaskResponse>> {
+    return this.request<AudiobookTaskResponse>('/audiobook/generate', {
+      method: 'POST',
+      body: JSON.stringify({
+        project_name: request.projectName,
+        input_json_path: request.inputJsonPath,
+        voice_config_path: request.voiceConfigPath,
+        mode: request.mode || 'full',
+        silence_threshold: request.silenceThreshold,
+        cache_overrides_dir: request.cacheOverridesDir,
+        text_processor_configs: request.textProcessorConfigs,
+        gap_ms: request.gapMs || 500,
+        max_workers: request.maxWorkers || 12,
+      }),
+    });
+  }
+
+  async getAudiobookStatus(
+    taskId: string
+  ): Promise<ApiResponse<AudiobookGenerationProgress>> {
+    return this.request<AudiobookGenerationProgress>(
+      `/audiobook/status/${taskId}`
+    );
+  }
+
+  async getAudiobookResult(
+    taskId: string
+  ): Promise<ApiResponse<AudiobookGenerationResult>> {
+    return this.request<AudiobookGenerationResult>(
+      `/audiobook/result/${taskId}`
+    );
+  }
+
+  async getAllAudiobookTasks(): Promise<
+    ApiResponse<AudiobookGenerationProgress[]>
+  > {
+    return this.request<AudiobookGenerationProgress[]>('/audiobook/tasks');
+  }
+
+  async cleanupAudiobookTasks(
+    maxAgeHours: number = 24
+  ): Promise<ApiResponse<{ message: string }>> {
+    return this.request<{ message: string }>(
+      `/audiobook/cleanup?max_age_hours=${maxAgeHours}`,
+      {
+        method: 'DELETE',
+      }
+    );
   }
 
   // Utility methods

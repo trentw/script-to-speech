@@ -1,16 +1,15 @@
 import argparse
-import json
 import logging
 import os
 import sys
-import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import yaml
 from pydub import AudioSegment
 from tqdm import tqdm
 
+from .audio_generation.log_messages import PipelinePhase, log_completion, log_phase
 from .audio_generation.models import AudioGenerationTask
 from .audio_generation.processing import (
     apply_cache_overrides,
@@ -28,7 +27,7 @@ from .text_processors.processor_manager import TextProcessorManager
 from .text_processors.utils import get_text_processor_configs
 from .tts_providers.tts_provider_manager import TTSProviderManager
 from .utils.audio_utils import configure_ffmpeg
-from .utils.file_system_utils import create_output_folders
+from .utils.file_system_utils import create_output_folders, save_processed_dialogues
 from .utils.id3_tag_utils import set_id3_tags_from_config
 from .utils.logging import get_screenplay_logger, setup_screenplay_logging
 
@@ -129,22 +128,6 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     return parser.parse_args()
-
-
-def save_modified_json(
-    modified_dialogues: List[Dict[str, Any]], output_folder: str, input_file: str
-) -> None:
-    """Saves the processed dialogue chunks to a JSON file."""
-    try:
-        base_name = os.path.splitext(os.path.basename(input_file))[0]
-        modified_json_path = os.path.join(
-            output_folder, f"{base_name}-text-processed.json"
-        )
-        with open(modified_json_path, "w", encoding="utf-8") as f:
-            json.dump(modified_dialogues, f, ensure_ascii=False, indent=2)
-        logger.info(f"\nProcessed dialogue saved to: {modified_json_path}")
-    except Exception as e:
-        logger.error(f"Failed to save modified JSON: {e}", exc_info=True)
 
 
 def find_optional_config(
@@ -287,7 +270,7 @@ def main() -> None:
 
     try:
         # 1. Plan Generation (Common to all modes)
-        logger.info("\n--- Planning Audio Generation ---")
+        log_phase(logger, PipelinePhase.PLANNING)
         all_tasks, plan_reporting_state = plan_audio_generation(
             dialogues=dialogues,
             tts_provider_manager=tts_manager,
@@ -305,7 +288,7 @@ def main() -> None:
 
         # 2. Apply Cache Overrides (not for dry-run, modifies tasks in-place)
         if not args.dry_run and args.cache_overrides:
-            logger.info("\n--- Applying Cache Overrides ---")
+            log_phase(logger, PipelinePhase.OVERRIDES)
             apply_cache_overrides(
                 tasks=all_tasks,
                 cache_overrides_dir=args.cache_overrides,
@@ -316,7 +299,7 @@ def main() -> None:
 
         # 3. Check for Silence
         if args.check_silence:
-            logger.info("\n--- Checking for Silent Audio Files ---")
+            log_phase(logger, PipelinePhase.SILENCE)
             silence_reporting_state = check_for_silence(
                 tasks=all_tasks,
                 silence_threshold=args.check_silence,
@@ -328,10 +311,7 @@ def main() -> None:
 
         # 4. Fetch/Generate Audio (Not for dry-run)
         if not args.dry_run:
-            logger.info("\n--- Fetching any Non-Cached Audio Files ---")
-            logger.info(
-                "⚠️  PRIVACY NOTICE: Audio generation relies on 3rd party services. See PRIVACY.md for more details"
-            )
+            log_phase(logger, PipelinePhase.FETCH)
             # Fetch and cache the audio files
             fetch_reporting_state = fetch_and_cache_audio(
                 tasks=all_tasks,
@@ -346,15 +326,14 @@ def main() -> None:
             )
 
             # Recheck file status after potential generation/overrides
-            logger.info("\n--- Rechecking Cache Status ---")
+            log_phase(logger, PipelinePhase.RECHECK)
             recheck_audio_files(
                 combined_reporting_state, str(cache_folder), args.check_silence, logger
             )
-            logger.info("Recheck complete")
 
         # 5. Concatenate Audio (Only for full run mode)
         if not args.dry_run and not args.populate_cache:
-            logger.info("\n--- Concatenating Audio ---")
+            log_phase(logger, PipelinePhase.CONCAT)
 
             # Use task-based concatenation function
             concatenate_tasks_batched(
@@ -401,7 +380,7 @@ def main() -> None:
         sys.exit(1)
 
     # --- Final Reporting ---
-    logger.info("\n--- Final Report ---")
+    log_phase(logger, PipelinePhase.FINAL_REPORT)
     # Check if tts_manager is bound before using it
     if tts_manager is not None:
         print_unified_report(
@@ -420,22 +399,18 @@ def main() -> None:
     # Save modified JSON regardless of run mode (useful for debugging)
     # Ensure modified_dialogues is defined even if processing failed
     if modified_dialogues:
-        save_modified_json(modified_dialogues, str(main_output_folder), args.input_file)
+        save_processed_dialogues(modified_dialogues, main_output_folder, base_name)
     else:
         logger.warning("Modified dialogues not available to save.")
 
     # --- Completion Summary ---
-    logger.info(f"\n--- {run_mode.upper()} Mode Completed ---")
-    logger.info(f"Log file: {log_file}")
-    logger.info(f"Cache folder: {cache_folder}")
-    if not args.dry_run and not args.populate_cache:
-        # Ensure output_file is defined before using it
-        if output_file:
-            logger.info(f"Output file: {output_file}")
-        else:
-            logger.warning("Output file path not determined.")
-
-    logger.info("Script finished.\n")
+    log_completion(
+        logger,
+        run_mode,
+        log_file,
+        cache_folder,
+        output_file if not args.dry_run and not args.populate_cache else None,
+    )
 
 
 if __name__ == "__main__":
