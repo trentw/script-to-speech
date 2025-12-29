@@ -55,6 +55,8 @@ from ..models import (
     AudiobookGenerationRequest,
     AudiobookGenerationResult,
     AudiobookGenerationStats,
+    ProblemClipInfo,
+    SilentClipsResponse,
     TaskStatus,
 )
 
@@ -132,6 +134,9 @@ class AudiobookGenerationService:
         self._tasks: Dict[str, AudiobookGenerationTask] = {}
         self._lock = threading.Lock()
 
+        # Cache of silent clips by project name (shared with review service)
+        self._silent_clips_cache: Dict[str, SilentClipsResponse] = {}
+
         # Use provided workspace_dir or fall back to settings
         if workspace_dir is None:
             workspace_dir = settings.WORKSPACE_DIR
@@ -142,6 +147,39 @@ class AudiobookGenerationService:
             )
 
         self.workspace_dir = Path(workspace_dir)
+
+    def get_cached_silent_clips(
+        self, project_name: str
+    ) -> Optional[SilentClipsResponse]:
+        """Get cached silent clips for a project (if available).
+
+        This cache is populated after audio generation completes and can be
+        used by the review service to avoid re-scanning audio files.
+
+        Args:
+            project_name: Name of the project
+
+        Returns:
+            SilentClipsResponse if cached, None otherwise
+        """
+        return self._silent_clips_cache.get(project_name)
+
+    def set_cached_silent_clips(
+        self, project_name: str, data: SilentClipsResponse
+    ) -> None:
+        """Update cached silent clips for a project.
+
+        Called by review service after a manual rescan to keep cache fresh.
+
+        Args:
+            project_name: Name of the project
+            data: The silent clips response to cache
+        """
+        self._silent_clips_cache[project_name] = data
+        logger.info(
+            f"Updated silent clips cache for '{project_name}': "
+            f"{len(data.silent_clips)} clips"
+        )
 
     def create_task(self, request: AudiobookGenerationRequest) -> str:
         """Create a new audiobook generation task.
@@ -579,6 +617,16 @@ class AudiobookGenerationService:
             max_text_length=30,
         )
 
+        # === CACHE SILENT CLIPS FOR REVIEW SERVICE ===
+        # Populate in-memory cache so review page can read without re-scanning
+        self._cache_silent_clips(
+            project_name=request.project_name,
+            reporting_state=combined_reporting_state,
+            tts_manager=tts_manager,
+            total_clips=len(all_tasks),
+            cache_folder=cache_folder,
+        )
+
         # === COMPLETION ===
         log_completion(
             logger,
@@ -597,6 +645,56 @@ class AudiobookGenerationService:
         if default_config_path.exists():
             return str(default_config_path)
         return None
+
+    def _cache_silent_clips(
+        self,
+        project_name: str,
+        reporting_state: ReportingState,
+        tts_manager: TTSProviderManager,
+        total_clips: int,
+        cache_folder: Path,
+    ) -> None:
+        """Cache silent clips data for the review service.
+
+        This populates an in-memory cache that the review service can read
+        to avoid re-scanning audio files for silence.
+
+        Args:
+            project_name: Name of the project
+            reporting_state: Combined reporting state with silent clips
+            tts_manager: TTS provider manager for speaker config lookup
+            total_clips: Total number of clips scanned
+            cache_folder: Path to the cache folder
+        """
+        clips = []
+        for filename, clip in reporting_state.silent_clips.items():
+            # Get speaker config for regeneration
+            speaker_key = clip.speaker or "default"
+            try:
+                speaker_config = tts_manager.get_speaker_configuration(speaker_key)
+            except Exception as e:
+                logger.warning(f"Could not get speaker config for '{speaker_key}': {e}")
+                speaker_config = {}
+
+            clips.append(
+                ProblemClipInfo(
+                    cache_filename=filename,
+                    speaker=clip.speaker_display or "(default)",
+                    voice_id=clip.speaker_id or "",
+                    provider=clip.provider_id or "",
+                    text=clip.text,
+                    dbfs_level=clip.dbfs_level,
+                    speaker_config=speaker_config,
+                )
+            )
+
+        self._silent_clips_cache[project_name] = SilentClipsResponse(
+            silent_clips=clips,
+            total_clips_scanned=total_clips,
+            cache_folder=str(cache_folder),
+            scanned_at=datetime.now(timezone.utc).isoformat(),
+        )
+        logger.info(f"Cached {len(clips)} silent clips for project '{project_name}'")
 
 
 # Global service instance

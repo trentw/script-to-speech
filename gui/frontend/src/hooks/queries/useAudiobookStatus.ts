@@ -30,6 +30,16 @@ export const useAudiobookStatus = (taskId: string | null) => {
 
       // Stop polling when complete or failed
       if (data?.status === 'completed' || data?.status === 'failed') {
+        // Invalidate review queries so fresh data is fetched when user visits review page
+        if (data?.status === 'completed') {
+          queryClient.invalidateQueries({
+            queryKey: ['review', 'cache-misses'],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['review', 'silent-clips'],
+          });
+        }
+
         // Clean up query after some time
         setTimeout(
           () => {

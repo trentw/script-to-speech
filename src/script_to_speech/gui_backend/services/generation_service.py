@@ -64,6 +64,8 @@ class GenerationTask:
         self.created_at = datetime.utcnow()
         self.started_at: Optional[datetime] = None
         self.completed_at: Optional[datetime] = None
+        # Track files as they're generated for streaming display
+        self.partial_files: List[str] = []
 
 
 class GenerationService:
@@ -107,6 +109,9 @@ class GenerationService:
             result_dict = task.result.dict()
             # Build full HTTP URLs for audio files
             audio_urls = build_audio_urls(task.result.files)
+        elif task.partial_files:
+            # Stream partial results while generation is in progress
+            audio_urls = build_audio_urls(task.partial_files)
 
         return TaskStatusResponse(
             task_id=task_id,
@@ -249,20 +254,32 @@ class GenerationService:
 
         # If sts_id is provided, expand it using voice library
         config = request.config.copy()
-        if request.sts_id:
+
+        # Debug logging to understand what config is being received
+        logger.info(
+            f"Generation request - provider: {request.provider}, sts_id: {request.sts_id}, config: {config}"
+        )
+
+        # Extract sts_id from config if present (e.g., from speakerConfig)
+        # This allows the frontend to pass the full speaker config without
+        # needing to extract sts_id separately
+        sts_id = request.sts_id or config.pop("sts_id", None)
+        logger.info(f"After sts_id extraction - sts_id: {sts_id}, config: {config}")
+
+        if sts_id:
             try:
                 expanded_config = voice_library_service.expand_sts_id(
-                    request.provider, request.sts_id
+                    request.provider, sts_id
                 )
                 # Merge expanded config with provided overrides
                 for key, value in config.items():
                     expanded_config[key] = value
                 config = expanded_config
             except Exception as e:
-                logger.warning(f"Failed to expand sts_id {request.sts_id}: {e}")
+                logger.warning(f"Failed to expand sts_id {sts_id}: {e}")
 
         # Create mock args
-        mock_args = MockArgs(request.provider, config, request.sts_id)
+        mock_args = MockArgs(request.provider, config, sts_id)
 
         # Get provider class
         provider_class = get_provider_class(request.provider)
@@ -306,6 +323,8 @@ class GenerationService:
                 )
                 if generated_file:
                     generated_files.append(generated_file)
+                    # Update partial files for streaming display
+                    task.partial_files = generated_files.copy()
 
             except Exception as e:
                 logger.error(f"Failed to generate variant {variant}: {e}")

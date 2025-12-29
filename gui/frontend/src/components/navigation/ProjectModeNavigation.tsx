@@ -1,5 +1,13 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { FileText, Home, Mic, Play, Settings, Users } from 'lucide-react';
+import {
+  FileText,
+  Home,
+  Mic,
+  Play,
+  Search,
+  Settings,
+  Users,
+} from 'lucide-react';
 import React from 'react';
 
 import {
@@ -118,6 +126,13 @@ export function ProjectModeNavigation({
           label: 'Generate Audio',
           to: '/project/generate',
           icon: Mic,
+          enabled: status?.voicesCast ?? false,
+          tooltip: !status?.voicesCast ? 'Cast voices first' : undefined,
+        },
+        {
+          label: 'Review Audio',
+          to: '/project/review',
+          icon: Search,
           enabled: status?.voicesCast ?? false,
           tooltip: !status?.voicesCast ? 'Cast voices first' : undefined,
         },

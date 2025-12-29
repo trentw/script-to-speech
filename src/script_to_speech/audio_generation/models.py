@@ -22,9 +22,14 @@ class AudioClipInfo:
     text: str
     cache_path: str
     dbfs_level: Optional[float] = None
+    # Human-readable name for UI display (e.g., "JOHN", "(default)")
     speaker_display: Optional[str] = None
+    # Voice identifier from TTS provider (e.g., "nova_tts-1", "voice_id_abc123")
     speaker_id: Optional[str] = None
+    # TTS provider name (e.g., "openai", "elevenlabs")
     provider_id: Optional[str] = None
+    # Config key for speaker lookup (e.g., "JOHN", "default") - used to get full speaker config
+    speaker: Optional[str] = None
 
 
 @dataclass

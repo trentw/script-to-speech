@@ -285,6 +285,7 @@ def check_audio_silence(
                 speaker_display=task.speaker_display,
                 speaker_id=task.speaker_id,
                 provider_id=task.provider_id,
+                speaker=task.speaker,
             )
         return True
     return False

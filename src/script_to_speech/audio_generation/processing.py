@@ -200,6 +200,7 @@ def plan_audio_generation(
                                 speaker_display=task.speaker_display,
                                 speaker_id=task.speaker_id,
                                 provider_id=task.provider_id,
+                                speaker=task.speaker,
                             )
                         )
 

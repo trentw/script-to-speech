@@ -622,6 +622,55 @@ class ApiService {
     );
   }
 
+  // Audio Review endpoints
+
+  async getCacheMisses(
+    projectName: string
+  ): Promise<ApiResponse<import('../types/review').CacheMissesResponse>> {
+    return this.request<import('../types/review').CacheMissesResponse>(
+      `/review/cache-misses/${encodeURIComponent(projectName)}`
+    );
+  }
+
+  async getSilentClips(
+    projectName: string,
+    refresh: boolean = false
+  ): Promise<ApiResponse<import('../types/review').SilentClipsResponse>> {
+    const params = refresh ? '?refresh=true' : '';
+    return this.request<import('../types/review').SilentClipsResponse>(
+      `/review/silent-clips/${encodeURIComponent(projectName)}${params}`
+    );
+  }
+
+  async commitVariant(
+    request: import('../types/review').CommitVariantRequest
+  ): Promise<ApiResponse<import('../types/review').CommitVariantResponse>> {
+    return this.request<import('../types/review').CommitVariantResponse>(
+      '/review/commit',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          source_path: request.sourcePath,
+          target_cache_filename: request.targetCacheFilename,
+          project_name: request.projectName,
+        }),
+      }
+    );
+  }
+
+  async deleteVariant(
+    filePath: string
+  ): Promise<ApiResponse<{ success: boolean }>> {
+    return this.request<{ success: boolean }>('/review/variant', {
+      method: 'DELETE',
+      body: JSON.stringify({ file_path: filePath }),
+    });
+  }
+
+  getCacheAudioUrl(projectName: string, filename: string): string {
+    return `${API_BASE_URL}/review/cache-audio/${encodeURIComponent(projectName)}/${encodeURIComponent(filename)}`;
+  }
+
   // Utility methods
   async healthCheck(): Promise<boolean> {
     try {

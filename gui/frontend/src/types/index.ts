@@ -267,3 +267,16 @@ export type {
   AudiobookTaskResponse,
 } from './audiobook-generation';
 export { MODE_DESCRIPTIONS, PHASE_LABELS } from './audiobook-generation';
+
+// Re-export audio review types
+export type {
+  CacheMissesResponse,
+  CommitVariantRequest,
+  CommitVariantResponse,
+  DeleteVariantRequest,
+  DialogueEditState,
+  ProblemClipInfo,
+  SilentClipsResponse,
+  SpeakerGroup,
+  VariantInfo,
+} from './review';

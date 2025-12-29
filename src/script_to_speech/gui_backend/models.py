@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from script_to_speech.audio_generation.constants import DEFAULT_SILENCE_THRESHOLD
+
 
 def to_camel(string: str) -> str:
     """Convert snake_case to camelCase for frontend compatibility."""
@@ -22,6 +24,7 @@ class CamelModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,  # Accept both snake_case and camelCase input
+        serialize_by_alias=True,  # Output camelCase in JSON responses
     )
 
 
@@ -298,7 +301,9 @@ class AudiobookGenerationRequest(BaseModel):
     mode: AudiobookGenerationMode = AudiobookGenerationMode.FULL
 
     # Optional features
-    silence_threshold: Optional[float] = -40.0  # dBFS, None to disable
+    silence_threshold: Optional[float] = (
+        DEFAULT_SILENCE_THRESHOLD  # dBFS, None to disable
+    )
     cache_overrides_dir: Optional[str] = None  # Path to override audio files
     text_processor_configs: Optional[List[str]] = None
 
@@ -375,3 +380,61 @@ class AudiobookGenerationResult(CamelModel):
     # Issues detected (for dry-run or review)
     cache_misses: List[Dict[str, Any]] = []  # Clips that need generation
     silent_clips: List[Dict[str, Any]] = []  # Clips detected as silent
+
+
+# Audio Review Models
+
+
+class ProblemClipInfo(CamelModel):
+    """Information about a problem audio clip (silent or cache miss)."""
+
+    cache_filename: str  # Cache filename for reference
+    speaker: str  # e.g., "NORMA" or "(default)"
+    voice_id: str  # Cache filename component (for display only)
+    provider: str  # TTS provider identifier
+    text: str  # Full dialogue text
+    dbfs_level: Optional[float] = None  # For silent clips, the detected dBFS level
+    speaker_config: Dict[str, Any] = {}  # Full speaker config for regeneration
+
+
+class CacheMissesResponse(CamelModel):
+    """Response containing cache misses for a project."""
+
+    cache_misses: List[ProblemClipInfo]
+    cache_misses_capped: bool = False  # True if cache misses were capped
+    total_cache_misses: int = 0  # Total count before capping
+    cache_folder: str  # Path to cache folder for audio serving
+    scanned_at: str  # ISO timestamp of when scan was performed
+
+
+class SilentClipsResponse(CamelModel):
+    """Response containing silent clips for a project."""
+
+    silent_clips: List[ProblemClipInfo]
+    total_clips_scanned: int = 0  # Number of cached clips scanned
+    cache_folder: str  # Path to cache folder for audio serving
+    scanned_at: Optional[str] = (
+        None  # ISO timestamp of when scan was performed (None if never scanned)
+    )
+
+
+class CommitVariantRequest(BaseModel):
+    """Request to commit a variant to the project cache."""
+
+    source_path: str  # Path to variant in standalone_speech
+    target_cache_filename: str  # Destination cache filename
+    project_name: str
+
+
+class CommitVariantResponse(CamelModel):
+    """Response from committing a variant."""
+
+    success: bool
+    target_path: str
+    message: str
+
+
+class DeleteVariantRequest(BaseModel):
+    """Request to delete a variant file."""
+
+    file_path: str  # Path to file in standalone_speech
