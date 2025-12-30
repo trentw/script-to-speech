@@ -1,4 +1,4 @@
-import { Loader2, Play, Settings } from 'lucide-react';
+import { AlertTriangle, Loader2, Play, Settings } from 'lucide-react';
 import { useState } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
@@ -13,6 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type {
   AudiobookGenerationMode,
   AudiobookGenerationRequest,
@@ -26,6 +31,8 @@ interface AudiobookGenerationControlsProps {
   onGenerate: (request: AudiobookGenerationRequest) => void;
   isGenerating: boolean;
   disabled?: boolean;
+  /** Reason why the button is disabled, shown in tooltip and below button */
+  disabledReason?: string;
 }
 
 export function AudiobookGenerationControls({
@@ -35,6 +42,7 @@ export function AudiobookGenerationControls({
   onGenerate,
   isGenerating,
   disabled = false,
+  disabledReason,
 }: AudiobookGenerationControlsProps) {
   const [mode, setMode] = useState<AudiobookGenerationMode>('full');
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -175,27 +183,46 @@ export function AudiobookGenerationControls({
         )}
 
         {/* Generate Button */}
-        <div className="flex justify-center">
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating || disabled}
-            className={appButtonVariants({
-              variant: 'primary',
-              size: 'lg',
-            })}
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                Generate Audiobook
-              </>
+        <div className="flex flex-col items-center gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* Wrap button in span so tooltip works when button is disabled */}
+              <span className={disabled ? 'cursor-not-allowed' : ''}>
+                <button
+                  onClick={handleGenerate}
+                  disabled={isGenerating || disabled}
+                  className={appButtonVariants({
+                    variant: 'primary',
+                    size: 'lg',
+                  })}
+                  style={disabled ? { pointerEvents: 'none' } : undefined}
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="mr-2 h-4 w-4" />
+                      Generate Audiobook
+                    </>
+                  )}
+                </button>
+              </span>
+            </TooltipTrigger>
+            {disabled && disabledReason && (
+              <TooltipContent>{disabledReason}</TooltipContent>
             )}
-          </button>
+          </Tooltip>
+
+          {/* Warning message when disabled */}
+          {disabled && disabledReason && (
+            <div className="text-muted-foreground flex items-center justify-center gap-2">
+              <AlertTriangle className="h-4 w-4" />
+              <span className="text-sm">{disabledReason}</span>
+            </div>
+          )}
         </div>
 
         {/* Info about what will be generated */}

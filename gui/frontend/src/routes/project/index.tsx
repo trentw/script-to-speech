@@ -59,6 +59,8 @@ function ProjectOverview() {
     ? getProjectProgressStatus({
         hasJson: status.hasJson,
         hasVoiceConfig: status.hasVoiceConfig,
+        speakerCount: status.speakerCount,
+        voicesAssigned: status.voicesAssigned,
       })
     : null;
 

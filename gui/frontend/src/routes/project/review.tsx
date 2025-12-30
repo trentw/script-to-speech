@@ -4,7 +4,9 @@ import { Search } from 'lucide-react';
 import { ProblemClipsSection } from '@/components/review/ProblemClipsSection';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCacheMisses } from '@/hooks/queries/useCacheMisses';
+import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { useSilentClips } from '@/hooks/queries/useSilentClips';
+import { isVoiceCastingComplete } from '@/lib/project-status';
 import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 
@@ -25,20 +27,26 @@ export const Route = createFileRoute('/project/review')({
 function ProjectAudioReview() {
   const projectState = useProject();
 
-  // Get project name for hook (null if not in project mode)
+  // Get project info for hooks (null if not in project mode)
   const projectName =
     projectState.mode === 'project'
       ? projectState.project.screenplayName
       : null;
+  const inputPath =
+    projectState.mode === 'project' ? projectState.project.inputPath : null;
 
-  // Cache misses - auto-fetches on mount (fast operation)
+  // Check voice casting status
+  const { status } = useProjectStatus(inputPath ?? undefined);
+  const isFullyCast = isVoiceCastingComplete(status);
+
+  // Cache misses - only auto-fetch when voice casting is complete
   const {
     data: cacheMissesData,
     isLoading: cacheMissesLoading,
     isRefetching: cacheMissesRefetching,
     error: cacheMissesError,
     refresh: refreshCacheMisses,
-  } = useCacheMisses(projectName);
+  } = useCacheMisses(projectName, isFullyCast);
 
   // Silent clips - auto-fetches (backend caches data from generation)
   const {
@@ -99,14 +107,25 @@ function ProjectAudioReview() {
           cacheFolder={cacheFolder}
           showDbfs
           emptyMessage="No silent clips detected"
-          notScannedMessage="No scan data. Click Refresh to scan for silent clips."
+          notScannedMessage={
+            isFullyCast
+              ? 'No scan data. Click Refresh to scan for silent clips.'
+              : undefined
+          }
           hasScanned={!!silentClipsData?.scannedAt}
           scannedAt={silentClipsData?.scannedAt ?? undefined}
           isLoading={silentClipsLoading || silentClipsFetching}
           onRefresh={refreshSilentClips}
+          disabled={!isFullyCast}
+          disabledReason="Complete voice casting before scanning"
+          warningMessage={
+            !isFullyCast
+              ? 'Complete voice casting before scanning for new silent clips.'
+              : undefined
+          }
         />
 
-        {/* Cache Misses Section - auto-refreshes on page load */}
+        {/* Cache Misses Section - auto-refreshes on page load when voice casting is complete */}
         <ProblemClipsSection
           title="Cache Misses"
           description={
@@ -118,10 +137,18 @@ function ProjectAudioReview() {
           projectName={project.screenplayName}
           cacheFolder={cacheFolder}
           emptyMessage="No cache misses - all audio is cached"
-          hasScanned={!!cacheMissesData}
+          notScannedMessage={undefined}
+          hasScanned={isFullyCast ? !!cacheMissesData : false}
           scannedAt={cacheMissesData?.scannedAt}
           isLoading={cacheMissesLoading || cacheMissesRefetching}
           onRefresh={refreshCacheMisses}
+          disabled={!isFullyCast}
+          disabledReason="Complete voice casting before scanning"
+          warningMessage={
+            !isFullyCast
+              ? 'Complete voice casting before checking for cache misses.'
+              : undefined
+          }
         />
       </div>
     </div>

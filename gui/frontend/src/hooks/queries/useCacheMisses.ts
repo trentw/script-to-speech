@@ -8,12 +8,20 @@ import type { CacheMissesResponse } from '../../types/review';
  * Hook for fetching cache misses for a project.
  *
  * Features:
- * - Auto-fetches on mount (fast operation)
+ * - Auto-fetches on mount when autoScan is true (fast operation)
  * - Fresh data on each request (staleTime: 0)
  * - Refetch on window focus for CLI/GUI interop
  * - Manual invalidation support
+ *
+ * @param projectName - The project name to fetch cache misses for
+ * @param autoScan - Whether to auto-fetch on mount. Set to false to disable
+ *                   auto-scanning (e.g., when voice casting is incomplete).
+ *                   Default: true
  */
-export const useCacheMisses = (projectName: string | null) => {
+export const useCacheMisses = (
+  projectName: string | null,
+  autoScan: boolean = true
+) => {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -39,8 +47,8 @@ export const useCacheMisses = (projectName: string | null) => {
     // Refetch on window focus (critical for CLI/GUI interop)
     refetchOnWindowFocus: true,
 
-    // Only fetch if we have a project name
-    enabled: !!projectName,
+    // Only fetch if we have a project name AND autoScan is enabled
+    enabled: !!projectName && autoScan,
 
     // Retry with exponential backoff
     retry: (failureCount, error) => {

@@ -1,8 +1,13 @@
-import { Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ProblemClipInfo, SpeakerGroup } from '@/types/review';
 
@@ -27,6 +32,12 @@ interface ProblemClipsSectionProps {
   isLoading?: boolean;
   /** Callback to refresh the data */
   onRefresh?: () => void;
+  /** Whether the refresh button is disabled (e.g., voice casting incomplete) */
+  disabled?: boolean;
+  /** Reason why the refresh button is disabled, shown in tooltip */
+  disabledReason?: string;
+  /** Warning message to show above clips (e.g., when voice casting incomplete but cached data exists) */
+  warningMessage?: string;
 }
 
 /**
@@ -68,6 +79,9 @@ export function ProblemClipsSection({
   scannedAt,
   isLoading = false,
   onRefresh,
+  disabled = false,
+  disabledReason,
+  warningMessage,
 }: ProblemClipsSectionProps) {
   // Group clips by speaker
   const speakerGroups = useMemo(() => {
@@ -116,21 +130,32 @@ export function ProblemClipsSection({
           </div>
           {onRefresh && (
             <div className="flex flex-col items-end gap-1">
-              <button
-                className={appButtonVariants({
-                  variant: 'secondary',
-                  size: 'sm',
-                })}
-                onClick={onRefresh}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className={cn('mr-2 h-4 w-4')} />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  {/* Wrap button in span so tooltip works when button is disabled */}
+                  <span className={disabled ? 'cursor-not-allowed' : ''}>
+                    <button
+                      className={appButtonVariants({
+                        variant: 'secondary',
+                        size: 'sm',
+                      })}
+                      onClick={onRefresh}
+                      disabled={isLoading || disabled}
+                      style={disabled ? { pointerEvents: 'none' } : undefined}
+                    >
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className={cn('mr-2 h-4 w-4')} />
+                      )}
+                      Refresh
+                    </button>
+                  </span>
+                </TooltipTrigger>
+                {disabled && disabledReason && (
+                  <TooltipContent>{disabledReason}</TooltipContent>
                 )}
-                Refresh
-              </button>
+              </Tooltip>
               {scannedAt && (
                 <span className="text-muted-foreground text-xs">
                   Last refreshed: {formatRelativeTime(scannedAt)}
@@ -146,6 +171,14 @@ export function ProblemClipsSection({
         </div>
       </CardHeader>
       <CardContent>
+        {/* Warning banner (shown when voice casting incomplete but cached data exists) */}
+        {warningMessage && (
+          <div className="bg-muted text-muted-foreground mb-4 flex items-center gap-2 rounded-md p-3 text-sm">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{warningMessage}</span>
+          </div>
+        )}
+
         {/* Loading state */}
         {isLoading && !hasClips && (
           <div className="flex items-center justify-center py-8">

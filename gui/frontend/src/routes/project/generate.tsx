@@ -14,6 +14,8 @@ import {
   useAudiobookResult,
   useAudiobookStatus,
 } from '@/hooks/queries/useAudiobookStatus';
+import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
+import { isVoiceCastingComplete } from '@/lib/project-status';
 import { useProject } from '@/stores/appStore';
 import type { AudiobookGenerationRequest } from '@/types';
 import type { RouteStaticData } from '@/types/route-metadata';
@@ -35,6 +37,16 @@ export const Route = createFileRoute('/project/generate')({
 function ProjectAudioGeneration() {
   const projectState = useProject();
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+
+  // Get input path for project status check (before type guard)
+  const inputPath =
+    projectState.mode === 'project'
+      ? projectState.project.inputPath
+      : undefined;
+
+  // Check voice casting status
+  const { status } = useProjectStatus(inputPath);
+  const isFullyCast = isVoiceCastingComplete(status);
 
   const createTask = useCreateAudiobookTask();
   const { data: progress } = useAudiobookStatus(currentTaskId);
@@ -97,6 +109,12 @@ function ProjectAudioGeneration() {
             voiceConfigPath={voiceConfigPath}
             onGenerate={handleGenerate}
             isGenerating={createTask.isPending}
+            disabled={!isFullyCast}
+            disabledReason={
+              !isFullyCast
+                ? 'Complete voice casting to enable audio generation'
+                : undefined
+            }
           />
         )}
 
