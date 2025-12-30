@@ -1,9 +1,12 @@
+import { Link } from '@tanstack/react-router';
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   Download,
   FileAudio,
   Folder,
+  Loader2,
   Play,
   Volume2,
   VolumeX,
@@ -14,21 +17,31 @@ import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useCacheMisses } from '@/hooks/queries/useCacheMisses';
 import { apiService } from '@/services/api';
 import type { AudiobookGenerationResult as ResultType } from '@/types';
 import { downloadFile } from '@/utils/downloadService';
 
 interface AudiobookGenerationResultProps {
   result: ResultType;
+  projectName: string;
   onStartNew?: () => void;
 }
 
 export function AudiobookGenerationResult({
   result,
+  projectName,
   onStartNew,
 }: AudiobookGenerationResultProps) {
+  // Fetch CURRENT cache misses (not from the run, but what's still missing)
+  const { data: cacheMissesData, isLoading: cacheMissesLoading } =
+    useCacheMisses(projectName, true);
+
+  // Use live cache miss data if available, otherwise show nothing for missing clips
+  const currentMissingClips = cacheMissesData?.cacheMisses || [];
+
   const hasIssues =
-    result.cacheMisses.length > 0 || result.silentClips.length > 0;
+    currentMissingClips.length > 0 || result.silentClips.length > 0;
 
   const handleDownload = async () => {
     if (!result.outputFile) return;
@@ -135,46 +148,73 @@ export function AudiobookGenerationResult({
               <span>Issues Detected</span>
             </h4>
 
-            {/* Cache Misses */}
-            {result.cacheMisses.length > 0 && (
+            {/* Missing Clips (live cache check) */}
+            {cacheMissesLoading ? (
               <Alert variant="warning">
-                <Volume2 className="h-4 w-4" />
-                <AlertTitle>
-                  {result.cacheMisses.length} Cache Miss
-                  {result.cacheMisses.length > 1 ? 'es' : ''}
-                </AlertTitle>
-                <AlertDescription>
-                  <div className="mt-2 space-y-1">
-                    {result.cacheMisses.slice(0, 5).map((miss, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center space-x-2 text-xs"
-                      >
-                        <Badge variant="secondary" className="text-xs">
-                          {miss.speaker}
-                        </Badge>
-                        <span className="text-muted-foreground truncate">
-                          {miss.text}...
-                        </span>
-                      </div>
-                    ))}
-                    {result.cacheMisses.length > 5 && (
-                      <p className="text-muted-foreground text-xs">
-                        ...and {result.cacheMisses.length - 5} more
-                      </p>
-                    )}
-                  </div>
-                </AlertDescription>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <AlertTitle>Checking for missing clips...</AlertTitle>
               </Alert>
+            ) : (
+              currentMissingClips.length > 0 && (
+                <Alert variant="warning">
+                  <Volume2 className="h-4 w-4" />
+                  <AlertTitle className="flex items-center justify-between">
+                    <span>
+                      {currentMissingClips.length} Missing Clip
+                      {currentMissingClips.length !== 1 ? 's' : ''}
+                    </span>
+                    <Link
+                      to="/project/review"
+                      state={{ scrollToSection: 'missing-clips' }}
+                      className="flex items-center gap-1 text-xs font-normal underline hover:no-underline"
+                    >
+                      Review and fix
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="mt-2 space-y-1">
+                      {currentMissingClips.slice(0, 5).map((miss, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center space-x-2 text-xs"
+                        >
+                          <Badge variant="secondary" className="text-xs">
+                            {miss.speaker}
+                          </Badge>
+                          <span className="text-muted-foreground truncate">
+                            {miss.text}...
+                          </span>
+                        </div>
+                      ))}
+                      {currentMissingClips.length > 5 && (
+                        <p className="text-muted-foreground text-xs">
+                          ...and {currentMissingClips.length - 5} more
+                        </p>
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )
             )}
 
             {/* Silent Clips */}
             {result.silentClips.length > 0 && (
               <Alert variant="warning">
                 <VolumeX className="h-4 w-4" />
-                <AlertTitle>
-                  {result.silentClips.length} Silent Clip
-                  {result.silentClips.length > 1 ? 's' : ''}
+                <AlertTitle className="flex items-center justify-between">
+                  <span>
+                    {result.silentClips.length} Silent Clip
+                    {result.silentClips.length !== 1 ? 's' : ''}
+                  </span>
+                  <Link
+                    to="/project/review"
+                    state={{ scrollToSection: 'silent-clips' }}
+                    className="flex items-center gap-1 text-xs font-normal underline hover:no-underline"
+                  >
+                    Review and fix
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
                 </AlertTitle>
                 <AlertDescription>
                   <div className="mt-2 space-y-1">

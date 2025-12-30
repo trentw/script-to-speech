@@ -127,6 +127,7 @@ function ProjectAudioGeneration() {
         {result && (
           <AudiobookGenerationResult
             result={result}
+            projectName={project.screenplayName}
             onStartNew={() => setCurrentTaskId(null)}
           />
         )}

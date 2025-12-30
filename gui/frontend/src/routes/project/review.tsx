@@ -1,5 +1,11 @@
-import { createFileRoute, Navigate } from '@tanstack/react-router';
+import {
+  createFileRoute,
+  Navigate,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router';
 import { Search } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { ProblemClipsSection } from '@/components/review/ProblemClipsSection';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -26,6 +32,48 @@ export const Route = createFileRoute('/project/review')({
 
 function ProjectAudioReview() {
   const projectState = useProject();
+  const navigate = useNavigate();
+
+  // Get scroll-to-section from location state
+  const location = useRouterState({ select: (s) => s.location });
+  const scrollToSection = location.state?.scrollToSection as
+    | 'silent-clips'
+    | 'missing-clips'
+    | undefined;
+
+  // Handle scroll-to-section effect
+  useEffect(() => {
+    if (scrollToSection) {
+      const scrollToElement = () => {
+        const sectionId =
+          scrollToSection === 'silent-clips'
+            ? 'review-silent-clips'
+            : 'review-missing-clips';
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          });
+        }
+      };
+
+      // Use requestAnimationFrame to ensure DOM is ready
+      const frameId = requestAnimationFrame(() => {
+        setTimeout(scrollToElement, 50);
+      });
+
+      // Clear state after scroll
+      const timer = setTimeout(() => {
+        navigate({ to: '.', replace: true, state: {} });
+      }, 1000);
+
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(frameId);
+      };
+    }
+  }, [scrollToSection, navigate]);
 
   // Get project info for hooks (null if not in project mode)
   const projectName =
@@ -99,57 +147,61 @@ function ProjectAudioReview() {
       {/* Both sections always shown */}
       <div className="space-y-8">
         {/* Silent Clips Section - only scans on user request or after generation */}
-        <ProblemClipsSection
-          title="Silent Clips"
-          description="Audio clips detected as silent. Regenerate with different text or review the original."
-          clips={silentClipsData?.silentClips || []}
-          projectName={project.screenplayName}
-          cacheFolder={cacheFolder}
-          showDbfs
-          emptyMessage="No silent clips detected"
-          notScannedMessage={
-            isFullyCast
-              ? 'No scan data. Click Refresh to scan for silent clips.'
-              : undefined
-          }
-          hasScanned={!!silentClipsData?.scannedAt}
-          scannedAt={silentClipsData?.scannedAt ?? undefined}
-          isLoading={silentClipsLoading || silentClipsFetching}
-          onRefresh={refreshSilentClips}
-          disabled={!isFullyCast}
-          disabledReason="Complete voice casting before scanning"
-          warningMessage={
-            !isFullyCast
-              ? 'Complete voice casting before scanning for new silent clips.'
-              : undefined
-          }
-        />
+        <div id="review-silent-clips">
+          <ProblemClipsSection
+            title="Silent Clips"
+            description="Audio clips detected as silent. Regenerate with different text or review the original."
+            clips={silentClipsData?.silentClips || []}
+            projectName={project.screenplayName}
+            cacheFolder={cacheFolder}
+            showDbfs
+            emptyMessage="No silent clips detected"
+            notScannedMessage={
+              isFullyCast
+                ? 'No scan data. Click Refresh to scan for silent clips.'
+                : undefined
+            }
+            hasScanned={!!silentClipsData?.scannedAt}
+            scannedAt={silentClipsData?.scannedAt ?? undefined}
+            isLoading={silentClipsLoading || silentClipsFetching}
+            onRefresh={refreshSilentClips}
+            disabled={!isFullyCast}
+            disabledReason="Complete voice casting before scanning"
+            warningMessage={
+              !isFullyCast
+                ? 'Complete voice casting before scanning for new silent clips.'
+                : undefined
+            }
+          />
+        </div>
 
-        {/* Cache Misses Section - auto-refreshes on page load when voice casting is complete */}
-        <ProblemClipsSection
-          title="Cache Misses"
-          description={
-            cacheMissesData?.cacheMissesCapped
-              ? `Showing first ${cacheMissesData.cacheMisses.length} of ${cacheMissesData.totalCacheMisses} cache misses. Generate audio or run the CLI to create missing clips.`
-              : 'Audio clips that need to be generated. Use the Generate Audio page or regenerate individual clips here.'
-          }
-          clips={cacheMissesData?.cacheMisses || []}
-          projectName={project.screenplayName}
-          cacheFolder={cacheFolder}
-          emptyMessage="No cache misses - all audio is cached"
-          notScannedMessage={undefined}
-          hasScanned={isFullyCast ? !!cacheMissesData : false}
-          scannedAt={cacheMissesData?.scannedAt}
-          isLoading={cacheMissesLoading || cacheMissesRefetching}
-          onRefresh={refreshCacheMisses}
-          disabled={!isFullyCast}
-          disabledReason="Complete voice casting before scanning"
-          warningMessage={
-            !isFullyCast
-              ? 'Complete voice casting before checking for cache misses.'
-              : undefined
-          }
-        />
+        {/* Missing Clips Section - auto-refreshes on page load when voice casting is complete */}
+        <div id="review-missing-clips">
+          <ProblemClipsSection
+            title="Missing Clips"
+            description={
+              cacheMissesData?.cacheMissesCapped
+                ? `Showing first ${cacheMissesData.cacheMisses.length} of ${cacheMissesData.totalCacheMisses} missing clips. Generate audio or run the CLI to create missing clips.`
+                : 'Audio clips that need to be generated. Use the Generate Audio page or regenerate individual clips here.'
+            }
+            clips={cacheMissesData?.cacheMisses || []}
+            projectName={project.screenplayName}
+            cacheFolder={cacheFolder}
+            emptyMessage="No missing clips - all audio has been generated"
+            notScannedMessage={undefined}
+            hasScanned={isFullyCast ? !!cacheMissesData : false}
+            scannedAt={cacheMissesData?.scannedAt}
+            isLoading={cacheMissesLoading || cacheMissesRefetching}
+            onRefresh={refreshCacheMisses}
+            disabled={!isFullyCast}
+            disabledReason="Complete voice casting before scanning"
+            warningMessage={
+              !isFullyCast
+                ? 'Complete voice casting before checking for missing clips.'
+                : undefined
+            }
+          />
+        </div>
       </div>
     </div>
   );
