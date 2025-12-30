@@ -47,7 +47,7 @@ export function AppShell({
       <main className="grid-area-main overflow-auto">{main}</main>
 
       {panel && (
-        <aside className="grid-area-panel border-border bg-muted/30 flex flex-col overflow-hidden border-l">
+        <aside className="grid-area-panel border-border bg-background flex flex-col overflow-hidden border-l">
           {panel}
         </aside>
       )}

@@ -108,7 +108,7 @@ export const ConfigForm: React.FC<ConfigFormProps> = ({
     <div className="space-y-6">
       {/* Voice Library Configuration Banner */}
       {config.sts_id && (
-        <div className="bg-primary/5 border-primary/20 rounded-lg border px-3 py-2">
+        <div className="bg-background border-border rounded-lg border px-3 py-2">
           <div className="flex items-center gap-2">
             <div className="bg-primary h-2 w-2 rounded-full" />
             <span className="text-foreground text-sm font-medium">

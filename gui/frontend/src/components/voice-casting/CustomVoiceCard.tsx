@@ -259,7 +259,7 @@ export function CustomVoiceCard({
   return (
     <div
       className={cn(
-        'bg-muted/50 cursor-pointer rounded-lg border transition-all hover:shadow-sm',
+        'bg-background cursor-pointer rounded-lg border transition-all hover:shadow-sm',
         isExpanded && 'shadow-md',
         className
       )}

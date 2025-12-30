@@ -149,10 +149,7 @@ export function CharacterCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div
-                      className={cn(
-                        'shrink-0 rounded-full p-2',
-                        character.isNarrator ? 'bg-primary/10' : 'bg-muted'
-                      )}
+                      className={cn('shrink-0 rounded-full p-2', 'bg-muted/70')}
                     >
                       <User className="h-4 w-4" />
                     </div>

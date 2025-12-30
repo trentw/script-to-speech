@@ -212,9 +212,7 @@ function ProjectToolCard({
   const isDisabled = status === 'disabled';
 
   return (
-    <Card
-      className={`transition-colors ${isDisabled ? 'opacity-60' : 'hover:bg-accent/50'}`}
-    >
+    <Card className={isDisabled ? 'opacity-60' : ''}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Icon className="h-5 w-5" />

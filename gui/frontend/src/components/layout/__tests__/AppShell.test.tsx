@@ -309,7 +309,7 @@ describe('AppShell', () => {
 
       expect(nav).toHaveClass('bg-background');
       expect(header).toHaveClass('bg-background');
-      expect(panel).toHaveClass('bg-muted/30');
+      expect(panel).toHaveClass('bg-background');
       expect(footer).toHaveClass('bg-background');
     });
   });
