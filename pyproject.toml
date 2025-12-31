@@ -75,6 +75,7 @@ sts-validate-voice-library-config = "script_to_speech.voice_library.cli_config:m
 sts-voice-library-run-script = "script_to_speech.voice_library.cli_run_script:main"
 sts-validate-voice-library-scripts = "script_to_speech.voice_library.cli_validate_scripts:main"
 sts-gui-server = "script_to_speech.gui_backend.main:main"
+sts-detect-headers = "script_to_speech.parser.header_footer.cli:main"
 
 
 [tool.hatch.build.targets.wheel]

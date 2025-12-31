@@ -48,6 +48,7 @@ The following documentation covers the **Command Line Interface**. For GUI instr
 | Command                           | Description                        |
 | --------------------------------- | ---------------------------------- |
 | `sts-parse-screenplay`            | Parse PDF/TXT to JSON chunks       |
+| `sts-detect-headers`              | Detect header/footer patterns in PDFs |
 | `sts-generate-audio`              | Generate audiobook from JSON       |
 | `sts-generate-standalone-speech`  | Create individual audio clips. See [Standalone Speech Generation](docs/STANDALONE_SPEECH.md) for more details. |
 | `sts-tts-provider-yaml`           | Generate/populate provider configs |
@@ -203,6 +204,44 @@ Manually edit `input/your_script/your_script.txt` to remove headers, footers, pa
 # Create JSON dialogue chunks from edited text
 uv run sts-parse-screenplay input/your_script/your_script.txt
 ```
+
+**Detecting headers/footers automatically:**
+
+Use `sts-detect-headers` to identify recurring header/footer patterns before parsing:
+
+```bash
+# Detect patterns in a PDF
+uv run sts-detect-headers source_screenplays/your_script.pdf
+```
+
+The tool outputs detected patterns with occurrence percentages and a copy-paste `--remove` string:
+
+```
+HEADERS (sorted by occurrence):
+-----------------------------------
+[100.0%] "MY SCREENPLAY - Rev. 10/"
+        Found on 120/120 pages
+        Variations (2):
+          - "MY SCREENPLAY - Rev. 10/15/24"
+          - "MY SCREENPLAY - Rev. 10/22/24"
+
+Copy-paste for sts-parse-screenplay:
+----------------------------------------
+--remove 'MY SCREENPLAY - Rev. 10/15/24' --remove 'MY SCREENPLAY - Rev. 10/22/24'
+```
+
+Apply the detected patterns during parsing:
+
+```bash
+uv run sts-parse-screenplay source_screenplays/your_script.pdf \
+  --remove 'MY SCREENPLAY - Rev. 10/15/24' --remove 'MY SCREENPLAY - Rev. 10/22/24'
+```
+
+Options:
+- `--threshold PCT`: Minimum occurrence percentage to display (default: 30%)
+- `--lines N`: Lines to scan from top/bottom of each page (default: 2)
+- `--json`: Output as JSON for programmatic use
+- `--include-blacklisted`: Include patterns like "CONTINUED" in output
 
 **Analyzing the parsed screenplay:**
 
@@ -582,6 +621,11 @@ Changes in any of the above will mark just the relevant clips for regeneration u
 
 4. **Screenplay is parsed incorrectly**
    - The parser is currently fairly fragile, and expects "standard" screenplay files with predictable margins and conventions. Additional configuration options, and automatic configuration, is planned for future releases
+
+5. **Headers/Footers Appearing in Parsed Output**
+   - Use `sts-detect-headers` to identify recurring patterns
+   - Apply detected patterns with `--remove` option during parsing
+   - Use `--text-only` to manually edit problematic content
 
 See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more solutions.
 
