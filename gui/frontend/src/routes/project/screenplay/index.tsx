@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, Navigate } from '@tanstack/react-router';
-import { AlertCircle, ArrowLeft, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { AlertCircle, ArrowLeft, Settings2 } from 'lucide-react';
 
 import { ScreenplayResultViewer } from '@/components/screenplay/ScreenplayResultViewer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -23,14 +22,13 @@ const staticData: RouteStaticData = {
   },
 };
 
-export const Route = createFileRoute('/project/screenplay')({
+export const Route = createFileRoute('/project/screenplay/')({
   component: ProjectScreenplayInfo,
   staticData,
 });
 
 function ProjectScreenplayInfo() {
   const projectState = useProject();
-  const [isReparsing, setIsReparsing] = useState(false);
   const containerClasses = 'container mx-auto px-6 py-8';
 
   // Get inputPath before any conditional logic (hooks must be unconditional)
@@ -43,15 +41,10 @@ function ProjectScreenplayInfo() {
       ? projectState.project.screenplayName
       : undefined;
 
-  const {
-    status,
-    isLoading: _isLoading,
-    error,
-    invalidate,
-  } = useProjectStatus(inputPath);
+  const { status, isLoading: _isLoading, error } = useProjectStatus(inputPath);
 
   // Load the screenplay data from backend
-  const { data: screenplayData, refetch: refetchScreenplay } = useQuery({
+  const { data: screenplayData } = useQuery({
     queryKey: ['project-screenplay-result', inputPath, screenplayName],
     queryFn: async (): Promise<ScreenplayResult | null> => {
       if (!status?.hasJson || !inputPath || !screenplayName) return null;
@@ -94,20 +87,6 @@ function ProjectScreenplayInfo() {
   if (projectState.mode !== 'project') {
     return <Navigate to="/" replace />;
   }
-
-  const handleReparse = async () => {
-    setIsReparsing(true);
-    try {
-      // For now, just refresh the data from disk
-      // In the future, we could add a reparse endpoint if needed
-      await invalidate();
-      await refetchScreenplay();
-    } catch (err) {
-      console.error('Failed to refresh:', err);
-    } finally {
-      setIsReparsing(false);
-    }
-  };
 
   if (error) {
     return (
@@ -157,26 +136,16 @@ function ProjectScreenplayInfo() {
               Screenplay Information
             </h1>
           </div>
-          <button
+          <Link
+            to="/project/screenplay/configure"
             className={appButtonVariants({
               variant: 'secondary',
               size: 'sm',
             })}
-            onClick={handleReparse}
-            disabled={isReparsing}
           >
-            {isReparsing ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                Reparsing...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Re-parse
-              </>
-            )}
-          </button>
+            <Settings2 className="mr-2 h-4 w-4" />
+            Configure Parsing
+          </Link>
         </div>
         <p className="text-muted-foreground mt-2">
           Detailed analysis of your parsed screenplay structure and content.

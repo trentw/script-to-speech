@@ -2,16 +2,25 @@
 
 import json
 import logging
+import math
 import os
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import yaml
 
+from script_to_speech.parser.header_footer.detector import HeaderFooterDetector
+
 from ..config import settings
-from ..models import ProjectMeta, ProjectStatus
+from ..models import (
+    AUTO_APPLY_THRESHOLD,
+    SUGGESTION_THRESHOLD,
+    DetectedPatternResponse,
+    ProjectMeta,
+    ProjectStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -308,15 +317,23 @@ class ProjectService:
 
     def create_new_project_from_upload(
         self, source_file_path: str, original_filename: Optional[str] = None
-    ) -> Dict[str, str]:
+    ) -> Dict[str, Any]:
         """Create a new project from an uploaded screenplay file.
+
+        For PDF files, this will:
+        1. Run header/footer detection with 20% threshold
+        2. Auto-apply removal for patterns >= 40%
+        3. Return detection metadata for popover display
 
         Args:
             source_file_path: Path to the uploaded screenplay file
             original_filename: Original filename from the upload (optional, if not provided uses source_file_path)
 
         Returns:
-            Dictionary with project metadata (inputPath, outputPath, screenplayName)
+            Dictionary with project metadata including:
+            - inputPath, outputPath, screenplayName
+            - autoRemovedPatterns: patterns that were auto-removed (>= 40%)
+            - suggestedPatterns: patterns that are suggestions (20-40%)
 
         Raises:
             ValueError: If file is invalid or project creation fails
@@ -361,9 +378,36 @@ class ProjectService:
             shutil.copy2(source_path, target_path)
             logger.info(f"Copied {source_path} to {target_path}")
 
-            # Run CLI parser
+            # Initialize detection results
+            auto_removed_patterns: List[DetectedPatternResponse] = []
+            suggested_patterns: List[DetectedPatternResponse] = []
+            strings_to_remove: List[str] = []
+
+            # Run header/footer detection for PDFs
+            if source_path.suffix.lower() == ".pdf":
+                try:
+                    detection_result = self._detect_headers_footers(target_path)
+                    auto_removed_patterns = detection_result["auto_removed"]
+                    suggested_patterns = detection_result["suggested"]
+                    strings_to_remove = detection_result["strings_to_remove"]
+
+                    if strings_to_remove:
+                        logger.info(
+                            f"Auto-removing {len(strings_to_remove)} header/footer patterns"
+                        )
+                except Exception as e:
+                    # Log but don't fail - detection is optional
+                    logger.warning(
+                        f"Header/footer detection failed, continuing without: {e}"
+                    )
+
+            # Run CLI parser with auto-removal patterns
             try:
-                self._run_cli_parser(target_path)
+                self._run_cli_parser(
+                    target_path,
+                    strings_to_remove=strings_to_remove if strings_to_remove else None,
+                    remove_lines=2,
+                )
             except Exception as e:
                 # Clean up on failure
                 if target_path.exists():
@@ -374,16 +418,101 @@ class ProjectService:
             output_project_dir = self.output_dir / screenplay_name
             output_project_dir.mkdir(parents=True, exist_ok=True)
 
-            # Return project metadata
+            # Return project metadata with detection results
+            # Use by_alias=True to serialize with camelCase for frontend compatibility
             return {
                 "inputPath": str(input_project_dir),
                 "outputPath": str(output_project_dir),
                 "screenplayName": screenplay_name,
+                "autoRemovedPatterns": [
+                    p.model_dump(by_alias=True) for p in auto_removed_patterns
+                ],
+                "suggestedPatterns": [
+                    p.model_dump(by_alias=True) for p in suggested_patterns
+                ],
             }
 
         except Exception as e:
             logger.error(f"Failed to create project from {source_file_path}: {e}")
             raise
+
+    def _detect_headers_footers(self, pdf_path: Path) -> Dict[str, Any]:
+        """Detect header/footer patterns in a PDF.
+
+        Args:
+            pdf_path: Path to the PDF file
+
+        Returns:
+            Dictionary with:
+            - auto_removed: patterns >= 40% (to be auto-removed)
+            - suggested: patterns 20-40% (suggestions)
+            - strings_to_remove: list of pattern texts to remove
+        """
+        # Create detector with lenient threshold for suggestions
+        # Use adjusted min_occurrences for short scripts
+        detector = HeaderFooterDetector(
+            lines_to_scan=2,
+            min_occurrences=2,  # Start low, we'll filter by percentage
+        )
+        result = detector.detect(str(pdf_path))
+
+        # Adjust min_occurrences based on page count
+        if result.total_pages > 0:
+            adjusted_min = max(2, math.floor(result.total_pages * 0.15))
+            if adjusted_min > 2:
+                # Re-run with adjusted min if needed
+                detector = HeaderFooterDetector(
+                    lines_to_scan=2,
+                    min_occurrences=adjusted_min,
+                )
+                result = detector.detect(str(pdf_path))
+
+        auto_removed: List[DetectedPatternResponse] = []
+        suggested: List[DetectedPatternResponse] = []
+        strings_to_remove: List[str] = []
+
+        for pattern in result.patterns:
+            # Skip blacklisted patterns for auto-removal
+            if pattern.is_blacklisted:
+                continue
+
+            # Skip patterns below suggestion threshold
+            if pattern.occurrence_percentage < SUGGESTION_THRESHOLD:
+                continue
+
+            # Create response object
+            pattern_response = DetectedPatternResponse(
+                text=pattern.text,
+                position=pattern.position.value,
+                occurrence_count=pattern.occurrence_count,
+                total_pages=pattern.total_pages,
+                occurrence_percentage=pattern.occurrence_percentage,
+                is_blacklisted=pattern.is_blacklisted,
+                example_full_lines=pattern.example_full_lines[:3],
+                variations=pattern.variations,
+                is_auto_applied=pattern.occurrence_percentage >= AUTO_APPLY_THRESHOLD,
+                is_suggestion=(
+                    SUGGESTION_THRESHOLD
+                    <= pattern.occurrence_percentage
+                    < AUTO_APPLY_THRESHOLD
+                ),
+            )
+
+            if pattern.occurrence_percentage >= AUTO_APPLY_THRESHOLD:
+                auto_removed.append(pattern_response)
+                # Use variations if available (they include page numbers etc.)
+                if pattern.variations:
+                    strings_to_remove.extend(pattern.variations)
+                else:
+                    strings_to_remove.append(pattern.text)
+            elif pattern.occurrence_percentage >= SUGGESTION_THRESHOLD:
+                suggested.append(pattern_response)
+
+        return {
+            "auto_removed": auto_removed,
+            "suggested": suggested,
+            "strings_to_remove": strings_to_remove,
+        }
 
     def _sanitize_filename(self, filename: str) -> str:
         """Sanitize filename for use as project name.
@@ -401,11 +530,21 @@ class ProjectService:
         # Limit length for practicality
         return str(sanitized[:200]) if sanitized else ""
 
-    def _run_cli_parser(self, screenplay_path: Path) -> None:
+    def _run_cli_parser(
+        self,
+        screenplay_path: Path,
+        strings_to_remove: Optional[List[str]] = None,
+        remove_lines: int = 2,
+    ) -> Dict[str, Any]:
         """Run the screenplay parser directly.
 
         Args:
             screenplay_path: Path to the screenplay file to parse
+            strings_to_remove: Optional list of header/footer patterns to remove
+            remove_lines: Number of lines from top/bottom to check for removal
+
+        Returns:
+            Parser result dictionary
 
         Raises:
             RuntimeError: If parsing fails
@@ -419,10 +558,14 @@ class ProjectService:
                 input_file=str(screenplay_path),
                 base_path=self.workspace_dir,
                 text_only=False,
+                strings_to_remove=strings_to_remove,
+                remove_lines=remove_lines,
             )
 
             logger.info(f"Successfully parsed screenplay: {screenplay_path}")
             logger.debug(f"Parser result: {result}")
+
+            return result
 
         except Exception as e:
             error_msg = f"Screenplay parsing failed: {str(e)}"

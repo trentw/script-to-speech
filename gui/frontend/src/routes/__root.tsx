@@ -20,6 +20,7 @@ import {
   MobileDrawer,
   ResponsivePanel,
 } from '../components/layout';
+import { UploadProgressDialog } from '../components/project/UploadProgressDialog';
 import { SettingsDialog } from '../components/settings/SettingsDialog';
 import { useAllVoiceCounts } from '../hooks/queries/useAllVoiceCounts';
 import { useProviders } from '../hooks/queries/useProviders';
@@ -191,6 +192,9 @@ function RootComponent() {
 
       {/* Settings Dialog - works on all platforms */}
       <SettingsDialog />
+
+      {/* Upload Progress Dialog - global dialog for screenplay upload feedback */}
+      <UploadProgressDialog />
 
       <ErrorDisplay />
       <Toaster />

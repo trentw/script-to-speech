@@ -3,6 +3,7 @@
  */
 
 import { API_BASE_URL } from '../config/api';
+import type { DetectedPattern } from '../types';
 import type { ProjectStatus } from '../types/project';
 
 interface ApiResponse<T = unknown> {
@@ -25,6 +26,9 @@ interface ProjectCreateData {
   inputPath: string;
   outputPath: string;
   screenplayName: string;
+  // Header/footer detection results (for popover display)
+  autoRemovedPatterns?: DetectedPattern[];
+  suggestedPatterns?: DetectedPattern[];
 }
 
 class ProjectApiService {

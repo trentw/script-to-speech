@@ -259,12 +259,15 @@ class NewProjectRequest(BaseModel):
     originalFilename: Optional[str] = None  # Original filename from upload
 
 
-class NewProjectResponse(BaseModel):
+class NewProjectResponse(CamelModel):
     """Response from creating a new project."""
 
-    inputPath: str
-    outputPath: str
-    screenplayName: str
+    input_path: str
+    output_path: str
+    screenplay_name: str
+    # Header/footer detection results (for popover display)
+    auto_removed_patterns: Optional[List["DetectedPatternResponse"]] = None
+    suggested_patterns: Optional[List["DetectedPatternResponse"]] = None
 
 
 # Audiobook Generation Models
@@ -438,3 +441,60 @@ class DeleteVariantRequest(BaseModel):
     """Request to delete a variant file."""
 
     file_path: str  # Path to file in standalone_speech
+
+
+# Header/Footer Detection Models
+
+# Threshold constants for auto-apply vs suggestion
+AUTO_APPLY_THRESHOLD = 40.0  # Patterns >= 40% are auto-applied
+SUGGESTION_THRESHOLD = 20.0  # Patterns 20-40% are suggestions
+
+
+class DetectedPatternResponse(CamelModel):
+    """A detected header/footer pattern from the detector."""
+
+    text: str
+    position: str  # "header" or "footer"
+    occurrence_count: int
+    total_pages: int
+    occurrence_percentage: float
+    is_blacklisted: bool
+    example_full_lines: List[str]  # Show context for user verification
+    variations: List[str]
+    is_auto_applied: bool  # True if >= AUTO_APPLY_THRESHOLD
+    is_suggestion: bool  # True if SUGGESTION_THRESHOLD <= % < AUTO_APPLY_THRESHOLD
+
+
+class DetectionResultResponse(CamelModel):
+    """Complete detection results from header/footer analysis."""
+
+    patterns: List[DetectedPatternResponse]
+    pdf_path: str
+    total_pages: int
+    lines_scanned: int
+    auto_applied_patterns: List[DetectedPatternResponse]
+    suggested_patterns: List[DetectedPatternResponse]
+
+
+class ReparseRequest(BaseModel):
+    """Request to re-parse a screenplay with header/footer removal options."""
+
+    input_path: str  # Path to project input directory
+    screenplay_name: str  # Name of the screenplay
+    strings_to_remove: List[str]  # Patterns to remove
+    remove_lines: int = 2  # Number of lines from top/bottom to check for removal
+    global_replace: bool = (
+        False  # If true, replace throughout document (sets remove_lines=0)
+    )
+
+
+class ReparseResponse(CamelModel):
+    """Response from re-parsing a screenplay."""
+
+    success: bool
+    message: str
+    removal_metadata: Optional[Dict[str, Any]] = None  # Details about what was removed
+
+
+# Rebuild models to resolve forward references
+NewProjectResponse.model_rebuild()

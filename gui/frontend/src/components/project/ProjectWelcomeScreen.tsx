@@ -15,7 +15,7 @@ import {
   projectApi,
   type ProjectMeta as ApiProjectMeta,
 } from '@/services/projectApi';
-import { useProject } from '@/stores/appStore';
+import { useProject, useUploadDialog } from '@/stores/appStore';
 import type { ProjectMetaStore as ProjectMeta } from '@/types/project';
 
 import { ProjectPicker } from './ProjectPicker';
@@ -23,6 +23,7 @@ import { ProjectPicker } from './ProjectPicker';
 export function ProjectWelcomeScreen() {
   const navigate = useNavigate();
   const { setProject, addRecentProject, recentProjects } = useProject();
+  const { setUploadDialog } = useUploadDialog();
   const [isLoading, setIsLoading] = useState(false);
   const [showProjectPicker, setShowProjectPicker] = useState(false);
 
@@ -39,46 +40,79 @@ export function ProjectWelcomeScreen() {
     setShowProjectPicker(true);
   };
 
-  // Handle new project file selection
+  // Handle new project file selection - uses global upload dialog
   const handleNewProjectFile = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (!file.name.match(/\.(pdf|txt)$/i)) {
+      toast.error('Please select a PDF or TXT file');
+      return;
+    }
+
     try {
-      setIsLoading(true);
+      // 1. Show "Parsing screenplay..." dialog immediately
+      setUploadDialog({
+        status: 'processing',
+        filename: file.name,
+        step: 'parsing',
+      });
 
-      // Validate file type
-      if (!file.name.match(/\.(pdf|txt)$/i)) {
-        throw new Error('Please select a PDF or TXT file');
-      }
-
-      // Use the project API service
+      // 2. Create project (includes parsing)
       const projectData = await projectApi.createProjectFromFile(file);
 
-      // Update store
+      // Create project meta but DON'T set it yet - wait for user to click OK
       const projectMeta: ProjectMeta = {
         screenplayName: projectData.screenplayName,
         inputPath: projectData.inputPath,
         outputPath: projectData.outputPath,
       };
 
-      setProject(projectMeta);
-      addRecentProject(projectData.inputPath);
+      // 3. Update to "Checking for headers/footers..."
+      setUploadDialog({
+        status: 'processing',
+        filename: file.name,
+        step: 'detecting',
+      });
 
-      toast.success(
-        `Project "${projectData.screenplayName}" created successfully!`
-      );
+      // 4. Fetch project status for stats
+      const status = await projectApi.getProjectStatus(projectData.inputPath);
+      const speakerCount = status.speakerCount ?? 0;
+      const dialogueChunks = status.dialogueChunks ?? 0;
 
-      // Navigate to project overview
-      navigate({ to: '/project' });
+      // 5. Check for detection results and show final dialog
+      const hasDetection =
+        (projectData.autoRemovedPatterns?.length ?? 0) > 0 ||
+        (projectData.suggestedPatterns?.length ?? 0) > 0;
+
+      if (hasDetection) {
+        setUploadDialog({
+          status: 'detection',
+          filename: file.name,
+          speakerCount,
+          dialogueChunks,
+          autoRemoved: projectData.autoRemovedPatterns || [],
+          suggested: projectData.suggestedPatterns || [],
+          projectMeta,
+        });
+      } else {
+        setUploadDialog({
+          status: 'complete',
+          filename: file.name,
+          speakerCount,
+          dialogueChunks,
+          projectMeta,
+        });
+      }
     } catch (error) {
+      setUploadDialog({ status: 'idle' });
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(errorMessage);
     } finally {
-      setIsLoading(false);
       // Reset file input
       if (newProjectFileRef.current) {
         newProjectFileRef.current.value = '';
@@ -215,6 +249,8 @@ export function ProjectWelcomeScreen() {
         onClose={() => setShowProjectPicker(false)}
         onProjectSelect={handleProjectPickerSelect}
       />
+
+      {/* Upload Progress Dialog is now rendered globally in __root.tsx */}
     </div>
   );
 }

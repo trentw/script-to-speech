@@ -280,3 +280,52 @@ export type {
   SpeakerGroup,
   VariantInfo,
 } from './review';
+
+// Header/Footer Detection Types
+
+export interface DetectedPattern {
+  text: string;
+  position: 'header' | 'footer';
+  occurrenceCount: number;
+  totalPages: number;
+  occurrencePercentage: number;
+  isBlacklisted: boolean;
+  exampleFullLines: string[];
+  variations: string[];
+  isAutoApplied: boolean;
+  isSuggestion: boolean;
+}
+
+export interface DetectionResult {
+  patterns: DetectedPattern[];
+  pdfPath: string;
+  totalPages: number;
+  linesScanned: number;
+  autoAppliedPatterns: DetectedPattern[];
+  suggestedPatterns: DetectedPattern[];
+}
+
+export interface DetectHeadersParams {
+  pdfPath: string;
+  linesToScan?: number;
+  minOccurrences?: number;
+  threshold?: number;
+}
+
+export interface ReparseRequest {
+  inputPath: string;
+  screenplayName: string;
+  stringsToRemove: string[];
+  removeLines: number;
+  globalReplace: boolean;
+}
+
+export interface ReparseResponse {
+  success: boolean;
+  message: string;
+  removalMetadata?: {
+    patternsRemoved?: string[];
+    totalRemovals?: number;
+    perPatternCounts?: Record<string, number>;
+  };
+}

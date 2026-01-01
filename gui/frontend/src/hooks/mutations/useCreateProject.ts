@@ -12,6 +12,7 @@ import type { CreateProjectResponse } from '../../types/project';
  * - Pre-populates project status cache with initial data
  * - Provides loading states and error handling
  * - Optimistic updates for better UX
+ * - Returns header/footer detection results for popover display
  */
 export const useCreateProject = () => {
   const queryClient = useQueryClient();
@@ -23,6 +24,8 @@ export const useCreateProject = () => {
         inputPath: projectData.inputPath,
         outputPath: projectData.outputPath,
         screenplayName: projectData.screenplayName,
+        autoRemovedPatterns: projectData.autoRemovedPatterns,
+        suggestedPatterns: projectData.suggestedPatterns,
       };
     },
 

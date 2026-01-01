@@ -1,6 +1,7 @@
 """Screenplay parsing API routes."""
 
 import json
+import math
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -8,10 +9,22 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 
 from script_to_speech.parser.analyze import analyze_chunks
+from script_to_speech.parser.header_footer.detector import HeaderFooterDetector
+from script_to_speech.parser.header_footer.models import PatternPosition
+from script_to_speech.parser.process import process_screenplay
 from script_to_speech.utils.file_system_utils import PathSecurityValidator
 
 from ..config import settings
-from ..models import TaskResponse, TaskStatusResponse
+from ..models import (
+    AUTO_APPLY_THRESHOLD,
+    SUGGESTION_THRESHOLD,
+    DetectedPatternResponse,
+    DetectionResultResponse,
+    ReparseRequest,
+    ReparseResponse,
+    TaskResponse,
+    TaskStatusResponse,
+)
 from ..services.screenplay_service import screenplay_service
 
 router = APIRouter()
@@ -357,4 +370,198 @@ async def download_screenplay_file_from_path(
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to download file: {str(e)}"
+        )
+
+
+@router.post("/detect-headers", response_model=DetectionResultResponse)
+async def detect_headers(
+    pdf_path: str = Query(..., description="Path to the PDF file"),
+    lines_to_scan: int = Query(
+        2, ge=1, le=10, description="Lines from top/bottom to scan"
+    ),
+    min_occurrences: Optional[int] = Query(
+        None,
+        ge=1,
+        description="Minimum occurrences to report (auto-adjusted for short scripts if not provided)",
+    ),
+    threshold: float = Query(
+        SUGGESTION_THRESHOLD,
+        ge=0,
+        le=100,
+        description="Minimum occurrence percentage to include",
+    ),
+) -> DetectionResultResponse:
+    """Detect header/footer patterns in a PDF file.
+
+    Args:
+        pdf_path: Path to the PDF file to analyze
+        lines_to_scan: Number of non-blank lines to scan from top/bottom of each page
+        min_occurrences: Minimum page occurrences to report (auto-adjusted for short scripts)
+        threshold: Minimum occurrence percentage to include in results
+
+    Returns:
+        DetectionResultResponse with classified patterns
+    """
+    try:
+        # Validate the PDF path
+        validator = PathSecurityValidator(settings.WORKSPACE_DIR)
+        safe_path = validator.validate_existing_path(Path(pdf_path))
+
+        if not safe_path.suffix.lower() == ".pdf":
+            raise HTTPException(status_code=400, detail="File must be a PDF")
+
+        # Create detector and run detection
+        detector = HeaderFooterDetector(
+            lines_to_scan=lines_to_scan,
+            min_occurrences=min_occurrences or 10,  # Will be adjusted below
+        )
+        result = detector.detect(str(safe_path))
+
+        # Auto-adjust min_occurrences for short scripts if not explicitly provided
+        # For short scripts, 20% threshold might be less than default min_occurrences=10
+        if min_occurrences is None and result.total_pages > 0:
+            adjusted_min = max(2, math.floor(result.total_pages * 0.15))
+            if adjusted_min < 10:
+                # Re-run with adjusted min_occurrences
+                detector = HeaderFooterDetector(
+                    lines_to_scan=lines_to_scan,
+                    min_occurrences=adjusted_min,
+                )
+                result = detector.detect(str(safe_path))
+
+        # Convert patterns to response format and classify
+        patterns: List[DetectedPatternResponse] = []
+        auto_applied: List[DetectedPatternResponse] = []
+        suggested: List[DetectedPatternResponse] = []
+
+        for pattern in result.patterns:
+            # Skip patterns below threshold
+            if pattern.occurrence_percentage < threshold:
+                continue
+
+            # Determine classification
+            is_auto_applied = pattern.occurrence_percentage >= AUTO_APPLY_THRESHOLD
+            is_suggestion = (
+                SUGGESTION_THRESHOLD
+                <= pattern.occurrence_percentage
+                < AUTO_APPLY_THRESHOLD
+            )
+
+            pattern_response = DetectedPatternResponse(
+                text=pattern.text,
+                position=pattern.position.value,
+                occurrence_count=pattern.occurrence_count,
+                total_pages=pattern.total_pages,
+                occurrence_percentage=pattern.occurrence_percentage,
+                is_blacklisted=pattern.is_blacklisted,
+                example_full_lines=pattern.example_full_lines[
+                    :3
+                ],  # Limit to 3 examples
+                variations=pattern.variations,
+                is_auto_applied=is_auto_applied,
+                is_suggestion=is_suggestion,
+            )
+            patterns.append(pattern_response)
+
+            if is_auto_applied:
+                auto_applied.append(pattern_response)
+            elif is_suggestion:
+                suggested.append(pattern_response)
+
+        return DetectionResultResponse(
+            patterns=patterns,
+            pdf_path=str(safe_path),
+            total_pages=result.total_pages,
+            lines_scanned=lines_to_scan,
+            auto_applied_patterns=auto_applied,
+            suggested_patterns=suggested,
+        )
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to detect headers/footers: {str(e)}"
+        )
+
+
+# Track which projects are currently being parsed to prevent concurrent parses
+_parsing_locks: Dict[str, bool] = {}
+
+
+@router.post("/reparse", response_model=ReparseResponse)
+async def reparse_screenplay(request: ReparseRequest) -> ReparseResponse:
+    """Re-parse a screenplay with header/footer removal options.
+
+    Args:
+        request: ReparseRequest with removal options
+
+    Returns:
+        ReparseResponse with success status and removal metadata
+    """
+    try:
+        # Validate paths
+        validator = PathSecurityValidator(settings.WORKSPACE_DIR)
+        safe_input_path = validator.validate_existing_path(Path(request.input_path))
+
+        # Find the source PDF
+        pdf_path = safe_input_path / f"{request.screenplay_name}.pdf"
+        if not pdf_path.exists():
+            # Check source_screenplays directory
+            source_dir = settings.WORKSPACE_DIR / "source_screenplays"
+            pdf_path = source_dir / f"{request.screenplay_name}.pdf"
+            if not pdf_path.exists():
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"PDF file not found for screenplay: {request.screenplay_name}",
+                )
+
+        # Check for concurrent parse lock
+        lock_key = str(safe_input_path)
+        if _parsing_locks.get(lock_key):
+            raise HTTPException(
+                status_code=409,
+                detail="A parse operation is already in progress for this project",
+            )
+
+        try:
+            # Set the lock
+            _parsing_locks[lock_key] = True
+
+            # Determine remove_lines value
+            remove_lines = 0 if request.global_replace else request.remove_lines
+
+            # Filter out empty strings and normalize entries
+            strings_to_remove = [
+                s.strip() for s in request.strings_to_remove if s.strip()
+            ]
+
+            # Run the parser with removal options
+            result = process_screenplay(
+                input_file=str(pdf_path),
+                base_path=settings.WORKSPACE_DIR,
+                text_only=False,
+                strings_to_remove=strings_to_remove if strings_to_remove else None,
+                remove_lines=remove_lines,
+            )
+
+            return ReparseResponse(
+                success=True,
+                message=f"Successfully re-parsed screenplay with {len(strings_to_remove)} patterns removed",
+                removal_metadata=result.get("removal_metadata"),
+            )
+
+        finally:
+            # Always release the lock
+            _parsing_locks.pop(lock_key, None)
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to re-parse screenplay: {str(e)}"
         )

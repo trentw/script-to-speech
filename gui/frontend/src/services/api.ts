@@ -6,10 +6,14 @@ import type {
   AudiobookGenerationResult,
   AudiobookTaskResponse,
   AudioFilesResponse,
+  DetectHeadersParams,
+  DetectionResult,
   ExpandedStsIdResponse,
   GenerationRequest,
   ProviderInfo,
   RecentScreenplay,
+  ReparseRequest,
+  ReparseResponse,
   ScreenplayResult,
   TaskResponse,
   TaskStatusResponse,
@@ -261,6 +265,43 @@ class ApiService {
         method: 'DELETE',
       }
     );
+  }
+
+  async detectHeaders(
+    params: DetectHeadersParams
+  ): Promise<ApiResponse<DetectionResult>> {
+    const searchParams = new URLSearchParams();
+    searchParams.append('pdf_path', params.pdfPath);
+    if (params.linesToScan !== undefined) {
+      searchParams.append('lines_to_scan', params.linesToScan.toString());
+    }
+    if (params.minOccurrences !== undefined) {
+      searchParams.append('min_occurrences', params.minOccurrences.toString());
+    }
+    if (params.threshold !== undefined) {
+      searchParams.append('threshold', params.threshold.toString());
+    }
+    return this.request<DetectionResult>(
+      `/screenplay/detect-headers?${searchParams}`,
+      {
+        method: 'POST',
+      }
+    );
+  }
+
+  async reparseScreenplay(
+    request: ReparseRequest
+  ): Promise<ApiResponse<ReparseResponse>> {
+    return this.request<ReparseResponse>('/screenplay/reparse', {
+      method: 'POST',
+      body: JSON.stringify({
+        input_path: request.inputPath,
+        screenplay_name: request.screenplayName,
+        strings_to_remove: request.stringsToRemove,
+        remove_lines: request.removeLines,
+        global_replace: request.globalReplace,
+      }),
+    });
   }
 
   // Voice Casting endpoints

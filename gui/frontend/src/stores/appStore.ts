@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import { useShallow } from 'zustand/react/shallow';
 
-import type { ScreenplayResult, VoiceEntry } from '../types';
+import type { DetectedPattern, ScreenplayResult, VoiceEntry } from '../types';
 import { createSuperJSONStorage } from '../utils/superJSONStorage';
 
 // Type for configuration values matching VoiceEntry config structure
@@ -105,6 +105,35 @@ interface ProjectSlice {
   resetProjectState: () => void;
 }
 
+// Upload dialog slice - global dialog for project upload feedback
+type UploadDialogState =
+  | { status: 'idle' }
+  | { status: 'processing'; filename: string; step: 'parsing' | 'detecting' }
+  | {
+      status: 'detection';
+      filename: string;
+      speakerCount: number;
+      dialogueChunks: number;
+      autoRemoved: DetectedPattern[];
+      suggested: DetectedPattern[];
+      projectMeta: ProjectMeta;
+    }
+  | {
+      status: 'complete';
+      filename: string;
+      speakerCount: number;
+      dialogueChunks: number;
+      projectMeta: ProjectMeta;
+    };
+
+interface UploadDialogSlice {
+  uploadDialog: UploadDialogState;
+
+  // Actions
+  setUploadDialog: (state: UploadDialogState) => void;
+  resetUploadDialog: () => void;
+}
+
 // Combined store type
 type AppStore = ConfigurationSlice &
   UserInputSlice &
@@ -112,7 +141,8 @@ type AppStore = ConfigurationSlice &
   LayoutSlice &
   ScreenplaySlice &
   SettingsSlice &
-  ProjectSlice;
+  ProjectSlice &
+  UploadDialogSlice;
 
 // Create the store with domain slices
 const useAppStore = create<AppStore>()(
@@ -390,6 +420,25 @@ const useAppStore = create<AppStore>()(
             'project/resetProjectState'
           );
         },
+
+        // Upload dialog slice implementation (ephemeral, not persisted)
+        uploadDialog: { status: 'idle' } as UploadDialogState,
+
+        setUploadDialog: (dialogState) => {
+          set(
+            { uploadDialog: dialogState },
+            false,
+            'uploadDialog/setUploadDialog'
+          );
+        },
+
+        resetUploadDialog: () => {
+          set(
+            { uploadDialog: { status: 'idle' } },
+            false,
+            'uploadDialog/resetUploadDialog'
+          );
+        },
       })),
       {
         name: 'app-store',
@@ -493,6 +542,16 @@ export const useSettings = () =>
       apiKeyStatus: state.apiKeyStatus,
       setApiKeyStatus: state.setApiKeyStatus,
       clearApiKeyStatus: state.clearApiKeyStatus,
+    }))
+  );
+
+// Upload dialog selector hook (global dialog state)
+export const useUploadDialog = () =>
+  useAppStore(
+    useShallow((state) => ({
+      uploadDialog: state.uploadDialog,
+      setUploadDialog: state.setUploadDialog,
+      resetUploadDialog: state.resetUploadDialog,
     }))
   );
 

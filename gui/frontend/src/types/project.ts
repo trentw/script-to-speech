@@ -48,7 +48,13 @@ export interface CreateProjectResponse {
   inputPath: string;
   outputPath: string;
   screenplayName: string;
+  // Header/footer detection results for popover display
+  autoRemovedPatterns?: DetectedPattern[];
+  suggestedPatterns?: DetectedPattern[];
 }
+
+// Import for forward reference
+import type { DetectedPattern } from './index';
 
 export interface GenerateOptionalConfigRequest {
   inputPath: string;
