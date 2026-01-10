@@ -433,6 +433,62 @@ class TTSProviderManager:
             )  # Use specific error
         return self._speaker_configs_map[speaker]
 
+    def get_library_sts_id_for_voice(
+        self, provider: str, speaker_identifier: str
+    ) -> Optional[str]:
+        """
+        Find the sts_id for a given provider speaker identifier by searching the voice library.
+
+        This performs a reverse lookup by calling the provider's get_speaker_identifier()
+        method on each voice library entry and comparing the result. This approach works
+        correctly for all providers, including those that produce composite identifiers
+        (OpenAI: voice + model) or hashes (Cartesia, Minimax).
+
+        **Limitation**: This only finds sts_id for voices defined in the voice library.
+        Custom voices configured directly with provider voice_ids will return None.
+        This method is intended for display purposes only.
+
+        Args:
+            provider: The TTS provider name (e.g., "elevenlabs", "openai")
+            speaker_identifier: The output of get_speaker_identifier() to search for
+
+        Returns:
+            The sts_id if found in the voice library, None otherwise
+        """
+        if not provider or not speaker_identifier:
+            return None
+
+        # Get provider class for calling get_speaker_identifier
+        try:
+            provider_class = self._get_provider_class(provider)
+        except ValueError:
+            return None
+
+        # Get all voices for this provider from the voice library
+        try:
+            provider_voices = self._voice_library.get_provider_voices(provider)
+        except Exception:
+            return None
+
+        # Iterate through voice library entries and compare speaker identifiers
+        for sts_id, voice_data in provider_voices.items():
+            config = voice_data.get("config", {})
+            if not config:
+                continue
+
+            # Build a complete config for comparison (add provider field)
+            test_config = {"provider": provider, **config}
+
+            try:
+                entry_identifier = provider_class.get_speaker_identifier(test_config)
+                if entry_identifier == speaker_identifier:
+                    return sts_id
+            except Exception:
+                # Skip entries that fail (missing required fields, etc.)
+                continue
+
+        return None
+
     ####
     # Voice Configuration YAML generation
     ####

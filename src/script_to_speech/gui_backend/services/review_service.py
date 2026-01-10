@@ -358,15 +358,24 @@ class ReviewService:
             except Exception as e:
                 logger.warning(f"Could not get speaker config for '{speaker_key}': {e}")
 
+            # Look up human-readable sts_id from voice library (for display purposes)
+            # This is a reverse lookup from provider voice_id -> library sts_id
+            sts_id = None
+            provider_id = clip_info.provider_id or ""
+            voice_id = clip_info.speaker_id or ""
+            if provider_id and voice_id:
+                sts_id = tts_manager.get_library_sts_id_for_voice(provider_id, voice_id)
+
             result.append(
                 ProblemClipInfo(
                     cache_filename=cache_filename,
                     speaker=clip_info.speaker_display or "(default)",
-                    voice_id=clip_info.speaker_id or "",
-                    provider=clip_info.provider_id or "",
+                    voice_id=voice_id,
+                    provider=provider_id,
                     text=clip_info.text,
                     dbfs_level=clip_info.dbfs_level if include_dbfs else None,
                     speaker_config=speaker_config,
+                    sts_id=sts_id,
                 )
             )
         return result

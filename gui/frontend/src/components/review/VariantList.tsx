@@ -1,5 +1,5 @@
-import { Check, Play, Trash2 } from 'lucide-react';
-import { useCallback } from 'react';
+import { AlertCircle, Check, Play, Trash2, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 import {
@@ -31,6 +31,7 @@ export function VariantList({
 }: VariantListProps) {
   const commitVariant = useCommitVariant();
   const deleteVariant = useDeleteVariant();
+  const [error, setError] = useState<string | null>(null);
 
   const handlePlay = useCallback((audioUrl: string) => {
     const audio = new Audio(audioUrl);
@@ -40,14 +41,18 @@ export function VariantList({
   const handleCommit = useCallback(
     async (variant: VariantInfo) => {
       try {
+        setError(null);
         await commitVariant.mutateAsync({
           sourcePath: variant.filePath,
           targetCacheFilename,
           projectName,
         });
         onCommit(variant.id);
-      } catch (error) {
-        console.error('Failed to commit variant:', error);
+      } catch (err) {
+        console.error('Failed to commit variant:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to commit variant'
+        );
       }
     },
     [commitVariant, projectName, targetCacheFilename, onCommit]
@@ -56,10 +61,14 @@ export function VariantList({
   const handleRemove = useCallback(
     async (variant: VariantInfo) => {
       try {
+        setError(null);
         await deleteVariant.mutateAsync(variant.filePath);
         onRemove(variant.id);
-      } catch (error) {
-        console.error('Failed to delete variant:', error);
+      } catch (err) {
+        console.error('Failed to delete variant:', err);
+        setError(
+          err instanceof Error ? err.message : 'Failed to delete variant'
+        );
       }
     },
     [deleteVariant, onRemove]
@@ -74,6 +83,22 @@ export function VariantList({
       <div className="text-muted-foreground mb-2 text-xs font-medium">
         Variants ({variants.length})
       </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="mb-2 flex items-center gap-2 rounded bg-red-50 px-2 py-1 text-xs text-red-700 dark:bg-red-950/30 dark:text-red-400">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          <span className="flex-1">{error}</span>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            aria-label="Dismiss error"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
+
       <div className="space-y-1">
         {variants.map((variant, index) => (
           <div

@@ -676,15 +676,24 @@ class AudiobookGenerationService:
                 logger.warning(f"Could not get speaker config for '{speaker_key}': {e}")
                 speaker_config = {}
 
+            # Look up human-readable sts_id from voice library (for display purposes)
+            # This is a reverse lookup from provider voice_id -> library sts_id
+            sts_id = None
+            provider_id = clip.provider_id or ""
+            voice_id = clip.speaker_id or ""
+            if provider_id and voice_id:
+                sts_id = tts_manager.get_library_sts_id_for_voice(provider_id, voice_id)
+
             clips.append(
                 ProblemClipInfo(
                     cache_filename=filename,
                     speaker=clip.speaker_display or "(default)",
-                    voice_id=clip.speaker_id or "",
-                    provider=clip.provider_id or "",
+                    voice_id=voice_id,
+                    provider=provider_id,
                     text=clip.text,
                     dbfs_level=clip.dbfs_level,
                     speaker_config=speaker_config,
+                    sts_id=sts_id,
                 )
             )
 

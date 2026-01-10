@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   CheckCircle2,
   ChevronDown,
   Circle,
@@ -7,6 +8,7 @@ import {
   Play,
   Plus,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -68,6 +70,7 @@ export function DialogueItem({
     null
   );
   const [processedUrls, setProcessedUrls] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
 
   const createTask = useCreateTask();
   const { data: taskStatus } = useTaskStatus(currentTaskId ?? undefined);
@@ -107,6 +110,7 @@ export function DialogueItem({
       generationStartTime: null,
       variants: [],
       processedUrls: new Set(),
+      error: null,
     };
     setEditInputs((prev) => [...prev, newInput]);
   }, [clip.text]);
@@ -131,6 +135,8 @@ export function DialogueItem({
   // Generate variants with original text (main Regenerate button)
   const handleRegenerate = useCallback(async () => {
     try {
+      // Clear any previous error when starting a new generation
+      setError(null);
       setIsAwaitingVariants(true);
       setGenerationStartTime(Date.now());
       setProcessedUrls(new Set());
@@ -143,8 +149,11 @@ export function DialogueItem({
       });
 
       setCurrentTaskId(response.task_id);
-    } catch (error) {
-      console.error('Failed to generate variants:', error);
+    } catch (err) {
+      console.error('Failed to generate variants:', err);
+      setError(
+        err instanceof Error ? err.message : 'Failed to start generation'
+      );
       setIsAwaitingVariants(false);
       setGenerationStartTime(null);
     }
@@ -186,25 +195,28 @@ export function DialogueItem({
     if (timeRemaining <= 0) {
       setIsAwaitingVariants(false);
       setGenerationStartTime(null);
+      setError('Generation timed out');
       return;
     }
 
     const timeoutId = setTimeout(() => {
       setIsAwaitingVariants(false);
       setGenerationStartTime(null);
+      setError('Generation timed out');
     }, timeRemaining);
 
     return () => clearTimeout(timeoutId);
   }, [generationStartTime]);
 
-  // Handle task failure - clear awaiting state
+  // Handle task failure - clear awaiting state and set error
   useEffect(() => {
     if (taskStatus?.status === 'failed') {
       setIsAwaitingVariants(false);
       setGenerationStartTime(null);
       setCurrentTaskId(null);
+      setError(taskStatus.error || 'Generation failed');
     }
-  }, [taskStatus?.status]);
+  }, [taskStatus?.status, taskStatus?.error]);
 
   // Handle variant removal (main variants)
   const handleRemoveVariant = useCallback((variantId: string) => {
@@ -360,6 +372,52 @@ export function DialogueItem({
         </div>
       </div>
 
+      {/* Error display for main regeneration */}
+      {error && (
+        <div className="border-destructive/30 bg-destructive/10 mt-2 flex items-center gap-2 rounded border px-3 py-2 text-sm">
+          <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
+          {error.length > 60 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-foreground flex-1 cursor-default">
+                  {error.slice(0, 60)}...
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md">
+                <p className="whitespace-pre-wrap">{error}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-foreground flex-1">{error}</span>
+          )}
+          <button
+            onClick={() => setError(null)}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss error"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Main variants list (from Regenerate button) - shown before edit inputs */}
+      {variants.length > 0 && (
+        <div className="mt-3">
+          {hasEditInputs && (
+            <div className="text-muted-foreground mb-1 text-xs">
+              Original text:
+            </div>
+          )}
+          <VariantList
+            variants={variants}
+            projectName={projectName}
+            targetCacheFilename={clip.cacheFilename}
+            onRemove={handleRemoveVariant}
+            onCommit={handleCommitVariant}
+          />
+        </div>
+      )}
+
       {/* Edit inputs - each is independent with its own generation */}
       {editInputs.map((input) => (
         <div key={input.id} className="border-muted mt-2 ml-4 border-l-2 pl-3">
@@ -372,19 +430,6 @@ export function DialogueItem({
           />
         </div>
       ))}
-
-      {/* Main variants list (from Regenerate button) */}
-      {variants.length > 0 && (
-        <div className="mt-3">
-          <VariantList
-            variants={variants}
-            projectName={projectName}
-            targetCacheFilename={clip.cacheFilename}
-            onRemove={handleRemoveVariant}
-            onCommit={handleCommitVariant}
-          />
-        </div>
-      )}
     </div>
   );
 }

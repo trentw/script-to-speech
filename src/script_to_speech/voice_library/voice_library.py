@@ -139,6 +139,21 @@ class VoiceLibrary:
 
         return voices
 
+    def get_provider_voices(self, provider: str) -> Dict[str, Any]:
+        """
+        Get all voices for a provider from the voice library.
+
+        Args:
+            provider: The TTS provider name
+
+        Returns:
+            Dict mapping sts_id to voice data (including config)
+
+        Raises:
+            VoiceNotFoundError: If provider not found in voice library
+        """
+        return self._load_provider_voices(provider)
+
     def expand_config(self, provider: str, sts_id: str) -> Dict[str, Any]:
         """
         Expand an sts_id to its full configuration.

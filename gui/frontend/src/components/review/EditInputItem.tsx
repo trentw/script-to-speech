@@ -1,4 +1,4 @@
-import { ChevronDown, Loader2, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, ChevronDown, Loader2, RefreshCw, X } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
@@ -9,6 +9,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useCreateTask } from '@/hooks/mutations/useTasks';
 import { useTaskStatus } from '@/hooks/queries/useTaskStatus';
 import type {
@@ -64,8 +69,9 @@ export function EditInputItem({
   // Generate variants
   const handleGenerate = useCallback(async () => {
     try {
-      // Set awaiting state before starting generation
+      // Clear any previous error and set awaiting state before starting generation
       onUpdate({
+        error: null,
         isAwaitingVariants: true,
         generationStartTime: Date.now(),
         processedUrls: new Set(),
@@ -79,9 +85,11 @@ export function EditInputItem({
       });
 
       onUpdate({ currentTaskId: response.task_id });
-    } catch (error) {
-      console.error('Failed to generate variants:', error);
+    } catch (err) {
+      console.error('Failed to generate variants:', err);
       onUpdate({
+        error:
+          err instanceof Error ? err.message : 'Failed to start generation',
         isAwaitingVariants: false,
         generationStartTime: null,
       });
@@ -144,6 +152,7 @@ export function EditInputItem({
       GENERATION_TIMEOUT_MS - (Date.now() - input.generationStartTime);
     if (timeRemaining <= 0) {
       onUpdate({
+        error: 'Generation timed out',
         isAwaitingVariants: false,
         generationStartTime: null,
       });
@@ -152,6 +161,7 @@ export function EditInputItem({
 
     const timeoutId = setTimeout(() => {
       onUpdate({
+        error: 'Generation timed out',
         isAwaitingVariants: false,
         generationStartTime: null,
       });
@@ -160,16 +170,17 @@ export function EditInputItem({
     return () => clearTimeout(timeoutId);
   }, [input.generationStartTime, onUpdate]);
 
-  // Handle task failure - clear awaiting state
+  // Handle task failure - clear awaiting state and set error
   useEffect(() => {
     if (taskStatus?.status === 'failed') {
       onUpdate({
+        error: taskStatus.error || 'Generation failed',
         isAwaitingVariants: false,
         generationStartTime: null,
         currentTaskId: null,
       });
     }
-  }, [taskStatus?.status, onUpdate]);
+  }, [taskStatus?.status, taskStatus?.error, onUpdate]);
 
   // Handle variant removal
   const handleRemoveVariant = useCallback(
@@ -204,6 +215,34 @@ export function EditInputItem({
         className="text-sm"
         disabled={isGenerating}
       />
+
+      {/* Error display */}
+      {input.error && (
+        <div className="border-destructive/30 bg-destructive/10 flex items-center gap-2 rounded border px-3 py-2 text-sm">
+          <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
+          {input.error.length > 60 ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-foreground flex-1 cursor-default">
+                  {input.error.slice(0, 60)}...
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md">
+                <p className="whitespace-pre-wrap">{input.error}</p>
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span className="text-foreground flex-1">{input.error}</span>
+          )}
+          <button
+            onClick={() => onUpdate({ error: null })}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Dismiss error"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

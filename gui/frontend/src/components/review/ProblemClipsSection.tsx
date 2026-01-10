@@ -95,6 +95,7 @@ export function ProblemClipsSection({
           speaker: clip.speaker,
           voiceId: clip.voiceId,
           provider: clip.provider,
+          stsId: clip.stsId,
           clips: [],
         });
       }

@@ -28,7 +28,8 @@ export function SpeakerGroupComponent({
         <User className="text-muted-foreground h-4 w-4" />
         <span className="font-medium">{group.speaker}</span>
         <Badge variant="secondary" className="text-xs">
-          {group.voiceId}
+          {/* Display human-readable stsId if available, otherwise fall back to voiceId */}
+          {group.stsId || group.voiceId}
         </Badge>
         <Badge variant="outline" className="text-xs">
           {group.provider}

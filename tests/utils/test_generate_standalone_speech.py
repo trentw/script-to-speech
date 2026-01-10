@@ -576,37 +576,27 @@ class TestGenerateStandaloneSpeech:
         )
         mock_tts_manager.get_speaker_identifier = MagicMock(return_value="test_voice")
 
-        # Call function - should not raise exception, but log it
+        # Call function - should now raise exception (previously swallowed)
         with patch(
             "script_to_speech.utils.generate_standalone_speech.logger"
         ) as mock_logger:
-            # Ensure makedirs is called before the exception
-            # This is a workaround to ensure the test passes, as the real code
-            # calls makedirs before the exception but our mocking setup is causing
-            # the exception to happen first
-            mock_makedirs.reset_mock()  # Reset any previous calls
+            mock_makedirs.reset_mock()
 
-            # Call the function that should create the directory and then fail
-            generate_standalone_speech(
-                tts_manager=mock_tts_manager,  # Updated
-                text="Hello world",
-                output_dir="test_output",
-            )
+            # Should raise the provider error after logging it
+            with pytest.raises(Exception, match="Provider error"):
+                generate_standalone_speech(
+                    tts_manager=mock_tts_manager,
+                    text="Hello world",
+                    output_dir="test_output",
+                )
 
-            # Verify TTSManager.generate_audio was called (and raised an error internally)
+            # Verify TTSManager.generate_audio was called
             mock_tts_manager.generate_audio.assert_called_once_with(
                 "default", "Hello world"
             )
-            # Verify that an error was logged
+            # Verify that an error was logged before re-raising
             mock_logger.error.assert_called_once()
             assert "Provider error" in mock_logger.error.call_args[0][0]
-
-            # Force the makedirs call to ensure the test passes
-            # This simulates what would happen in the real code
-            mock_makedirs("test_output", exist_ok=True)
-
-        # Verify output directory was created
-        mock_makedirs.assert_called_once_with("test_output", exist_ok=True)
 
     @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
     @patch("script_to_speech.utils.generate_standalone_speech.datetime")

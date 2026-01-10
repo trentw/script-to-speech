@@ -141,6 +141,7 @@ def generate_standalone_speech(
 
     except Exception as e:
         logger.error(f"Error generating speech: {e}")
+        raise
 
 
 def get_command_string(

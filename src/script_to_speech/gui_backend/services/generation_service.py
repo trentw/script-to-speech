@@ -292,6 +292,7 @@ class GenerationService:
     ) -> List[str]:
         """Generate audio files using the TTS manager."""
         generated_files = []
+        errors: List[str] = []  # Collect error messages for reporting
         request = task.request
 
         # Run generation in thread pool to avoid blocking
@@ -328,9 +329,16 @@ class GenerationService:
 
             except Exception as e:
                 logger.error(f"Failed to generate variant {variant}: {e}")
+                errors.append(str(e))
                 # Continue with other variants
 
         if not generated_files:
+            # Include actual error messages instead of generic message
+            if errors:
+                error_msg = errors[0]
+                if len(errors) > 1:
+                    error_msg = f"{errors[0]} (+{len(errors) - 1} more errors)"
+                raise RuntimeError(error_msg)
             raise RuntimeError("No audio files were generated successfully")
 
         return generated_files

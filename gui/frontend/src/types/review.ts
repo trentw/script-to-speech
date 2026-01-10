@@ -24,6 +24,11 @@ export interface ProblemClipInfo {
   dbfsLevel: number | null;
   /** Full speaker config for regeneration (contains provider, voice, speed, etc.) */
   speakerConfig: Record<string, unknown>;
+  /**
+   * Human-readable voice library identifier (e.g., "sarah" instead of "9BWtsMINqrJLrRacOk9x").
+   * Only available for voices defined in the voice library; null for custom voices.
+   */
+  stsId?: string | null;
 }
 
 /**
@@ -135,6 +140,11 @@ export interface SpeakerGroup {
   voiceId: string;
   /** TTS provider for this speaker */
   provider: string;
+  /**
+   * Human-readable voice library identifier (e.g., "sarah").
+   * Only available for voices defined in the voice library; null for custom voices.
+   */
+  stsId?: string | null;
   /** Clips belonging to this speaker */
   clips: ProblemClipInfo[];
 }
@@ -161,4 +171,6 @@ export interface EditInputInstance {
   variants: VariantInfo[];
   /** Set of processed audio URLs (for streaming deduplication) */
   processedUrls: Set<string>;
+  /** Error message from failed generation (null when no error) */
+  error?: string | null;
 }
