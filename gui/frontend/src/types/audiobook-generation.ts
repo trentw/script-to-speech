@@ -15,6 +15,7 @@ export type AudiobookGenerationPhase =
   | 'checking_silence'
   | 'generating'
   | 'concatenating'
+  | 'exporting'
   | 'finalizing'
   | 'completed'
   | 'failed';
@@ -124,6 +125,7 @@ export const PHASE_LABELS: Record<AudiobookGenerationPhase, string> = {
   checking_silence: 'Checking for silence',
   generating: 'Generating audio',
   concatenating: 'Concatenating files',
+  exporting: 'Exporting audiobook',
   finalizing: 'Finalizing audiobook',
   completed: 'Completed',
   failed: 'Failed',

@@ -290,6 +290,7 @@ class AudiobookGenerationPhase(str, Enum):
     CHECKING_SILENCE = "checking_silence"
     GENERATING = "generating"
     CONCATENATING = "concatenating"
+    EXPORTING = "exporting"
     FINALIZING = "finalizing"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -398,6 +399,9 @@ class ProblemClipInfo(CamelModel):
     text: str  # Full dialogue text
     dbfs_level: Optional[float] = None  # For silent clips, the detected dBFS level
     speaker_config: Dict[str, Any] = {}  # Full speaker config for regeneration
+    # Human-readable voice library identifier (e.g., "sarah" instead of "9BWtsMINqrJLrRacOk9x")
+    # Only available for voices defined in the voice library; None for custom voices
+    sts_id: Optional[str] = None
 
 
 class CacheMissesResponse(CamelModel):

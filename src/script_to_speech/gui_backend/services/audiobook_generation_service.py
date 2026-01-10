@@ -19,6 +19,7 @@ from script_to_speech.audio_generation.log_messages import (
 from script_to_speech.audio_generation.models import AudioGenerationTask
 from script_to_speech.audio_generation.models import TaskStatus as CoreTaskStatus
 from script_to_speech.audio_generation.processing import (
+    SilenceCheckProgressTracker,
     apply_cache_overrides,
     check_for_silence,
     plan_audio_generation,
@@ -30,6 +31,7 @@ from script_to_speech.audio_generation.reporting import (
     recheck_audio_files,
 )
 from script_to_speech.audio_generation.utils import (
+    ConcatenationProgressTracker,
     concatenate_tasks_batched,
     load_json_chunks,
 )
@@ -69,7 +71,8 @@ PHASE_WEIGHTS = {
     AudiobookGenerationPhase.APPLYING_OVERRIDES: (0.05, 0.08),
     AudiobookGenerationPhase.CHECKING_SILENCE: (0.08, 0.12),
     AudiobookGenerationPhase.GENERATING: (0.12, 0.90),
-    AudiobookGenerationPhase.CONCATENATING: (0.90, 0.98),
+    AudiobookGenerationPhase.CONCATENATING: (0.90, 0.96),
+    AudiobookGenerationPhase.EXPORTING: (0.96, 0.98),
     AudiobookGenerationPhase.FINALIZING: (0.98, 1.0),
     AudiobookGenerationPhase.COMPLETED: (1.0, 1.0),
     AudiobookGenerationPhase.FAILED: (0.0, 0.0),
@@ -103,8 +106,10 @@ class AudiobookGenerationTask:
         self.started_at: Optional[datetime] = None
         self.completed_at: Optional[datetime] = None
 
-        # Reference to download manager (for progress polling during GENERATING phase)
+        # References for progress polling (snapshot-based)
         self._download_manager: Optional[AudioDownloadManager] = None
+        self._silence_tracker: Optional[SilenceCheckProgressTracker] = None
+        self._concat_tracker: Optional[ConcatenationProgressTracker] = None
 
     def get_overall_progress(self) -> float:
         """Calculate overall progress based on phase and phase_progress."""
@@ -115,10 +120,34 @@ class AudiobookGenerationTask:
         """Set reference to download manager for progress polling."""
         self._download_manager = manager
 
+    def set_silence_tracker(
+        self, tracker: Optional[SilenceCheckProgressTracker]
+    ) -> None:
+        """Set reference to silence check progress tracker."""
+        self._silence_tracker = tracker
+
+    def set_concat_tracker(
+        self, tracker: Optional[ConcatenationProgressTracker]
+    ) -> None:
+        """Set reference to concatenation progress tracker."""
+        self._concat_tracker = tracker
+
     def get_progress_snapshot(self) -> Optional[Dict[str, Any]]:
         """Get progress snapshot from download manager if available."""
         if self._download_manager is not None:
             return self._download_manager.get_progress_snapshot()
+        return None
+
+    def get_silence_progress_snapshot(self) -> Optional[Dict[str, Any]]:
+        """Get progress snapshot from silence tracker if available."""
+        if self._silence_tracker is not None:
+            return self._silence_tracker.get_progress_snapshot()
+        return None
+
+    def get_concat_progress_snapshot(self) -> Optional[Dict[str, Any]]:
+        """Get progress snapshot from concatenation tracker if available."""
+        if self._concat_tracker is not None:
+            return self._concat_tracker.get_progress_snapshot()
         return None
 
 
@@ -215,6 +244,36 @@ class AudiobookGenerationService:
 
         if not task:
             return None
+
+        # Poll silence tracker if in CHECKING_SILENCE phase
+        if task.phase == AudiobookGenerationPhase.CHECKING_SILENCE:
+            snapshot = task.get_silence_progress_snapshot()
+            if snapshot:
+                task.phase_progress = snapshot.get("progress", 0.0)
+
+        # Poll concatenation tracker if in CONCATENATING phase
+        # (also check for phase transition to EXPORTING based on tracker stage)
+        if task.phase == AudiobookGenerationPhase.CONCATENATING:
+            snapshot = task.get_concat_progress_snapshot()
+            if snapshot:
+                stage = snapshot.get("stage", "clips")
+                if stage == "exporting":
+                    # Transition to EXPORTING phase
+                    task.phase = AudiobookGenerationPhase.EXPORTING
+                    task.phase_progress = 0.5  # Exporting is in progress
+                    task.message = "Exporting final audiobook"
+                else:
+                    task.phase_progress = snapshot.get("progress", 0.0)
+                    if stage == "clips":
+                        task.message = "Processing audio clips"
+                    elif stage == "batches":
+                        task.message = "Concatenating batches"
+
+        # Poll concatenation tracker for EXPORTING phase progress
+        if task.phase == AudiobookGenerationPhase.EXPORTING:
+            # EXPORTING phase progress stays at 0.5 until export completes
+            # (export is a single blocking operation)
+            pass
 
         # Build stats from download manager snapshot if available
         stats = task.stats
@@ -483,10 +542,18 @@ class AudiobookGenerationService:
             task.phase_progress = 0.0
             task.message = "Checking for silent audio files"
 
+            # Create tracker for GUI polling (snapshot-based)
+            silence_tracker = SilenceCheckProgressTracker()
+            task.set_silence_tracker(silence_tracker)
+
             silence_reporting_state = check_for_silence(
                 tasks=all_tasks,
                 silence_threshold=request.silence_threshold,
+                progress_tracker=silence_tracker,
             )
+
+            # Clear tracker reference after completion
+            task.set_silence_tracker(None)
 
             # Merge silence report state into combined state
             combined_reporting_state.silent_clips.update(
@@ -584,16 +651,23 @@ class AudiobookGenerationService:
             task.phase_progress = 0.0
             task.message = "Concatenating audio files"
 
+            # Create tracker for GUI polling (snapshot-based)
+            concat_tracker = ConcatenationProgressTracker()
+            task.set_concat_tracker(concat_tracker)
+
             concatenate_tasks_batched(
                 tasks=all_tasks,
                 output_file=str(output_file),
                 batch_size=250,
                 gap_duration_ms=request.gap_ms,
+                progress_tracker=concat_tracker,
             )
 
-            task.phase_progress = 1.0
+            # Clear tracker reference after completion
+            task.set_concat_tracker(None)
 
             # === PHASE 6: FINALIZE ===
+            # (Ensure we're in FINALIZING phase - may have transitioned to EXPORTING during concat)
             task.phase = AudiobookGenerationPhase.FINALIZING
             task.phase_progress = 0.0
             task.message = "Setting ID3 tags"

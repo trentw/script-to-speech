@@ -23,6 +23,51 @@ DELIMITER = "~~"
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.processing")
 
+
+class SilenceCheckProgressTracker:
+    """Thread-safe progress tracker for silence checking (snapshot-based polling).
+
+    This tracker follows the same pattern as AudioDownloadManager.get_progress_snapshot()
+    to provide pull-based progress updates for GUI polling.
+    """
+
+    def __init__(self, total_tasks: int = 0):
+        """Initialize tracker with optional total task count.
+
+        Args:
+            total_tasks: Number of tasks to check. Can be updated later.
+        """
+        self.total_tasks = total_tasks
+        self.completed_tasks = 0
+        self._lock = threading.Lock()
+
+    def set_total(self, total: int) -> None:
+        """Update total task count (thread-safe)."""
+        with self._lock:
+            self.total_tasks = total
+
+    def update(self, completed: int) -> None:
+        """Update completed count (thread-safe)."""
+        with self._lock:
+            self.completed_tasks = completed
+
+    def get_progress_snapshot(self) -> Dict[str, Any]:
+        """Get thread-safe snapshot for GUI polling.
+
+        Returns:
+            Dict with total_tasks, completed_tasks, and progress (0.0-1.0)
+        """
+        with self._lock:
+            progress = (
+                self.completed_tasks / self.total_tasks if self.total_tasks > 0 else 0.0
+            )
+            return {
+                "total_tasks": self.total_tasks,
+                "completed_tasks": self.completed_tasks,
+                "progress": progress,
+            }
+
+
 # Download manager constants
 INITIAL_BACKOFF_SECONDS = 10.0  # Initial backoff time when rate limited
 BACKOFF_FACTOR = 2.0  # Factor to multiply backoff time by on each retry
@@ -286,6 +331,7 @@ def apply_cache_overrides(
 def check_for_silence(
     tasks: List[AudioGenerationTask],
     silence_threshold: Optional[float],
+    progress_tracker: Optional[SilenceCheckProgressTracker] = None,
 ) -> ReportingState:
     """
     Checks existing cache files for silence.
@@ -294,6 +340,7 @@ def check_for_silence(
     Args:
         tasks: List of AudioGenerationTask objects from plan_audio_generation.
         silence_threshold: dBFS threshold for detecting silence.
+        progress_tracker: Optional tracker for GUI polling (snapshot-based progress).
 
     Returns:
         A ReportingState object containing info about silent clips.
@@ -314,6 +361,10 @@ def check_for_silence(
         logger.info("No tasks need silence checking.")
         return reporting_state
 
+    # Initialize tracker total for GUI polling
+    if progress_tracker:
+        progress_tracker.set_total(len(tasks_to_check))
+
     # Use tqdm with context manager for better progress bar display
     with tqdm(
         total=len(tasks_to_check),
@@ -324,7 +375,7 @@ def check_for_silence(
         mininterval=0.1,  # Update more frequently
         dynamic_ncols=True,  # Adapt to terminal resizing
     ) as progress_bar:
-        for task in tasks_to_check:
+        for idx, task in enumerate(tasks_to_check):
             # Remove the per-task logging that would clutter the console
             # logger.info(f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)")
             logger.debug(
@@ -356,6 +407,10 @@ def check_for_silence(
 
             # Update progress bar after each iteration
             progress_bar.update(1)
+
+            # Update tracker for GUI polling
+            if progress_tracker:
+                progress_tracker.update(idx + 1)
 
     logger.info(
         f"Silence check complete. Found {len(reporting_state.silent_clips)} silent clips."

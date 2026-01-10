@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import sys
+import threading
 import traceback
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -17,11 +18,98 @@ from .models import AudioClipInfo, AudioGenerationTask, ReportingState
 logger = get_screenplay_logger("audio_generation.utils")
 
 
+class ConcatenationProgressTracker:
+    """Thread-safe progress tracker for audio concatenation (snapshot-based polling).
+
+    This tracker follows the same pattern as AudioDownloadManager.get_progress_snapshot()
+    to provide pull-based progress updates for GUI polling.
+
+    Tracks three stages:
+    - "clips": Processing individual audio clips into batches (~70% of phase)
+    - "batches": Concatenating batch files together (~25% of phase)
+    - "exporting": Final MP3 export (~5% of phase)
+    """
+
+    def __init__(self) -> None:
+        """Initialize tracker."""
+        self.total_clips = 0
+        self.processed_clips = 0
+        self.total_batches = 0
+        self.concatenated_batches = 0
+        self.stage = "clips"  # "clips", "batches", "exporting"
+        self._lock = threading.Lock()
+
+    def set_clip_total(self, total: int) -> None:
+        """Set total clips to process and enter clips stage."""
+        with self._lock:
+            self.total_clips = total
+            self.processed_clips = 0
+            self.stage = "clips"
+
+    def update_clips(self, processed: int) -> None:
+        """Update processed clip count."""
+        with self._lock:
+            self.processed_clips = processed
+
+    def set_batch_total(self, total: int) -> None:
+        """Set total batches and enter batches stage."""
+        with self._lock:
+            self.total_batches = total
+            self.concatenated_batches = 0
+            self.stage = "batches"
+
+    def update_batches(self, concatenated: int) -> None:
+        """Update concatenated batch count."""
+        with self._lock:
+            self.concatenated_batches = concatenated
+
+    def set_exporting(self) -> None:
+        """Enter the exporting stage."""
+        with self._lock:
+            self.stage = "exporting"
+
+    def get_progress_snapshot(self) -> Dict[str, Any]:
+        """Get thread-safe snapshot for GUI polling.
+
+        Returns:
+            Dict with stage, counts, and progress (0.0-1.0 within concatenation phase)
+        """
+        with self._lock:
+            if self.stage == "clips":
+                # Clips processing is ~70% of concatenation phase
+                clip_progress = (
+                    self.processed_clips / self.total_clips
+                    if self.total_clips > 0
+                    else 0.0
+                )
+                progress = 0.7 * clip_progress
+            elif self.stage == "batches":
+                # Batch concatenation is ~25% (70% to 95%)
+                batch_progress = (
+                    self.concatenated_batches / self.total_batches
+                    if self.total_batches > 0
+                    else 0.0
+                )
+                progress = 0.7 + 0.25 * batch_progress
+            else:  # exporting
+                progress = 0.95
+
+            return {
+                "stage": self.stage,
+                "total_clips": self.total_clips,
+                "processed_clips": self.processed_clips,
+                "total_batches": self.total_batches,
+                "concatenated_batches": self.concatenated_batches,
+                "progress": progress,
+            }
+
+
 def concatenate_tasks_batched(
     tasks: List[AudioGenerationTask],
     output_file: str,
     batch_size: int = 250,
     gap_duration_ms: int = 500,
+    progress_tracker: Optional[ConcatenationProgressTracker] = None,
 ) -> None:
     """
     Concatenate audio from tasks using pydub with batch processing for improved performance.
@@ -32,6 +120,7 @@ def concatenate_tasks_batched(
         output_file: Path for the output audio file
         batch_size: Number of clips to process in each batch
         gap_duration_ms: Duration of silence (in ms) to add between clips
+        progress_tracker: Optional tracker for GUI polling (snapshot-based progress)
     """
     logger.info(f"\nStarting batched audio concatenation of {len(tasks)} tasks")
     logger.info(f"Using batch size: {batch_size} clips per batch")
@@ -60,6 +149,10 @@ def concatenate_tasks_batched(
         valid_tasks[i : i + batch_size] for i in range(0, len(valid_tasks), batch_size)
     ]
     logger.debug(f"Divided into {len(batches)} batches")
+
+    # Initialize tracker for GUI polling
+    if progress_tracker:
+        progress_tracker.set_clip_total(len(valid_tasks))
 
     try:
         # Create temporary directory for batch files
@@ -105,6 +198,10 @@ def concatenate_tasks_batched(
                         total_clips_processed += 1
                         progress_bar.update(1)
 
+                        # Update tracker for GUI polling
+                        if progress_tracker:
+                            progress_tracker.update_clips(total_clips_processed)
+
                     except Exception as e:
                         logger.error(
                             f"Failed to load audio segment for task {task.idx} from file {task.cache_filepath}: {e}"
@@ -131,15 +228,29 @@ def concatenate_tasks_batched(
         logger.info(f"Concatenating {len(batch_files)} batch files into final output")
         final_audio = AudioSegment.empty()
 
-        for batch_file in tqdm(
-            batch_files,
-            desc="Concatenating Batches",
-            unit="batch",
-            file=sys.stderr,
-            leave=False,
+        # Enter batches stage for GUI polling
+        if progress_tracker:
+            progress_tracker.set_batch_total(len(batch_files))
+
+        for batch_idx, batch_file in enumerate(
+            tqdm(
+                batch_files,
+                desc="Concatenating Batches",
+                unit="batch",
+                file=sys.stderr,
+                leave=False,
+            )
         ):
             batch_segment = AudioSegment.from_mp3(batch_file)
             final_audio += batch_segment
+
+            # Update tracker for GUI polling
+            if progress_tracker:
+                progress_tracker.update_batches(batch_idx + 1)
+
+        # Enter exporting stage for GUI polling
+        if progress_tracker:
+            progress_tracker.set_exporting()
 
         # Export final audio
         logger.info(
