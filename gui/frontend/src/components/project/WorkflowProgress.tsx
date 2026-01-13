@@ -77,11 +77,11 @@ export function WorkflowProgress({
       label: 'Generate Audio',
       icon: PlayCircle,
       isComplete: (status) => status.audioGenerated,
-      isEnabled: (status) => status.voicesCast,
-      comingSoon: true,
+      isEnabled: (status) => status.hasJson,
       actionButton: {
         label: 'Generate',
-        variant: 'ghost',
+        route: '/project/generate',
+        variant: 'default',
       },
     },
   ];

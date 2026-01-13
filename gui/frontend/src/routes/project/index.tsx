@@ -189,7 +189,7 @@ function ProjectOverview() {
           description="Generate the complete audiobook"
           icon={Play}
           href="/project/generate"
-          status="disabled"
+          status="ready"
         />
       </div>
     </div>

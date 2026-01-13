@@ -126,8 +126,7 @@ export function ProjectModeNavigation({
           label: 'Generate Audio',
           to: '/project/generate',
           icon: Mic,
-          enabled: status?.voicesCast ?? false,
-          tooltip: !status?.voicesCast ? 'Cast voices first' : undefined,
+          enabled: true,
         },
         {
           label: 'Review Audio',
