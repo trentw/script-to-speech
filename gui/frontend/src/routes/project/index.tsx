@@ -3,6 +3,7 @@ import {
   FileText,
   Folder,
   Play,
+  Search,
   Settings2,
   TestTube,
   Users,
@@ -189,6 +190,15 @@ function ProjectOverview() {
           description="Generate the complete audiobook"
           icon={Play}
           href="/project/generate"
+          status="ready"
+        />
+
+        {/* Review Audio */}
+        <ProjectToolCard
+          title="Review Audio"
+          description="Review and regenerate individual audio clips"
+          icon={Search}
+          href="/project/review"
           status="ready"
         />
       </div>
