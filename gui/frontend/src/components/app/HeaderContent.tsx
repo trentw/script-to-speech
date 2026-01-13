@@ -19,7 +19,7 @@ export const HeaderContent = ({
   showParseNewButton,
 }: HeaderContentProps) => {
   const { isMobile } = useViewportSize();
-  const { toggleSidebar, setActiveModal } = useLayout();
+  const { toggleSidebar, setActiveModal, openSettings } = useLayout();
   const routerState = useRouterState();
 
   // Get title from current route's staticData, checking parent routes if needed
@@ -49,10 +49,13 @@ export const HeaderContent = ({
       showNavToggle={true}
       onNavToggle={toggleSidebar}
       // Settings button always available (shows on desktop and mobile)
-      onSettingsClick={() => setActiveModal('settings')}
+      // Opens directly to API Keys section
+      onSettingsClick={() => openSettings('api-keys')}
       // History button only on mobile TTS view
       onHistoryClick={
-        showActionButtons ? () => setActiveModal('history') : undefined
+        showActionButtons
+          ? () => setActiveModal({ type: 'history' })
+          : undefined
       }
       showActionButtons={true}
     >

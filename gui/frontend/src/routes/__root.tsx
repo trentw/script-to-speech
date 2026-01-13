@@ -3,10 +3,13 @@ import {
   Outlet,
   useNavigate,
   useRouterState,
+  useSearch,
 } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Toaster } from '@/components/ui/sonner';
+import type { SettingsSection } from '@/stores/appStore';
 
 import { ErrorDisplay } from '../components/app/ErrorDisplay';
 import { FooterContent } from '../components/app/FooterContent';
@@ -36,10 +39,28 @@ import {
 import type { VoiceEntry } from '../types';
 import type { RouteStaticData } from '../types/route-metadata';
 
+// Search params type for settings deep linking
+type RootSearchParams = {
+  settings?: SettingsSection;
+};
+
+// Valid settings sections for URL validation
+const VALID_SETTINGS_SECTIONS: SettingsSection[] = ['api-keys', 'debug'];
+
 // Create the root route with context
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
   errorComponent: RouteError,
+  validateSearch: (search: Record<string, unknown>): RootSearchParams => {
+    const settings = search.settings;
+    if (
+      typeof settings === 'string' &&
+      VALID_SETTINGS_SECTIONS.includes(settings as SettingsSection)
+    ) {
+      return { settings: settings as SettingsSection };
+    }
+    return {};
+  },
 });
 
 function RootComponent() {
@@ -47,10 +68,32 @@ function RootComponent() {
   const { isMobile } = useViewportSize();
   const routerState = useRouterState();
   const navigate = useNavigate();
+  const { settings: settingsParam } = useSearch({ from: '__root__' });
 
   // Use Layout state for responsive behavior
-  const { sidebarExpanded, activeModal, toggleSidebar, closeModal } =
-    useLayout();
+  const {
+    sidebarExpanded,
+    activeModal,
+    toggleSidebar,
+    openSettings,
+    closeModal,
+  } = useLayout();
+
+  // Bidirectional sync between URL search params and store
+  // 1. URL -> Store: Open settings when URL has settings param
+  useEffect(() => {
+    if (settingsParam && activeModal?.type !== 'settings') {
+      openSettings(settingsParam);
+    }
+  }, [settingsParam, activeModal, openSettings]);
+
+  // 2. Store -> URL: Update URL when settings modal closes
+  useEffect(() => {
+    // If settings modal was closed but URL still has settings param, clear it
+    if (activeModal?.type !== 'settings' && settingsParam) {
+      navigate({ search: {}, replace: true });
+    }
+  }, [activeModal, settingsParam, navigate]);
 
   // Use Screenplay state
   const { resetScreenplayState } = useScreenplay();
@@ -163,7 +206,7 @@ function RootComponent() {
         currentStaticData?.ui?.mobileDrawers?.includes('settings') && (
           <MobileDrawer
             title="Settings"
-            isOpen={activeModal === 'settings'}
+            isOpen={activeModal?.type === 'settings'}
             onClose={closeModal}
           >
             <SettingsContent
@@ -183,7 +226,7 @@ function RootComponent() {
         currentStaticData?.ui?.mobileDrawers?.includes('history') && (
           <MobileDrawer
             title="History"
-            isOpen={activeModal === 'history'}
+            isOpen={activeModal?.type === 'history'}
             onClose={closeModal}
           >
             <HistoryContent />

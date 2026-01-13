@@ -28,13 +28,14 @@ export function ApiKeyWarning({
   provider,
   providerDisplayName,
 }: ApiKeyWarningProps) {
-  const { setActiveModal } = useLayout();
+  const { openSettings } = useLayout();
 
   const displayName = providerDisplayName || provider;
 
   const handleOpenSettings = () => {
     onClose();
-    setActiveModal('settings');
+    // Open settings directly to API keys section
+    openSettings('api-keys');
   };
 
   return (

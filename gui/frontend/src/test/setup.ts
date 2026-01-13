@@ -7,6 +7,32 @@ import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 import { handlers } from './mocks/handlers';
 
+// Mock localStorage for tests (jsdom's implementation may be incomplete in forked processes)
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: (key: string) => store[key] ?? null,
+    setItem: (key: string, value: string) => {
+      store[key] = String(value);
+    },
+    removeItem: (key: string) => {
+      delete store[key];
+    },
+    clear: () => {
+      store = {};
+    },
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: (index: number) => Object.keys(store)[index] ?? null,
+  };
+})();
+
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});
+
 // Set React 19 act environment flag
 // @ts-expect-error - React 19 internal flag
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

@@ -47,17 +47,27 @@ interface UISlice {
   clearError: () => void;
 }
 
+// Settings section identifiers for URL deep linking
+type SettingsSection = 'api-keys' | 'debug';
+
+// Active modal state with section support for settings
+type ActiveModal =
+  | { type: 'settings'; section?: SettingsSection }
+  | { type: 'history' }
+  | null;
+
 // Layout slice - handles responsive layout state
 interface LayoutSlice {
   viewportSize: 'mobile' | 'tablet' | 'desktop';
   sidebarExpanded: boolean;
-  activeModal: 'settings' | 'history' | null;
+  activeModal: ActiveModal;
 
   // Actions
   setViewportSize: (size: 'mobile' | 'tablet' | 'desktop') => void;
   setSidebarExpanded: (expanded: boolean) => void;
   toggleSidebar: () => void;
-  setActiveModal: (modal: 'settings' | 'history' | null) => void;
+  setActiveModal: (modal: ActiveModal) => void;
+  openSettings: (section?: SettingsSection) => void;
   closeModal: () => void;
 }
 
@@ -263,6 +273,14 @@ const useAppStore = create<AppStore>()(
 
         setActiveModal: (modal) => {
           set({ activeModal: modal }, false, 'layout/setActiveModal');
+        },
+
+        openSettings: (section) => {
+          set(
+            { activeModal: { type: 'settings', section } },
+            false,
+            'layout/openSettings'
+          );
         },
 
         closeModal: () => {
@@ -503,6 +521,7 @@ export const useLayout = () =>
       setSidebarExpanded: state.setSidebarExpanded,
       toggleSidebar: state.toggleSidebar,
       setActiveModal: state.setActiveModal,
+      openSettings: state.openSettings,
       closeModal: state.closeModal,
     }))
   );
@@ -564,7 +583,9 @@ export const useHasProject = (): boolean => {
 };
 
 // Export types for external use
+export type { AppStore };
 export type { ProjectState };
+export type { ActiveModal, SettingsSection };
 export type { ProjectMetaStore as ProjectMeta } from '../types/project';
 
 // Export the store for debugging

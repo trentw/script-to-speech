@@ -59,6 +59,8 @@ export function createStore(initialState?: Partial<AppStore>) {
     toggleSidebar: () =>
       set((state) => ({ sidebarExpanded: !state.sidebarExpanded })),
     setActiveModal: (modal) => set({ activeModal: modal }),
+    openSettings: (section) =>
+      set({ activeModal: { type: 'settings', section } }),
     closeModal: () => set({ activeModal: null }),
 
     // Screenplay slice actions

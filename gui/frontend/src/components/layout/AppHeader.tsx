@@ -1,17 +1,9 @@
-import { Bug, History, Menu, Settings } from 'lucide-react';
+import { History, Menu, Settings } from 'lucide-react';
 import React from 'react';
 
 import { Button } from '@/components/ui/button';
 import { appButtonVariants } from '@/components/ui/button-variants';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import { WorkspaceDebugInfo } from '@/components/WorkspaceDebugInfo';
 import { useViewportSize } from '@/hooks/useViewportSize';
 import { cn } from '@/lib/utils';
 
@@ -95,27 +87,6 @@ export function AppHeader({
           <div className="h-2 w-2 rounded-full bg-green-500" />
           {!isMobile && <span>Connected</span>}
         </div>
-
-        {/* Debug Info Button */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 p-0"
-              title="Debug Info"
-            >
-              <Bug className="h-4 w-4" />
-              <span className="sr-only">Debug Info</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Workspace Debug Info</DialogTitle>
-            </DialogHeader>
-            <WorkspaceDebugInfo />
-          </DialogContent>
-        </Dialog>
 
         {showActionButtons && (
           <>
