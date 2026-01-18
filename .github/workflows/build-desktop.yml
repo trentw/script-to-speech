@@ -1,0 +1,123 @@
+name: 'Build Desktop App'
+
+on:
+  workflow_dispatch:  # Manual trigger for testing
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macOS ARM64 (Apple Silicon)
+          - platform: 'macos-latest'
+            args: '--target aarch64-apple-darwin'
+            rust_target: 'aarch64-apple-darwin'
+            name: 'macOS-ARM64'
+          # macOS x86_64 (Intel) - macos-13 is Intel-based
+          - platform: 'macos-13'
+            args: '--target x86_64-apple-darwin'
+            rust_target: 'x86_64-apple-darwin'
+            name: 'macOS-Intel'
+          # Linux x86_64
+          - platform: 'ubuntu-22.04'
+            args: ''
+            rust_target: ''
+            name: 'Linux-x64'
+          # Windows x86_64
+          - platform: 'windows-latest'
+            args: ''
+            rust_target: ''
+            name: 'Windows-x64'
+
+    runs-on: ${{ matrix.platform }}
+    name: Build (${{ matrix.name }})
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Linux dependencies
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf
+
+      # Node.js + pnpm
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      # Rust
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust_target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './gui/frontend/src-tauri -> target'
+
+      # Python + Backend Sidecar
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Install Python dependencies
+        run: uv pip install -e ".[dev]" --system
+
+      - name: Build backend sidecar
+        run: uv run python build_backend.py
+
+      # Frontend
+      - name: Install frontend dependencies
+        working-directory: gui/frontend
+        run: pnpm install
+
+      # Build Tauri App
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: gui/frontend
+          args: ${{ matrix.args }}
+          tagName: v__VERSION__
+          releaseName: 'Script to Speech v__VERSION__'
+          releaseBody: |
+            ## Downloads
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `Script to Speech_*_aarch64.dmg` |
+            | macOS (Intel) | `Script to Speech_*_x64.dmg` |
+            | Windows | `Script to Speech_*_x64-setup.exe` or `.msi` |
+            | Linux | `Script to Speech_*.AppImage` or `.deb` |
+
+            ### Installation Notes
+            - **macOS**: You may need to right-click and select "Open" the first time (unsigned app)
+            - **Linux**: Make AppImage executable: `chmod +x *.AppImage`
+          releaseDraft: true
+          prerelease: false
