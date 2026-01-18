@@ -15,6 +15,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import PyInstaller.__main__
+
 
 def get_target_triple():
     """
@@ -98,10 +100,10 @@ def main():
         print(f"❌ Error: .spec file not found at {spec_file}")
         sys.exit(1)
 
-    # PyInstaller command using .spec file
+    # PyInstaller arguments using .spec file
     # The .spec file contains all configuration including hidden imports via collect_submodules()
-    cmd = [
-        "pyinstaller",
+    # Using PyInstaller's official programmatic API (no subprocess, no PATH issues)
+    pyinstaller_args = [
         str(spec_file),
         "--distpath",
         str(dist_dir),
@@ -109,11 +111,11 @@ def main():
         str(build_dir),
     ]
 
-    print(f"🚀 Running PyInstaller...")
-    print(f"   Command: {' '.join(cmd)}")
+    print("🚀 Running PyInstaller...")
+    print(f"   Args: {' '.join(pyinstaller_args)}")
 
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        PyInstaller.__main__.run(pyinstaller_args)
         print("✅ Build completed successfully!")
 
         # Get platform target triple for Tauri sidecar naming
@@ -165,11 +167,11 @@ def main():
         else:
             print("⚠️  Warning: Executable not found in expected location")
 
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Build failed with exit code {e.returncode}")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
-        sys.exit(1)
+    except SystemExit as e:
+        # PyInstaller raises SystemExit on failure
+        if e.code != 0:
+            print(f"❌ Build failed with exit code {e.code}")
+            sys.exit(1)
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         sys.exit(1)
