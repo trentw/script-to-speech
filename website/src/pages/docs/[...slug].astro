@@ -1,0 +1,41 @@
+---
+import { getCollection } from 'astro:content';
+import DocsLayout from '@/layouts/DocsLayout.astro';
+
+// Map of slug to display title (for files without frontmatter)
+const titleMap: Record<string, string> = {
+  readme: 'Script to Speech',
+  guide: 'GUI User Guide',
+  providers: 'TTS Providers',
+  troubleshooting: 'Troubleshooting',
+  privacy: 'Privacy Policy',
+};
+
+// Map of slug to description
+const descriptionMap: Record<string, string> = {
+  readme: 'Convert screenplays into multi-voiced audiobooks using AI text-to-speech.',
+  guide: 'Learn how to use the Script to Speech desktop application.',
+  providers: 'Configure OpenAI, ElevenLabs, Cartesia, Minimax, and Zonos TTS providers.',
+  troubleshooting: 'Solutions for common issues with Script to Speech.',
+  privacy: 'Privacy policy explaining how Script to Speech handles your data.',
+};
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => ({
+    params: { slug: doc.slug },
+    props: { doc },
+  }));
+}
+
+const { doc } = Astro.props;
+const { Content } = await doc.render();
+
+// Get title from frontmatter or fallback to map
+const title = doc.data?.title || titleMap[doc.slug] || doc.slug;
+const description = doc.data?.description || descriptionMap[doc.slug];
+---
+
+<DocsLayout title={title} description={description}>
+  <Content />
+</DocsLayout>

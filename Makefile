@@ -1,6 +1,7 @@
 .PHONY: gui-server gui-dev gui-desktop gui-build gui-build-debug gui-build-release gui-build-backend kill-server
 .PHONY: frontend-test frontend-test-ui frontend-test-coverage frontend-lint frontend-lint-fix
 .PHONY: frontend-format frontend-type-check frontend-analyze frontend-type-coverage help
+.PHONY: website-dev website-build website-preview
 
 help: ## Show available commands
 	@echo "Script-to-Speech GUI Commands:"
@@ -23,6 +24,11 @@ help: ## Show available commands
 	@echo "  make frontend-type-check - Run TypeScript type checking"
 	@echo "  make frontend-analyze   - Generate bundle analysis"
 	@echo "  make frontend-type-coverage - Check TypeScript type coverage"
+	@echo ""
+	@echo "Website Commands:"
+	@echo "  make website-dev        - Start website development server"
+	@echo "  make website-build      - Build website for production"
+	@echo "  make website-preview    - Preview production build locally"
 	@echo ""
 	@echo "Development workflow:"
 	@echo "  Terminal 1: make gui-server"
@@ -92,3 +98,13 @@ frontend-analyze: ## Generate bundle analysis
 
 frontend-type-coverage: ## Check TypeScript type coverage
 	cd gui/frontend && pnpm run type-coverage
+
+# Website Commands
+website-dev: ## Start website development server
+	cd website && pnpm run dev
+
+website-build: ## Build website for production
+	cd website && pnpm run build
+
+website-preview: ## Preview production build locally
+	cd website && pnpm run preview

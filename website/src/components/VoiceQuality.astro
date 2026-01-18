@@ -1,0 +1,61 @@
+---
+const qualities = [
+  {
+    title: 'Natural & Expressive',
+    description: 'Human-like voices with natural inflection, emotion, and timing that bring your characters to life.',
+    icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>`,
+  },
+  {
+    title: 'Diverse Voice Library',
+    description: 'Choose from a wide range of voices with different ages, accents, and speaking styles to match your characters.',
+    icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>`,
+  },
+  {
+    title: 'Broadcast Quality',
+    description: 'Professional-grade audio output suitable for podcasts, audiobooks, and production use.',
+    icon: `<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+    </svg>`,
+  },
+];
+---
+
+<section class="py-24 bg-surface-dark">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Section header -->
+    <div class="text-center mb-16">
+      <div class="inline-flex items-center gap-2 px-4 py-2 bg-brand/10 rounded-full text-brand text-sm font-medium mb-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+        </svg>
+        Premium Voices
+      </div>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+        Voices That Sound Real
+      </h2>
+      <p class="text-xl text-gray-400 max-w-2xl mx-auto">
+        Instant table reads, any time you need them.
+        Hear if your script is working before you share it with the world.
+      </p>
+    </div>
+
+    <!-- Quality highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {
+        qualities.map((quality) => (
+          <div class="text-center p-6">
+            <div class="w-14 h-14 bg-brand/10 rounded-xl flex items-center justify-center text-brand mx-auto mb-4">
+              <Fragment set:html={quality.icon} />
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">{quality.title}</h3>
+            <p class="text-gray-400">{quality.description}</p>
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
