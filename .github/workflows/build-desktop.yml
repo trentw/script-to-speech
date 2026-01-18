@@ -76,20 +76,12 @@ jobs:
         with:
           workspaces: "./gui/frontend/src-tauri -> target"
 
-      # Python + Backend Sidecar
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
+      # Python + Backend Sidecar (uv-managed - no separate Python setup needed)
       - name: Install uv
         uses: astral-sh/setup-uv@v4
 
-      - name: Install Python dependencies
-        run: uv pip install -e ".[dev]" --system
-
       - name: Build backend sidecar
-        run: python build_backend.py
+        run: uv run python build_backend.py
         env:
           PYTHONIOENCODING: utf-8
 
