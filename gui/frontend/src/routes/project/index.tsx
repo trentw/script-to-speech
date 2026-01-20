@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
+  FileAudio,
   FileText,
   Folder,
   Play,
@@ -8,6 +9,7 @@ import {
   TestTube,
   Users,
 } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { RouteError } from '@/components/errors';
 import { Badge } from '@/components/ui/badge';
@@ -20,8 +22,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { UniversalAudioPlayer } from '@/components/UniversalAudioPlayer';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { getProjectProgressStatus } from '@/lib/project-status';
+import { apiService } from '@/services/api';
+import {
+  useAudioCommands,
+  useAudioState,
+} from '@/services/AudioService';
 import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 
@@ -62,6 +70,7 @@ function ProjectOverview() {
         hasVoiceConfig: status.hasVoiceConfig,
         speakerCount: status.speakerCount,
         voicesAssigned: status.voicesAssigned,
+        hasOutputMp3: status.hasOutputMp3,
       })
     : null;
 
@@ -145,6 +154,14 @@ function ProjectOverview() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Generated Audiobook Card - shows when audio exists */}
+      {status?.hasOutputMp3 && (
+        <GeneratedAudioCard
+          projectName={project.screenplayName}
+          outputPath={project.outputPath}
+        />
+      )}
 
       {/* Project Tools Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -258,6 +275,52 @@ function ProjectToolCard({
             Open Tool
           </a>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function GeneratedAudioCard({
+  projectName,
+  outputPath,
+}: {
+  projectName: string;
+  outputPath: string;
+}) {
+  const { loadWithMetadata } = useAudioCommands();
+  const { src } = useAudioState();
+
+  // Construct audio URL for the output MP3
+  const outputFilePath = `${outputPath}/${projectName}.mp3`;
+  const audioUrl = apiService.getScreenplayDownloadFromPathUrl(
+    outputFilePath,
+    `${projectName}.mp3`
+  );
+
+  // Load audio when component mounts or URL changes
+  useEffect(() => {
+    if (audioUrl && audioUrl !== src) {
+      loadWithMetadata(audioUrl, {
+        primaryText: projectName,
+        secondaryText: 'Generated Audiobook',
+        downloadFilename: `${projectName}.mp3`,
+      });
+    }
+  }, [audioUrl, loadWithMetadata, projectName, src]);
+
+  return (
+    <Card className="border-purple-200 bg-purple-50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileAudio className="h-5 w-5 text-purple-600" />
+          Generated Audiobook
+        </CardTitle>
+        <CardDescription>
+          Your audiobook is ready for playback and download
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <UniversalAudioPlayer />
       </CardContent>
     </Card>
   );

@@ -5,6 +5,7 @@ interface ProgressStatusInput {
   hasVoiceConfig: boolean;
   speakerCount?: number;
   voicesAssigned?: number;
+  hasOutputMp3?: boolean;
 }
 
 export interface ProgressStatus {
@@ -42,7 +43,8 @@ export function isVoiceCastingComplete(
 export function getProjectProgressStatus(
   input: ProgressStatusInput
 ): ProgressStatus {
-  const { hasJson, hasVoiceConfig, speakerCount, voicesAssigned } = input;
+  const { hasJson, hasVoiceConfig, speakerCount, voicesAssigned, hasOutputMp3 } =
+    input;
 
   // Not started - no parsed screenplay
   if (!hasJson) {
@@ -71,6 +73,15 @@ export function getProjectProgressStatus(
         stage: 'casting',
       };
     }
+  }
+
+  // Check if audio generation is complete
+  if (hasOutputMp3) {
+    return {
+      label: 'Generation Complete',
+      badgeClassName: 'border-purple-300 bg-purple-100 text-purple-700',
+      stage: 'complete',
+    };
   }
 
   // All voices assigned, ready to generate
