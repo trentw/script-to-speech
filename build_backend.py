@@ -63,6 +63,13 @@ def get_target_triple():
 
 def main():
     """Build the GUI backend executable using PyInstaller."""
+    # Reconfigure stdout/stderr to handle Unicode on Windows
+    # Uses 'backslashreplace' to gracefully degrade emojis on systems that can't display them
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='backslashreplace')
+
     print("🔨 Building Script-to-Speech GUI Backend executable...")
 
     # Ensure we're in the project root

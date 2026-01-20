@@ -22,8 +22,8 @@ jobs:
             args: "--target aarch64-apple-darwin"
             rust_target: "aarch64-apple-darwin"
             name: "macOS-ARM64"
-          # macOS x86_64 (Intel) - macos-13 is Intel-based
-          - platform: "macos-13"
+          # macOS x86_64 (Intel) - macos-15-intel is Intel-based
+          - platform: "macos-15-intel"
             args: "--target x86_64-apple-darwin"
             rust_target: "x86_64-apple-darwin"
             name: "macOS-Intel"
@@ -83,6 +83,7 @@ jobs:
       - name: Build backend sidecar
         run: uv run --python 3.11 --extra build --extra gui python build_backend.py
         env:
+          PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
 
       # Frontend
