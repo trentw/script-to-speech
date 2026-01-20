@@ -9,6 +9,7 @@ The executable is renamed with a platform-specific target triple suffix (e.g.,
 sts-gui-backend-x86_64-apple-darwin) to comply with Tauri's sidecar naming convention.
 """
 
+import platform
 import re
 import shutil
 import subprocess
@@ -42,8 +43,6 @@ def get_target_triple():
     except (subprocess.CalledProcessError, FileNotFoundError):
         # Fallback: detect from platform
         print("⚠️  rustc not found, falling back to platform detection...")
-        import platform
-
         system = platform.system().lower()
         machine = platform.machine().lower()
 
@@ -134,11 +133,15 @@ def main():
             sys.exit(1)
 
         # Rename the generated executable with platform target triple
-        base_executable = dist_dir / "sts-gui-backend"
+        # On Windows, executables have .exe extension
+        is_windows = platform.system().lower() == "windows"
+        exe_suffix = ".exe" if is_windows else ""
+
+        base_executable = dist_dir / f"sts-gui-backend{exe_suffix}"
 
         if base_executable.exists():
-            # Rename with target triple suffix
-            new_executable = dist_dir / f"sts-gui-backend-{target_triple}"
+            # Rename with target triple suffix (Tauri requires .exe on Windows)
+            new_executable = dist_dir / f"sts-gui-backend-{target_triple}{exe_suffix}"
 
             # Remove existing file if it exists
             if new_executable.exists():
@@ -158,7 +161,7 @@ def main():
                 project_root / "gui" / "frontend" / "src-tauri" / "binaries"
             )
             tauri_binaries_dir.mkdir(parents=True, exist_ok=True)
-            tauri_binary_path = tauri_binaries_dir / f"sts-gui-backend-{target_triple}"
+            tauri_binary_path = tauri_binaries_dir / f"sts-gui-backend-{target_triple}{exe_suffix}"
 
             # Remove existing file or directory if it exists
             if tauri_binary_path.exists():
