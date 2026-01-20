@@ -1,4 +1,4 @@
-.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-debug gui-build-release gui-build-backend kill-server
+.PHONY: gui-server gui-dev gui-desktop gui-build gui-build-debug gui-build-release gui-build-backend kill-server check-gui-deps
 .PHONY: frontend-test frontend-test-ui frontend-test-coverage frontend-lint frontend-lint-fix
 .PHONY: frontend-format frontend-type-check frontend-analyze frontend-type-coverage help
 .PHONY: website-dev website-build website-preview
@@ -47,29 +47,35 @@ kill-server: ## Stop FastAPI backend server
 		echo "Backend server is not running."; \
 	fi
 
-gui-dev: ## Start React frontend for web development
+check-gui-deps: ## Verify GUI build dependencies are installed
+	@command -v node >/dev/null 2>&1 || { echo "❌ Error: Node.js is required but not found."; echo "   Install with: brew install node (macOS) or visit https://nodejs.org/"; exit 1; }
+	@command -v pnpm >/dev/null 2>&1 || { echo "❌ Error: pnpm is required but not found."; echo "   Install with: npm install -g pnpm"; exit 1; }
+	@command -v cargo >/dev/null 2>&1 || { echo "❌ Error: Rust is required but not found."; echo "   Install with: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"; exit 1; }
+	@if [ ! -d "gui/frontend/node_modules" ]; then echo "📦 Installing frontend dependencies..."; cd gui/frontend && pnpm install; fi
+
+gui-dev: check-gui-deps ## Start React frontend for web development
 	cd gui/frontend && pnpm run dev
 
 
-gui-desktop: ## Start desktop app in development mode  
-	cd gui/frontend && npx tauri dev
+gui-desktop: check-gui-deps ## Start desktop app in development mode
+	cd gui/frontend && pnpm run tauri dev
 
 gui-build: gui-build-debug ## Build production desktop app (defaults to debug mode)
 
-gui-build-debug: ## Build production desktop app with debug mode (console access)
+gui-build-debug: check-gui-deps ## Build production desktop app with debug mode (console access)
 	@echo "🔨 Building backend executable..."
-	@uv run python build_backend.py
+	@uv run --extra build --extra gui python build_backend.py
 	@echo "🏗️  Building Tauri app (debug mode - has console for easier debugging)..."
-	@cd gui/frontend && npx tauri build --debug
+	@cd gui/frontend && pnpm run tauri build --debug
 
-gui-build-release: ## Build production desktop app (optimized release)
+gui-build-release: check-gui-deps ## Build production desktop app (optimized release)
 	@echo "🔨 Building backend executable..."
-	@uv run python build_backend.py
+	@uv run --extra build --extra gui python build_backend.py
 	@echo "🏗️  Building Tauri app (release mode - optimized)..."
-	@cd gui/frontend && npx tauri build
+	@cd gui/frontend && pnpm run tauri build
 
 gui-build-backend: ## Build standalone backend executable
-	uv run python build_backend.py
+	uv run --extra build --extra gui python build_backend.py
 
 # Frontend Development Commands
 frontend-test: ## Run frontend tests

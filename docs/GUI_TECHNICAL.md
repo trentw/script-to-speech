@@ -39,10 +39,27 @@ The application follows a "Sidecar" architecture, where a modern web frontend co
 ## Development Setup
 
 ### Prerequisites
-- **Node.js** (v18+)
-- **Rust** (latest stable)
+
+- **Node.js** (v18+) - Required for frontend build tooling
+  - macOS: `brew install node`
+  - Or download from [nodejs.org](https://nodejs.org/)
+  - Verify: `node --version`
+
+- **pnpm** - Fast, disk-efficient package manager
+  - Install after Node.js: `npm install -g pnpm`
+  - Verify: `pnpm --version`
+
+- **Rust** (latest stable) - Required for Tauri
+  - Install: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
+  - Verify: `rustc --version`
+
 - **Python** (v3.10+)
+  - macOS: Usually pre-installed, or `brew install python`
+  - Verify: `python3 --version`
+
 - **uv** (Python package manager)
+  - Install: `pip install uv` or `brew install uv`
+  - Verify: `uv --version`
 
 ### Running Locally
 The project includes a `Makefile` to simplify development tasks.
@@ -76,6 +93,8 @@ make gui-build-debug
 # Build release version (optimized)
 make gui-build-release
 ```
+
+The Makefile targets automatically install build dependencies (PyInstaller) via `uv`'s `--extra build` flag. If running `build_backend.py` directly without the Makefile, ensure you have the build dependencies installed.
 
 ## Key Directories
 
@@ -207,3 +226,16 @@ If the backend fails to start after building, you may need to add hidden imports
 
 **Tauri sidecar not found:**
 Ensure the backend executable name matches the target triple expected by Tauri (e.g., `sts-gui-backend-aarch64-apple-darwin` for Apple Silicon Mac).
+
+**PyInstaller not found:**
+If you see `ModuleNotFoundError: No module named 'PyInstaller'`, the build dependencies are not installed. Use the Makefile targets (e.g., `make gui-build-backend`) which automatically install dependencies. If running the build script directly, use:
+```bash
+uv run --extra build --extra gui python build_backend.py
+```
+
+**Node.js/npx not found:**
+If you see `npx: command not found` when running build commands:
+1. Install Node.js: `brew install node` (macOS) or download from [nodejs.org](https://nodejs.org/)
+2. Restart your terminal
+3. Verify installation: `node --version && npx --version`
+4. If using a version manager (nvm, fnm), ensure it's initialized in your shell
