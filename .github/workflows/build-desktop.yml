@@ -110,6 +110,54 @@ jobs:
           CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
           echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> $GITHUB_ENV
 
+          # Extract Team ID from certificate for debugging
+          CERT_TEAM_ID=$(echo "$CERT_ID" | grep -oE '\([A-Z0-9]+\)$' | tr -d '()')
+          echo "Team ID from certificate: $CERT_TEAM_ID"
+          echo "Team ID length: ${#CERT_TEAM_ID}"
+          echo "APPLE_TEAM_ID secret length: ${#APPLE_TEAM_ID}"
+          echo "Team ID from secret (first 3 chars): ${APPLE_TEAM_ID:0:3}..."
+
+          if [ "${#APPLE_TEAM_ID}" != "10" ]; then
+            echo "::error::APPLE_TEAM_ID should be exactly 10 characters, but got ${#APPLE_TEAM_ID}"
+          fi
+
+          if [ "$CERT_TEAM_ID" != "$APPLE_TEAM_ID" ]; then
+            echo "::error::Team ID mismatch! Certificate has '$CERT_TEAM_ID' but APPLE_TEAM_ID secret is different"
+          else
+            echo "✓ Team IDs match"
+          fi
+
+          # Validate app-specific password format (xxxx-xxxx-xxxx-xxxx)
+          if [[ ! "$APPLE_PASSWORD" =~ ^[a-z]{4}-[a-z]{4}-[a-z]{4}-[a-z]{4}$ ]]; then
+            echo "::warning::APPLE_PASSWORD may not be an app-specific password. Expected format: xxxx-xxxx-xxxx-xxxx"
+          else
+            echo "✓ APPLE_PASSWORD format looks correct (app-specific password)"
+          fi
+
+          # Validate APPLE_ID
+          echo "APPLE_ID length: ${#APPLE_ID}"
+          echo "APPLE_ID (masked): ${APPLE_ID:0:3}***@***${APPLE_ID: -4}"
+          if [[ ! "$APPLE_ID" =~ ^[^@]+@[^@]+\.[^@]+$ ]]; then
+            echo "::error::APPLE_ID doesn't look like a valid email address"
+          else
+            echo "✓ APPLE_ID format looks like an email"
+          fi
+
+          # Check for whitespace issues
+          if [[ "$APPLE_TEAM_ID" =~ [[:space:]] ]]; then
+            echo "::error::APPLE_TEAM_ID contains whitespace characters!"
+          fi
+          if [[ "$APPLE_ID" =~ ^[[:space:]] ]] || [[ "$APPLE_ID" =~ [[:space:]]$ ]]; then
+            echo "::error::APPLE_ID has leading or trailing whitespace!"
+          fi
+          if [[ "$APPLE_PASSWORD" =~ ^[[:space:]] ]] || [[ "$APPLE_PASSWORD" =~ [[:space:]]$ ]]; then
+            echo "::error::APPLE_PASSWORD has leading or trailing whitespace!"
+          fi
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+
       - name: Sign PyInstaller Sidecar
         if: startsWith(matrix.platform, 'macos')
         run: |
