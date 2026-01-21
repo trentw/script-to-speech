@@ -86,6 +86,40 @@ jobs:
           PYTHONUTF8: "1"
           PYTHONIOENCODING: utf-8
 
+      # macOS Code Signing
+      - name: Import Apple Developer Certificate
+        if: startsWith(matrix.platform, 'macos')
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          rm certificate.p12
+
+      - name: Get Signing Identity
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Developer ID Application")
+          CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
+          echo "APPLE_SIGNING_IDENTITY=$CERT_ID" >> $GITHUB_ENV
+
+      - name: Sign PyInstaller Sidecar
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          codesign --sign "$APPLE_SIGNING_IDENTITY" \
+                   --options runtime \
+                   --entitlements gui/frontend/src-tauri/Entitlements.plist \
+                   --timestamp \
+                   --force \
+                   "gui/frontend/src-tauri/binaries/sts-gui-backend-${{ matrix.rust_target }}"
+
       # Frontend
       - name: Install frontend dependencies
         working-directory: gui/frontend
@@ -96,6 +130,12 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           projectPath: gui/frontend
           args: ${{ matrix.args }}
@@ -112,7 +152,11 @@ jobs:
             | Linux | `Script to Speech_*.AppImage` or `.deb` |
 
             ### Installation Notes
-            - **macOS**: You may need to right-click and select "Open" the first time (unsigned app)
+            - **macOS**: App is signed and notarized - should open without security warnings
             - **Linux**: Make AppImage executable: `chmod +x *.AppImage`
           releaseDraft: true
           prerelease: false
+
+      - name: Cleanup Keychain
+        if: startsWith(matrix.platform, 'macos') && always()
+        run: security delete-keychain build.keychain || true

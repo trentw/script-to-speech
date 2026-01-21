@@ -39,7 +39,7 @@
     "externalBin": ["binaries/sts-gui-backend"],
     "macOS": {
       "entitlements": "Entitlements.plist",
-      "signingIdentity": "-",
+      "signingIdentity": null,
       "minimumSystemVersion": "10.13"
     }
   }

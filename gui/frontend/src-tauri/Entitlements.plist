@@ -28,5 +28,9 @@
 	<!-- This enables "Export Audio" and "Import Screenplay" functionality -->
 	<key>com.apple.security.files.user-selected.read-write</key>
 	<true/>
+
+	<!-- Allow unsigned executable memory (for Python runtime in sidecar) -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
 </dict>
 </plist>
