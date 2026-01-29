@@ -756,7 +756,10 @@ class AudiobookGenerationService:
             provider_id = clip.provider_id or ""
             voice_id = clip.speaker_id or ""
             if provider_id and voice_id:
-                sts_id = tts_manager.get_library_sts_id_for_voice(provider_id, voice_id)
+                try:
+                    sts_id = tts_manager.get_library_sts_id_for_voice(provider_id, voice_id)
+                except Exception as e:
+                    logger.warning(f"Could not look up sts_id for '{provider_id}/{voice_id}': {e}")
 
             clips.append(
                 ProblemClipInfo(

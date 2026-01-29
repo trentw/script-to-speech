@@ -1,6 +1,8 @@
 import os
+import sys
 import threading
 import time
+from pathlib import Path
 from typing import Optional
 
 # Constants for the dummy backend
@@ -32,15 +34,18 @@ class DummyTTSBackend:
         self.NEW_ID_LOOKUP_DELAY_SECONDS = NEW_ID_LOOKUP_DELAY_SECONDS
 
         # Determine asset path relative to backend.py
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        asset_dir = os.path.join(current_dir, "assets")
+        if getattr(sys, "frozen", False):
+            base_path = Path(getattr(sys, "_MEIPASS", "."))
+            asset_dir = base_path / "script_to_speech" / "dummy_tts_backend" / "assets"
+        else:
+            asset_dir = Path(os.path.dirname(os.path.abspath(__file__))) / "assets"
 
         # Read audio files
         try:
-            with open(os.path.join(asset_dir, "dummy_audio.mp3"), "rb") as f:
+            with open(asset_dir / "dummy_audio.mp3", "rb") as f:
                 self.dummy_audio_bytes = f.read()
 
-            with open(os.path.join(asset_dir, "silent_audio.mp3"), "rb") as f:
+            with open(asset_dir / "silent_audio.mp3", "rb") as f:
                 self.silent_audio_bytes = f.read()
         except Exception as e:
             # If files can't be read, create minimal placeholders

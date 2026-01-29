@@ -5,7 +5,9 @@ import json
 import os
 import re
 import shlex
+import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from ..tts_providers.base.exceptions import TTSError, VoiceNotFoundError
@@ -271,9 +273,13 @@ def _build_tts_provider_config_data(
 def main() -> int:
     # Get available providers
     available_providers = []
-    tts_providers_dir = os.path.join(os.path.dirname(__file__), "..", "tts_providers")
+    if getattr(sys, "frozen", False):
+        base_path = Path(getattr(sys, "_MEIPASS", "."))
+        tts_providers_dir = base_path / "script_to_speech" / "tts_providers"
+    else:
+        tts_providers_dir = Path(os.path.dirname(__file__)).parent / "tts_providers"
     for item in os.listdir(tts_providers_dir):
-        if os.path.isdir(os.path.join(tts_providers_dir, item)) and item not in [
+        if os.path.isdir(tts_providers_dir / item) and item not in [
             "base",
             "__pycache__",
             "dummy_common",

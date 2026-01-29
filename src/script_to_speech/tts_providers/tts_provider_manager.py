@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+import sys
 import threading
 from collections import defaultdict
 from io import StringIO
@@ -274,7 +275,11 @@ class TTSProviderManager:
     def get_available_providers(cls) -> List[str]:
         """Get list of available provider names."""
         providers = []
-        provider_dir = Path(__file__).parent
+        if getattr(sys, "frozen", False):
+            base_path = Path(getattr(sys, "_MEIPASS", "."))
+            provider_dir = base_path / "script_to_speech" / "tts_providers"
+        else:
+            provider_dir = Path(__file__).parent
 
         for item in provider_dir.iterdir():
             if item.is_dir() and item.name not in [

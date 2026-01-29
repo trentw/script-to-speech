@@ -1,5 +1,6 @@
 """Utility functions for voice library casting prompt generation."""
 
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
@@ -124,10 +125,15 @@ def generate_voice_library_casting_prompt_file(
         output_file_path = output_dir / output_file_name
 
     # 1. Read Prompt Content
+    if getattr(sys, "frozen", False):
+        base_path = Path(getattr(sys, "_MEIPASS", "."))
+        prompt_parent_dir = base_path / "script_to_speech" / "voice_casting"
+    else:
+        prompt_parent_dir = Path(__file__).parent
     prompt_content = read_prompt_file(
         prompt_file_path=prompt_file_path,
         default_filename=DEFAULT_VOICE_LIBRARY_PROMPT_FILENAME,
-        parent_dir=Path(__file__).parent,
+        parent_dir=prompt_parent_dir,
     )
 
     # 2. Read Voice Configuration
