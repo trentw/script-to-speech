@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import tempfile
 from typing import Optional
 
 from pydub import AudioSegment
@@ -50,8 +51,8 @@ def configure_ffmpeg() -> None:
         # Verify ffmpeg works
         try:
             test_file = AudioSegment.silent(duration=1)
-            test_file.export("test.mp3", format="mp3")
-            os.remove("test.mp3")
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=True) as tmp:
+                test_file.export(tmp.name, format="mp3")
             logger.info("FFMPEG verification successful")
         except Exception as e:
             raise RuntimeError(f"Failed to verify ffmpeg installation: {e}") from e
