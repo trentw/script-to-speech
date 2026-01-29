@@ -86,7 +86,7 @@ fn get_workspace_dir(app_handle: &AppHandle, is_bundled: bool) -> Result<std::pa
         // This directory is automatically accessible within the app sandbox
         // Maps to:
         //   - macOS: ~/Library/Application Support/Script to Speech/
-        //   - Windows: %APPDATA%\Script to Speech\
+        //   - Windows: %LOCALAPPDATA%\Script to Speech\
         //   - Linux: ~/.local/share/script-to-speech/
         use tauri::path::BaseDirectory;
 

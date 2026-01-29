@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import sys
 import tempfile
 from typing import Optional
 
@@ -37,7 +38,8 @@ def configure_ffmpeg() -> None:
 
         # Add to system PATH (for subprocesses that might need it)
         ffmpeg_dir = os.path.dirname(ffmpeg_executable)
-        os.environ["PATH"] = f"{ffmpeg_dir}:{os.environ.get('PATH', '')}"
+        path_separator = ";" if sys.platform == "win32" else ":"
+        os.environ["PATH"] = f"{ffmpeg_dir}{path_separator}{os.environ.get('PATH', '')}"
 
         # Configure pydub with explicit paths
         AudioSegment.converter = ffmpeg_executable

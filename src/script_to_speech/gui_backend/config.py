@@ -31,7 +31,7 @@ def get_default_workspace_dir() -> Path:
     Development mode: Project root
     Production mode: Platform-specific Application Support directory
       - macOS: ~/Library/Application Support/Script to Speech/
-      - Windows: %APPDATA%\\Script to Speech\\
+      - Windows: %LOCALAPPDATA%\\Script to Speech\\
       - Linux: ~/.local/share/script-to-speech/
 
     Returns:
@@ -51,8 +51,10 @@ def get_default_workspace_dir() -> Path:
     if sys.platform == "darwin":  # macOS
         app_support = home / "Library" / "Application Support" / "Script to Speech"
     elif sys.platform == "win32":  # Windows
-        appdata = os.getenv("APPDATA", str(home / "AppData" / "Roaming"))
-        app_support = Path(appdata) / "Script to Speech"
+        # Use LocalAppData to match Tauri's BaseDirectory::AppLocalData
+        # LocalAppData is correct for large cache files per Microsoft best practices
+        localappdata = os.getenv("LOCALAPPDATA", str(home / "AppData" / "Local"))
+        app_support = Path(localappdata) / "Script to Speech"
     else:  # Linux and others
         xdg_data = os.getenv("XDG_DATA_HOME", str(home / ".local" / "share"))
         app_support = Path(xdg_data) / "script-to-speech"

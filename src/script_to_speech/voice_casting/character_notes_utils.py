@@ -91,18 +91,22 @@ def generate_voice_casting_prompt_file(
     if file_extension == ".pdf":
         # extract_text_preserving_whitespace writes to a file and returns the text.
         # We need a temporary file for its output_file argument.
+        # On Windows, we must close the file handle before another process can write to it.
         with tempfile.NamedTemporaryFile(
             mode="w+", delete=False, suffix=".txt", encoding="utf-8"
         ) as tmp_pdf_text_out:
-            try:
-                extracted_text = extract_text_preserving_whitespace(
-                    pdf_path=str(source_screenplay_path),
-                    output_file=tmp_pdf_text_out.name,
-                )
-                raw_screenplay_text = extracted_text
-            finally:
-                # Ensure temporary file is cleaned up
-                Path(tmp_pdf_text_out.name).unlink(missing_ok=True)
+            tmp_output_path = tmp_pdf_text_out.name
+        # File handle closed - now safe to write on Windows
+
+        try:
+            extracted_text = extract_text_preserving_whitespace(
+                pdf_path=str(source_screenplay_path),
+                output_file=tmp_output_path,
+            )
+            raw_screenplay_text = extracted_text
+        finally:
+            # Ensure temporary file is cleaned up
+            Path(tmp_output_path).unlink(missing_ok=True)
 
         screenplay_text_processed_lines = [
             line.strip() for line in raw_screenplay_text.splitlines()
