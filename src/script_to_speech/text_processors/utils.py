@@ -1,10 +1,35 @@
+import sys
 from pathlib import Path
 from typing import List, Optional
 
+
+def _get_default_text_processor_config() -> Path:
+    """Get the path to the default text processor config.
+
+    Handles both development and PyInstaller frozen builds.
+    Uses sys.frozen (not --production flag) because this may be called from
+    multiprocessing workers where sys.argv doesn't persist on macOS.
+    """
+    if getattr(sys, "frozen", False):
+        # Running as PyInstaller bundle - files are in sys._MEIPASS
+        # The spec file bundles configs to: script_to_speech/text_processors/configs/
+        base_path = Path(getattr(sys, "_MEIPASS", "."))
+        return (
+            base_path
+            / "script_to_speech"
+            / "text_processors"
+            / "configs"
+            / "default_text_processor_config.yaml"
+        )
+    else:
+        # Development mode - use relative path from project root
+        return Path(
+            "src/script_to_speech/text_processors/configs/default_text_processor_config.yaml"
+        )
+
+
 # Default processor configuration path
-DEFAULT_TEXT_PROCESSOR_CONFIG = Path(
-    "src/script_to_speech/text_processors/configs/default_text_processor_config.yaml"
-)
+DEFAULT_TEXT_PROCESSOR_CONFIG = _get_default_text_processor_config()
 
 
 def get_text_processor_configs(
