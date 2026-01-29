@@ -1,6 +1,7 @@
 import io
 import logging
 import os
+import subprocess
 import sys
 import tempfile
 from typing import Optional
@@ -10,6 +11,43 @@ from pydub.silence import detect_silence
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
+
+
+def _patch_pydub_for_windows():
+    """
+    Patch pydub's subprocess calls on Windows to prevent console windows
+    and handle the lack of stdin/stdout/stderr in PyInstaller --noconsole builds.
+
+    When PyInstaller bundles an app with --noconsole, there's no stdin/stdout/stderr.
+    Subprocess calls that try to inherit these handles will hang or fail with
+    "OSError [Error 6] the handle is invalid".
+
+    This patch adds STARTUPINFO with STARTF_USESHOWWINDOW to hide console windows
+    and ensures stdin is always PIPE (never None) to prevent hangs.
+
+    See: https://github.com/jiaaro/pydub/issues/586
+    See: https://github.com/jiaaro/pydub/issues/698
+    See: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-subprocess
+    """
+    import pydub.utils
+
+    class _PydubWindowsPopen(subprocess.Popen):
+        def __init__(self, *args, **kwargs):
+            # Add STARTUPINFO to hide console window
+            if "startupinfo" not in kwargs:
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                kwargs["startupinfo"] = si
+
+            # Ensure stdin is not None (causes hangs in --noconsole builds)
+            if kwargs.get("stdin") is None:
+                kwargs["stdin"] = subprocess.PIPE
+
+            super().__init__(*args, **kwargs)
+
+    # Patch only pydub's reference to Popen
+    pydub.utils.subprocess.Popen = _PydubWindowsPopen
+    logger.info("Patched pydub subprocess for Windows compatibility")
 
 
 def configure_ffmpeg() -> None:
@@ -25,6 +63,10 @@ def configure_ffmpeg() -> None:
         ImportError: If static-ffmpeg is not installed
         RuntimeError: If ffmpeg verification fails
     """
+    # Apply Windows-specific pydub patch before any pydub operations
+    if sys.platform == "win32":
+        _patch_pydub_for_windows()
+
     try:
         import static_ffmpeg
         from static_ffmpeg import run
