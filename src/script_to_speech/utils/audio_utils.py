@@ -51,8 +51,14 @@ def configure_ffmpeg() -> None:
         # Verify ffmpeg works
         try:
             test_file = AudioSegment.silent(duration=1)
-            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=True) as tmp:
-                test_file.export(tmp.name, format="mp3")
+            # Use delete=False because Windows doesn't allow writing to an open temp file
+            tmp = tempfile.NamedTemporaryFile(suffix=".mp3", delete=False)
+            tmp_path = tmp.name
+            tmp.close()
+            try:
+                test_file.export(tmp_path, format="mp3")
+            finally:
+                os.remove(tmp_path)
             logger.info("FFMPEG verification successful")
         except Exception as e:
             raise RuntimeError(f"Failed to verify ffmpeg installation: {e}") from e
