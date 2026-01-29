@@ -121,7 +121,9 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:5174",
         "tauri://localhost",
-    ],  # Vite and Tauri
+        "https://tauri.localhost",  # Windows WebView2
+        "http://tauri.localhost",   # Windows WebView2 alternate
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
