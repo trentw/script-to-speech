@@ -1,13 +1,39 @@
 ---
+const GITHUB_OWNER = 'trentw';
+const GITHUB_REPO = 'script-to-speech';
+const FALLBACK_URL = `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`;
+
+async function getLatestRelease() {
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
+      { headers: { 'Accept': 'application/vnd.github.v3+json' } }
+    );
+    if (!response.ok) return null;
+    return await response.json();
+  } catch {
+    return null;
+  }
+}
+
+function findAsset(assets: any[], pattern: string): string | null {
+  return assets?.find(a => a.name.includes(pattern))?.browser_download_url ?? null;
+}
+
+const release = await getLatestRelease();
+const assets = release?.assets ?? [];
+
 const platforms = [
   {
     name: 'macOS',
     icon: `<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
     </svg>`,
-    description: 'Apple Silicon & Intel',
-    downloadUrl: 'https://github.com/trentw/script-to-speech/releases/latest',
-    fileHint: '.dmg',
+    description: 'macOS 11+',
+    downloads: [
+      { label: 'Apple Silicon', url: findAsset(assets, 'aarch64.dmg'), fileType: '.dmg' },
+      { label: 'Intel', url: findAsset(assets, 'x64.dmg'), fileType: '.dmg' },
+    ],
   },
   {
     name: 'Windows',
@@ -15,17 +41,20 @@ const platforms = [
       <path d="M3 5.5l7-1v7H3v-6zm7 6.5v7l-7-1v-6h7zm1-7.5l9-1.5v8.5h-9V4.5zm9 8.5v8.5l-9-1.5V13h9z"/>
     </svg>`,
     description: 'Windows 10/11',
-    downloadUrl: 'https://github.com/trentw/script-to-speech/releases/latest',
-    fileHint: '.msi / .exe',
+    downloads: [
+      { label: 'Download', url: findAsset(assets, 'x64-setup.exe'), fileType: '.exe' },
+    ],
   },
   {
     name: 'Linux',
     icon: `<svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
       <path d="M12.504 0c-.155 0-.311.001-.465.003-.653.014-1.292.106-1.892.287C8.25.94 6.762 2.093 5.932 3.832c-.585 1.224-.863 2.629-.863 4.2 0 1.47.228 2.85.67 4.14.445 1.292 1.09 2.416 1.934 3.373a.75.75 0 01.107.217l.012.037c.083.265.16.537.232.813.21.807.328 1.54.328 2.183 0 1.075-.229 2.025-.658 2.862a.75.75 0 00.607 1.082c.476.042.943.063 1.4.063.457 0 .924-.021 1.4-.063a.75.75 0 00.607-1.082c-.43-.837-.658-1.787-.658-2.862 0-.642.118-1.376.328-2.183.072-.276.149-.548.232-.813l.012-.037a.75.75 0 01.107-.217c.845-.957 1.49-2.081 1.935-3.372.44-1.29.67-2.67.67-4.14 0-1.572-.278-2.977-.864-4.2-.83-1.74-2.318-2.893-4.215-3.543-.6-.18-1.239-.273-1.892-.287A11.28 11.28 0 0012.504 0zm1.26 2.38c1.104.325 1.939.975 2.396 1.93.457.958.685 2.135.685 3.49 0 1.23-.192 2.377-.577 3.433-.385 1.057-.94 1.963-1.663 2.72-.143.149-.29.293-.44.432l-.047.043a13.17 13.17 0 00-.308 1.014c-.096.355-.175.68-.235.968v.024h-.024c-.003.013-.007.026-.009.039a3.45 3.45 0 00-.031.169H9.49a3.628 3.628 0 00-.031-.169 1.348 1.348 0 00-.009-.04v-.023c-.06-.287-.14-.612-.235-.967-.1-.366-.21-.706-.308-1.015l-.048-.042a7.59 7.59 0 01-.439-.433c-.724-.756-1.278-1.662-1.664-2.719-.385-1.056-.577-2.203-.577-3.433 0-1.355.228-2.532.686-3.49.457-.955 1.292-1.605 2.396-1.93.445-.131.928-.196 1.443-.196s.998.065 1.443.196z"/>
     </svg>`,
-    description: 'AppImage / deb',
-    downloadUrl: 'https://github.com/trentw/script-to-speech/releases/latest',
-    fileHint: '.AppImage / .deb',
+    description: 'Most distributions',
+    downloads: [
+      { label: 'AppImage', url: findAsset(assets, 'AppImage'), fileType: '.AppImage' },
+      { label: 'Debian/Ubuntu', url: findAsset(assets, 'amd64.deb'), fileType: '.deb' },
+    ],
   },
 ];
 ---
@@ -46,24 +75,28 @@ const platforms = [
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       {
         platforms.map((platform) => (
-          <a
-            href={platform.downloadUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="group p-6 bg-surface rounded-xl border border-surface-light hover:border-brand/50 transition-all text-center"
-          >
-            <div class="text-gray-400 group-hover:text-brand transition-colors mb-4 flex justify-center">
+          <div class="p-6 bg-surface rounded-xl border border-surface-light text-center">
+            <div class="text-gray-400 mb-4 flex justify-center">
               <Fragment set:html={platform.icon} />
             </div>
             <h3 class="text-xl font-semibold text-white mb-1">{platform.name}</h3>
             <p class="text-gray-400 text-sm mb-4">{platform.description}</p>
-            <span class="inline-flex items-center gap-2 text-brand text-sm font-medium">
-              Download {platform.fileHint}
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </span>
-          </a>
+            <div class="flex flex-wrap justify-center gap-2">
+              {platform.downloads.map((download) => (
+                <a
+                  href={download.url ?? FALLBACK_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-2 bg-brand/10 hover:bg-brand/20 text-brand text-sm font-medium rounded-lg transition-colors"
+                >
+                  {download.label} {download.fileType}
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </a>
+              ))}
+            </div>
+          </div>
         ))
       }
     </div>
