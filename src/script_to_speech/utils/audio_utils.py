@@ -29,9 +29,12 @@ def _patch_pydub_for_windows():
     See: https://github.com/jiaaro/pydub/issues/698
     See: https://github.com/pyinstaller/pyinstaller/wiki/Recipe-subprocess
     """
+    import pydub.audio_segment
     import pydub.utils
 
-    class _PydubWindowsPopen(subprocess.Popen):
+    _original_popen = subprocess.Popen
+
+    class _WindowsNoConsolePopen(_original_popen):
         def __init__(self, *args, **kwargs):
             # Add STARTUPINFO to hide console window
             if "startupinfo" not in kwargs:
@@ -45,8 +48,12 @@ def _patch_pydub_for_windows():
 
             super().__init__(*args, **kwargs)
 
-    # Patch only pydub's reference to Popen
-    pydub.utils.subprocess.Popen = _PydubWindowsPopen
+    # Patch pydub.audio_segment which uses `import subprocess` then subprocess.Popen()
+    pydub.audio_segment.subprocess.Popen = _WindowsNoConsolePopen
+
+    # Patch pydub.utils which uses `from subprocess import Popen` directly
+    pydub.utils.Popen = _WindowsNoConsolePopen
+
     logger.info("Patched pydub subprocess for Windows compatibility")
 
 
