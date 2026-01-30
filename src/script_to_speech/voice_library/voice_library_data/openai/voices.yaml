@@ -6,32 +6,146 @@ provider_metadata:
 
 voices:
 
-  # Onyx - Deep, authoritative male voice
-  onyx:
+  # Alloy - Female / androgynous, good narrator
+  alloy:
+    sts_id: alloy
     config:
-      voice: onyx
-      
+      voice: alloy
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: .5
+      authority: .5
+      energy: .65
+      pace: .5
+      performative: .5
+      pitch: .5
+      quality: 1.0
+
+    description:
+      custom_description: "Friendly, neutral, voice that makes a great narrator"
+      perceived_age: "25-40 years"
+
+    tags:
+      character_types: ["narrator", "friend", "professional", "therapist"]
+      custom_tags: ["neutral", "friendly", "approachable", "even"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/alloy.wav"
+
+  # Ash - Male, confident and slightly gruff
+  ash:
+    sts_id: ash
+    config:
+      voice: ash
+
     voice_properties:
       accent: "american_general"
       gender: "masculine"
 
-      age: .5
-      authority: .75
-      energy: .4
+      age: .6
+      authority: .6
+      energy: .7
       pace: .5
       performative: .5
-      pitch: .25
+      pitch: .35
       quality: 1.0
 
     description:
-      custom_description: "Deep, resonant voice. Conveys authority and trustworthiness."
-      perceived_age: "30-50 years"
+      custom_description: "Friendly, approachable voice with natural conversational flow"
+      perceived_age: "25-45 years"
 
     tags:
-      character_types: ["narrator", "authority_figure", "professional", "news_anchor"]
-      custom_tags: ["trustworthy", "subdued", "news_anchor"]
+      character_types: ["protagonist", "hero", "biker", "coach", "father"]
+      custom_tags: ["confident", "edgy", "tough_love", "gruff", "even"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/ash.wav"
 
-    preview_url: "https://cdn.openai.com/API/docs/audio/onyx.wav"
+  # Coral - Feminine, slightly angry
+  coral:
+    sts_id: coral
+    config:
+      voice: coral
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: .7
+      authority: .65
+      energy: .8
+      pace: .65
+      performative: .75
+      pitch: .5
+      quality: .8
+
+    description:
+      custom_description: "Friendly, approachable voice with natural conversational flow"
+      perceived_age: "45-70 years"
+
+    tags:
+      character_types: ["antagonist", "mother_in_law", "witch", "angry_customer"]
+      custom_tags: ["stern", "angry", "emotional", "offended"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/coral.wav"
+
+  # Echo - Male, versatile voice
+  echo:
+    sts_id: echo
+    config:
+      voice: echo
+
+    voice_properties:
+      accent: "american_general"
+      gender: "male"
+
+      age: .5
+      authority: .5
+      energy: .55
+      pace: .5
+      performative: .5
+      pitch: .5
+      quality: 1.0
+
+    description:
+      custom_description: "Friendly, neutral 'every-man'"
+      perceived_age: "25-45 years"
+
+    tags:
+      character_types: ["protagonist", "friend", "professional", "sidekick", "student"]
+      custom_tags: ["neutral", "friendly", "approachable", "even"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/echo.wav"
+
+
+  # Fable - Male, proper british voice
+  fable:
+    sts_id: fable
+    config:
+      voice: fable
+
+    voice_properties:
+      accent: "british"
+      gender: "masculine"
+
+      age: .4
+      authority: .55
+      energy: .6
+      pace: .6
+      performative: .6
+      pitch: .65
+      quality: 1.0
+
+    description:
+      custom_description: "Young, british man with "
+      perceived_age: "18-35 years"
+
+    tags:
+      character_types: ["friend", "professional", "teacher", "villain", "guide", "butler"]
+      custom_tags: ["neutral", "proper", "classy", "enthusiastic"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/fable.wav"
 
   # Nova - Feminine, versatile voice
   nova:
@@ -60,4 +174,88 @@ voices:
       custom_tags: ["neutral", "friendly", "approachable", "even"]
     
     preview_url: "https://cdn.openai.com/API/docs/audio/nova.wav"
+
+  # Onyx - Deep, authoritative male voice
+  onyx:
+    config:
+      voice: onyx
+      
+    voice_properties:
+      accent: "american_general"
+      gender: "masculine"
+
+      age: .5
+      authority: .75
+      energy: .4
+      pace: .5
+      performative: .5
+      pitch: .25
+      quality: 1.0
+
+    description:
+      custom_description: "Deep, resonant voice. Conveys authority and trustworthiness."
+      perceived_age: "30-50 years"
+
+    tags:
+      character_types: ["narrator", "authority_figure", "professional", "news_anchor"]
+      custom_tags: ["trustworthy", "subdued", "news_anchor"]
+
+    preview_url: "https://cdn.openai.com/API/docs/audio/onyx.wav"
+
+  # Sage - Feminine, enthusiastic
+  sage:
+    sts_id: sage
+    config:
+      voice: sage
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: .4
+      authority: .65
+      energy: .8
+      pace: .5
+      performative: .6
+      pitch: .5
+      quality: 1.0
+
+    description:
+      custom_description: "Energetic, warm voice with natural conversational flow"
+      perceived_age: "18-35 years"
+
+    tags:
+      character_types: ["protagonist", "cheerleader", "teacher", "marketer" ]
+      custom_tags: ["spirited", "enthusiastic", "encouraging", "energetic", "convincing", "warm"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/sage.wav"
+
+
+  # Shimmer - Feminine, caring voice
+  shimmer:
+    sts_id: shimmer
+    config:
+      voice: shimmer
+
+    voice_properties:
+      accent: "american_general"
+      gender: "feminine"
+
+      age: .6
+      authority: .65
+      energy: .5
+      pace: .4
+      performative: .5
+      pitch: .4
+      quality: 1.0
+
+    description:
+      custom_description: "Friendly, approachable voice with natural conversational flow"
+      perceived_age: "30-45 years"
+
+    tags:
+      character_types: ["protagonist", "friend", "professional", "mother", "therapist"]
+      custom_tags: ["neutral", "friendly", "warm", "caring"]
+    
+    preview_url: "https://cdn.openai.com/API/docs/audio/shimmer.wav"
 
