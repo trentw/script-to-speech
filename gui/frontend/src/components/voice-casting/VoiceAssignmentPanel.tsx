@@ -7,12 +7,15 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
+import { ApiKeyWarning } from '@/components/settings/ApiKeyWarning';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { isProviderConfigured } from '@/constants/providers';
 import { useAssignVoice } from '@/hooks/mutations/useAssignVoice';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
+import { useValidateApiKeys } from '@/hooks/queries/useEnvKeys';
 import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useVoiceCastingUI } from '@/stores/uiStore';
 import type { VoiceEntry } from '@/types';
@@ -69,6 +72,12 @@ export function VoiceAssignmentPanel({
 
   // Voice assignment mutation
   const assignVoiceMutation = useAssignVoice();
+
+  // Fetch API key validation status
+  const { data: apiKeyStatus } = useValidateApiKeys();
+
+  // State for API key warning dialog
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
 
   // UI state for filters (stored in UI store)
   const { filterProvider, setFilterProvider } = useVoiceCastingUI();
@@ -180,6 +189,12 @@ export function VoiceAssignmentPanel({
   }
 
   const handleLibraryVoiceAssign = async (voice: VoiceEntry) => {
+    // Check if provider has required API keys configured
+    if (apiKeyStatus && !isProviderConfigured(selectedProvider, apiKeyStatus)) {
+      setShowApiKeyWarning(true);
+      return;
+    }
+
     if (!sessionData.yamlVersionId) {
       console.error('Cannot assign voice: missing version ID');
       return;
@@ -206,6 +221,12 @@ export function VoiceAssignmentPanel({
   };
 
   const handleCustomVoiceAssign = async (config: Record<string, unknown>) => {
+    // Check if provider has required API keys configured
+    if (apiKeyStatus && !isProviderConfigured(selectedProvider, apiKeyStatus)) {
+      setShowApiKeyWarning(true);
+      return;
+    }
+
     if (!sessionData.yamlVersionId) {
       console.error('Cannot assign voice: missing version ID');
       return;
@@ -402,6 +423,16 @@ export function VoiceAssignmentPanel({
             </Tabs>
           )}
         </div>
+
+        {/* API Key Warning Dialog */}
+        <ApiKeyWarning
+          open={showApiKeyWarning}
+          onClose={() => setShowApiKeyWarning(false)}
+          provider={selectedProvider}
+          providerDisplayName={
+            providers?.find((p) => p.identifier === selectedProvider)?.name
+          }
+        />
       </div>
     </TooltipProvider>
   );

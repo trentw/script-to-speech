@@ -2,14 +2,18 @@ import { ArrowLeft, Search } from 'lucide-react';
 import React, { useState } from 'react';
 
 import { PlayPreviewButton } from '@/components/PlayPreviewButton';
+import { ApiKeyWarning } from '@/components/settings/ApiKeyWarning';
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
+import { isProviderConfigured } from '@/constants/providers';
+import { useValidateApiKeys } from '@/hooks/queries/useEnvKeys';
 import { getVoiceDisplayName, getVoiceSubtext } from '@/utils/voiceUtils';
 
 import type { VoiceEntry } from '../types';
 
 interface VoiceSelectionPanelProps {
   provider: string;
+  providerDisplayName?: string;
   voices: VoiceEntry[];
   selectedVoice?: VoiceEntry;
   onVoiceSelect: (voice: VoiceEntry) => void;
@@ -18,12 +22,28 @@ interface VoiceSelectionPanelProps {
 
 export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
   provider,
+  providerDisplayName,
   voices,
   selectedVoice,
   onVoiceSelect,
   onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
+
+  // Fetch API key validation status
+  const { data: apiKeyStatus } = useValidateApiKeys();
+
+  const handleVoiceSelect = (voice: VoiceEntry) => {
+    // Check if provider has required API keys configured
+    if (apiKeyStatus && !isProviderConfigured(provider, apiKeyStatus)) {
+      setShowApiKeyWarning(true);
+      return;
+    }
+
+    // All good, proceed with voice selection
+    onVoiceSelect(voice);
+  };
 
   const filteredVoices = voices.filter((voice) => {
     if (!searchQuery) return true;
@@ -90,7 +110,7 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
                         ? 'border-primary bg-accent text-accent-foreground shadow-sm'
                         : 'border-border hover:bg-accent hover:text-accent-foreground hover:border-accent hover:shadow-sm'
                     }`}
-                    onClick={() => onVoiceSelect(voice)}
+                    onClick={() => handleVoiceSelect(voice)}
                   >
                     <div className="flex items-start gap-3">
                       {/* Voice info */}
@@ -151,6 +171,14 @@ export const VoiceSelectionPanel: React.FC<VoiceSelectionPanelProps> = ({
           </div>
         </div>
       </div>
+
+      {/* API Key Warning Dialog */}
+      <ApiKeyWarning
+        open={showApiKeyWarning}
+        onClose={() => setShowApiKeyWarning(false)}
+        provider={provider}
+        providerDisplayName={providerDisplayName}
+      />
     </div>
   );
 };

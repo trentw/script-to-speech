@@ -227,6 +227,10 @@ export const ConfigurationPanel: React.FC<ConfigurationPanelProps> = ({
               {showVoicePanel && selectedProvider && (
                 <VoiceSelectionPanel
                   provider={selectedProvider}
+                  providerDisplayName={
+                    providers.find((p) => p.identifier === selectedProvider)
+                      ?.name
+                  }
                   voices={voiceLibrary[selectedProvider] || []}
                   selectedVoice={selectedVoice}
                   onVoiceSelect={handleVoiceSelect}

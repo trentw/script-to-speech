@@ -1,11 +1,8 @@
 import { Search } from 'lucide-react';
 import React, { useState } from 'react';
 
-import { ApiKeyWarning } from '@/components/settings/ApiKeyWarning';
 import { ProviderLogo } from '@/components/ui/provider-logo';
 import { SelectorCard, SelectorPanel } from '@/components/ui/selector';
-import { isProviderConfigured } from '@/constants/providers';
-import { useValidateApiKeys } from '@/hooks/queries/useEnvKeys';
 
 import type { ProviderInfo, VoiceEntry } from '../types';
 
@@ -29,14 +26,6 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
   onBack,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [showApiKeyWarning, setShowApiKeyWarning] = useState(false);
-  const [warningProvider, setWarningProvider] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-
-  // Fetch API key validation status
-  const { data: apiKeyStatus } = useValidateApiKeys();
 
   const getProviderDisplayName = (provider: ProviderInfo) => {
     return provider.name;
@@ -92,17 +81,7 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
   };
 
   const handleProviderSelect = (provider: ProviderInfo) => {
-    // Check if provider has required API keys configured
-    if (
-      apiKeyStatus &&
-      !isProviderConfigured(provider.identifier, apiKeyStatus)
-    ) {
-      setWarningProvider({ id: provider.identifier, name: provider.name });
-      setShowApiKeyWarning(true);
-      return;
-    }
-
-    // All good, proceed with provider selection
+    // Allow browsing any provider - API key check happens at voice selection
     onProviderSelect(provider.identifier);
   };
 
@@ -171,16 +150,6 @@ export const ProviderSelectionPanel: React.FC<ProviderSelectionPanelProps> = ({
           </div>
         )}
       </div>
-
-      {/* API Key Warning Dialog */}
-      {warningProvider && (
-        <ApiKeyWarning
-          open={showApiKeyWarning}
-          onClose={() => setShowApiKeyWarning(false)}
-          provider={warningProvider.id}
-          providerDisplayName={warningProvider.name}
-        />
-      )}
     </SelectorPanel>
   );
 };
