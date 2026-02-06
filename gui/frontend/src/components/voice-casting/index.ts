@@ -6,6 +6,7 @@ export * from './LLMWorkflowButtons';
 export * from './PrivacyWarning';
 export * from './ProviderAvatar';
 export * from './ScreenplaySourceUpload';
+export * from './TruncatedNote';
 export * from './VoiceAssignmentPanel';
 export * from './VoiceCard';
 export * from './VoiceCastingHistoryList';

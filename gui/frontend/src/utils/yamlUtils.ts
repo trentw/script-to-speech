@@ -31,7 +31,7 @@ export const yamlUtils = {
         provider: assignment.provider,
         sts_id: assignment.sts_id, // Optional - only for library voices
         provider_config: assignment.provider_config,
-        casting_notes: assignment.castingNotes,
+        casting_notes: assignment.casting_notes,
         role: assignment.role,
         additional_notes: assignment.additional_notes,
         line_count: assignment.line_count,
@@ -88,7 +88,7 @@ export const yamlUtils = {
         sts_id, // Use the resolved sts_id
         provider: assignment.provider,
         provider_config: assignment.provider_config,
-        castingNotes: assignment.casting_notes,
+        casting_notes: assignment.casting_notes,
         role: assignment.role,
         additional_notes: assignment.additional_notes,
         line_count: assignment.line_count,

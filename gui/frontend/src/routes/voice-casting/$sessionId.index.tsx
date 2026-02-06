@@ -158,6 +158,9 @@ function VoiceCastingSessionIndex() {
           castingNotes: assignment.casting_notes,
         }),
         ...(assignment?.role && { role: assignment.role }),
+        ...(assignment?.additional_notes?.length && {
+          additionalNotes: assignment.additional_notes,
+        }),
         // Only mark as assigned if there's actual voice data (not just empty provider)
         assignedVoice:
           assignment &&

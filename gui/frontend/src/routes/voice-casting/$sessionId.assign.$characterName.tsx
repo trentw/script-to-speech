@@ -66,8 +66,9 @@ function VoiceAssignmentRoute() {
       totalCharacters: characterInfo.totalCharacters || 0,
       longestDialogue: characterInfo.longestDialogue || 0,
       isNarrator: characterInfo.isNarrator || false,
-      castingNotes: assignment?.castingNotes,
+      castingNotes: assignment?.casting_notes,
       role: assignment?.role,
+      additionalNotes: assignment?.additional_notes,
       assignedVoice: assignment
         ? {
             provider: assignment.provider,

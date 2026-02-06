@@ -23,6 +23,7 @@ import type { VoiceAssignment } from '@/types/voice-casting';
 import { calculateVoiceUsage } from '@/utils/voiceUsageHelper';
 
 import { CustomVoiceCard } from './CustomVoiceCard';
+import { TruncatedNote } from './TruncatedNote';
 import { VoiceCard } from './VoiceCard';
 
 interface CharacterData {
@@ -34,6 +35,7 @@ interface CharacterData {
   isNarrator: boolean;
   role?: string;
   castingNotes?: string;
+  additionalNotes?: string[];
   assignedVoice: {
     provider: string;
     voiceName: string;
@@ -289,18 +291,40 @@ export function VoiceAssignmentPanel({
         </div>
 
         {/* Character Notes */}
-        {(character.role || character.castingNotes) && (
-          <div className="bg-muted/50 space-y-1 rounded-md p-2">
+        {(character.role || character.castingNotes || character.additionalNotes?.length) && (
+          <div className="bg-muted/50 space-y-1.5 rounded-md p-3">
             {character.role && (
-              <p className="text-sm">
-                <span className="text-muted-foreground">Role:</span>{' '}
-                <span className="font-medium">{character.role}</span>
-              </p>
+              <TruncatedNote
+                text={character.role}
+                maxLines={2}
+                className="text-sm font-medium"
+              />
             )}
             {character.castingNotes && (
-              <p className="text-muted-foreground text-sm">
-                {character.castingNotes}
-              </p>
+              <TruncatedNote
+                text={character.castingNotes}
+                maxLines={3}
+                className="text-muted-foreground text-sm"
+              />
+            )}
+            {character.additionalNotes && character.additionalNotes.length > 0 && (
+              <>
+                <div className="border-muted-foreground/20 border-t pt-1.5">
+                  <p className="text-muted-foreground mb-1 text-xs font-medium">
+                    Additional Notes
+                  </p>
+                  <div className="space-y-0.5">
+                    {character.additionalNotes.map((note, idx) => (
+                      <TruncatedNote
+                        key={idx}
+                        text={note}
+                        maxLines={1}
+                        className="text-muted-foreground text-sm"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}

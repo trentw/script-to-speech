@@ -14,6 +14,7 @@ import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { cn } from '@/lib/utils';
 import type { VoiceAssignment } from '@/types/voice-casting';
 
+import { TruncatedNote } from './TruncatedNote';
 import { VoiceCard } from './VoiceCard';
 
 interface CharacterData {
@@ -25,6 +26,7 @@ interface CharacterData {
   isNarrator: boolean;
   castingNotes?: string;
   role?: string;
+  additionalNotes?: string[];
   assignedVoice: {
     provider: string;
     voiceName: string;
@@ -194,18 +196,28 @@ export function CharacterCard({
 
             {/* Character Notes/Role - This will grow to fill available space */}
             <div className="flex-grow">
-              {(character.role || character.castingNotes) && (
+              {(character.role || character.castingNotes || character.additionalNotes?.length) && (
                 <div className="bg-muted/50 space-y-1 rounded-md p-2">
                   {character.role && (
-                    <p className="text-xs">
-                      <span className="text-muted-foreground">Role:</span>{' '}
-                      <span className="font-medium">{character.role}</span>
-                    </p>
+                    <TruncatedNote
+                      text={character.role}
+                      maxLines={1}
+                      className="font-medium"
+                    />
                   )}
                   {character.castingNotes && (
-                    <p className="text-muted-foreground text-xs">
-                      {character.castingNotes}
-                    </p>
+                    <TruncatedNote
+                      text={character.castingNotes}
+                      maxLines={2}
+                      className="text-muted-foreground"
+                    />
+                  )}
+                  {character.additionalNotes && character.additionalNotes.length > 0 && (
+                    <TruncatedNote
+                      text={character.additionalNotes.join(' | ')}
+                      maxLines={1}
+                      className="text-muted-foreground italic"
+                    />
                   )}
                 </div>
               )}

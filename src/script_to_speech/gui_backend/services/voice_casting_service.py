@@ -1231,11 +1231,22 @@ class VoiceCastingService:
                         total_characters = None
                         longest_dialogue = None
 
+                        # Pattern for detecting new labeled lines (e.g., "# Gender:", "# Voice suggestion:")
+                        new_label_pattern = re.compile(r"#\s*\w[\w\s]*:\s*.+")
+                        # Track what was last matched for continuation
+                        last_matched = None  # 'casting_notes', 'role', 'additional_notes', or None
+
                         for comment in comment_buffer:
+                            # Check for empty comment line (just '#') - break continuation
+                            if comment.strip() == "#":
+                                last_matched = None
+                                continue
+
                             # Check for line count
                             line_count_match = line_count_pattern.match(comment)
                             if line_count_match:
                                 line_count = int(line_count_match.group(2))
+                                last_matched = None
                                 continue
 
                             # Check for character stats
@@ -1243,22 +1254,46 @@ class VoiceCastingService:
                             if char_stats_match:
                                 total_characters = int(char_stats_match.group(1))
                                 longest_dialogue = int(char_stats_match.group(2))
+                                last_matched = None
                                 continue
 
                             # Check for casting notes
                             casting_match = casting_notes_pattern.match(comment)
                             if casting_match:
                                 casting_notes.append(casting_match.group(1).strip())
+                                last_matched = "casting_notes"
                                 continue
 
                             # Check for role
                             role_match = role_pattern.match(comment)
                             if role_match:
                                 roles.append(role_match.group(1).strip())
+                                last_matched = "role"
                                 continue
 
-                            # If it doesn't match any pattern, it's an additional note
-                            additional_notes.append(comment)
+                            # Doesn't match any known pattern - check if it's a new labeled note or continuation
+                            clean_text = comment.lstrip("#").strip()
+                            if not clean_text:
+                                last_matched = None
+                                continue
+
+                            if new_label_pattern.match(comment):
+                                # New labeled line (e.g., "# Gender: Female") -> additional note
+                                additional_notes.append(clean_text)
+                                last_matched = "additional_notes"
+                            elif last_matched == "casting_notes" and casting_notes:
+                                # Bare continuation of casting notes
+                                casting_notes[-1] += " " + clean_text
+                            elif last_matched == "role" and roles:
+                                # Bare continuation of role
+                                roles[-1] += " " + clean_text
+                            elif last_matched == "additional_notes" and additional_notes:
+                                # Bare continuation of additional note
+                                additional_notes[-1] += " " + clean_text
+                            else:
+                                # Standalone unrecognized note
+                                additional_notes.append(clean_text)
+                                last_matched = "additional_notes"
 
                         # Store all extracted information
                         if (
