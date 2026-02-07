@@ -18,7 +18,7 @@ export const handlers = [
   http.get(`${API_BASE_URL}/api/backend/status`, () => {
     return HttpResponse.json({
       status: 'healthy',
-      version: '1.0.0',
+      version: '2.0.0',
       uptime: 3600,
     });
   }),

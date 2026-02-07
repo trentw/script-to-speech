@@ -37,6 +37,13 @@ repos:
         pass_filenames: false
         always_run: false
         files: ^src/script_to_speech/voice_library_data/.*\.yaml$
+      - id: check-version-sync
+        name: check-version-sync
+        entry: uv run python scripts/check_version_sync.py
+        language: system
+        pass_filenames: false
+        always_run: false
+        files: (pyproject\.toml|_version\.py|tauri\.conf\.json|gui/frontend/src-tauri/Cargo\.toml|gui/frontend/package\.json)
       - id: prettier
         name: prettier
         entry: scripts/pre-commit-entry.sh prettier --write

@@ -64,10 +64,10 @@ def main():
     """Build the GUI backend executable using PyInstaller."""
     # Reconfigure stdout/stderr to handle Unicode on Windows
     # Uses 'backslashreplace' to gracefully degrade emojis on systems that can't display them
-    if hasattr(sys.stdout, 'reconfigure'):
-        sys.stdout.reconfigure(encoding='utf-8', errors='backslashreplace')
-    if hasattr(sys.stderr, 'reconfigure'):
-        sys.stderr.reconfigure(encoding='utf-8', errors='backslashreplace')
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="backslashreplace")
 
     print("🔨 Building Script-to-Speech GUI Backend executable...")
 
@@ -161,7 +161,9 @@ def main():
                 project_root / "gui" / "frontend" / "src-tauri" / "binaries"
             )
             tauri_binaries_dir.mkdir(parents=True, exist_ok=True)
-            tauri_binary_path = tauri_binaries_dir / f"sts-gui-backend-{target_triple}{exe_suffix}"
+            tauri_binary_path = (
+                tauri_binaries_dir / f"sts-gui-backend-{target_triple}{exe_suffix}"
+            )
 
             # Remove existing file or directory if it exists
             if tauri_binary_path.exists():

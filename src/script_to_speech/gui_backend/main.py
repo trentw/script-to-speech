@@ -32,6 +32,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from uvicorn import Config, Server
 
+from script_to_speech._version import __version__ as _APP_VERSION
 from script_to_speech.gui_backend.config import settings
 from script_to_speech.gui_backend.routers import (
     audiobook_generation,
@@ -109,7 +110,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(
     title="Script-to-Speech GUI Backend",
     description="REST API for TTS Playground functionality",
-    version="0.1.0",
+    version=_APP_VERSION,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
@@ -123,7 +124,7 @@ app.add_middleware(
         "http://localhost:5174",
         "tauri://localhost",
         "https://tauri.localhost",  # Windows WebView2
-        "http://tauri.localhost",   # Windows WebView2 alternate
+        "http://tauri.localhost",  # Windows WebView2 alternate
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -144,9 +145,7 @@ app.include_router(
     audiobook_generation.router, prefix="/api", tags=["audiobook-generation"]
 )
 app.include_router(review.router, prefix="/api", tags=["review"])
-app.include_router(
-    optional_config.router, prefix="/api", tags=["optional-config"]
-)
+app.include_router(optional_config.router, prefix="/api", tags=["optional-config"])
 app.include_router(settings_router.router, tags=["settings"])
 
 # Mount static files directory for generated audio
@@ -159,7 +158,7 @@ if settings.AUDIO_OUTPUT_DIR.exists():
 @app.get("/")
 async def root() -> dict[str, str]:
     """Root endpoint."""
-    return {"message": "Script-to-Speech GUI Backend", "version": "0.1.0"}
+    return {"message": "Script-to-Speech GUI Backend", "version": _APP_VERSION}
 
 
 @app.get("/health")

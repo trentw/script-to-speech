@@ -135,6 +135,43 @@ jobs:
         working-directory: gui/frontend
         run: pnpm install
 
+      # Extract changelog for release notes
+      - name: Extract changelog for release
+        id: changelog
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          # Extract the section for this version from CHANGELOG.md
+          BODY=$(python3 -c "
+          import re, sys
+          content = open('CHANGELOG.md').read()
+          # Match the version section header and capture everything until the next version header
+          pattern = r'## \[' + re.escape('$VERSION') + r'\].*?\n(.*?)(?=\n## \[|$)'
+          match = re.search(pattern, content, re.DOTALL)
+          if match:
+              print(match.group(1).strip())
+          else:
+              print('See [CHANGELOG.md](https://github.com/trentw/script-to-speech/blob/master/CHANGELOG.md) for details.')
+          " 2>/dev/null || echo "See CHANGELOG.md for details.")
+          # Write to environment file for multi-line support
+          {
+            echo "RELEASE_BODY<<RELEASE_BODY_EOF"
+            echo "$BODY"
+            echo ""
+            echo "## Downloads"
+            echo ""
+            echo "| Platform | File |"
+            echo "|----------|------|"
+            echo "| macOS (Apple Silicon) | \`Script to Speech_*_aarch64.dmg\` |"
+            echo "| macOS (Intel) | \`Script to Speech_*_x64.dmg\` |"
+            echo "| Windows | \`Script to Speech_*_x64-setup.exe\` or \`.msi\` |"
+            echo "| Linux | \`Script to Speech_*.AppImage\` or \`.deb\` |"
+            echo ""
+            echo "### Installation Notes"
+            echo "- **macOS**: App is signed and notarized - should open without security warnings"
+            echo "- **Linux**: Make AppImage executable: \`chmod +x *.AppImage\`"
+            echo "RELEASE_BODY_EOF"
+          } >> "$GITHUB_ENV"
+
       # Build Tauri App
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
@@ -153,19 +190,7 @@ jobs:
           args: ${{ matrix.args }}
           tagName: v__VERSION__
           releaseName: "Script to Speech v__VERSION__"
-          releaseBody: |
-            ## Downloads
-
-            | Platform | File |
-            |----------|------|
-            | macOS (Apple Silicon) | `Script to Speech_*_aarch64.dmg` |
-            | macOS (Intel) | `Script to Speech_*_x64.dmg` |
-            | Windows | `Script to Speech_*_x64-setup.exe` or `.msi` |
-            | Linux | `Script to Speech_*.AppImage` or `.deb` |
-
-            ### Installation Notes
-            - **macOS**: App is signed and notarized - should open without security warnings
-            - **Linux**: Make AppImage executable: `chmod +x *.AppImage`
+          releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: true
           prerelease: false
 

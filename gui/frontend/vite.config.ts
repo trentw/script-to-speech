@@ -6,6 +6,8 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { fileURLToPath } from 'url';
 import { defineConfig } from 'vite';
 
+import pkg from './package.json';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
@@ -13,6 +15,9 @@ export default defineConfig(({ mode }) => {
   const isAnalyze = mode === 'analyze';
 
   return {
+    define: {
+      __APP_VERSION__: JSON.stringify(pkg.version),
+    },
     plugins: [
       tailwindcss(),
       TanStackRouterVite({

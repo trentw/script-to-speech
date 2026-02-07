@@ -2,6 +2,7 @@
 .PHONY: frontend-test frontend-test-ui frontend-test-coverage frontend-lint frontend-lint-fix
 .PHONY: frontend-format frontend-type-check frontend-analyze frontend-type-coverage help
 .PHONY: website-dev website-build website-preview
+.PHONY: bump-patch bump-minor bump-major bump-dry-run check-version release
 
 help: ## Show available commands
 	@echo "Script-to-Speech GUI Commands:"
@@ -29,6 +30,14 @@ help: ## Show available commands
 	@echo "  make website-dev        - Start website development server"
 	@echo "  make website-build      - Build website for production"
 	@echo "  make website-preview    - Preview production build locally"
+	@echo ""
+	@echo "Versioning Commands:"
+	@echo "  make bump-patch         - Bump patch version (e.g., 2.0.0 -> 2.0.1)"
+	@echo "  make bump-minor         - Bump minor version (e.g., 2.0.0 -> 2.1.0)"
+	@echo "  make bump-major         - Bump major version (e.g., 2.0.0 -> 3.0.0)"
+	@echo "  make bump-dry-run       - Preview what a patch bump would change"
+	@echo "  make check-version      - Verify all version files are in sync"
+	@echo "  make release            - Show instructions to push release tag"
 	@echo ""
 	@echo "Development workflow:"
 	@echo "  Terminal 1: make gui-server"
@@ -104,6 +113,30 @@ frontend-analyze: ## Generate bundle analysis
 
 frontend-type-coverage: ## Check TypeScript type coverage
 	cd gui/frontend && pnpm run type-coverage
+
+# Versioning Commands
+bump-patch: ## Bump patch version (e.g., 2.0.0 -> 2.0.1), commits and tags
+	uv run bump-my-version bump patch
+
+bump-minor: ## Bump minor version (e.g., 2.0.0 -> 2.1.0), commits and tags
+	uv run bump-my-version bump minor
+
+bump-major: ## Bump major version (e.g., 2.0.0 -> 3.0.0), commits and tags
+	uv run bump-my-version bump major
+
+bump-dry-run: ## Preview what a patch bump would change (no modifications)
+	uv run bump-my-version bump --dry-run -vv patch
+
+check-version: ## Verify all version files are in sync
+	uv run python scripts/check_version_sync.py
+
+release: ## Show instructions to push latest release tag
+	@echo ""
+	@echo "To trigger a GitHub release build, push the tag:"
+	@echo "  git push origin master --tags"
+	@echo ""
+	@echo "This will trigger the build-desktop workflow which creates"
+	@echo "a draft GitHub release with binaries for all platforms."
 
 # Website Commands
 website-dev: ## Start website development server

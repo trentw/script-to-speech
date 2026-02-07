@@ -195,7 +195,7 @@ export function AdaptiveNavigation({
           >
             {/* Version */}
             <p className="text-muted-foreground text-xs whitespace-nowrap">
-              v0.1.0
+              v{__APP_VERSION__}
             </p>
           </div>
         </div>

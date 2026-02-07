@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "script_to_speech"
-version = "1.1.0"
+version = "2.0.0"
 description = "A set of tools to convert screenplays into multi-voiced audiobooks using various TTS providers"
 authors = [
     {name = "Trent Walkiewicz", email = "t.walkiewicz@gmail.com"}
@@ -45,6 +45,7 @@ build = [
 ]
 dev = [
     "black>=25.1.0",
+    "bump-my-version>=1.2.6",
     "isort>=6.0.1",
     "pre-commit>=4.2.0",
     "pytest>=8.3.5",
@@ -155,3 +156,42 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = ["pydub.*", "ruamel.*", "elevenlabs.*", "eyed3.*", "zyphra.*", "pdfplumber.*", "unidecode.*", "openai.*", "static_ffmpeg.*", "cartesia.*", "requests.*", "dotenv.*", "pyperclip.*", "pydantic.*", "pydantic_settings.*", "fastapi.*", "uvicorn.*", "pathvalidate.*"]
 ignore_missing_imports = true
+
+# ── Version bumping ─────────────────────────────────────────────────────────
+# Usage: uv run bump-my-version bump patch|minor|major
+#        uv run bump-my-version bump --dry-run -vv patch  (preview)
+[tool.bumpversion]
+current_version = "2.0.0"
+commit = true
+tag = true
+tag_name = "v{new_version}"
+message = "release: v{new_version}"
+pre_commit_hooks = [
+    "cd gui/frontend/src-tauri && cargo generate-lockfile",
+    "git add gui/frontend/src-tauri/Cargo.lock",
+]
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "src/script_to_speech/_version.py"
+search = '__version__ = "{current_version}"'
+replace = '__version__ = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "gui/frontend/src-tauri/tauri.conf.json"
+search = '"version": "{current_version}"'
+replace = '"version": "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "gui/frontend/src-tauri/Cargo.toml"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
+
+[[tool.bumpversion.files]]
+filename = "gui/frontend/package.json"
+search = '"version": "{current_version}"'
+replace = '"version": "{new_version}"'
