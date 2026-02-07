@@ -25,7 +25,9 @@ export const queryKeys = {
 
   // Projects
   projectsDiscover: (limit?: number) =>
-    limit ? ['projects', 'discover', limit] : (['projects', 'discover'] as const),
+    limit
+      ? ['projects', 'discover', limit]
+      : (['projects', 'discover'] as const),
   projectStatus: (inputPath: string) =>
     ['projects', 'status', inputPath] as const,
   id3TagConfig: (inputPath: string) =>

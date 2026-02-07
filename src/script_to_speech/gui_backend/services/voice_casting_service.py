@@ -1234,7 +1234,9 @@ class VoiceCastingService:
                         # Pattern for detecting new labeled lines (e.g., "# Gender:", "# Voice suggestion:")
                         new_label_pattern = re.compile(r"#\s*\w[\w\s]*:\s*.+")
                         # Track what was last matched for continuation
-                        last_matched = None  # 'casting_notes', 'role', 'additional_notes', or None
+                        last_matched = (
+                            None  # 'casting_notes', 'role', 'additional_notes', or None
+                        )
 
                         for comment in comment_buffer:
                             # Check for empty comment line (just '#') - break continuation
@@ -1287,7 +1289,9 @@ class VoiceCastingService:
                             elif last_matched == "role" and roles:
                                 # Bare continuation of role
                                 roles[-1] += " " + clean_text
-                            elif last_matched == "additional_notes" and additional_notes:
+                            elif (
+                                last_matched == "additional_notes" and additional_notes
+                            ):
                                 # Bare continuation of additional note
                                 additional_notes[-1] += " " + clean_text
                             else:

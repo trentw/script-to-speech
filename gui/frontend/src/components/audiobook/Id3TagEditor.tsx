@@ -15,7 +15,7 @@ import { useId3TagConfig } from '@/hooks/queries/useId3TagConfig';
  * Validate that a year string is exactly 4 digits (e.g. "2025").
  * Returns an error message or null if valid. Empty string is valid (field is optional).
  */
-export function validateYear(value: string): string | null {
+function validateYear(value: string): string | null {
   if (value === '') return null;
   if (!/^\d{4}$/.test(value)) return 'Year must be 4 digits';
   return null;
@@ -48,6 +48,7 @@ function InlineField({
   const [editing, setEditing] = useState(false);
   const [localValue, setLocalValue] = useState(value);
   const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Sync display value from server when not editing
   useEffect(() => {
@@ -58,6 +59,8 @@ function InlineField({
     setLocalValue(value);
     setError(null);
     setEditing(true);
+    // Focus after React renders the input
+    requestAnimationFrame(() => inputRef.current?.focus());
   };
 
   const handleCancel = () => {
@@ -119,6 +122,7 @@ function InlineField({
         <div className={`${labelClass} ${inlineOffset}`}>{label}</div>
         <div className={`flex items-center gap-1 ${inlineOffset}`}>
           <Input
+            ref={inputRef}
             id={id}
             value={localValue}
             onChange={(e) => {
@@ -128,7 +132,6 @@ function InlineField({
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className={`${compact ? 'h-8 text-sm' : ''} ${error ? 'border-red-400' : ''}`}
-            autoFocus
           />
           <Tooltip>
             <TooltipTrigger asChild>

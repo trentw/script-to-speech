@@ -641,7 +641,11 @@ class ProjectService:
             config = yaml.safe_load(f) or {}
 
         if "id3_tag_config" not in config:
-            config["id3_tag_config"] = {"title": "", "screenplay_author": "", "date": ""}
+            config["id3_tag_config"] = {
+                "title": "",
+                "screenplay_author": "",
+                "date": "",
+            }
 
         # Apply only non-None updates
         for key, value in updates.items():

@@ -13,7 +13,7 @@ from pydub.silence import detect_silence
 logger = logging.getLogger(__name__)
 
 
-def _patch_pydub_for_windows():
+def _patch_pydub_for_windows() -> None:
     """
     Patch pydub's subprocess calls on Windows to prevent console windows
     and handle the lack of stdin/stdout/stderr in PyInstaller --noconsole builds.
@@ -32,27 +32,25 @@ def _patch_pydub_for_windows():
     import pydub.audio_segment
     import pydub.utils
 
-    _original_popen = subprocess.Popen
-
-    class _WindowsNoConsolePopen(_original_popen):
-        def __init__(self, *args, **kwargs):
+    class _WindowsNoConsolePopen(subprocess.Popen):  # type: ignore[type-arg]
+        def __init__(self, *args: object, **kwargs: object) -> None:
             # Add STARTUPINFO to hide console window
             if "startupinfo" not in kwargs:
-                si = subprocess.STARTUPINFO()
-                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si = subprocess.STARTUPINFO()  # type: ignore[attr-defined]
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW  # type: ignore[attr-defined]
                 kwargs["startupinfo"] = si
 
             # Ensure stdin is not None (causes hangs in --noconsole builds)
             if kwargs.get("stdin") is None:
                 kwargs["stdin"] = subprocess.PIPE
 
-            super().__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)  # type: ignore[call-overload]
 
     # Patch pydub.audio_segment which uses `import subprocess` then subprocess.Popen()
-    pydub.audio_segment.subprocess.Popen = _WindowsNoConsolePopen
+    pydub.audio_segment.subprocess.Popen = _WindowsNoConsolePopen  # type: ignore[assignment]
 
     # Patch pydub.utils which uses `from subprocess import Popen` directly
-    pydub.utils.Popen = _WindowsNoConsolePopen
+    pydub.utils.Popen = _WindowsNoConsolePopen  # type: ignore[attr-defined]
 
     logger.info("Patched pydub subprocess for Windows compatibility")
 

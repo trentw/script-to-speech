@@ -303,8 +303,6 @@ def main() -> int:
     )
 
     # Check if --sts_id is present in sys.argv (before parsing)
-    import sys
-
     sts_id_present = any(
         arg == "--sts_id" or arg.startswith("--sts_id=") for arg in sys.argv
     )

@@ -18,7 +18,9 @@ def _get_voice_library_scripts_path() -> Path:
     if getattr(sys, "frozen", False):
         # Note: Scripts may not be bundled, return a path that won't exist
         base_path = Path(getattr(sys, "_MEIPASS", "."))
-        return base_path / "script_to_speech" / "voice_library" / "voice_library_scripts"
+        return (
+            base_path / "script_to_speech" / "voice_library" / "voice_library_scripts"
+        )
     else:
         return Path(__file__).parent / "voice_library_scripts"
 

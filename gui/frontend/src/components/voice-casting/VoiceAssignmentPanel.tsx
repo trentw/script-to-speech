@@ -291,7 +291,9 @@ export function VoiceAssignmentPanel({
         </div>
 
         {/* Character Notes */}
-        {(character.role || character.castingNotes || character.additionalNotes?.length) && (
+        {(character.role ||
+          character.castingNotes ||
+          character.additionalNotes?.length) && (
           <div className="bg-muted/50 space-y-1.5 rounded-md p-3">
             {character.role && (
               <TruncatedNote
@@ -307,25 +309,26 @@ export function VoiceAssignmentPanel({
                 className="text-muted-foreground text-sm"
               />
             )}
-            {character.additionalNotes && character.additionalNotes.length > 0 && (
-              <>
-                <div className="border-muted-foreground/20 border-t pt-1.5">
-                  <p className="text-muted-foreground mb-1 text-xs font-medium">
-                    Additional Notes
-                  </p>
-                  <div className="space-y-0.5">
-                    {character.additionalNotes.map((note, idx) => (
-                      <TruncatedNote
-                        key={idx}
-                        text={note}
-                        maxLines={1}
-                        className="text-muted-foreground text-sm"
-                      />
-                    ))}
+            {character.additionalNotes &&
+              character.additionalNotes.length > 0 && (
+                <>
+                  <div className="border-muted-foreground/20 border-t pt-1.5">
+                    <p className="text-muted-foreground mb-1 text-xs font-medium">
+                      Additional Notes
+                    </p>
+                    <div className="space-y-0.5">
+                      {character.additionalNotes.map((note, idx) => (
+                        <TruncatedNote
+                          key={idx}
+                          text={note}
+                          maxLines={1}
+                          className="text-muted-foreground text-sm"
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
           </div>
         )}
 

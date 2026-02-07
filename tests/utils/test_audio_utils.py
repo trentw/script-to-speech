@@ -61,10 +61,12 @@ class TestConfigureFFmpeg:
 
                     # Check that verification test was performed
                     mock_silent.assert_called_once()
-                    mock_silent.return_value.export.assert_called_once_with(
-                        "test.mp3", format="mp3"
-                    )
-                    mock_remove.assert_called_once_with("test.mp3")
+                    # Verification now uses a temp file instead of hardcoded path
+                    mock_silent.return_value.export.assert_called_once()
+                    call_args = mock_silent.return_value.export.call_args
+                    assert call_args[0][0].endswith(".mp3")
+                    assert call_args[1] == {"format": "mp3"}
+                    mock_remove.assert_called_once()
 
     def test_configure_ffmpeg_static_ffmpeg_not_installed(self):
         """Test configure_ffmpeg raises ImportError when static-ffmpeg is not installed."""

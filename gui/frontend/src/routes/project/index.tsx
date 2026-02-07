@@ -28,10 +28,7 @@ import { useId3TagConfig } from '@/hooks/queries/useId3TagConfig';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { getProjectProgressStatus } from '@/lib/project-status';
 import { apiService } from '@/services/api';
-import {
-  useAudioCommands,
-  useAudioState,
-} from '@/services/AudioService';
+import { useAudioCommands, useAudioState } from '@/services/AudioService';
 import { useProject } from '@/stores/appStore';
 import type { RouteStaticData } from '@/types/route-metadata';
 
@@ -91,8 +88,7 @@ function ProjectOverview() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Project Overview</h1>
         <p className="text-muted-foreground">
-          Managing project:{' '}
-          <span className="font-medium">{displayTitle}</span>
+          Managing project: <span className="font-medium">{displayTitle}</span>
         </p>
       </div>
 

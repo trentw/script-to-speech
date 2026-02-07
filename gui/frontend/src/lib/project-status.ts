@@ -43,8 +43,13 @@ export function isVoiceCastingComplete(
 export function getProjectProgressStatus(
   input: ProgressStatusInput
 ): ProgressStatus {
-  const { hasJson, hasVoiceConfig, speakerCount, voicesAssigned, hasOutputMp3 } =
-    input;
+  const {
+    hasJson,
+    hasVoiceConfig,
+    speakerCount,
+    voicesAssigned,
+    hasOutputMp3,
+  } = input;
 
   // Not started - no parsed screenplay
   if (!hasJson) {

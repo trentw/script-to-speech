@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   Tooltip,
@@ -45,7 +45,10 @@ export function TruncatedNote({
           {label}{' '}
         </span>
       )}
-      <span ref={textRef} className={cn('inline-block w-full', lineClampClass[maxLines])}>
+      <span
+        ref={textRef}
+        className={cn('inline-block w-full', lineClampClass[maxLines])}
+      >
         {text}
       </span>
     </p>

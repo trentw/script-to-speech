@@ -4,7 +4,11 @@
 
 import { API_BASE_URL } from '../config/api';
 import type { DetectedPattern } from '../types';
-import type { Id3TagConfig, Id3TagConfigUpdate, ProjectStatus } from '../types/project';
+import type {
+  Id3TagConfig,
+  Id3TagConfigUpdate,
+  ProjectStatus,
+} from '../types/project';
 
 interface ApiResponse<T = unknown> {
   ok: boolean;

@@ -445,7 +445,9 @@ export function YamlImportPanel({
                           {assignment.provider} - {assignment.sts_id}
                         </span>
                       </div>
-                      {(assignment.role || assignment.casting_notes || assignment.additional_notes?.length) && (
+                      {(assignment.role ||
+                        assignment.casting_notes ||
+                        assignment.additional_notes?.length) && (
                         <div className="mt-1 space-y-1 pl-4">
                           {assignment.role && (
                             <p className="text-muted-foreground text-xs">
@@ -459,13 +461,16 @@ export function YamlImportPanel({
                               {assignment.casting_notes}
                             </p>
                           )}
-                          {assignment.additional_notes && assignment.additional_notes.length > 0 && (
+                          {assignment.additional_notes &&
+                            assignment.additional_notes.length > 0 &&
                             assignment.additional_notes.map((note, idx) => (
-                              <p key={idx} className="text-muted-foreground text-xs italic">
+                              <p
+                                key={idx}
+                                className="text-muted-foreground text-xs italic"
+                              >
                                 {note}
                               </p>
-                            ))
-                          )}
+                            ))}
                         </div>
                       )}
                     </div>

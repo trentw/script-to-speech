@@ -196,7 +196,9 @@ export function CharacterCard({
 
             {/* Character Notes/Role - This will grow to fill available space */}
             <div className="flex-grow">
-              {(character.role || character.castingNotes || character.additionalNotes?.length) && (
+              {(character.role ||
+                character.castingNotes ||
+                character.additionalNotes?.length) && (
                 <div className="bg-muted/50 space-y-1 rounded-md p-2">
                   {character.role && (
                     <TruncatedNote
@@ -212,13 +214,14 @@ export function CharacterCard({
                       className="text-muted-foreground"
                     />
                   )}
-                  {character.additionalNotes && character.additionalNotes.length > 0 && (
-                    <TruncatedNote
-                      text={character.additionalNotes.join(' | ')}
-                      maxLines={1}
-                      className="text-muted-foreground italic"
-                    />
-                  )}
+                  {character.additionalNotes &&
+                    character.additionalNotes.length > 0 && (
+                      <TruncatedNote
+                        text={character.additionalNotes.join(' | ')}
+                        maxLines={1}
+                        className="text-muted-foreground italic"
+                      />
+                    )}
                 </div>
               )}
             </div>
