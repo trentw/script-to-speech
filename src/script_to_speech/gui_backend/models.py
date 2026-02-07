@@ -213,6 +213,22 @@ class ProjectMeta(BaseModel):
     last_modified: str
 
 
+class Id3TagConfig(CamelModel):
+    """ID3 tag configuration for audiobook metadata."""
+
+    title: str = ""
+    screenplay_author: str = ""
+    date: str = ""
+
+
+class Id3TagConfigUpdate(CamelModel):
+    """Request body for updating ID3 tag configuration (partial update)."""
+
+    title: Optional[str] = None
+    screenplay_author: Optional[str] = None
+    date: Optional[str] = None
+
+
 class ProjectStatus(BaseModel):
     """Detailed project status with file existence and parse errors."""
 

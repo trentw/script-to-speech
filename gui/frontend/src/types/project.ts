@@ -64,3 +64,15 @@ export interface GenerateOptionalConfigResponse {
   created: boolean;
   path: string;
 }
+
+export interface Id3TagConfig {
+  title: string;
+  screenplayAuthor: string;
+  date: string;
+}
+
+export interface Id3TagConfigUpdate {
+  title?: string;
+  screenplayAuthor?: string;
+  date?: string;
+}

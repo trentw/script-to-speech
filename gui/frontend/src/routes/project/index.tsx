@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect } from 'react';
 
+import { Id3TagEditor } from '@/components/audiobook';
 import { RouteError } from '@/components/errors';
 import { Badge } from '@/components/ui/badge';
 import { appButtonVariants } from '@/components/ui/button-variants';
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { UniversalAudioPlayer } from '@/components/UniversalAudioPlayer';
+import { useId3TagConfig } from '@/hooks/queries/useId3TagConfig';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { getProjectProgressStatus } from '@/lib/project-status';
 import { apiService } from '@/services/api';
@@ -74,6 +76,10 @@ function ProjectOverview() {
       })
     : null;
 
+  // ID3 tag config for display title
+  const { config: id3Config } = useId3TagConfig(project?.inputPath);
+  const displayTitle = id3Config?.title || project?.screenplayName || '';
+
   // Don't render if no project (route guard will handle redirect)
   if (!project) {
     return null;
@@ -86,7 +92,7 @@ function ProjectOverview() {
         <h1 className="text-3xl font-bold tracking-tight">Project Overview</h1>
         <p className="text-muted-foreground">
           Managing project:{' '}
-          <span className="font-medium">{project.screenplayName}</span>
+          <span className="font-medium">{displayTitle}</span>
         </p>
       </div>
 
@@ -98,6 +104,25 @@ function ProjectOverview() {
           <CardTitle className="flex items-center gap-2">
             <Folder className="h-5 w-5" />
             Project Status
+            {progressStatus ? (
+              <Badge
+                variant="outline"
+                className={progressStatus.badgeClassName}
+              >
+                {progressStatus.label}
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="border-slate-300 bg-slate-100 text-slate-600"
+              >
+                {error
+                  ? 'Status Unavailable'
+                  : isLoading
+                    ? 'Loading…'
+                    : 'Status Unknown'}
+              </Badge>
+            )}
           </CardTitle>
           <CardDescription>
             Current state and basic information about your project
@@ -105,37 +130,13 @@ function ProjectOverview() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <div className="text-muted-foreground text-sm font-medium">
-                Screenplay Name
-              </div>
-              <p className="font-medium">{project.screenplayName}</p>
-            </div>
-            <div>
-              <div className="text-muted-foreground text-sm font-medium">
-                Status
-              </div>
-              <div className="flex items-center gap-2">
-                {progressStatus ? (
-                  <Badge
-                    variant="outline"
-                    className={progressStatus.badgeClassName}
-                  >
-                    {progressStatus.label}
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="border-slate-300 bg-slate-100 text-slate-600"
-                  >
-                    {error
-                      ? 'Status Unavailable'
-                      : isLoading
-                        ? 'Loading…'
-                        : 'Status Unknown'}
-                  </Badge>
-                )}
-              </div>
+            {/* ID3 Metadata — spans full width */}
+            <div className="col-span-full">
+              <Id3TagEditor
+                inputPath={project.inputPath}
+                screenplayName={project.screenplayName}
+                idPrefix="overview-id3"
+              />
             </div>
             <div>
               <div className="text-muted-foreground text-sm font-medium">

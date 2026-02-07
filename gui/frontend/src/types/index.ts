@@ -252,6 +252,8 @@ export type {
   CreateProjectResponse,
   GenerateOptionalConfigRequest,
   GenerateOptionalConfigResponse,
+  Id3TagConfig,
+  Id3TagConfigUpdate,
   ProjectMeta,
   ProjectStatus,
 } from './project';

@@ -572,6 +572,91 @@ class ProjectService:
             logger.error(error_msg, exc_info=True)
             raise RuntimeError(error_msg)
 
+    def get_id3_tag_config(self, input_path: str) -> Dict[str, str]:
+        """Get ID3 tag configuration for a project.
+
+        Args:
+            input_path: Path to the project's input directory
+
+        Returns:
+            Dictionary with id3 tag config fields (title, screenplay_author, date)
+        """
+        project_dir = self._validate_path_security(input_path)
+        if not project_dir.exists() or not project_dir.is_dir():
+            raise ValueError(f"Project directory does not exist: {input_path}")
+
+        project_name = project_dir.name
+        json_path = str(project_dir / f"{project_name}.json")
+
+        # Auto-create optional config if missing
+        from script_to_speech.utils.optional_config_generation import (
+            generate_optional_config,
+            get_optional_config_path,
+        )
+
+        generate_optional_config(json_path)
+        config_path = get_optional_config_path(json_path)
+
+        # Read the YAML config
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+
+        id3_config = config.get("id3_tag_config", {})
+        return {
+            "title": id3_config.get("title", ""),
+            "screenplay_author": id3_config.get("screenplay_author", ""),
+            "date": id3_config.get("date", ""),
+        }
+
+    def update_id3_tag_config(
+        self, input_path: str, updates: Dict[str, Optional[str]]
+    ) -> Dict[str, str]:
+        """Update ID3 tag configuration for a project.
+
+        Args:
+            input_path: Path to the project's input directory
+            updates: Dictionary of fields to update (only non-None values are applied)
+
+        Returns:
+            Full updated id3 tag config dictionary
+        """
+        project_dir = self._validate_path_security(input_path)
+        if not project_dir.exists() or not project_dir.is_dir():
+            raise ValueError(f"Project directory does not exist: {input_path}")
+
+        project_name = project_dir.name
+        json_path = str(project_dir / f"{project_name}.json")
+
+        from script_to_speech.utils.optional_config_generation import (
+            generate_optional_config,
+            get_optional_config_path,
+            write_config_file,
+        )
+
+        generate_optional_config(json_path)
+        config_path = get_optional_config_path(json_path)
+
+        # Read existing config
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f) or {}
+
+        if "id3_tag_config" not in config:
+            config["id3_tag_config"] = {"title": "", "screenplay_author": "", "date": ""}
+
+        # Apply only non-None updates
+        for key, value in updates.items():
+            if value is not None:
+                config["id3_tag_config"][key] = value
+
+        # Write back
+        write_config_file(config_path, config)
+
+        return {
+            "title": config["id3_tag_config"].get("title", ""),
+            "screenplay_author": config["id3_tag_config"].get("screenplay_author", ""),
+            "date": config["id3_tag_config"].get("date", ""),
+        }
+
 
 # Create service instance
 project_service = ProjectService()

@@ -37,6 +37,7 @@ from script_to_speech.gui_backend.routers import (
     audiobook_generation,
     files,
     generation,
+    optional_config,
     projects,
     providers,
     review,
@@ -143,6 +144,9 @@ app.include_router(
     audiobook_generation.router, prefix="/api", tags=["audiobook-generation"]
 )
 app.include_router(review.router, prefix="/api", tags=["review"])
+app.include_router(
+    optional_config.router, prefix="/api", tags=["optional-config"]
+)
 app.include_router(settings_router.router, tags=["settings"])
 
 # Mount static files directory for generated audio

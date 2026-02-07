@@ -4,7 +4,7 @@
 
 import { API_BASE_URL } from '../config/api';
 import type { DetectedPattern } from '../types';
-import type { ProjectStatus } from '../types/project';
+import type { Id3TagConfig, Id3TagConfigUpdate, ProjectStatus } from '../types/project';
 
 interface ApiResponse<T = unknown> {
   ok: boolean;
@@ -167,6 +167,56 @@ class ProjectApiService {
       );
       throw error;
     }
+  }
+
+  /**
+   * Get ID3 tag configuration for a project
+   */
+  async getId3TagConfig(inputPath: string): Promise<Id3TagConfig> {
+    const response = await fetch(
+      `${this.baseUrl}/project/id3-config?input_path=${encodeURIComponent(inputPath)}`
+    );
+    const result: ApiResponse<Id3TagConfig> = await response.json();
+
+    if (!result.ok) {
+      throw new Error(result.error || 'Failed to get ID3 tag config');
+    }
+
+    if (!result.data) {
+      throw new Error('No ID3 tag config data returned');
+    }
+
+    return result.data;
+  }
+
+  /**
+   * Update ID3 tag configuration for a project (partial update)
+   */
+  async updateId3TagConfig(
+    inputPath: string,
+    update: Id3TagConfigUpdate
+  ): Promise<Id3TagConfig> {
+    const response = await fetch(
+      `${this.baseUrl}/project/id3-config?input_path=${encodeURIComponent(inputPath)}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(update),
+      }
+    );
+    const result: ApiResponse<Id3TagConfig> = await response.json();
+
+    if (!result.ok) {
+      throw new Error(result.error || 'Failed to update ID3 tag config');
+    }
+
+    if (!result.data) {
+      throw new Error('No ID3 tag config data returned');
+    }
+
+    return result.data;
   }
 }
 
