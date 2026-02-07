@@ -138,6 +138,7 @@ jobs:
       # Extract changelog for release notes
       - name: Extract changelog for release
         id: changelog
+        shell: bash
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           # Extract the section for this version from CHANGELOG.md
