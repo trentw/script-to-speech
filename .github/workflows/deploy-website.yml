@@ -9,6 +9,8 @@ on:
       - 'README.md'
       - 'PRIVACY.md'
       - '.github/workflows/deploy-website.yml'
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
