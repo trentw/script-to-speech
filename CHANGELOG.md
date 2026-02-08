@@ -7,35 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-02-07
+
+Starting with 2.0.0, this changelog covers all components (CLI, backend, frontend, desktop app).
+
 ### Added
-- Adding `sts-voice-library-run-script` and corresponding `sts-validate-voice-library-scripts` scripts to load system / user defined voice library scripts + tests and documentation, as well initial `fetch_provider_voices` script
-- Added `overall_voice_casting_prompt` case to `additional_voice_casting_instructions` to add to overall casting prompt
-- Added `additional_voice_casting_instructions` field to voice_library_config to specific additional casting instructions for each provider
-- Added user-configurable voice library directories, and merge logic, so that project-level voices can be modified / added to
-- Added `voice_library_config` concept on both project and user level, and added first use case: filtering sts_ids that are included in the voice casting prompt
-- Added new documentation for `sts-generate-standalone-speech` and `sts-batch-generate-standalone-speech`, including sample configuration for batch generation
-- Expanded elevenlabs voice library with additional voices
-- Added `sts-batch-generate-standalone-speech` script to generate standalone speech files in bulk (useful for generating sample audio for multiple voices that need to be added to voice library)
-- Added additional reporting functionality to `validate` mode of `sts-tts-provider-yaml` to report provide stats provider usage + duplicate voice stats 
-- Added `sts-generate-voice-library-casting-prompt` utility to aid in casting voice configs, utilizing the voice library
-- Incorporating voice library "expansion" into tts provider manager and standalone speech utility
-- Added validation for voice library, validation scripts, and pre-commit hook
-- Added voice library schema an minimal library files
-- Added more extensive privacy notices and data usage suggestions, including [PRIVACY.md](PRIVACY.md)
-- Added clearer in-line privacy notices when a 3rd party service is being used
-- Added `validate` mode to `sts-tts-provider-yaml` script to identify missing / additional / duplicate speakers in .yaml voice configuration, as well as validate fields with `--strict` flag
-- Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
-- Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
+- [Desktop] First unified release of the Script to Speech desktop application
+- [Desktop] Voice casting workflow with LLM-assisted casting, voice preview, and assignment UI
+- [Desktop] Audiobook generation pipeline with progress tracking and ID3 tag editing
+- [Desktop] Project management with screenplay import, parsing, and review
+- [Desktop] Provider API key configuration and management
+- [Desktop] macOS code signing and notarization for trusted distribution
+- [Desktop] Cross-platform builds (macOS ARM64/Intel, Windows, Linux)
+- [CLI] Adding `sts-voice-library-run-script` and corresponding `sts-validate-voice-library-scripts` scripts to load system / user defined voice library scripts + tests and documentation, as well initial `fetch_provider_voices` script
+- [CLI] Added `overall_voice_casting_prompt` case to `additional_voice_casting_instructions` to add to overall casting prompt
+- [CLI] Added `additional_voice_casting_instructions` field to voice_library_config to specific additional casting instructions for each provider
+- [CLI] Added user-configurable voice library directories, and merge logic, so that project-level voices can be modified / added to
+- [CLI] Added `voice_library_config` concept on both project and user level, and added first use case: filtering sts_ids that are included in the voice casting prompt
+- [CLI] Added new documentation for `sts-generate-standalone-speech` and `sts-batch-generate-standalone-speech`, including sample configuration for batch generation
+- [CLI] Expanded elevenlabs voice library with additional voices
+- [CLI] Added `sts-batch-generate-standalone-speech` script to generate standalone speech files in bulk (useful for generating sample audio for multiple voices that need to be added to voice library)
+- [CLI] Added additional reporting functionality to `validate` mode of `sts-tts-provider-yaml` to report provide stats provider usage + duplicate voice stats 
+- [CLI] Added `sts-generate-voice-library-casting-prompt` utility to aid in casting voice configs, utilizing the voice library
+- [CLI] Incorporating voice library "expansion" into tts provider manager and standalone speech utility
+- [CLI] Added validation for voice library, validation scripts, and pre-commit hook
+- [CLI] Added voice library schema an minimal library files
+- [CLI] Added more extensive privacy notices and data usage suggestions, including [PRIVACY.md](PRIVACY.md)
+- [CLI] Added clearer in-line privacy notices when a 3rd party service is being used
+- [CLI] Added `validate` mode to `sts-tts-provider-yaml` script to identify missing / additional / duplicate speakers in .yaml voice configuration, as well as validate fields with `--strict` flag
+- [CLI] Added `sts-copy-to-clipboard` utility to copy file contents to clipboard
+- [CLI] Added `sts-generate-character-notes-prompt` utility to aid in casting voice configs by generating character notes
 
 ### Changed
-- Changed `--tts_config` to be a required parameter for `sts-generate-audio`, and updated variable naming to `tts_provider_config` to be more consistent with rest of code
+- [CLI] Changed `--tts_config` to be a required parameter for `sts-generate-audio`, and updated variable naming to `tts_provider_config` to be more consistent with rest of code
 
 ### Fixed
-- Fixing some dict merging edge cases with nested lists, and consolidating dict merging functionality in a `dict_utils.py` file
-- Added duplicate checking across voice library .yaml files for a given provider to ensure uniqueness
-- Fixed a couple parser issues where multi-line dialogue_modifiers were being terminated early, and where they were incorrectly being attributed as dialogues
-- Fixed parser issue where dialogue_modifiers weren't properly being terminated in some cases by adding tracking of last non-blank line, and checking for closed parenthesis
-- Fixed issue with `sts-parse-regression-check-json` where it could get "out of sync" in some cases and incorrectly show chunks as added / removed
+- [CLI] Fixing some dict merging edge cases with nested lists, and consolidating dict merging functionality in a `dict_utils.py` file
+- [CLI] Added duplicate checking across voice library .yaml files for a given provider to ensure uniqueness
+- [CLI] Fixed a couple parser issues where multi-line dialogue_modifiers were being terminated early, and where they were incorrectly being attributed as dialogues
+- [CLI] Fixed parser issue where dialogue_modifiers weren't properly being terminated in some cases by adding tracking of last non-blank line, and checking for closed parenthesis
+- [CLI] Fixed issue with `sts-parse-regression-check-json` where it could get "out of sync" in some cases and incorrectly show chunks as added / removed
 
 ## [1.1.0] - 2025-05-26
 
