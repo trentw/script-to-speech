@@ -84,11 +84,23 @@ No additional installation needed! UV will automatically install dependencies on
 
 ### For Development
 
-Install the package in editable mode:
+1. Install Python dependencies (including dev and GUI extras):
 
-```bash
-uv pip install -e ".[dev]"
-```
+   ```bash
+   uv sync --all-extras
+   ```
+
+2. Install frontend dependencies ([pnpm](https://pnpm.io/installation) required):
+
+   ```bash
+   pnpm install
+   ```
+
+3. Install pre-commit hooks:
+
+   ```bash
+   uv run pre-commit install
+   ```
 
 ## Basic Workflow
 
