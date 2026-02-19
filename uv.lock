@@ -2138,7 +2138,7 @@ requires-dist = [
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.32.0" },
     { name = "ruamel-yaml", specifier = ">=0.17.21" },
-    { name = "static-ffmpeg", specifier = ">=2.5" },
+    { name = "static-ffmpeg", specifier = ">=3.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.12" },
     { name = "types-requests", marker = "extra == 'dev'", specifier = ">=2.32.0" },
@@ -2194,7 +2194,7 @@ wheels = [
 
 [[package]]
 name = "static-ffmpeg"
-version = "2.13"
+version = "3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
@@ -2203,7 +2203,7 @@ dependencies = [
     { name = "twine" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/09/39/1a5d0603280dd681ec52a2a6717c05dab530190dff7887b7603740a1741b/static_ffmpeg-2.13-py3-none-any.whl", hash = "sha256:3bed55a7979f9de9d1eec1126b98774a1d41c2e323811f59973d54b9c94d6dac", size = 7586, upload-time = "2025-03-30T23:34:20.646Z" },
+    { url = "https://files.pythonhosted.org/packages/a9/d3/c238124fbf2dbe5eda203f0a1c4cd6c210e27993ed9780c4c1bf2ab0efbe/static_ffmpeg-3.0-py3-none-any.whl", hash = "sha256:79d9067264cefbb05e6b847be7d6cb7410b7b25adce40178a787f0137567c89f", size = 7927, upload-time = "2026-01-16T21:17:10.643Z" },
 ]
 
 [[package]]

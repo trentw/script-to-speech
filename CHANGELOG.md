@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 - [Desktop] Fixed issue where character names with special characters (like "/") would break voice assignment
+- [Desktop] Fixed ffmpeg "Bad CPU type" error on Apple Silicon by upgrading `static-ffmpeg` to v3.0 (arm64 support)
+
 ## [2.0.0] - 2026-02-07
 
 Starting with 2.0.0, this changelog covers all components (CLI, backend, frontend, desktop app).
