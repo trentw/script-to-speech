@@ -6,7 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from script_to_speech.utils.logging import get_screenplay_logger
@@ -593,11 +593,13 @@ async def update_session_yaml(
 
 
 @router.put(
-    "/session/{session_id}/assignment/{character}",
+    "/session/{session_id}/assignment",
     response_model=UpdateAssignmentResponse,
 )
 async def update_character_assignment(
-    session_id: str, character: str, request: UpdateAssignmentRequest
+    session_id: str,
+    character: str = Query(..., description="Character name"),
+    request: UpdateAssignmentRequest = Body(...),
 ) -> UpdateAssignmentResponse:
     """
     Update a single character's voice assignment while preserving YAML structure and comments.
@@ -642,12 +644,12 @@ async def update_character_assignment(
 
 
 @router.delete(
-    "/session/{session_id}/assignment/{character}/voice",
+    "/session/{session_id}/assignment/voice",
     response_model=UpdateAssignmentResponse,
 )
 async def clear_character_voice(
     session_id: str,
-    character: str,
+    character: str = Query(..., description="Character name"),
     version_id: int = Query(
         ..., description="Current YAML version ID for optimistic locking"
     ),

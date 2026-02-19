@@ -549,7 +549,7 @@ class ApiService {
       session: import('../types/voice-casting').VoiceCastingSession;
       success: boolean;
     }>(
-      `/voice-casting/session/${sessionId}/assignment/${encodeURIComponent(character)}`,
+      `/voice-casting/session/${sessionId}/assignment?character=${encodeURIComponent(character)}`,
       {
         method: 'PUT',
         body: JSON.stringify({
@@ -574,7 +574,7 @@ class ApiService {
       session: import('../types/voice-casting').VoiceCastingSession;
       success: boolean;
     }>(
-      `/voice-casting/session/${sessionId}/assignment/${encodeURIComponent(character)}/voice?version_id=${versionId}`,
+      `/voice-casting/session/${sessionId}/assignment/voice?character=${encodeURIComponent(character)}&version_id=${versionId}`,
       {
         method: 'DELETE',
       }
