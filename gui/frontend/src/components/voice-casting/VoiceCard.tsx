@@ -33,6 +33,7 @@ interface VoiceCardProps {
   showAssignButton?: boolean;
   voiceUsageMap?: Map<string, Array<{ character: string; lineCount: number }>>;
   currentCharacter?: string;
+  onScrollToCharacter?: (characterName: string) => void;
   className?: string;
 }
 
@@ -47,6 +48,7 @@ export function VoiceCard({
   showAssignButton = false,
   voiceUsageMap,
   currentCharacter,
+  onScrollToCharacter,
   className,
 }: VoiceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -246,7 +248,21 @@ export function VoiceCard({
                       <ul className="space-y-0.5 text-xs">
                         {voiceUsage.map(({ character, lineCount }) => (
                           <li key={character}>
-                            • {character} ({lineCount} lines)
+                            {onScrollToCharacter ? (
+                              <button
+                                className="text-left hover:underline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onScrollToCharacter(character);
+                                }}
+                              >
+                                • {character} ({lineCount} lines)
+                              </button>
+                            ) : (
+                              <>
+                                • {character} ({lineCount} lines)
+                              </>
+                            )}
                           </li>
                         ))}
                       </ul>

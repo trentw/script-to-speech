@@ -88,14 +88,14 @@ function VoiceCastingSessionIndex() {
         setTimeout(scrollToCharacter, 50); // Small delay for layout
       });
 
-      // Clear highlight state after animation completes (2.5 seconds)
+      // Clear highlight state after animation completes (4 seconds)
       const timer = setTimeout(() => {
         navigate({
           to: '.',
           replace: true,
           state: {},
         });
-      }, 2500);
+      }, 4000);
 
       return () => {
         clearTimeout(timer);
@@ -307,6 +307,14 @@ function VoiceCastingSessionIndex() {
     navigateToLibrary(sessionId);
   };
 
+  const handleScrollToCharacter = (characterName: string) => {
+    navigate({
+      to: '.',
+      replace: true,
+      state: { highlightCharacter: characterName },
+    });
+  };
+
   // Loading state
   if (isLoading || sessionLoading || sessionDataLoading) {
     return (
@@ -507,6 +515,7 @@ function VoiceCastingSessionIndex() {
                 yamlVersionId={sessionData?.yamlVersionId}
                 voiceUsageMap={voiceUsageMaps.get(character.name) || new Map()}
                 onAssignVoice={() => handleAssignVoice(character.name)}
+                onScrollToCharacter={handleScrollToCharacter}
                 shouldHighlight={character.name === highlightCharacter}
               />
             ))}

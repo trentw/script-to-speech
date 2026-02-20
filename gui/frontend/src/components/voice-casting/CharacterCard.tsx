@@ -42,6 +42,7 @@ interface CharacterCardProps {
   yamlVersionId?: number | undefined;
   voiceUsageMap: Map<string, number>;
   onAssignVoice: () => void;
+  onScrollToCharacter?: (characterName: string) => void;
   shouldHighlight?: boolean;
 }
 
@@ -52,6 +53,7 @@ export function CharacterCard({
   yamlVersionId,
   voiceUsageMap,
   onAssignVoice,
+  onScrollToCharacter,
   shouldHighlight,
 }: CharacterCardProps) {
   // Resolve voice entry if we have an assignment but no voiceEntry
@@ -91,39 +93,34 @@ export function CharacterCard({
     });
   };
 
-  // Animation variants for highlight effect
-  const cardVariants = {
-    normal: {
-      backgroundColor: 'rgba(255, 255, 255, 0)',
-    },
-    highlight: {
-      backgroundColor: [
-        'rgba(255, 255, 255, 0)',
-        'rgba(34, 197, 94, 0.1)',
-        'rgba(255, 255, 255, 0)',
-      ],
-      transition: {
-        duration: 2.5,
-        times: [0, 0.3, 1],
-        ease: 'easeInOut',
-      },
-    },
-  };
-
   return (
     <TooltipProvider>
-      <motion.div
-        variants={cardVariants}
-        initial="normal"
-        animate={shouldHighlight ? 'highlight' : 'normal'}
-        data-character-name={character.name}
-      >
+      <div data-character-name={character.name}>
         <Card
           className={cn(
-            'relative h-full transition-all hover:shadow-md',
+            'relative h-full overflow-hidden transition-all hover:shadow-md',
             isAssigned && 'border-green-500/30'
           )}
         >
+          {shouldHighlight && (
+            <motion.div
+              className="pointer-events-none absolute inset-0 rounded-[inherit]"
+              initial={{ backgroundColor: 'rgba(34, 197, 94, 0)' }}
+              animate={{
+                backgroundColor: [
+                  'rgba(34, 197, 94, 0)',
+                  'rgba(34, 197, 94, 0.10)',
+                  'rgba(34, 197, 94, 0.10)',
+                  'rgba(34, 197, 94, 0)',
+                ],
+              }}
+              transition={{
+                duration: 4,
+                times: [0, 0.25, 0.55, 1],
+                ease: 'easeInOut',
+              }}
+            />
+          )}
           {/* Assignment Status Indicator */}
           <div className="absolute top-3 right-3 z-10">
             {isAssigned ? (
@@ -243,11 +240,12 @@ export function CharacterCard({
                 showRemoveButton={isAssigned}
                 voiceUsageMap={voiceUsageMap}
                 currentCharacter={character.name}
+                onScrollToCharacter={onScrollToCharacter}
               />
             </div>
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </TooltipProvider>
   );
 }
