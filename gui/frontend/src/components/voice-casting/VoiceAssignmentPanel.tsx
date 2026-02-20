@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertCircle,
   ArrowLeft,
@@ -10,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ApiKeyWarning } from '@/components/settings/ApiKeyWarning';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { appButtonVariants } from '@/components/ui/button-variants';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { isProviderConfigured } from '@/constants/providers';
@@ -18,6 +20,7 @@ import { useProviders, useVoiceLibrary } from '@/hooks/queries';
 import { useValidateApiKeys } from '@/hooks/queries/useEnvKeys';
 import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
 import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
+import { apiService } from '@/services/api';
 import { useVoiceCastingUI } from '@/stores/uiStore';
 import type { VoiceEntry } from '@/types';
 import type { VoiceAssignment } from '@/types/voice-casting';
@@ -73,8 +76,9 @@ export function VoiceAssignmentPanel({
     error: sessionError,
   } = useSessionAssignments(sessionId);
 
-  // Voice assignment mutation
+  // Voice assignment mutation (used for single assigns)
   const assignVoiceMutation = useAssignVoice();
+  const queryClient = useQueryClient();
 
   // Fetch API key validation status
   const { data: apiKeyStatus } = useValidateApiKeys();
@@ -99,6 +103,23 @@ export function VoiceAssignmentPanel({
     currentAssignment?.provider,
     currentAssignment?.sts_id
   );
+
+  // For "replace all": find all characters sharing the same voice (including current)
+  const [replaceAll, setReplaceAll] = useState(false);
+  const charactersWithSameVoice = useMemo(() => {
+    if (!isReplaceMode || !currentAssignment?.sts_id || !sessionData) return [];
+    const result: string[] = [];
+    const assignments = sessionData.assignments || new Map();
+    assignments.forEach((assignment, charName) => {
+      if (
+        assignment.sts_id === currentAssignment.sts_id &&
+        assignment.provider === currentAssignment.provider
+      ) {
+        result.push(charName);
+      }
+    });
+    return result;
+  }, [isReplaceMode, currentAssignment, sessionData]);
 
   // Initialize state with current assignment or stable provider default
   const [selectedProvider, setSelectedProvider] = useState<string>(
@@ -221,23 +242,60 @@ export function VoiceAssignmentPanel({
       return;
     }
 
-    const assignment: VoiceAssignment = {
-      character: characterName,
-      provider: selectedProvider,
-      sts_id: voice.sts_id,
-    };
+    const isBatch = replaceAll && charactersWithSameVoice.length > 1;
 
-    try {
-      await assignVoiceMutation.mutateAsync({
-        sessionId,
+    if (isBatch) {
+      // Batch replace: call API directly, chain version IDs, invalidate once at end
+      try {
+        let versionId = sessionData.yamlVersionId;
+        for (const target of charactersWithSameVoice) {
+          const assignment: VoiceAssignment = {
+            character: target,
+            provider: selectedProvider,
+            sts_id: voice.sts_id,
+          };
+          const response = await apiService.updateCharacterAssignment(
+            sessionId,
+            target,
+            assignment,
+            versionId
+          );
+          if (response.error) {
+            throw new Error(response.error);
+          }
+          if (response.data?.session.yaml_version_id) {
+            versionId = response.data.session.yaml_version_id;
+          }
+        }
+        // Invalidate queries once after all assignments complete
+        queryClient.invalidateQueries({
+          queryKey: ['session', sessionId],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['voice-casting-sessions'],
+        });
+        onAssign();
+      } catch (error) {
+        console.error('Failed to batch assign voice:', error);
+      }
+    } else {
+      // Single assign: use the mutation hook as normal
+      const assignment: VoiceAssignment = {
         character: characterName,
-        assignment,
-        versionId: sessionData.yamlVersionId,
-      });
-      onAssign();
-    } catch (error) {
-      console.error('Failed to assign voice:', error);
-      // Error handling is managed by the mutation
+        provider: selectedProvider,
+        sts_id: voice.sts_id,
+      };
+      try {
+        await assignVoiceMutation.mutateAsync({
+          sessionId,
+          character: characterName,
+          assignment,
+          versionId: sessionData.yamlVersionId,
+        });
+        onAssign();
+      } catch (error) {
+        console.error('Failed to assign voice:', error);
+      }
     }
   };
 
@@ -354,7 +412,7 @@ export function VoiceAssignmentPanel({
 
         {/* Current Voice (shown in replace mode) */}
         {isReplaceMode && currentAssignment && (
-          <div className="max-w-[calc(50%-0.5rem)] space-y-2">
+          <div className="max-w-[calc(50%-0.5rem)] space-y-3">
             <h2 className="text-muted-foreground text-sm font-medium">
               Current Voice
             </h2>
@@ -369,6 +427,23 @@ export function VoiceAssignmentPanel({
               voiceUsageMap={voiceUsageMap}
               currentCharacter={characterName}
             />
+            {charactersWithSameVoice.length > 1 && (
+              <label className="ml-3 flex cursor-pointer items-center gap-2">
+                <Checkbox
+                  checked={replaceAll}
+                  onCheckedChange={(checked) => setReplaceAll(checked === true)}
+                />
+                <span className="text-xs text-amber-600">
+                  Replace voice for all {charactersWithSameVoice.length}{' '}
+                  characters using
+                  {' \u201C'}
+                  {currentVoiceEntry?.description?.provider_name ||
+                    currentAssignment.sts_id ||
+                    'this voice'}
+                  {'\u201D'}
+                </span>
+              </label>
+            )}
           </div>
         )}
 
