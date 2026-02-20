@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Feature: click voice name on voice assignemnt page to replace — shows current voice and "Replace Voice" header on voice assignment page
 - [Desktop] Feature: clickable character names in "other assignments" tooltip — click to scroll to that character
 
 ### Fixed

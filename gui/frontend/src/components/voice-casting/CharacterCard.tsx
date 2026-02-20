@@ -241,6 +241,7 @@ export function CharacterCard({
                 voiceUsageMap={voiceUsageMap}
                 currentCharacter={character.name}
                 onScrollToCharacter={onScrollToCharacter}
+                onReplace={isAssigned ? onAssignVoice : undefined}
               />
             </div>
           </CardContent>

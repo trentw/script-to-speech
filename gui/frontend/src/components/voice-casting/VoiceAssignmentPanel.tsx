@@ -17,6 +17,7 @@ import { useAssignVoice } from '@/hooks/mutations/useAssignVoice';
 import { useProviders, useVoiceLibrary } from '@/hooks/queries';
 import { useValidateApiKeys } from '@/hooks/queries/useEnvKeys';
 import { useSessionAssignments } from '@/hooks/queries/useSessionAssignments';
+import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { useVoiceCastingUI } from '@/stores/uiStore';
 import type { VoiceEntry } from '@/types';
 import type { VoiceAssignment } from '@/types/voice-casting';
@@ -86,6 +87,18 @@ export function VoiceAssignmentPanel({
 
   // Get current assignment from session data
   const currentAssignment = sessionData?.assignments?.get(characterName);
+
+  // Detect replace mode: assignment exists with actual voice data
+  const isReplaceMode = !!(
+    currentAssignment?.provider &&
+    (currentAssignment?.sts_id || currentAssignment?.provider_config)
+  );
+
+  // Resolve the current voice entry for display in replace mode
+  const currentVoiceEntry = useResolveVoiceEntry(
+    currentAssignment?.provider,
+    currentAssignment?.sts_id
+  );
 
   // Initialize state with current assignment or stable provider default
   const [selectedProvider, setSelectedProvider] = useState<string>(
@@ -273,7 +286,8 @@ export function VoiceAssignmentPanel({
           </button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold">
-              {character.displayName}: Assign Voice
+              {character.displayName}:{' '}
+              {isReplaceMode ? 'Replace Voice' : 'Assign Voice'}
             </h1>
             <div className="text-muted-foreground flex items-center gap-3">
               <div className="flex items-center gap-1">
@@ -329,6 +343,26 @@ export function VoiceAssignmentPanel({
                   </div>
                 </>
               )}
+          </div>
+        )}
+
+        {/* Current Voice (shown in replace mode) */}
+        {isReplaceMode && currentAssignment && (
+          <div className="max-w-[calc(50%-0.5rem)] space-y-2">
+            <h2 className="text-muted-foreground text-sm font-medium">
+              Current Voice
+            </h2>
+            <VoiceCard
+              provider={currentAssignment.provider}
+              voiceEntry={currentVoiceEntry || undefined}
+              sts_id={currentAssignment.sts_id}
+              isCustom={
+                !!(currentAssignment.provider && !currentAssignment.sts_id)
+              }
+              onAssignVoice={() => {}}
+              voiceUsageMap={voiceUsageMap}
+              currentCharacter={characterName}
+            />
           </div>
         )}
 

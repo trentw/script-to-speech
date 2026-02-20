@@ -34,6 +34,7 @@ interface VoiceCardProps {
   voiceUsageMap?: Map<string, Array<{ character: string; lineCount: number }>>;
   currentCharacter?: string;
   onScrollToCharacter?: (characterName: string) => void;
+  onReplace?: () => void;
   className?: string;
 }
 
@@ -49,6 +50,7 @@ export function VoiceCard({
   voiceUsageMap,
   currentCharacter,
   onScrollToCharacter,
+  onReplace,
   className,
 }: VoiceCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -224,7 +226,19 @@ export function VoiceCard({
             <ProviderAvatar provider={provider} size="sm" />
             <div className="min-w-0 flex-1 space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <p className="truncate text-sm font-medium">{voiceName}</p>
+                {onReplace ? (
+                  <button
+                    className="hover:bg-muted -ml-1 cursor-pointer truncate rounded px-1 text-sm font-medium underline decoration-transparent transition-all hover:decoration-current"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onReplace();
+                    }}
+                  >
+                    {voiceName}
+                  </button>
+                ) : (
+                  <p className="truncate text-sm font-medium">{voiceName}</p>
+                )}
                 {perceivedAge && (
                   <Badge variant="outline" className="px-1.5 py-0 text-xs">
                     {perceivedAge.toLowerCase().includes('year')
