@@ -80,7 +80,7 @@ function VoiceAssignmentRoute() {
   }, [charactersData, characterName, sessionData]);
 
   const handleBack = () => {
-    navigateToSession(sessionId);
+    navigateToSession(sessionId, { highlightCharacter: characterName });
   };
 
   const handleAssign = () => {

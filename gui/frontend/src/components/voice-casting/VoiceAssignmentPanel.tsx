@@ -5,7 +5,7 @@ import {
   Loader2,
   MessageSquare,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ApiKeyWarning } from '@/components/settings/ApiKeyWarning';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -108,6 +108,12 @@ export function VoiceAssignmentPanel({
   const [customVoiceConfig, setCustomVoiceConfig] = useState<
     Record<string, unknown>
   >(currentAssignment?.provider_config || {});
+
+  // Scroll to top on mount (prevents inheriting scroll position from previous page)
+  const topRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    topRef.current?.scrollIntoView({ block: 'start' });
+  }, []);
 
   // Update selected provider when providers load, preferring stable providers
   useEffect(() => {
@@ -272,7 +278,7 @@ export function VoiceAssignmentPanel({
 
   return (
     <TooltipProvider>
-      <div className="container mx-auto max-w-6xl space-y-6 p-6">
+      <div ref={topRef} className="container mx-auto max-w-6xl space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <button

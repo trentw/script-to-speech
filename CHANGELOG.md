@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [Desktop] Feature: clickable character names in "other assignments" tooltip — click to scroll to that character
 
 ### Fixed
+- [Desktop] Fixed scroll voice casting scroll position issues with voice assignment page / "back" button flow
 - [Desktop] Stop voice preview playback when unassigning a voice from a character 
 - [Desktop] Added onBlur for ID3 tag edit boxes so that they auto-save when clicked outside of edit box
 - [Desktop] Fixed issue where character names with special characters (like "/") would break voice assignment
