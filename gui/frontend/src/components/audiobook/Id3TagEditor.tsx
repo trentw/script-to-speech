@@ -84,6 +84,14 @@ function InlineField({
     setEditing(false);
   };
 
+  const handleBlur = () => {
+    if (localValue !== value) {
+      handleSave();
+    } else {
+      handleCancel();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleSave();
     if (e.key === 'Escape') handleCancel();
@@ -130,6 +138,7 @@ function InlineField({
               if (error) setError(null);
             }}
             onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
             placeholder={placeholder}
             className={`${compact ? 'h-8 text-sm' : ''} ${error ? 'border-red-400' : ''}`}
           />
@@ -140,6 +149,7 @@ function InlineField({
                   variant: 'list-action',
                   size: 'icon-sm',
                 })} shrink-0 text-green-600 hover:text-green-700`}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleSave}
               >
                 <Check className="h-3.5 w-3.5" />
@@ -154,6 +164,7 @@ function InlineField({
                   variant: 'list-action',
                   size: 'icon-sm',
                 })} shrink-0`}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={handleCancel}
               >
                 <X className="h-3.5 w-3.5" />

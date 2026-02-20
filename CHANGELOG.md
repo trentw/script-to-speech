@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- [Desktop] Added onBlur for ID3 tag edit boxes so that they auto-save when clicked outside of edit box
 - [Desktop] Fixed issue where character names with special characters (like "/") would break voice assignment
 - [Desktop] Fixed ffmpeg "Bad CPU type" error on Apple Silicon by upgrading `static-ffmpeg` to v3.0 (arm64 support)
 - [Docs] Updated development setup instructions with correct `uv sync --all-extras` command, pnpm install step, and pre-commit hook setup
