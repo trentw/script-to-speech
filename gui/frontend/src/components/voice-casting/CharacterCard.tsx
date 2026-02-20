@@ -12,6 +12,7 @@ import {
 import { useClearVoice } from '@/hooks/mutations/useClearVoice';
 import { useResolveVoiceEntry } from '@/hooks/useResolveVoiceEntry';
 import { cn } from '@/lib/utils';
+import { useAudioCommands } from '@/services/AudioService';
 import type { VoiceAssignment } from '@/types/voice-casting';
 
 import { TruncatedNote } from './TruncatedNote';
@@ -61,6 +62,7 @@ export function CharacterCard({
 
   // Clear voice mutation
   const clearVoiceMutation = useClearVoice();
+  const { clear: clearAudio } = useAudioCommands();
 
   // Calculate assignment status - memoized for performance
   const isAssigned = useMemo(() => {
@@ -81,6 +83,7 @@ export function CharacterCard({
       return;
     }
 
+    clearAudio();
     clearVoiceMutation.mutate({
       sessionId,
       character: character.name,

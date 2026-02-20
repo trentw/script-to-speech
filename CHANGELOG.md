@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Fixed
+- [Desktop] Stop voice preview playback when unassigning a voice from a character 
 - [Desktop] Added onBlur for ID3 tag edit boxes so that they auto-save when clicked outside of edit box
 - [Desktop] Fixed issue where character names with special characters (like "/") would break voice assignment
 - [Desktop] Fixed ffmpeg "Bad CPU type" error on Apple Silicon by upgrading `static-ffmpeg` to v3.0 (arm64 support)
