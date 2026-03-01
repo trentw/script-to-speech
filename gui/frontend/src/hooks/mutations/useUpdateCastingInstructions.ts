@@ -13,7 +13,12 @@ function stripIds(items: CastingInstruction[]) {
 export function useUpdateCastingInstructions() {
   const queryClient = useQueryClient();
 
-  return useMutation<CastingInstructionsData, Error, CastingInstructionsData>({
+  return useMutation<
+    CastingInstructionsData,
+    Error,
+    CastingInstructionsData,
+    { previous: CastingInstructionsData | undefined }
+  >({
     mutationFn: async (data) => {
       const payload = {
         overall: stripIds(data.overall),
@@ -41,11 +46,7 @@ export function useUpdateCastingInstructions() {
       queryClient.setQueryData(['casting-instructions'], newData);
       return { previous };
     },
-    onError: (
-      _err,
-      _newData,
-      context: { previous: CastingInstructionsData | undefined } | undefined
-    ) => {
+    onError: (_err, _newData, context) => {
       if (context?.previous) {
         queryClient.setQueryData(['casting-instructions'], context.previous);
       }

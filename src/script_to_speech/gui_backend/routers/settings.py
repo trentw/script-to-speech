@@ -9,8 +9,6 @@ from dotenv import dotenv_values, load_dotenv, set_key
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from script_to_speech.voice_library.constants import USER_CONFIG_PATH
-
 from ..config import get_default_workspace_dir
 from ..constants import ALLOWED_ENV_KEYS
 from ..models import ApiResponse
@@ -185,7 +183,13 @@ class CastingInstructionsUpdate(BaseModel):
 
 
 def _get_casting_instructions_path() -> Path:
-    return USER_CONFIG_PATH / CASTING_INSTRUCTIONS_FILENAME
+    workspace = get_default_workspace_dir()
+    return (
+        workspace
+        / "voice_library"
+        / "voice_library_config"
+        / CASTING_INSTRUCTIONS_FILENAME
+    )
 
 
 def _read_casting_instructions() -> Dict[str, Any]:
