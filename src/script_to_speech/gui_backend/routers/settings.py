@@ -2,14 +2,20 @@
 
 import os
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import yaml
 from dotenv import dotenv_values, load_dotenv, set_key
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from script_to_speech.voice_library.constants import USER_CONFIG_PATH
+
 from ..config import get_default_workspace_dir
 from ..constants import ALLOWED_ENV_KEYS
 from ..models import ApiResponse
+
+CASTING_INSTRUCTIONS_FILENAME = "casting_instructions.yaml"
 
 router = APIRouter(prefix="/api/settings", tags=["settings"])
 
@@ -159,3 +165,115 @@ async def validate_api_keys() -> ApiResponse:
     validation = {key: bool(os.environ.get(key)) for key in ALLOWED_ENV_KEYS}
 
     return ApiResponse(ok=True, data={"keys": validation})
+
+
+# ── Casting Instructions ──────────────────────────────────────────────────
+
+
+class CastingInstructionItem(BaseModel):
+    """A single casting instruction with enabled state."""
+
+    text: str
+    enabled: bool = True
+
+
+class CastingInstructionsUpdate(BaseModel):
+    """Request model for updating casting instructions."""
+
+    overall: List[CastingInstructionItem] = []
+    provider_instructions: Dict[str, List[CastingInstructionItem]] = {}
+
+
+def _get_casting_instructions_path() -> Path:
+    return USER_CONFIG_PATH / CASTING_INSTRUCTIONS_FILENAME
+
+
+def _read_casting_instructions() -> Dict[str, Any]:
+    """Read casting instructions YAML file and return structured data."""
+    path = _get_casting_instructions_path()
+    if not path.exists():
+        return {"overall": [], "provider_instructions": {}}
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    if not data or not isinstance(data, dict):
+        return {"overall": [], "provider_instructions": {}}
+
+    raw = data.get("additional_voice_casting_instructions", {})
+    if not isinstance(raw, dict):
+        return {"overall": [], "provider_instructions": {}}
+
+    result: Dict[str, Any] = {"overall": [], "provider_instructions": {}}
+
+    for key, items in raw.items():
+        if not isinstance(items, list):
+            continue
+        parsed: List[Dict[str, Any]] = []
+        for item in items:
+            if isinstance(item, dict) and "text" in item:
+                parsed.append(
+                    {"text": item["text"], "enabled": item.get("enabled", True)}
+                )
+            elif isinstance(item, str):
+                parsed.append({"text": item, "enabled": True})
+
+        if key == "overall_voice_casting_prompt":
+            result["overall"] = parsed
+        else:
+            result["provider_instructions"][key] = parsed
+
+    return result
+
+
+def _write_casting_instructions(data: CastingInstructionsUpdate) -> None:
+    """Write structured casting instructions to YAML file."""
+    yaml_data: Dict[str, Any] = {}
+
+    if data.overall:
+        yaml_data["overall_voice_casting_prompt"] = [
+            {"text": item.text, "enabled": item.enabled} for item in data.overall
+        ]
+
+    for provider, items in data.provider_instructions.items():
+        if items:
+            yaml_data[provider] = [
+                {"text": item.text, "enabled": item.enabled} for item in items
+            ]
+
+    path = _get_casting_instructions_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    output = {"additional_voice_casting_instructions": yaml_data} if yaml_data else {}
+
+    with open(path, "w", encoding="utf-8") as f:
+        yaml.dump(
+            output, f, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
+
+
+@router.get("/casting-instructions")
+async def get_casting_instructions() -> ApiResponse:
+    """Read casting instructions from workspace YAML file."""
+    try:
+        data = _read_casting_instructions()
+        return ApiResponse(ok=True, data=data)
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=f"Failed to read casting instructions: {str(e)}",
+        )
+
+
+@router.put("/casting-instructions")
+async def update_casting_instructions(update: CastingInstructionsUpdate) -> ApiResponse:
+    """Write full casting instruction set to workspace YAML file."""
+    try:
+        _write_casting_instructions(update)
+        data = _read_casting_instructions()
+        return ApiResponse(ok=True, data=data)
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=f"Failed to update casting instructions: {str(e)}",
+        )

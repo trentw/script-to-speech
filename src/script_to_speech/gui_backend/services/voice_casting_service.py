@@ -1497,14 +1497,18 @@ class VoiceCastingService:
             # Convert prompt path
             prompt_path = Path(custom_prompt_path) if custom_prompt_path else None
 
-            # Generate prompt file
-            output_path = await asyncio.get_event_loop().run_in_executor(
-                None,
+            # Generate prompt file using functools.partial for keyword args
+            import functools
+
+            gen_fn = functools.partial(
                 generate_voice_library_casting_prompt_file,
                 tmp_yaml_path,
                 providers,
                 prompt_path,
-                None,  # output_file_path
+            )
+            output_path = await asyncio.get_event_loop().run_in_executor(
+                None,
+                gen_fn,
             )
 
             # Read generated prompt

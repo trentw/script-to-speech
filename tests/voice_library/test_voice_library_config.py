@@ -233,7 +233,9 @@ def test_get_additional_voice_casting_instructions_mixed_types():
     assert instructions["openai"] == ["Use dramatic voices", "Prefer younger voices"]
     assert instructions["elevenlabs"] == ["Use British accents"]
     assert "cartesia" not in instructions
-    assert instructions["invalid"] == ["123"]
+    assert (
+        "invalid" not in instructions
+    )  # Non-string, non-list, non-dict values are ignored
 
 
 def test_deep_merge_with_additional_instructions():
@@ -295,6 +297,156 @@ def test_get_additional_voice_casting_instructions_with_overall_prompt():
     ]
     assert instructions["openai"] == ["Use dramatic voices for action scenes"]
     assert instructions["elevenlabs"] == ["Use British accents when available"]
+
+
+def test_get_additional_voice_casting_instructions_dict_format_enabled():
+    """Test that dict-format instructions with enabled=true are included."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"text": "Use dramatic voices", "enabled": True},
+                {"text": "Prefer younger voices", "enabled": True},
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == ["Use dramatic voices", "Prefer younger voices"]
+
+
+def test_get_additional_voice_casting_instructions_dict_format_disabled():
+    """Test that dict-format instructions with enabled=false are excluded."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"text": "Use dramatic voices", "enabled": True},
+                {"text": "Disabled instruction", "enabled": False},
+                {"text": "Another active one", "enabled": True},
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == ["Use dramatic voices", "Another active one"]
+    assert "Disabled instruction" not in instructions["openai"]
+
+
+def test_get_additional_voice_casting_instructions_all_disabled():
+    """Test that a provider with all disabled instructions is excluded from results."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"text": "Disabled one", "enabled": False},
+                {"text": "Disabled two", "enabled": False},
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert "openai" not in instructions
+
+
+def test_get_additional_voice_casting_instructions_mixed_plain_and_dict():
+    """Test mixing plain strings and dict-format instructions in the same list."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                "Plain string instruction",
+                {"text": "Enabled dict instruction", "enabled": True},
+                {"text": "Disabled dict instruction", "enabled": False},
+                "Another plain string",
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == [
+        "Plain string instruction",
+        "Enabled dict instruction",
+        "Another plain string",
+    ]
+
+
+def test_get_additional_voice_casting_instructions_dict_default_enabled():
+    """Test that dict-format instructions default to enabled when field is omitted."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"text": "No enabled field"},
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == ["No enabled field"]
+
+
+def test_get_additional_voice_casting_instructions_dict_missing_text():
+    """Test that dict-format instructions without 'text' key are skipped."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"enabled": True},
+                {"text": "Valid instruction", "enabled": True},
+                {"note": "No text key", "enabled": True},
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == ["Valid instruction"]
+
+
+def test_get_additional_voice_casting_instructions_single_dict():
+    """Test a single dict instruction (not wrapped in a list)."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": {"text": "Single dict instruction", "enabled": True}
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["openai"] == ["Single dict instruction"]
+
+
+def test_get_additional_voice_casting_instructions_single_dict_disabled():
+    """Test a single dict instruction that is disabled."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "openai": {"text": "Disabled single dict", "enabled": False}
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert "openai" not in instructions
+
+
+def test_get_additional_voice_casting_instructions_overall_with_enabled():
+    """Test overall_voice_casting_prompt with dict-format enabled/disabled filtering."""
+    config = {
+        "additional_voice_casting_instructions": {
+            "overall_voice_casting_prompt": [
+                {"text": "Focus on emotional state", "enabled": True},
+                {"text": "Maintain consistency", "enabled": False},
+                "Plain overall instruction",
+            ]
+        }
+    }
+
+    instructions = get_additional_voice_casting_instructions(config)
+
+    assert instructions["overall_voice_casting_prompt"] == [
+        "Focus on emotional state",
+        "Plain overall instruction",
+    ]
 
 
 def test_deep_merge_with_overall_voice_casting_prompt():

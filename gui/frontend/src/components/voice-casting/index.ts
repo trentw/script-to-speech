@@ -1,3 +1,4 @@
+export * from './CastingInstructionsCard';
 export * from './CastingMethodSelector';
 export * from './CharacterCard';
 export * from './CustomVoiceCard';

@@ -1124,6 +1124,89 @@ def test_generate_voice_library_casting_prompt_file_with_overall_and_provider_in
         assert openai_header_pos < openai_provider_pos
 
 
+def test_generate_voice_library_casting_prompt_file_with_enabled_disabled_in_config():
+    """Test that config with dict-format enabled/disabled instructions works end-to-end."""
+    voice_config_content = "test"
+    prompt_content = "prompt"
+    schema_content = {"voice_properties": {"age": {"type": "range"}}}
+    voices_data = {
+        "voices": {
+            "alloy": {"model_id": "tts-1"},
+        }
+    }
+
+    # Config uses the new dict format with enabled field
+    config_with_enabled = {
+        "additional_voice_casting_instructions": {
+            "openai": [
+                {"text": "Active instruction", "enabled": True},
+                {"text": "Disabled instruction", "enabled": False},
+            ],
+            "overall_voice_casting_prompt": [
+                {"text": "Active overall", "enabled": True},
+                {"text": "Disabled overall", "enabled": False},
+                "Plain string overall",
+            ],
+        }
+    }
+
+    output_mock = mock_open()
+
+    def mock_open_side_effect(file_path, mode="r", *args, **kwargs):
+        file_str = str(file_path)
+        if "config.yaml" in file_str:
+            return mock_open(read_data=voice_config_content).return_value
+        elif mode == "w":
+            return output_mock.return_value
+        return mock_open().return_value
+
+    with (
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.VoiceLibrary"
+        ) as MockVoiceLibrary,
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_config",
+            return_value=config_with_enabled,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.get_conflicting_ids",
+            return_value={},
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.read_prompt_file",
+            return_value=prompt_content,
+        ),
+        patch(
+            "script_to_speech.voice_casting.voice_library_casting_utils.load_merged_schemas_for_providers",
+            return_value=schema_content,
+        ),
+        patch("builtins.open", side_effect=mock_open_side_effect),
+        patch.object(Path, "is_file", return_value=True),
+        patch.object(Path, "mkdir"),
+    ):
+        mock_instance = MockVoiceLibrary.return_value
+        mock_instance._load_provider_voices.return_value = voices_data
+
+        # Act
+        generate_voice_library_casting_prompt_file(
+            voice_config_path=Path("/fake/config.yaml"),
+            providers=["openai"],
+        )
+
+        # Assert
+        output_mock().write.assert_called_once()
+        written_content = output_mock().write.call_args[0][0]
+
+        # Enabled instructions appear
+        assert "Active instruction" in written_content
+        assert "Active overall" in written_content
+        assert "Plain string overall" in written_content
+
+        # Disabled instructions do NOT appear
+        assert "Disabled instruction" not in written_content
+        assert "Disabled overall" not in written_content
+
+
 def test_generate_voice_library_casting_prompt_file_overall_voice_casting_prompt_not_in_provider_sections():
     """Test that overall_voice_casting_prompt is not treated as a provider."""
     # Arrange

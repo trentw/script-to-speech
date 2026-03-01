@@ -10,6 +10,7 @@ export * from './useGenerateYaml';
 export * from './useProviders';
 export * from './useReparseScreenplay';
 export * from './useTasks';
+export * from './useUpdateCastingInstructions';
 export * from './useUpdateId3TagConfig';
 export * from './useUpdateSessionYaml';
 export * from './useUploadScreenplaySource';

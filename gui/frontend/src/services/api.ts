@@ -399,6 +399,70 @@ class ApiService {
     );
   }
 
+  // Casting Instructions endpoints
+  // Settings router returns ApiResponse envelope {ok, data, error} —
+  // unwrap it here so hooks get the inner payload directly.
+  async getCastingInstructions(): Promise<
+    ApiResponse<{
+      overall: Array<{ text: string; enabled: boolean }>;
+      provider_instructions: Record<
+        string,
+        Array<{ text: string; enabled: boolean }>
+      >;
+    }>
+  > {
+    const response = await this.request<{
+      ok: boolean;
+      data: {
+        overall: Array<{ text: string; enabled: boolean }>;
+        provider_instructions: Record<
+          string,
+          Array<{ text: string; enabled: boolean }>
+        >;
+      };
+      error?: string;
+    }>('/settings/casting-instructions');
+    if (response.error) return { error: response.error };
+    if (!response.data?.ok)
+      return { error: response.data?.error || 'Unknown error' };
+    return { data: response.data.data };
+  }
+
+  async updateCastingInstructions(data: {
+    overall: Array<{ text: string; enabled: boolean }>;
+    provider_instructions: Record<
+      string,
+      Array<{ text: string; enabled: boolean }>
+    >;
+  }): Promise<
+    ApiResponse<{
+      overall: Array<{ text: string; enabled: boolean }>;
+      provider_instructions: Record<
+        string,
+        Array<{ text: string; enabled: boolean }>
+      >;
+    }>
+  > {
+    const response = await this.request<{
+      ok: boolean;
+      data: {
+        overall: Array<{ text: string; enabled: boolean }>;
+        provider_instructions: Record<
+          string,
+          Array<{ text: string; enabled: boolean }>
+        >;
+      };
+      error?: string;
+    }>('/settings/casting-instructions', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    if (response.error) return { error: response.error };
+    if (!response.data?.ok)
+      return { error: response.data?.error || 'Unknown error' };
+    return { data: response.data.data };
+  }
+
   async uploadScreenplayJson(
     file: File
   ): Promise<

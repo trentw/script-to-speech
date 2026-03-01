@@ -203,7 +203,9 @@ async def generate_voice_library_prompt(
     """Generate voice library casting prompt for LLM assistance."""
     try:
         return await voice_casting_service.generate_voice_library_prompt(
-            request.yaml_content, request.providers, request.custom_prompt_path
+            request.yaml_content,
+            request.providers,
+            request.custom_prompt_path,
         )
     except Exception as e:
         raise HTTPException(

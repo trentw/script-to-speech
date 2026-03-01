@@ -24,6 +24,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  CastingInstructionsCard,
   GeneratePromptDisplay,
   PrivacyWarning,
 } from '@/components/voice-casting';
@@ -490,6 +491,14 @@ function VoiceLibraryCasting() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Casting Instructions */}
+      {providers && providers.length > 0 && (
+        <CastingInstructionsCard
+          selectedProviders={selectedProviders}
+          providers={providers}
+        />
       )}
 
       {/* Step 1: Generate Prompt */}

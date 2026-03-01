@@ -95,6 +95,11 @@ def get_additional_voice_casting_instructions(
     """
     Extracts additional voice casting instructions for each provider from the config.
 
+    Supports two instruction formats in YAML:
+    - Plain string: ``"instruction text"`` — treated as enabled
+    - Dict with enabled field: ``{text: "...", enabled: true/false}`` —
+      only included when ``enabled`` is ``true``
+
     Args:
         config: The merged voice library configuration
 
@@ -109,9 +114,26 @@ def get_additional_voice_casting_instructions(
     result: Dict[str, List[str]] = {}
     for provider, provider_instructions in instructions.items():
         if isinstance(provider_instructions, list):
-            result[provider] = provider_instructions
-        elif provider_instructions is not None:
+            filtered: List[str] = []
+            for item in provider_instructions:
+                if isinstance(item, dict):
+                    # Dict format: {text: "...", enabled: true/false}
+                    if item.get("enabled", True) and "text" in item:
+                        filtered.append(str(item["text"]))
+                elif isinstance(item, str):
+                    # Plain string — always enabled
+                    filtered.append(item)
+            if filtered:
+                result[provider] = filtered
+        elif isinstance(provider_instructions, str):
             # Handle single string converted to list
-            result[provider] = [str(provider_instructions)]
+            result[provider] = [provider_instructions]
+        elif isinstance(provider_instructions, dict):
+            # Single dict instruction
+            if (
+                provider_instructions.get("enabled", True)
+                and "text" in provider_instructions
+            ):
+                result[provider] = [str(provider_instructions["text"])]
 
     return result
