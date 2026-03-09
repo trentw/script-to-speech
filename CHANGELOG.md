@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [CLI] Feature: LLM-based voice labeling for new voices / new voice providers to generate voices.yaml
+- [Desktop] Feature: custom voice casting instructions (existing CLI feature) added to desktop app
 - [Desktop] Feature: "replace all" option when replacing a voice shared by multiple characters
 - [Desktop] Feature: click voice name on voice assignemnt page to replace — shows current voice and "Replace Voice" header on voice assignment page
 - [Desktop] Feature: clickable character names in "other assignments" tooltip — click to scroll to that character
 
 ### Fixed
+- [Desktop] Fixed directory path issue for custom voice casting instructions / custom voices for production builds
 - [Desktop] Fixed scroll voice casting scroll position issues with voice assignment page / "back" button flow
 - [Desktop] Stop voice preview playback when unassigning a voice from a character 
 - [Desktop] Added onBlur for ID3 tag edit boxes so that they auto-save when clicked outside of edit box

@@ -108,6 +108,39 @@ This provider-specific file is responsible for returning a list of `sts_id` stri
 
 Similar to overall script discovery, user-defined provider-specific files take precedence over system-defined ones.
 
+### `llm_voice_labeler`
+
+Uses multimodal LLMs to automatically label voice properties (age, pitch, energy, accent, etc.) for new TTS providers. Generates audio samples, sends them to LLMs via OpenRouter, builds consensus across multiple runs/models, and outputs a valid `voices.yaml`.
+
+See the full guide: [LLM Voice Labeling](LLM_VOICE_LABELING.md)
+
+**Quick usage**:
+
+```bash
+# Generate a starter input config
+uv run sts-voice-library-run-script llm_voice_labeler minimax --generate-input-template
+
+# Run labeling with dual clips (recommended)
+uv run sts-voice-library-run-script llm_voice_labeler minimax \
+  --input-config minimax_voice_input.yaml --dual-clips
+```
+
+### `llm_voice_calibrate`
+
+Validates the LLM voice analysis prompt by running it against known hand-labeled voices (OpenAI, ElevenLabs) and comparing results to ground truth. Produces an accuracy report with per-property error metrics and per-property reasoning for debugging.
+
+See the full guide: [LLM Voice Labeling](LLM_VOICE_LABELING.md)
+
+**Quick usage**:
+
+```bash
+# Calibrate against OpenAI voices with dual clips
+uv run sts-voice-library-run-script llm_voice_calibrate --dual-clips
+
+# Calibrate against multiple providers
+uv run sts-voice-library-run-script llm_voice_calibrate --providers openai,elevenlabs --dual-clips
+```
+
 ## Best Practices
 
 1.  **Descriptive Naming**: Use clear and descriptive names for your scripts and their arguments.
