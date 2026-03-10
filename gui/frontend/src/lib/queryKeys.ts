@@ -22,6 +22,8 @@ export const queryKeys = {
   voiceSearch: (params: Record<string, unknown>) =>
     ['voices', 'search', params] as const,
   voiceLibraryStats: ['voices', 'stats'] as const,
+  voiceLibrarySchema: ['voices', 'schema'] as const,
+  llmRuns: ['voices', 'llm-runs'] as const,
 
   // Projects
   projectsDiscover: (limit?: number) =>

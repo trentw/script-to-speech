@@ -25,6 +25,8 @@ import {
 } from '../components/layout';
 import { UploadProgressDialog } from '../components/project/UploadProgressDialog';
 import { SettingsDialog } from '../components/settings/SettingsDialog';
+import { VoiceEditorFooter } from '../components/voice-editor/VoiceEditorFooter';
+import { VoiceEditorPanel } from '../components/voice-editor/VoiceEditorPanel';
 import { useAllVoiceCounts } from '../hooks/queries/useAllVoiceCounts';
 import { useProviders } from '../hooks/queries/useProviders';
 import { useVoiceLibrary } from '../hooks/queries/useVoiceLibrary';
@@ -109,6 +111,9 @@ function RootComponent() {
     | RouteStaticData
     | undefined;
 
+  // Derive app section from route staticData (not pathname matching)
+  const appSection = currentStaticData?.ui?.appSection ?? 'tts';
+
   // Use Screenplay state to get the current view mode
   const { viewMode: screenplayViewMode } = useScreenplay();
 
@@ -183,21 +188,31 @@ function RootComponent() {
         panel={
           !isMobile && currentStaticData?.ui?.showPanel ? (
             <ResponsivePanel>
-              <PanelContent
-                providers={providers || []}
-                voiceLibrary={voiceLibrary}
-                voiceCounts={voiceCounts}
-                providerErrors={providerErrors}
-                loading={providersLoading}
-                onProviderChange={handleProviderChange}
-                onVoiceSelect={handleVoiceSelect}
-                onConfigChange={handleConfigChange}
-              />
+              {appSection === 'voice-editor' ? (
+                <VoiceEditorPanel />
+              ) : (
+                <PanelContent
+                  providers={providers || []}
+                  voiceLibrary={voiceLibrary}
+                  voiceCounts={voiceCounts}
+                  providerErrors={providerErrors}
+                  loading={providersLoading}
+                  onProviderChange={handleProviderChange}
+                  onVoiceSelect={handleVoiceSelect}
+                  onConfigChange={handleConfigChange}
+                />
+              )}
             </ResponsivePanel>
           ) : undefined
         }
         footer={
-          currentStaticData?.ui?.showFooter ? <FooterContent /> : undefined
+          currentStaticData?.ui?.showFooter ? (
+            appSection === 'voice-editor' ? (
+              <VoiceEditorFooter />
+            ) : (
+              <FooterContent />
+            )
+          ) : undefined
         }
       />
 

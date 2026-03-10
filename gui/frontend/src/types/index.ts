@@ -51,6 +51,7 @@ export interface VoiceProperties {
   pitch?: number;
   quality?: number;
   range?: number;
+  special_vocal_characteristics?: string;
 }
 
 export interface VoiceDescription {

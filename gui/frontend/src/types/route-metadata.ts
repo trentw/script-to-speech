@@ -36,6 +36,8 @@ export interface RouteStaticData {
     showFooter?: boolean;
     /** Mobile drawer options */
     mobileDrawers?: Array<'settings' | 'history'>;
+    /** Which app section this route belongs to (determines panel/footer) */
+    appSection?: 'tts' | 'screenplay' | 'voice-editor';
   };
 
   /** Help text or additional documentation */

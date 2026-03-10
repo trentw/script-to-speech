@@ -387,7 +387,9 @@ These indicate the LLM produced out-of-schema values and may require prompt tuni
 
 ## Hand-Tuning Workflow
 
-The LLM labeler produces a good starting point, but you may want to hand-tune specific values. The recommended workflow:
+The LLM labeler produces a good starting point, but you may want to hand-tune specific values. There are two approaches: editing YAML directly via the CLI, or using the Voice Editor UI in the desktop app.
+
+### CLI workflow
 
 1. Run the labeler with `--dual-clips` to get initial ratings
 2. Review the `voices.yaml` output and the reasoning in `raw_results/`
@@ -396,3 +398,28 @@ The LLM labeler produces a good starting point, but you may want to hand-tune sp
 5. Run `uv run sts-validate-voice-library-data` to ensure your edits are schema-valid
 
 The reasoning field is especially useful here: if the model says "flat delivery with no pitch variance" but you hear an energetic voice, the audio sample may not have captured the voice's full range. Consider regenerating with different evaluation text.
+
+### Voice Editor UI (dev mode)
+
+The desktop app includes a Voice Editor for visually reviewing and adjusting voice properties. It is available in **dev mode only** (`npm run dev` / `npm run tauri dev`) and is not shown in production builds.
+
+To use it:
+
+1. Start the app in dev mode
+2. Switch to "manual mode" in the bottom-left corner of the app
+3. Navigate to **Voice Editor** in the sidebar
+4. Select a provider from the dropdown to browse its voices
+5. Optionally, click **Load LLM Run Data** in the provider dropdown (or on the empty state screen) to import an LLM labeler run directory. This loads:
+   - Per-property **LLM reasoning** (shown as blue info icons on each slider)
+   - **Variance warnings** (amber triangle icons on dimensions where LLM runs disagreed)
+   - **Audio samples** (neutral and expressive clips playable from the voice header)
+6. Select a voice to edit its properties:
+   - **Sliders** for numeric properties (age, pitch, energy, etc.) with scale point tooltips
+   - **Dropdowns** for enum properties (accent, gender)
+   - **Text fields** for descriptions and special vocal characteristics
+   - **Tag editors** for character types and custom tags (auto-sanitized to lowercase, a-z/0-9/underscores/dashes)
+7. Click **Save** to write changes directly to the source `voices.yaml` in the voice library
+
+The Voice Editor writes to the project source tree (`voice_library_data/{provider}/voices.yaml`), preserving YAML comments and formatting. Changes are immediately reflected in subsequent voice casting operations.
+
+When an LLM run is loaded, the voice list highlights voices included in the run (blue left border) and flags voices with variance warnings (amber triangle icon with tooltip showing the specific flagged dimensions). This makes it easy to focus review on voices where the LLM was uncertain.

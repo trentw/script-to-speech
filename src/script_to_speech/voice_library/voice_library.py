@@ -139,6 +139,14 @@ class VoiceLibrary:
 
         return voices
 
+    def invalidate_cache(self, provider: str) -> None:
+        """Invalidate the cache for a specific provider.
+
+        Call this after writing to a provider's YAML files so that
+        subsequent reads reflect the on-disk state.
+        """
+        self._voice_library_cache.pop(provider, None)
+
     def get_provider_voices(self, provider: str) -> Dict[str, Any]:
         """
         Get all voices for a provider from the voice library.

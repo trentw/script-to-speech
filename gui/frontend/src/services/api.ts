@@ -776,6 +776,69 @@ class ApiService {
     return `${API_BASE_URL}/review/cache-audio/${encodeURIComponent(projectName)}/${encodeURIComponent(filename)}`;
   }
 
+  // Voice Editor endpoints
+  async listLLMRuns(): Promise<
+    ApiResponse<
+      Array<{
+        name: string;
+        path: string;
+        provider: string;
+        timestamp: string;
+        voice_count: string;
+      }>
+    >
+  > {
+    return this.request<
+      Array<{
+        name: string;
+        path: string;
+        provider: string;
+        timestamp: string;
+        voice_count: string;
+      }>
+    >('/voice-library/llm-runs');
+  }
+
+  async getVoiceLibrarySchema(): Promise<
+    ApiResponse<import('../types/voice-editor').VoiceLibrarySchema>
+  > {
+    return this.request<import('../types/voice-editor').VoiceLibrarySchema>(
+      '/voice-library/schema'
+    );
+  }
+
+  async updateVoice(
+    provider: string,
+    stsId: string,
+    updates: import('../types/voice-editor').VoiceUpdateRequest
+  ): Promise<ApiResponse<import('../types').VoiceEntry>> {
+    return this.request<import('../types').VoiceEntry>(
+      `/voice-library/${provider}/${stsId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      }
+    );
+  }
+
+  async importLLMRun(
+    runDir: string
+  ): Promise<
+    ApiResponse<import('../types/voice-editor').LLMRunImportResponse>
+  > {
+    return this.request<import('../types/voice-editor').LLMRunImportResponse>(
+      '/voice-library/import-llm-run',
+      {
+        method: 'POST',
+        body: JSON.stringify({ run_dir: runDir }),
+      }
+    );
+  }
+
+  getLLMRunAudioUrl(runId: string, filename: string): string {
+    return `${API_BASE_URL}/voice-library/llm-run-audio/${encodeURIComponent(runId)}/${encodeURIComponent(filename)}`;
+  }
+
   // Utility methods
   async healthCheck(): Promise<boolean> {
     try {

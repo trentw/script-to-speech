@@ -14,3 +14,4 @@ export * from './useUpdateCastingInstructions';
 export * from './useUpdateId3TagConfig';
 export * from './useUpdateSessionYaml';
 export * from './useUploadScreenplaySource';
+export * from './useVoiceEditorMutations';

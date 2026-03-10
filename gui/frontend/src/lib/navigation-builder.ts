@@ -1,5 +1,5 @@
 import type { LinkOptions } from '@tanstack/react-router';
-import { FileText, Mic } from 'lucide-react';
+import { FileText, Library, Mic } from 'lucide-react';
 
 import type { RouteIds } from './navigation';
 
@@ -32,5 +32,18 @@ export function buildNavigationItems(): NavigationItem[] {
         to: '/screenplay',
       } as LinkOptions<RouteIds, string>,
     },
+    // Voice Editor only visible in dev mode
+    ...(import.meta.env.DEV
+      ? [
+          {
+            id: 'voice-editor',
+            label: 'Voice Editor',
+            icon: Library,
+            linkOptions: {
+              to: '/voice-editor',
+            } as LinkOptions<RouteIds, string>,
+          },
+        ]
+      : []),
   ];
 }

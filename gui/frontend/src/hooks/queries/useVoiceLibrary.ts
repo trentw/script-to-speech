@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../../lib/queryKeys';
 import { apiService } from '../../services/api';
 import type { VoiceDetails, VoiceEntry } from '../../types';
+import type { VoiceLibrarySchema } from '../../types/voice-editor';
 
 /**
  * Query hook for fetching voice library providers
@@ -101,6 +102,48 @@ export const useVoiceLibraryStats = () => {
       return response.data!;
     },
     staleTime: 1000 * 60 * 60, // 1 hour
+  });
+};
+
+/**
+ * Query hook for listing available LLM runs
+ */
+export interface LLMRunInfo {
+  name: string;
+  path: string;
+  provider: string;
+  timestamp: string;
+  voice_count: string;
+}
+
+export const useLLMRuns = () => {
+  return useQuery({
+    queryKey: queryKeys.llmRuns,
+    queryFn: async (): Promise<LLMRunInfo[]> => {
+      const response = await apiService.listLLMRuns();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data!;
+    },
+    staleTime: 1000 * 30, // 30 seconds - runs may appear during use
+  });
+};
+
+/**
+ * Query hook for fetching voice library schema
+ */
+export const useVoiceLibrarySchema = () => {
+  return useQuery({
+    queryKey: queryKeys.voiceLibrarySchema,
+    queryFn: async (): Promise<VoiceLibrarySchema> => {
+      const response = await apiService.getVoiceLibrarySchema();
+      if (response.error) {
+        throw new Error(response.error);
+      }
+      return response.data!;
+    },
+    staleTime: Infinity, // Schema never changes at runtime
   });
 };
 

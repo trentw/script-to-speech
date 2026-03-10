@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Feature: dev-mode only "voice editor" flow added to tweak voice library voices, with optional LLM labeling info integration
 - [CLI] Feature: LLM-based voice labeling for new voices / new voice providers to generate voices.yaml
 - [Desktop] Feature: custom voice casting instructions (existing CLI feature) added to desktop app
 - [Desktop] Feature: "replace all" option when replacing a voice shared by multiple characters

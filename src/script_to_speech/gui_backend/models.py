@@ -85,6 +85,7 @@ class VoiceProperties(BaseModel):
     pitch: Optional[float] = Field(None, ge=0.0, le=1.0)
     quality: Optional[float] = Field(None, ge=0.0, le=1.0)
     range: Optional[float] = Field(None, ge=0.0, le=1.0)
+    special_vocal_characteristics: Optional[str] = None
 
 
 class VoiceDescription(BaseModel):
@@ -514,6 +515,55 @@ class ReparseResponse(CamelModel):
     success: bool
     message: str
     removal_metadata: Optional[Dict[str, Any]] = None  # Details about what was removed
+
+
+# Voice Editor Models
+
+
+class VoiceUpdateRequest(BaseModel):
+    """Request to update a voice's properties, description, or tags."""
+
+    voice_properties: Optional[VoiceProperties] = None
+    description: Optional[VoiceDescription] = None
+    tags: Optional[VoiceTags] = None
+
+
+class SchemaPropertyDefinition(CamelModel):
+    """Schema definition for a single voice property."""
+
+    description: str
+    type: str  # "range", "enum", or "text"
+    min: Optional[float] = None
+    max: Optional[float] = None
+    scale_points: Optional[Dict[str, str]] = None
+    values: Optional[List[str]] = None
+
+
+class VoiceLibrarySchemaResponse(CamelModel):
+    """Response containing the voice library schema."""
+
+    voice_properties: Dict[str, SchemaPropertyDefinition]
+
+
+class LLMRunImportRequest(BaseModel):
+    """Request to import an LLM voice labeler run directory."""
+
+    run_dir: str
+
+
+class LLMRunVoiceData(CamelModel):
+    """LLM run data for a single voice."""
+
+    result: Dict[str, Any]
+    flags: List[str]
+
+
+class LLMRunImportResponse(CamelModel):
+    """Response from importing an LLM run directory."""
+
+    provider: str
+    voices: Dict[str, LLMRunVoiceData]
+    audio_dir: str
 
 
 # Rebuild models to resolve forward references
