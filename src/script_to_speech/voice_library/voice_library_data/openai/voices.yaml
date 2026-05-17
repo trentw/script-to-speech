@@ -16,22 +16,31 @@ voices:
       accent: "american_general"
       gender: "feminine"
 
-      age: .5
-      authority: .5
-      energy: .65
-      pace: .5
-      performative: .5
-      pitch: .5
+      age: 0.6
+      authority: 0.5
+      energy: 0.65
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.5
       quality: 1.0
 
+      range: 0.5
+      special_vocal_characteristics: ''
     description:
       custom_description: "Friendly, neutral, voice that makes a great narrator"
       perceived_age: "25-40 years"
 
     tags:
-      character_types: ["narrator", "friend", "professional", "therapist"]
-      custom_tags: ["neutral", "friendly", "approachable", "even"]
-    
+      character_types:
+      - narrator
+      - friend
+      - professional
+      - therapist
+      custom_tags:
+      - neutral
+      - friendly
+      - approachable
+      - even
     preview_url: "https://cdn.openai.com/API/docs/audio/alloy.wav"
 
   # Ash - Male, confident and slightly gruff
@@ -59,7 +68,6 @@ voices:
     tags:
       character_types: ["protagonist", "hero", "biker", "coach", "father"]
       custom_tags: ["confident", "edgy", "tough_love", "gruff", "even"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/ash.wav"
 
   # Coral - Feminine, slightly angry
@@ -87,7 +95,6 @@ voices:
     tags:
       character_types: ["antagonist", "mother_in_law", "witch", "angry_customer"]
       custom_tags: ["stern", "angry", "emotional", "offended"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/coral.wav"
 
   # Echo - Male, versatile voice
@@ -98,7 +105,7 @@ voices:
 
     voice_properties:
       accent: "american_general"
-      gender: "male"
+      gender: "masculine"
 
       age: .5
       authority: .5
@@ -115,7 +122,6 @@ voices:
     tags:
       character_types: ["protagonist", "friend", "professional", "sidekick", "student"]
       custom_tags: ["neutral", "friendly", "approachable", "even"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/echo.wav"
 
 
@@ -144,7 +150,6 @@ voices:
     tags:
       character_types: ["friend", "professional", "teacher", "villain", "guide", "butler"]
       custom_tags: ["neutral", "proper", "classy", "enthusiastic"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/fable.wav"
 
   # Nova - Feminine, versatile voice
@@ -172,14 +177,13 @@ voices:
     tags:
       character_types: ["protagonist", "friend", "professional"]
       custom_tags: ["neutral", "friendly", "approachable", "even"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/nova.wav"
 
   # Onyx - Deep, authoritative male voice
   onyx:
     config:
       voice: onyx
-      
+
     voice_properties:
       accent: "american_general"
       gender: "masculine"
@@ -225,9 +229,8 @@ voices:
       perceived_age: "18-35 years"
 
     tags:
-      character_types: ["protagonist", "cheerleader", "teacher", "marketer" ]
+      character_types: ["protagonist", "cheerleader", "teacher", "marketer"]
       custom_tags: ["spirited", "enthusiastic", "encouraging", "energetic", "convincing", "warm"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/sage.wav"
 
 
@@ -256,6 +259,5 @@ voices:
     tags:
       character_types: ["protagonist", "friend", "professional", "mother", "therapist"]
       custom_tags: ["neutral", "friendly", "warm", "caring"]
-    
     preview_url: "https://cdn.openai.com/API/docs/audio/shimmer.wav"
 
