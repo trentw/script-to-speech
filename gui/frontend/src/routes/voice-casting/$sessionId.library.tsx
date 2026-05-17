@@ -78,14 +78,13 @@ function VoiceLibraryCasting() {
   // Initialize selected providers when providers load
   useEffect(() => {
     if (providers && selectedProviders.length === 0) {
-      // Start with common providers selected
-      const commonProviders = ['openai', 'elevenlabs'];
-      const availableCommon = providers
-        .filter((p) => commonProviders.includes(p.identifier))
+      const voiceProviders = ['openai', 'elevenlabs', 'minimax'];
+      const available = providers
+        .filter((p) => voiceProviders.includes(p.identifier))
         .map((p) => p.identifier);
       setSelectedProviders(
-        availableCommon.length > 0
-          ? availableCommon
+        available.length > 0
+          ? available
           : [providers[0]?.identifier].filter(Boolean)
       );
     }

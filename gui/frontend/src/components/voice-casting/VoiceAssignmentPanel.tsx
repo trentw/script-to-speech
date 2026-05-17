@@ -136,15 +136,13 @@ export function VoiceAssignmentPanel({
     topRef.current?.scrollIntoView({ block: 'start' });
   }, []);
 
-  // Update selected provider when providers load, preferring stable providers
+  // Update selected provider when providers load, preferring openai as default
   useEffect(() => {
     if (providers && providers.length > 0 && !currentAssignment?.provider) {
-      // Only use openai or elevenlabs as they are stable
-      const stableProvider =
-        providers.find((p) => p.identifier === 'openai') ||
-        providers.find((p) => p.identifier === 'elevenlabs');
-      if (stableProvider) {
-        setSelectedProvider(stableProvider.identifier);
+      const preferred =
+        providers.find((p) => p.identifier === 'openai') || providers[0];
+      if (preferred) {
+        setSelectedProvider(preferred.identifier);
       }
     }
   }, [providers, currentAssignment?.provider]);
@@ -495,20 +493,18 @@ export function VoiceAssignmentPanel({
               }}
             >
               {(() => {
-                // Filter to only show stable providers for testing
-                const stableProviders = providers.filter(
-                  (p) =>
-                    p.identifier === 'openai' || p.identifier === 'elevenlabs'
+                const voiceProviders = providers.filter((p) =>
+                  ['openai', 'elevenlabs', 'minimax'].includes(p.identifier)
                 );
                 return (
                   <>
                     <TabsList
                       className="grid w-full"
                       style={{
-                        gridTemplateColumns: `repeat(${Math.min(stableProviders.length, 4)}, 1fr)`,
+                        gridTemplateColumns: `repeat(${Math.min(voiceProviders.length, 4)}, 1fr)`,
                       }}
                     >
-                      {stableProviders.map((provider) => (
+                      {voiceProviders.map((provider) => (
                         <TabsTrigger
                           key={provider.identifier}
                           value={provider.identifier}
@@ -518,7 +514,7 @@ export function VoiceAssignmentPanel({
                       ))}
                     </TabsList>
 
-                    {stableProviders.map((provider) => (
+                    {voiceProviders.map((provider) => (
                       <TabsContent
                         key={provider.identifier}
                         value={provider.identifier}
