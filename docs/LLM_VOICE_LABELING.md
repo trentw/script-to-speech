@@ -100,6 +100,22 @@ The output `voices.yaml` is written to both the run output directory and your us
 uv run sts-validate-voice-library-data
 ```
 
+### Sorting voices alphabetically (optional)
+
+Voices accumulate in whatever order they were added. To get the top-level voice keys
+into alphabetical order for easier diffing and lookup, use `sts-sort-voice-library-data`.
+It reorders whole voice blocks as raw text, so spacing, quoting, and values are preserved
+byte-for-byte — only the order changes. It never overwrites the input; the sorted result
+is written to a new file for you to review and rename:
+
+```bash
+# Writes voices.sorted.yaml next to the input
+uv run sts-sort-voice-library-data src/script_to_speech/voice_library/voice_library_data/minimax/voices.yaml
+
+# Read-only check: exits non-zero if the file is not already sorted
+uv run sts-sort-voice-library-data path/to/voices.yaml --check
+```
+
 ## Dual Clips
 
 The `--dual-clips` flag (recommended) generates two audio samples per voice:
