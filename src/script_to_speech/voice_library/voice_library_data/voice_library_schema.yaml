@@ -96,6 +96,7 @@ voice_properties:
     description: "Primary accent of the voice"
     type: enum
     values:
+      - "african"
       - "australian"
       - "american_general"
       - "american_southern"
