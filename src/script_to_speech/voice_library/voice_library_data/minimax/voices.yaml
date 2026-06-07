@@ -1,209 +1,41 @@
 voices:
-  casual_podcaster:
+  abbess:
     config:
-      voice_id: English_causual_podcast_vv1
+      voice_id: English_Abbess
     voice_properties:
-      accent: american_general
-      gender: masculine
-      age: 0.5
-      authority: 0.4
-      energy: 0.5
-      pace: 0.5
-      performative: 0.4
-      pitch: 0.6
-      quality: 0.8
-      range: 0.4
-      special_vocal_characteristics: Slightly robotic cadence during emotional shifts and non-verbal cues.
-    description:
-      provider_name: Casual Podcaster
-      provider_description: This voice features a smooth, conversational, and modern tone with a neutral accent.
-      provider_use_cases: Podcast & Social Media, Character Voice Acting
-      custom_description: A smooth, approachable male voice with a modern, conversational tone. While pleasant for informational reads and podcasts, it struggles to convey deep emotion or theatrical range
-      perceived_age: 25-35 years
-    tags:
-      provider_use_cases:
-      - podcast_&_social_media
-      - character_voice_acting
-      character_types:
-      - friend
-      - narrator
-      - influencer
-      - student
-      - assistant
-      - sidekick
-      custom_tags:
-      - conversational
-      - casual
-      - approachable
-      - modern
-      - relaxed
-      - smooth
-    preview_url: https://file.cdn.minimax.io/public/3852bdb3-dc77-447d-9794-bf5ab9dbb6ab.wav
-  charming_queen:
-    config:
-      voice_id: English_CharmingQueen
-    voice_properties:
-      accent: american_general
+      accent: irish
       gender: feminine
-      age: 0.4
-      authority: 0.45
-      energy: 0.7
-      pace: 0.55
-      performative: 0.6
-      pitch: 0.65
+      age: 0.55
+      authority: 0.65
+      energy: 0.65
+      pace: 0.45
+      performative: 0.45
+      pitch: 0.35
       quality: 0.9
-      range: 0.8
-      special_vocal_characteristics: Crisp articulation with theatrical breath intakes and distinct timbre shifts for whispering and shouting.
+      range: 0.75
+      special_vocal_characteristics: Slight Irish accent
     description:
-      provider_name: Charming Queen
-      provider_description: Bright, agile, and strongly projected with an energetic, crystal-clear delivery and a wide expressive range.
-      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Character Dubbing, Podcasts & Social, Corporate & Narration
-      custom_description: A bright, agile, and highly theatrical voice with crystal-clear articulation. It effortlessly transitions between energetic narration and dramatic character acting, featuring distinct whispers, shouts, and laughs.
-      perceived_age: 20-35 years
+      provider_name: Abbess
+      provider_description: Gritty, breathy, and raw with an urgent, unstable delivery that sounds relentless and battle-tested.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Commercials & Trailers, Podcasts & Social
+      custom_description: A gritty, breathy, and raw feminine voice with a battle-tested edge. Her delivery is intense and textured, featuring heavy vocal fry that conveys urgency and survival.
+      perceived_age: 30-45 years
     tags:
       provider_use_cases:
       - games_&_rpg
       - audio_drama
       - audiobooks_&_novels
-      - character_dubbing
+      - commercials_&_trailers
       - podcasts_&_social
-      - corporate_&_narration
       character_types:
-      - protagonist
-      - narrator
       - adventurer
-      - villain
-      - princess
       - teacher
-      custom_tags:
-      - bright
-      - expressive
-      - agile
-      - confident
-      - energetic
-      - crisp
-      - dynamic
-    preview_url: https://filecdn.minimax.chat/public/c57e42b2-94b1-4d93-8896-e3ebc4de9895.mp3
-  chatter_zoe:
-    config:
-      voice_id: moss_audio_7c7e7ae2-7356-11f0-9540-7ef9b4b62566
-    voice_properties:
-      accent: australian
-      gender: feminine
-      age: 0.5
-      authority: 0.5
-      energy: 0.6
-      pace: 0.5
-      performative: 0.5
-      pitch: 0.45
-      quality: 0.95
-      range: 0.45
-      special_vocal_characteristics: ''
-    description:
-      provider_name: ChatterZoe
-      provider_description: With a friendly guide tone, this voice features clear, warm, resonant qualities with a rhythmic, energetic flow.
-      provider_use_cases: Corporate & Narration, E-Learning, Commercials & Trailers
-      custom_description: A bright, friendly Australian voice with a warm and engaging tone
-      perceived_age: 25-35 years
-    tags:
-      provider_use_cases:
-      - corporate_&_narration
-      - e-learning
-      - commercials_&_trailers
-      character_types:
-      - narrator
-      - guide
-      - teacher
-      - presenter
-      - friend
-      - newscaster
-      - sidekick
-      custom_tags:
-      - friendly
-      - warm
-      - approachable
-      - engaging
-      - even
-    preview_url: https://filecdn.minimax.chat/public/7420c153-392f-4e57-9ca8-b53e7d96e369.mp3
-  cheerful_chloe:
-    config:
-      voice_id: socialmedia_female_2_v1
-    voice_properties:
-      accent: american_general
-      gender: feminine
-      age: 0.3
-      authority: 0.35
-      energy: 0.75
-      pace: 0.65
-      performative: 0.65
-      pitch: 0.65
-      quality: 0.9
-      range: 0.8
-      special_vocal_characteristics: Slight southern drawl
-    description:
-      provider_name: Cheerful Chloe
-      provider_description: This Candid Reviewer profile features a bright, youthful, and clear texture and rapid and colloquial delivery.
-      provider_use_cases: Podcasts & Social
-      custom_description: A bright, youthful, and energetic voice with a rapid, colloquial delivery. It has an upbeat, influencer-like quality that feels highly approachable, conversational, and engaging.
-      perceived_age: 18-25 years
-    tags:
-      provider_use_cases:
-      - podcasts_&_social
-      character_types:
-      - influencer
-      - cheerleader
-      - student
-      - friend
-      - presenter
-      - highschooler
-      - daughter
-      custom_tags:
-      - bright
-      - youthful
-      - upbeat
-      - energetic
-      - approachable
-      - cheerful
-      - southern
-    preview_url: https://filecdn.minimax.chat/public/014ad713-e76e-401c-99b6-38653171a646.mp3
-  chill_bestie:
-    config:
-      voice_id: moss_audio_ad5baf92-735f-11f0-8263-fe5a2fe98ec8
-    voice_properties:
-      accent: australian
-      gender: feminine
-      age: 0.4
-      authority: 0.4
-      energy: 0.3
-      pace: 0.35
-      performative: 0.35
-      pitch: 0.45
-      quality: 0.8
-      range: 0.25
-      special_vocal_characteristics: Breathy quality with noticeable vocal fry at the ends of phrases
-    description:
-      provider_name: ChillBestie
-      provider_description: With a soothing, gentle, and warm tone, this voice features a slow, deliberate pace.
-      provider_use_cases: E-Learning, Commercials & Trailers, Audiobooks & Novels
-      custom_description: A warm, monotone, Australian voice with a relaxed delivery
-      perceived_age: 20-35 years
-    tags:
-      provider_use_cases:
-      - e-learning
-      - commercials_&_trailers
-      - audiobooks_&_novels
-      character_types:
-      - friend
-      - therapist
-      - guide
-      - cashier
-      - student
+      - shop_keeper
       custom_tags:
       - breathy
       - calm
-      - monotone
-      - bored
-    preview_url: https://filecdn.minimax.chat/public/e4f9a24b-9d68-4d35-a248-893035752525.mp3
+      - conversational
+    preview_url: https://filecdn.minimax.chat/public/92747d7e-7487-471f-8653-6e7dbf3117b6.mp3
   analytical_scholar:
     config:
       voice_id: Enlish_analytical_scholar_vv1
@@ -246,6 +78,46 @@ voices:
       - informative
       - clear
     preview_url: https://file.cdn.minimax.io/public/915bec91-c7e2-4713-be32-a93f0afaa2f1.wav
+  angry_pirate:
+    config:
+      voice_id: angry_pirate_1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.65
+      authority: 0.7
+      energy: 0.85
+      pace: 0.5
+      performative: 0.9
+      pitch: 0.3
+      quality: 0.75
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Angry Pirate
+      provider_description: Husky, booming, and rugged, delivered with theatrical emphasis and big, confident punch.
+      provider_use_cases: Games & RPG, Anime & Animation, Commercials & Trailers
+      custom_description: A booming, rugged, masculine voice with some quality issues. It delivers lines with aggressive confidence (almost yelling), and a resonant punch. A bit over-the-top
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - anime_&_animation
+      - commercials_&_trailers
+      character_types:
+      - pirate
+      - villain
+      - adventurer
+      - antagonist
+      - warrior
+      custom_tags:
+      - booming
+      - theatrical
+      - commanding
+      - husky
+      - gruff
+      - over_the_top
+    preview_url: https://filecdn.minimax.chat/public/94c8ef2c-3aa7-46e1-996b-cbe30b7b5982.mp3
   anime_narrator:
     config:
       voice_id: English_AnimeCharacter
@@ -799,4 +671,4308 @@ voices:
       - relaxed
       - subdued
     preview_url: https://file.cdn.minimax.io/public/3d6a9806-3059-4707-af06-30b220dacf08.wav
-
+  casual_podcaster:
+    config:
+      voice_id: English_causual_podcast_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.4
+      energy: 0.5
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.6
+      quality: 0.8
+      range: 0.4
+      special_vocal_characteristics: Slightly robotic cadence during emotional shifts and non-verbal cues.
+    description:
+      provider_name: Casual Podcaster
+      provider_description: This voice features a smooth, conversational, and modern tone with a neutral accent.
+      provider_use_cases: Podcast & Social Media, Character Voice Acting
+      custom_description: A smooth, approachable male voice with a modern, conversational tone. While pleasant for informational reads and podcasts, it struggles to convey deep emotion or theatrical range
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - character_voice_acting
+      character_types:
+      - friend
+      - narrator
+      - influencer
+      - student
+      - assistant
+      - sidekick
+      custom_tags:
+      - conversational
+      - casual
+      - approachable
+      - modern
+      - relaxed
+      - smooth
+    preview_url: https://file.cdn.minimax.io/public/3852bdb3-dc77-447d-9794-bf5ab9dbb6ab.wav
+  charming_queen:
+    config:
+      voice_id: English_CharmingQueen
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.45
+      energy: 0.7
+      pace: 0.55
+      performative: 0.6
+      pitch: 0.65
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: Crisp articulation with theatrical breath intakes and distinct timbre shifts for whispering and shouting.
+    description:
+      provider_name: Charming Queen
+      provider_description: Bright, agile, and strongly projected with an energetic, crystal-clear delivery and a wide expressive range.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Character Dubbing, Podcasts & Social, Corporate & Narration
+      custom_description: A bright, agile, and highly theatrical voice with crystal-clear articulation. It effortlessly transitions between energetic narration and dramatic character acting, featuring distinct whispers, shouts, and laughs.
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - character_dubbing
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - protagonist
+      - narrator
+      - adventurer
+      - villain
+      - princess
+      - teacher
+      custom_tags:
+      - bright
+      - expressive
+      - agile
+      - confident
+      - energetic
+      - crisp
+      - dynamic
+    preview_url: https://filecdn.minimax.chat/public/c57e42b2-94b1-4d93-8896-e3ebc4de9895.mp3
+  chatter_zoe:
+    config:
+      voice_id: moss_audio_7c7e7ae2-7356-11f0-9540-7ef9b4b62566
+    voice_properties:
+      accent: australian
+      gender: feminine
+      age: 0.5
+      authority: 0.5
+      energy: 0.6
+      pace: 0.5
+      performative: 0.5
+      pitch: 0.45
+      quality: 0.95
+      range: 0.45
+      special_vocal_characteristics: ''
+    description:
+      provider_name: ChatterZoe
+      provider_description: With a friendly guide tone, this voice features clear, warm, resonant qualities with a rhythmic, energetic flow.
+      provider_use_cases: Corporate & Narration, E-Learning, Commercials & Trailers
+      custom_description: A bright, friendly Australian voice with a warm and engaging tone
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - corporate_&_narration
+      - e-learning
+      - commercials_&_trailers
+      character_types:
+      - narrator
+      - guide
+      - teacher
+      - presenter
+      - friend
+      - newscaster
+      - sidekick
+      custom_tags:
+      - friendly
+      - warm
+      - approachable
+      - engaging
+      - even
+    preview_url: https://filecdn.minimax.chat/public/7420c153-392f-4e57-9ca8-b53e7d96e369.mp3
+  cheerful_chloe:
+    config:
+      voice_id: socialmedia_female_2_v1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.3
+      authority: 0.35
+      energy: 0.75
+      pace: 0.65
+      performative: 0.65
+      pitch: 0.65
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: Slight southern drawl
+    description:
+      provider_name: Cheerful Chloe
+      provider_description: This Candid Reviewer profile features a bright, youthful, and clear texture and rapid and colloquial delivery.
+      provider_use_cases: Podcasts & Social
+      custom_description: A bright, youthful, and energetic voice with a rapid, colloquial delivery. It has an upbeat, influencer-like quality that feels highly approachable, conversational, and engaging.
+      perceived_age: 18-25 years
+    tags:
+      provider_use_cases:
+      - podcasts_&_social
+      character_types:
+      - influencer
+      - cheerleader
+      - student
+      - friend
+      - presenter
+      - highschooler
+      - daughter
+      custom_tags:
+      - bright
+      - youthful
+      - upbeat
+      - energetic
+      - approachable
+      - cheerful
+      - southern
+    preview_url: https://filecdn.minimax.chat/public/014ad713-e76e-401c-99b6-38653171a646.mp3
+  chill_bestie:
+    config:
+      voice_id: moss_audio_ad5baf92-735f-11f0-8263-fe5a2fe98ec8
+    voice_properties:
+      accent: australian
+      gender: feminine
+      age: 0.4
+      authority: 0.4
+      energy: 0.3
+      pace: 0.35
+      performative: 0.35
+      pitch: 0.45
+      quality: 0.8
+      range: 0.25
+      special_vocal_characteristics: Breathy quality with noticeable vocal fry at the ends of phrases
+    description:
+      provider_name: ChillBestie
+      provider_description: With a soothing, gentle, and warm tone, this voice features a slow, deliberate pace.
+      provider_use_cases: E-Learning, Commercials & Trailers, Audiobooks & Novels
+      custom_description: A warm, monotone, Australian voice with a relaxed delivery
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - commercials_&_trailers
+      - audiobooks_&_novels
+      character_types:
+      - friend
+      - therapist
+      - guide
+      - cashier
+      - student
+      custom_tags:
+      - breathy
+      - calm
+      - monotone
+      - bored
+    preview_url: https://filecdn.minimax.chat/public/e4f9a24b-9d68-4d35-a248-893035752525.mp3
+  comedian:
+    config:
+      voice_id: English_Comedian
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.5
+      energy: 0.7
+      pace: 0.6
+      performative: 0.7
+      pitch: 0.55
+      quality: 0.8
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Comedian
+      provider_description: Bright, lyrical, and lively with a light, rhythmic cadence and playful, dramatic intonation.
+      provider_use_cases: Audiobooks & Novels, Anime & Animation, Commercials & Trailers, E-Learning, Corporate & Narration
+      custom_description: A bright, lively British male voice with a lyrical cadence and theatrical delivery
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - anime_&_animation
+      - commercials_&_trailers
+      - e-learning
+      - corporate_&_narration
+      character_types:
+      - villain
+      - storyteller
+      - bard
+      - guide
+      - sidekick
+      - jester
+      - knight
+      custom_tags:
+      - bright
+      - playful
+      - theatrical
+      - expressive
+      - animated
+      - exaggerated
+    preview_url: https://filecdn.minimax.chat/public/6c6df450-b1dc-406f-a80d-855372edbd4b.mp3
+  compelling_lady:
+    config:
+      voice_id: English_compelling_lady1
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.5
+      authority: 0.6
+      energy: 0.65
+      pace: 0.5
+      performative: 0.6
+      pitch: 0.6
+      quality: 0.85
+      range: 0.8
+      special_vocal_characteristics: Clear, bright articulation with distinct character voices and breathy whispers.
+    description:
+      provider_name: Compelling Lady
+      provider_description: Bright and clear with expressive, rhythmic intonation that feels like a natural storyteller.
+      provider_use_cases: Audiobooks & Novels, Character Dubbing, Podcasts & Social, Corporate & Narration
+      custom_description: A bright, clear British voice. It transitions between professional narration and highly dynamic character acting
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - character_dubbing
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - storyteller
+      - protagonist
+      - professional
+      - news_anchor
+      - mother
+      custom_tags:
+      - bright
+      - expressive
+      - clear
+      - engaging
+      - dynamic
+      - articulate
+      - theatrical
+    preview_url: https://filecdn.minimax.chat/public/13f50227-ab44-4587-8ddc-32e79b048e03.mp3
+  confident_gamer:
+    config:
+      voice_id: Enlish_confident_streamer_vv1
+    voice_properties:
+      accent: australian
+      gender: masculine
+      age: 0.35
+      authority: 0.45
+      energy: 0.8
+      pace: 0.7
+      performative: 0.75
+      pitch: 0.65
+      quality: 0.7
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Confident Gamer
+      provider_description: This voice features a youthful, upbeat, and casual Australian accent with a fast, engaging rhythm.
+      provider_use_cases: Games & RPG, Podcast & Social Media
+      custom_description: A bright, energetic Australian male voice with a youthful and enthusiastic tone. It delivers lines with a hurried, upbeat rhythm
+      perceived_age: 16-30 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - podcast_&_social_media
+      character_types:
+      - friend
+      - student
+      - sidekick
+      - influencer
+      - presenter
+      - gamer
+      custom_tags:
+      - upbeat
+      - energetic
+      - casual
+      - bright
+      - youthful
+      - fast
+      - enthusiastic
+      - hurried
+    preview_url: https://file.cdn.minimax.io/public/9de3854a-d6ff-4302-b352-6d8dd4e8c791.wav
+  confident_woman:
+    config:
+      voice_id: English_ConfidentWoman
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.35
+      energy: 0.6
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.75
+      quality: 0.85
+      range: 0.8
+      special_vocal_characteristics: Highly breathy and soft phonation with occasional slight vocal fry at the ends of phrases.
+    description:
+      provider_name: Confident Woman
+      provider_description: Soft, breathy, and sweet with a gentle, natural flow and a slight hint of hesitation that feels tender and real.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Commercials & Trailers, Podcasts & Social, Corporate & Narration
+      custom_description: A soft, breathy, and sweet feminine voice with a gentle, tender quality. It possesses a natural, intimate flow
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - protagonist
+      - friend
+      - caregiver
+      - girlfriend
+      - storyteller
+      - therapist
+      custom_tags:
+      - soft
+      - breathy
+      - gentle
+      - caring
+      - expressive
+      - tender
+      - nasal
+    preview_url: https://filecdn.minimax.chat/public/54d82dac-3830-4839-90f6-e45d64a2ac4e.mp3
+  contrarian_konrad:
+    config:
+      voice_id: moss_audio_570551b1-735c-11f0-b236-0adeeecad052
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.5
+      energy: 0.65
+      pace: 0.6
+      performative: 0.4
+      pitch: 0.65
+      quality: 0.4
+      range: 0.6
+      special_vocal_characteristics: audio recording issues
+    description:
+      provider_name: ContrarianKonrad
+      provider_description: Bright, youthful, and clear with cheerful, rhythmic speech, this voice fits the bubbly assistant archetype.
+      provider_use_cases: E-Learning, Anime & Animation, Commercials & Trailers
+      custom_description: A bright, youthful male voice with a cheerful and bouncy cadence
+      perceived_age: 18-25 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - anime_&_animation
+      - commercials_&_trailers
+      character_types:
+      - assistant
+      - student
+      - friend
+      - sidekick
+      custom_tags:
+      - bright
+      - youthful
+      - cheerful
+      - upbeat
+      - friendly
+      - approachable
+      - rhythmic
+    preview_url: https://filecdn.minimax.chat/public/78425f97-1ea9-44d5-b26b-e95a7f43148d.mp3
+  cute_girl:
+    config:
+      voice_id: English_Cute_Girl
+    voice_properties:
+      accent: african
+      gender: feminine
+      age: 0.4
+      authority: 0.4
+      energy: 0.7
+      pace: 0.6
+      performative: 0.85
+      pitch: 0.7
+      quality: 0.8
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Cute Girl
+      provider_description: Youthful, upbeat, and highly expressive with passionate, conversational flow that feels hopeful and driven.
+      provider_use_cases: Games & RPG, Commercials & Trailers, Audio Drama
+      custom_description: A bright, youthful voice with a distinct South African accent. It is highly expressive and theatrical
+      perceived_age: 18-25 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - commercials_&_trailers
+      - audio_drama
+      character_types:
+      - protagonist
+      - student
+      - cheerleader
+      - friend
+      - sidekick
+      - teen
+      custom_tags:
+      - expressive
+      - youthful
+      - theatrical
+      - passionate
+      - upbeat
+      - bright
+      - enthusiastic
+    preview_url: https://filecdn.minimax.chat/public/36bdc78a-5c82-41ca-83c6-84455c55310f.mp3
+  debater:
+    config:
+      voice_id: English_Debator
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.45
+      authority: 0.7
+      energy: 0.75
+      pace: 0.5
+      performative: 0.95
+      pitch: 0.35
+      quality: 0.95
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Male Debater
+      provider_description: Husky, gritty, and rough-edged with energetic, irregular articulation that sounds unruly and fearless.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation
+      custom_description: A gritty, raspy male voice with a rebellious and fearless edge. It features heavy vocal fry and theatrical range.
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      character_types:
+      - villain
+      - adventurer
+      - antagonist
+      - sidekick
+      - cowboy
+      - smoker
+      custom_tags:
+      - gritty
+      - raspy
+      - edgy
+      - theatrical
+      - rough
+      - sinister
+      - evil
+    preview_url: https://filecdn.minimax.chat/public/d39ad502-1b25-4e28-aaea-df5f04023043.mp3
+  decent_boy:
+    config:
+      voice_id: English_DecentBoy
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.35
+      authority: 0.4
+      energy: 0.7
+      pace: 0.65
+      performative: 0.6
+      pitch: 0.45
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Decent Boy
+      provider_description: Husky and youthful with a textured tone and quick, reactive conversational delivery that feels candid and lived-in.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Character Dubbing
+      custom_description: A youthful, husky British voice with a quick, candid delivery. It features a textured, slightly breathy tone
+      perceived_age: 18-30 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - character_dubbing
+      character_types:
+      - protagonist
+      - student
+      - adventurer
+      - sidekick
+      - friend
+      - teen
+      - server
+      custom_tags:
+      - husky
+      - youthful
+      - expressive
+      - casual
+      - quick
+      - conversational
+    preview_url: https://filecdn.minimax.chat/public/d9c4edf8-8275-4052-9349-56ed353d1e50.mp3
+  decent_man:
+    config:
+      voice_id: English_DecentYoungMan
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.5
+      authority: 0.6
+      energy: 0.5
+      pace: 0.45
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Decent Young Man
+      provider_description: Smooth, soft, and magnetic with an easy, flowing pace that reads effortlessly charming.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A smooth, gentle, and slightly breathy young British male voice. It has a soft quality that feels approachable and charming
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - protagonist
+      - friend
+      - sidekick
+      - adventurer
+      - therapist
+      - apprentice
+      custom_tags:
+      - smooth
+      - gentle
+      - approachable
+      - calm
+    preview_url: https://filecdn.minimax.chat/public/eac29cdc-bec9-423f-89aa-c2b32a6bb690.mp3
+  deep_gentleman:
+    config:
+      voice_id: English_Deep-VoicedGentleman
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.65
+      authority: 0.75
+      energy: 0.6
+      pace: 0.4
+      performative: 0.75
+      pitch: 0.2
+      quality: 0.9
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Deep-voiced Gentleman
+      provider_description: Deep, warm, and strongly projected with clear, composed delivery that feels polished and authoritative.
+      provider_use_cases: Audio Drama, Audiobooks & Novels, Documentary
+      custom_description: A deep, resonant British gentleman's voice with a polished and commanding presence. It features a rich chest timbre and excellent theatrical range
+      perceived_age: 35-60 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - audiobooks_&_novels
+      - documentary
+      character_types:
+      - narrator
+      - villain
+      - authority_figure
+      - wiseman
+      - professor
+      custom_tags:
+      - deep
+      - resonant
+      - authoritative
+      - polished
+      - commanding
+      - theatrical
+      - expressive
+      - sophisticated
+    preview_url: https://filecdn.minimax.chat/public/8c54a381-344f-403f-b74e-b2a31a59c7dc.mp3
+  deep_toned_man:
+    config:
+      voice_id: English_Deep-tonedMan
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.8
+      energy: 0.6
+      pace: 0.35
+      performative: 0.8
+      pitch: 0.15
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Deep-tonedMan
+      provider_description: "Deep, low, and husky with melodic, unhurried articulation—classic dramatic bass weight with a playful, teasing edge."
+      provider_use_cases: Audio Drama, Anime & Animation, Character Dubbing
+      custom_description: A deep, resonant bass voice with a husky, theatrical quality. It commands attention with unhurried, deliberate pacing and a dramatic, slightly playful edge.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - villain
+      - narrator
+      - king
+      - antagonist
+      - boss
+      - giant
+      - god
+      custom_tags:
+      - deep
+      - husky
+      - theatrical
+      - dramatic
+      - resonant
+      - commanding
+    preview_url: https://filecdn.minimax.chat/public/35d4b420-4c9c-4111-91ee-60ef18151f7e.mp3
+  deep_voice_man:
+    config:
+      voice_id: English_ManWithDeepVoice
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.85
+      energy: 0.5
+      pace: 0.3
+      performative: 0.5
+      pitch: 0.25
+      quality: 1.0
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Man With Deep Voice
+      provider_description: "Deep, powerful, and husky with an unhurried, commanding rhythm—classic cinematic narration weight."
+      provider_use_cases: Commercials & Trailers, Corporate & Narration
+      custom_description: A deep, powerful, and resonant masculine voice with a slightly husky texture. Its unhurried, commanding rhythm makes it ideal for cinematic narration and authoritative roles.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - villain
+      - authority_figure
+      - boss
+      - cowboy
+      - detective
+      custom_tags:
+      - deep
+      - gravelly
+      - commanding
+      - cinematic
+      - measured
+      - husky
+      - authoritative
+      - resonant
+      - conversational
+    preview_url: https://filecdn.minimax.chat/public/c394d4d9-1baf-4a2d-8c1a-3e1eb1f01a0d.mp3
+  determined_man:
+    config:
+      voice_id: English_DeterminedMan
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.55
+      energy: 0.75
+      pace: 0.5
+      performative: 0.75
+      pitch: 0.6
+      quality: 0.85
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Determined Man
+      provider_description: Bright, lyrical, and lively with light, rhythmic phrasing and playful dramatic intonation.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation, Character Dubbing
+      custom_description: A bright, lively, and youthful masculine voice with a lyrical cadence. It excels at theatrical delivery, easily shifting between dramatic whispers and energetic shouts
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - protagonist
+      - hero
+      - sidekick
+      - adventurer
+      - student
+      - villain
+      - guide
+      custom_tags:
+      - theatrical
+      - expressive
+      - animated
+      - bright
+      - lively
+      - playful
+    preview_url: https://filecdn.minimax.chat/public/1b9eb538-691c-4b3b-a093-2a0ad57c4611.mp3
+  diligent_man:
+    config:
+      voice_id: English_Diligent_Man
+    voice_properties:
+      accent: indian
+      gender: masculine
+      age: 0.5
+      authority: 0.55
+      energy: 0.5
+      pace: 0.55
+      performative: 0.5
+      pitch: 0.4
+      quality: 0.85
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Diligent Man
+      provider_description: Clear, balanced, and approachable with fluent, rhythmic pacing that sounds energetic and sincere.
+      provider_use_cases: E-Learning, Podcasts & Social, Corporate & Narration
+      custom_description: A clear, professional Indian male voice with a steady, approachable tone. It sounds reliable and informative
+      perceived_age: 25-45 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - professional
+      - teacher
+      - shop_keeper
+      custom_tags:
+      - approachable
+      - professional
+      - neutral
+    preview_url: https://filecdn.minimax.chat/public/138731f9-b186-44f0-be5b-31efad0a7c74.mp3
+  energetic_caster:
+    config:
+      voice_id: English_energetic_caster_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.75
+      energy: 0.8
+      pace: 0.65
+      performative: 0.7
+      pitch: 0.45
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Energetic Caster
+      provider_description: This voice features a punchy, high-energy, and dynamic projection.
+      provider_use_cases: Podcast & Social Media, Games & RPG
+      custom_description: A punchy, highly dynamic male voice with a radio-announcer quality. It features sharp articulation and enthusiastic delivery
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - games_&_rpg
+      character_types:
+      - presenter
+      - news_anchor
+      - marketer
+      - coach
+      - hero
+      custom_tags:
+      - energetic
+      - punchy
+      - enthusiastic
+      - dynamic
+      - loud
+      - dissmissive
+    preview_url: https://file.cdn.minimax.io/public/80043f41-3cac-49da-896d-cc9964e564d6.wav
+  energetic_man:
+    config:
+      voice_id: English_energetic_male_1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.4
+      energy: 0.3
+      pace: 0.4
+      performative: 0.4
+      pitch: 0.4
+      quality: 0.9
+      range: 0.35
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Energetic man
+      provider_description: Bright, projected, and crisp with a smooth, natural speaking style that feels genuinely excited and nostalgic.
+      provider_use_cases: Podcasts & Social
+      custom_description: A calm, low-energy, unhurried voice
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - podcasts_&_social
+      character_types:
+      - friend
+      - student
+      - surfer
+      - stoner
+      custom_tags:
+      - dynamic
+      - approachable
+      - tired
+      - monotone
+      - bored
+      - calm
+    preview_url: https://filecdn.minimax.chat/public/85237d38-3b9d-40bc-b11d-f650192632e4.mp3
+  energetic_reporter:
+    config:
+      voice_id: English_energetic_reporter_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.45
+      energy: 0.75
+      pace: 0.6
+      performative: 0.6
+      pitch: 0.6
+      quality: 0.9
+      range: 0.4
+      special_vocal_characteristics: Slightly nasal
+    description:
+      provider_name: Energetic Reporter
+      provider_description: This voice features a sharp, fast-paced, and authoritative delivery typical of broadcast journalism.
+      provider_use_cases: Documentary, Podcast & Social Media
+      custom_description: A bright, fast-paced masculine voice. Features sharp articulation
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - podcast_&_social_media
+      character_types:
+      - informant
+      - salesman
+      - student
+      custom_tags:
+      - direct
+      - precise
+      - bright
+      - articulate
+    preview_url: https://file.cdn.minimax.io/public/82dc8ab0-d52e-4b40-a5dc-040023644254.wav
+  engaging_girl:
+    config:
+      voice_id: moss_audio_c12a59b9-7115-11f0-a447-9613c873494c
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.35
+      authority: 0.45
+      energy: 0.7
+      pace: 0.55
+      performative: 0.65
+      pitch: 0.6
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: EngagingGirl
+      provider_description: Bright, rich, and warm with a lively, conversational pace, this voice fits the friendly companion archetype.
+      provider_use_cases: Commercials & Trailers, Podcasts & Social, E-Learning
+      custom_description: A bright, warm, and highly engaging young feminine voice. It features a lively conversational pace and excellent expressive capabilitie
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - podcasts_&_social
+      - e-learning
+      character_types:
+      - friend
+      - cheerleader
+      - student
+      - protagonist
+      - companion
+      - girlfriend
+      custom_tags:
+      - bright
+      - warm
+      - conversational
+      - friendly
+      - engaging
+      - lively
+      - enthusiastic
+      - expressive
+    preview_url: https://filecdn.minimax.chat/public/04621adf-e613-48b5-8129-76986d71b257.mp3
+  engaging_instructor:
+    config:
+      voice_id: English_engaging_instructor_vv2
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.7
+      energy: 0.6
+      pace: 0.5
+      performative: 0.55
+      pitch: 0.4
+      quality: 0.95
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Engaging Instructor
+      provider_description: This voice features a clear, articulate, and confident tone with trustworthy enunciation.
+      provider_use_cases: Online Education, Podcast & Social Media
+      custom_description: A clear, resonant, and confident male voice with excellent articulation. It projects a trustworthy and professional demeanor
+      perceived_age: 35-50 years
+    tags:
+      provider_use_cases:
+      - online_education
+      - podcast_&_social_media
+      character_types:
+      - teacher
+      - professional
+      - narrator
+      - news_anchor
+      - guide
+      - coach
+      - doctor
+      custom_tags:
+      - clear
+      - articulate
+      - confident
+      - trustworthy
+      - professional
+      - engaging
+    preview_url: https://file.cdn.minimax.io/public/32792390-e361-4a8a-b83e-cbf399066e08.wav
+  engaging_podcaster:
+    config:
+      voice_id: Enlish_engaging_podcaster_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.65
+      energy: 0.55
+      pace: 0.45
+      performative: 0.65
+      pitch: 0.35
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Engaging Podcaster
+      provider_description: This voice features a warm, friendly, and robust morning radio presence that feels instantly familiar.
+      provider_use_cases: Podcast & Social Media, Commercials & Trailers
+      custom_description: A warm, resonant masculine voice with a classic, engaging radio-host quality. It balances professional authority with an approachable, friendly demeanor.
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - commercials_&_trailers
+      character_types:
+      - narrator
+      - news_anchor
+      - professional
+      - storyteller
+      - presenter
+      - farmer
+      custom_tags:
+      - warm
+      - confident
+      - engaging
+      - conversational
+      - smooth
+      - friendly
+      - robust
+    preview_url: https://file.cdn.minimax.io/public/baab5986-d2a8-401b-af22-910f602b2757.wav
+  exciting_actor:
+    config:
+      voice_id: English_exciting_actor_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.55
+      energy: 0.8
+      pace: 0.6
+      performative: 0.95
+      pitch: 0.55
+      quality: 0.6
+      range: 0.4
+      special_vocal_characteristics: Always yelling
+    description:
+      provider_name: Exciting Actor
+      provider_description: This voice features an animated, dramatic, and highly expressive range.
+      provider_use_cases: Radio Drama, Audiobooks & Novels, Character Voice Acting
+      custom_description: Over-to-top, energetic young male voice. Always yelling
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - radio_drama
+      - audiobooks_&_novels
+      - character_voice_acting
+      character_types:
+      - sidekick
+      - patient
+      custom_tags:
+      - expressive
+      - animated
+      - energetic
+      - dramatic
+      - yelling
+    preview_url: https://file.cdn.minimax.io/public/ef2b1881-d850-4dd3-a9dc-df15218f9112.wav
+  expressive_host:
+    config:
+      voice_id: English_expressive_host__vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.75
+      energy: 0.6
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.35
+      quality: 0.95
+      range: 0.65
+      special_vocal_characteristics: Strong chest resonance with a smooth, broadcast-ready polish.
+    description:
+      provider_name: Expressive Host
+      provider_description: This voice features a polished, inviting, and warm timbre with professional modulation.
+      provider_use_cases: Podcast & Social Media, Commercials & Trailers
+      custom_description: A polished, resonant male voice with a warm and inviting timbre. It carries a professional, authoritative presence perfectly suited for broadcasting, podcast hosting, or commercial narration.
+      perceived_age: 40-55 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - commercials_&_trailers
+      character_types:
+      - narrator
+      - news_anchor
+      - professional
+      - orator
+      custom_tags:
+      - resonant
+      - warm
+      - polished
+      - confident
+      - engaging
+      - professional
+      - smooth
+      - trustworthy
+    preview_url: https://file.cdn.minimax.io/public/ca99f3c0-539c-45e1-ba77-e532cf05688e.wav
+  expressive_narrator:
+    config:
+      voice_id: English_expressive_narrator
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.75
+      energy: 0.65
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.3
+      quality: 0.95
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Expressive Narrator
+      provider_description: Husky, gritty, and rough-edged with energetic, irregular articulation that sounds unruly and fearless. Great for RPG-style storytelling, adventure animation, and audio drama when you want bold confidence, mischief, and rebellious swagger.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels
+      custom_description: A deep, husky British voice with a gritty, resonant texture. It carries a commanding and theatrical presence, easily shifting from a rugged whisper to a booming shout.
+      perceived_age: 40-55 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      character_types:
+      - narrator
+      - adventurer
+      - storyteller
+      - announcer
+      - author
+      custom_tags:
+      - expressive
+      - confident
+      - theatrical
+      - commanding
+      - approachable
+      - inviting
+    preview_url: https://filecdn.minimax.chat/public/cff00b95-e45b-42b7-9ee2-50bbb0532bcd.mp3
+  friendly_female:
+    config:
+      voice_id: English_Friendly_Female_3
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.45
+      authority: 0.6
+      energy: 0.6
+      pace: 0.5
+      performative: 0.35
+      pitch: 0.6
+      quality: 0.9
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Friendly Women
+      provider_description: Bright, rounded, and clear with strong, well-timed pacing and confident, polished delivery.
+      provider_use_cases: Commercials & Trailers, E-Learning, Corporate & Narration
+      custom_description: 'A bright, polished, and clear feminine voice with a confident, professional delivery. It has a warm, rounded tone '
+      perceived_age: 25-45 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - e-learning
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - professional
+      - teacher
+      - presenter
+      - assistant
+      - reporter
+      custom_tags:
+      - bright
+      - polished
+      - confident
+      - professional
+      - engaging
+      - warm
+      - approachable
+    preview_url: https://filecdn.minimax.chat/public/457f2361-3996-41b3-bc24-d16e422adef7.mp3
+  friendly_giant:
+    config:
+      voice_id: massive_kind_troll
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.75
+      authority: 0.85
+      energy: 0.4
+      pace: 0.25
+      performative: 0.8
+      pitch: 0.2
+      quality: 0.5
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Friendly Giant
+      provider_description: Featuring deep, raspy, and booming resonance with slow, measured delivery, this voice embodies the villain archetype.
+      provider_use_cases: Games & RPG, Anime & Animation, Commercials & Trailers
+      custom_description: A deep, and heavily raspy masculine voice. Its slow, measured delivery and gravelly texture give it an imposing presence
+      perceived_age: 50-75 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - anime_&_animation
+      - commercials_&_trailers
+      character_types:
+      - villain
+      - antagonist
+      - grandfather
+      - mobster
+      - ogre
+      custom_tags:
+      - deep
+      - raspy
+      - gravelly
+      - sinister
+      - measured
+      - booming
+      - slow
+      - imposing
+      - gruff
+    preview_url: https://filecdn.minimax.chat/public/617cae56-9b0b-4882-8a30-cc48b4363a08.mp3
+  friendly_neighbor:
+    config:
+      voice_id: English_FriendlyNeighbor
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.3
+      authority: 0.3
+      energy: 0.7
+      pace: 0.55
+      performative: 0.7
+      pitch: 0.8
+      quality: 0.9
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Friendly Neighbor
+      provider_description: Bright, breezy, and high with fast, energetic pacing and a lively, conversational tone.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A bright, energetic, and highly expressive voice with a breezy, upbeat personality. The tone is consistently friendly and animated, making it sound like an enthusiastic young adult.
+      perceived_age: 18-30 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - cheerleader
+      - student
+      - friend
+      - sidekick
+      custom_tags:
+      - bright
+      - energetic
+      - breezy
+      - youthful
+      - expressive
+      - fast
+      - friendly
+    preview_url: https://filecdn.minimax.chat/public/2f9e9e00-8fe8-4401-bc8e-2df01f3e489b.mp3
+  friendly_paige:
+    config:
+      voice_id: conversational_female_2_v1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.3
+      authority: 0.4
+      energy: 0.6
+      pace: 0.6
+      performative: 0.55
+      pitch: 0.6
+      quality: 0.85
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Friendly Paige
+      provider_description: Clear, youthful, and confident with a quick, smooth pace and direct delivery that pulls you in.
+      provider_use_cases: Commercials & Trailers, E-Learning, Podcasts & Social
+      custom_description: A bright, youthful, and confident feminine voice with a smooth, clear delivery
+      perceived_age: 13-20 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - e-learning
+      - podcasts_&_social
+      character_types:
+      - friend
+      - student
+      - child
+      custom_tags:
+      - youthful
+      - clear
+      - approachable
+      - confident
+      - upbeat
+      - smooth
+    preview_url: https://filecdn.minimax.chat/public/1ac63145-0dbb-4bbd-aa4a-b1257038e913.mp3
+  friendly_person:
+    config:
+      voice_id: English_FriendlyPerson
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.65
+      energy: 0.4
+      pace: 0.4
+      performative: 0.55
+      pitch: 0.4
+      quality: 0.85
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Friendly Guy
+      provider_description: "Deep, low, and husky with melodic, unhurried articulation—classic dramatic bass weight with a playful, teasing edge."
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A semi-deep masculine voice with deliberate, unhurried cadence
+      perceived_age: 25-45 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - narrator
+      - adventurer
+      - antagonist
+      - father
+      - nurse
+      custom_tags:
+      - confident
+      - measured
+      - calm
+      - friendly
+    preview_url: https://filecdn.minimax.chat/public/6df8ac34-fac8-49db-8c90-04f94cf793df.mp3
+  gentle_man:
+    config:
+      voice_id: English_Gentle-voiced_man
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.55
+      energy: 0.4
+      pace: 0.35
+      performative: 0.5
+      pitch: 0.35
+      quality: 0.9
+      range: 0.6
+      special_vocal_characteristics: Loud
+    description:
+      provider_name: Gentle-voiced Man
+      provider_description: Warm, gentle, and soothing with a slow, unhurried pace that feels reflective and comforting.
+      provider_use_cases: Audiobooks & Novels, Commercials & Trailers, Podcasts & Social, Corporate & Narration
+      custom_description: A warm, gentle, and soothing masculine voice with a slow, deliberate pacing
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - storyteller
+      - therapist
+      - caregiver
+      - friend
+      - guide
+      custom_tags:
+      - warm
+      - gentle
+      - soothing
+      - reflective
+      - calm
+      - slow
+      - comforting
+      - breathy
+      - approachable
+    preview_url: https://filecdn.minimax.chat/public/773715bc-fb9a-4032-94d4-2d58d7cce152.mp3
+  gentle_storyteller:
+    config:
+      voice_id: English_gentle_storyteller_vv1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.3
+      energy: 0.3
+      pace: 0.4
+      performative: 0.25
+      pitch: 0.4
+      quality: 0.5
+      range: 0.3
+      special_vocal_characteristics: synthetic cadence
+    description:
+      provider_name: Gentle Storyteller
+      provider_description: This voice features a soft, soothing, and empathetic quality with a measured pace.
+      provider_use_cases: Podcast & Social Media, Character Voice Acting
+      custom_description: A soft, breathy, and gentle feminine voice with a soothing but noticeably synthetic quality. It attempts a comforting tone but struggles with natural emotional expression.
+      perceived_age: 18 -35 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - character_voice_acting
+      character_types:
+      - caregiver
+      - friend
+      - storyteller
+      - therapist
+      - assistant
+      custom_tags:
+      - gentle
+      - breathy
+      - soothing
+      - calm
+      - soft
+      - subdued
+      - robotic
+    preview_url: https://file.cdn.minimax.io/public/348864a3-4c73-4e3c-939f-0bb5dcebdb10.wav
+  gentle_teacher:
+    config:
+      voice_id: English_GentleTeacher
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.5
+      energy: 0.4
+      pace: 0.4
+      performative: 0.75
+      pitch: 0.4
+      quality: 0.85
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Gentle Teacher
+      provider_description: Warm, airy, and velvety with precise, expressive articulation that feels patient and wise.
+      provider_use_cases: Documentary, E-Learning, Podcasts & Social
+      custom_description: A warm, velvety, and slightly breathy masculine voice that exudes patience and wisdom. Smooth, close-mic quality
+      perceived_age: 30-55 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - e-learning
+      - podcasts_&_social
+      character_types:
+      - teacher
+      - narrator
+      - wiseman
+      - storyteller
+      - guide
+      - therapist
+      custom_tags:
+      - warm
+      - gentle
+      - patient
+      - velvety
+      - expressive
+      - soothing
+      - wise
+    preview_url: https://filecdn.minimax.chat/public/a395ff82-f811-4404-bc91-aaba9850f9f3.mp3
+  goblin:
+    config:
+      voice_id: ttv-voice-2025062517241625-ukalfUbZ
+    voice_properties:
+      accent: british_cockney
+      gender: masculine
+      age: 0.7
+      authority: 0.3
+      energy: 0.75
+      pace: 0.6
+      performative: 0.9
+      pitch: 0.65
+      quality: 0.7
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Goblin
+      provider_description: This voice features a high-pitched, scratchy, and mischievous timbre with a distinct fantasy creature characterization.
+      provider_use_cases: Character Voice Acting
+      custom_description: A highly stylized, high-pitched, and scratchy voice perfect for fantasy creatures. It features extreme raspiness and a mischievous, chaotic energy typical of a goblin or minion
+      perceived_age: 40-70
+    tags:
+      provider_use_cases:
+      - character_voice_acting
+      character_types:
+      - villain
+      - antagonist
+      - sidekick
+      - monster
+      - witch
+      - thief
+      - minion
+      custom_tags:
+      - scratchy
+      - raspy
+      - high-pitched
+      - mischievous
+      - creepy
+      - exaggerated
+      - theatrical
+      - chaotic
+    preview_url: https://file.cdn.minimax.io/public/99047983-a2d6-4503-b851-1d0bc0111525.wav
+  gorgeous_lady:
+    config:
+      voice_id: English_GorgeousLady
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.45
+      authority: 0.4
+      energy: 0.6
+      pace: 0.4
+      performative: 0.7
+      pitch: 0.75
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Gorgeous Lady
+      provider_description: Silky, bright, and elegant with smooth, unhurried pacing that feels high-end and poised.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation, Character Dubbing
+      custom_description: A silky, elegant feminine voice with a bright and poised delivery. It features a smooth, slightly breathy texture that feels high-end and sophisticated.
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - narrator
+      - receptionist
+      - professional
+      - guide
+      - witch
+      - princess
+      custom_tags:
+      - silky
+      - elegant
+      - smooth
+      - poised
+      - sophisticated
+      - bright
+      - superior
+      - smug
+    preview_url: https://filecdn.minimax.chat/public/d1905f05-71c1-41a8-9082-4c1811b748bc.mp3
+  graceful_lady:
+    config:
+      voice_id: English_Graceful_Lady
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.7
+      authority: 0.6
+      energy: 0.4
+      pace: 0.45
+      performative: 0.7
+      pitch: 0.4
+      quality: 0.7
+      range: 0.65
+      special_vocal_characteristics: loud
+    description:
+      provider_name: Graceful Lady
+      provider_description: Velvety-warm and pleasant with smooth, composed delivery that feels serene and timeless.
+      provider_use_cases: Audiobooks & Novels, Commercials & Trailers, Podcasts & Social
+      custom_description: A mature, elegant British voice with a velvety, warm texture. Composed and serene delivery
+      perceived_age: 45-65 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - storyteller
+      - mother
+      - guide
+      - professional
+      - therapist
+      - queen
+      custom_tags:
+      - warm
+      - composed
+      - elegant
+      - smooth
+      - serene
+      - calm
+    preview_url: https://filecdn.minimax.chat/public/f7cef5ed-0783-40df-82b6-1b467cbd51ae.mp3
+  honest_man:
+    config:
+      voice_id: English_Honest_Man
+    voice_properties:
+      accent: african
+      gender: masculine
+      age: 0.5
+      authority: 0.65
+      energy: 0.4
+      pace: 0.45
+      performative: 0.4
+      pitch: 0.35
+      quality: 0.7
+      range: 0.4
+      special_vocal_characteristics: Distinctive rhythmic cadence with slight robotic artifacts during emotional shifts
+    description:
+      provider_name: Honest Man
+      provider_description: Resonant, sincere, and steady with clear, rhythmic delivery and a persuasive edge that feels urgent yet controlled.
+      provider_use_cases: Documentary, E-Learning
+      custom_description: A resonant, steady masculine voice with a deliberate, rhythmic cadence. While it carries a sincere and authoritative tone, it struggles with natural emotional expression, sounding slightly stilted during dramatic reads.
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - e-learning
+      character_types:
+      - professional
+      - teacher
+      - orator
+      - guide
+      custom_tags:
+      - resonant
+      - steady
+      - sincere
+      - deep
+      - measured
+      - stilted
+      - calm
+    preview_url: https://filecdn.minimax.chat/public/7101e28b-1889-4434-9730-dc3309c40823.mp3
+  horror_narrator:
+    config:
+      voice_id: Eglish_horror_movie_narrator_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.7
+      energy: 0.55
+      pace: 0.45
+      performative: 0.65
+      pitch: 0.35
+      quality: 0.9
+      range: 0.5
+      special_vocal_characteristics: Deep, gravelly resonance with a cinematic, trailer-announcer quality
+    description:
+      provider_name: Horror Movie Narrator
+      provider_description: This voice features a deep, gravelly, and ominous resonance.
+      provider_use_cases: Podcast & Social Media, Character Voice Acting, Radio Drama
+      custom_description: A deep, booming, and gravelly masculine voice with a cinematic quality. It carries immense weight and resonance, perfect for dramatic narration, movie trailers, or ominous storytelling.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - character_voice_acting
+      - radio_drama
+      character_types:
+      - storyteller
+      - authority_figure
+      - protagonist
+      custom_tags:
+      - deep
+      - raspy
+      - african_american
+    preview_url: https://file.cdn.minimax.io/public/61fa3afb-25ce-412a-9a37-b8a13da7b365.wav
+  imposing_queen:
+    config:
+      voice_id: English_ImposingManner
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.5
+      authority: 0.75
+      energy: 0.65
+      pace: 0.5
+      performative: 0.75
+      pitch: 0.6
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Imposing Queen
+      provider_description: Bright, rounded, and clear with strong, well-timed pacing and confident, polished delivery.
+      provider_use_cases: Games & RPG, Audio Drama, Commercials & Trailers
+      custom_description: A polished, highly expressive British voice with crisp articulation and a theatrical flair
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - commercials_&_trailers
+      character_types:
+      - villain
+      - authority_figure
+      - news_anchor
+      - witch
+      - queen
+      custom_tags:
+      - polished
+      - theatrical
+      - crisp
+      - expressive
+      - confident
+      - dramatic
+      - clear
+      - commanding
+    preview_url: https://filecdn.minimax.chat/public/fb237421-d9bb-4618-b483-36acfa4f348e.mp3
+  insightful_speaker:
+    config:
+      voice_id: English_Insightful_Speaker
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.7
+      energy: 0.55
+      pace: 0.6
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Insightful Speaker
+      provider_description: Deep, smooth, and resonant with clear, unhurried delivery and an academic polish that feels authoritative and engaging.
+      provider_use_cases: Documentary, E-Learning
+      custom_description: A deep, smooth, masculine voice with an academic polish. The delivery is clear, unhurried, and carries a natural authority
+      perceived_age: 25-55 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - e-learning
+      character_types:
+      - narrator
+      - professor
+      - professional
+      - lawyer
+      custom_tags:
+      - deep
+      - smooth
+      - authoritative
+      - clear
+      - measured
+      - professional
+      - trustworthy
+    preview_url: https://filecdn.minimax.chat/public/b77785e2-bc81-4346-8199-85a6cef452f0.mp3
+  instructive_professor:
+    config:
+      voice_id: English_instructive_professor_vv1
+    voice_properties:
+      accent: american_midwest
+      gender: feminine
+      age: 0.65
+      authority: 0.65
+      energy: 0.55
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.9
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Instructive Professor
+      provider_description: This voice features a knowledgeable, articulate, and paced delivery with a reassuringly authoritative tone.
+      provider_use_cases: Documentary
+      custom_description: A mature, articulate female voice with a measured and knowledgeable delivery. It features a clear, instructional tone that conveys steady authority and patience.
+      perceived_age: 45-65 years
+    tags:
+      provider_use_cases:
+      - documentary
+      character_types:
+      - professor
+      - judge
+      - teacher
+      - guide
+      - farmer
+      - grandmother
+      custom_tags:
+      - measured
+      - mature
+      - authoritative
+      - reassuring
+    preview_url: https://file.cdn.minimax.io/public/5fa1ef3f-2273-4f88-a8be-18d1498ffba2.wav
+  intellect_woman:
+    config:
+      voice_id: English_intellect_female_1
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.5
+      authority: 0.7
+      energy: 0.6
+      pace: 0.4
+      performative: 0.75
+      pitch: 0.4
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Intellect Woman
+      provider_description: "Deep, low, and husky with melodic, unhurried articulation—classic dramatic bass weight with a playful, teasing edge."
+      provider_use_cases: Audiobooks & Novels, Documentary, Podcasts & Social, Corporate & Narration
+      custom_description: A deep British female voice with a sophisticated and slightly husky timbre. Her measured, unhurried articulation conveys a mature confidence that transitions effortlessly into highly theatrical character acting.
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - documentary
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - professional
+      - reporter
+      - actor
+      custom_tags:
+      - sophisticated
+      - expressive
+      - measured
+      - confident
+      - deep
+      - theatrical
+    preview_url: https://filecdn.minimax.chat/public/5cab2d81-2d0c-485e-8adc-786a84057810.mp3
+  jovial_man:
+    config:
+      voice_id: English_Jovialman
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.7
+      authority: 0.7
+      energy: 0.35
+      pace: 0.3
+      performative: 0.75
+      pitch: 0.25
+      quality: 0.9
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Jovial Man
+      provider_description: Warm, gentle, and soothing with a slow, unhurried pace that feels reflective and calm.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation, Commercials & Trailers, Corporate & Narration
+      custom_description: A warm, deep, and resonant older male voice with a gentle, slightly gravelly texture. It conveys wisdom and comfort, making it perfect for storytelling or playing a grandfatherly figure.
+      perceived_age: 50-75 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      - commercials_&_trailers
+      - corporate_&_narration
+      character_types:
+      - grandfather
+      - wiseman
+      - sage
+      - guide
+      - storyteller
+      custom_tags:
+      - warm
+      - gentle
+      - soothing
+      - calm
+      - deep
+      - reflective
+      - slow
+    preview_url: https://filecdn.minimax.chat/public/d4ed5586-54c8-4e42-92be-1a6889566605.mp3
+  kind_hearted_girl:
+    config:
+      voice_id: English_Kind-heartedGirl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.35
+      authority: 0.3
+      energy: 0.5
+      pace: 0.45
+      performative: 0.65
+      pitch: 0.6
+      quality: 0.7
+      range: 0.7
+      special_vocal_characteristics: clipped enunciation, slight accent
+    description:
+      provider_name: Kind-Hearted Girl
+      provider_description: Warm, airy, and velvety with precise, expressive articulation that feels patient and wise.
+      provider_use_cases: Audiobooks & Novels, Commercials & Trailers, Podcasts & Social
+      custom_description: A  young, warm, breathy voice with a gentle, patient demeanor. Precise articulation
+      perceived_age: 15-28 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - friend
+      - caregiver
+      - storyteller
+      - protagonist
+      - guide
+      - therapist
+      - child
+      - student
+      custom_tags:
+      - warm
+      - patient
+      - gentle
+      - airy
+      - expressive
+      - enunciated
+    preview_url: https://filecdn.minimax.chat/public/05f3cdd9-13fe-4012-8a3b-f2828e48f424.mp3
+  kindergarten_boy:
+    config:
+      voice_id: BritishChild_male_1_v1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.1
+      authority: 0.1
+      energy: 0.7
+      pace: 0.6
+      performative: 0.7
+      pitch: 0.85
+      quality: 0.7
+      range: 0.8
+      special_vocal_characteristics: inconsistent accent
+    description:
+      provider_name: Kindergarten Boy
+      provider_description: High, tense, and a little teary, with fast, unstable pacing that sounds raw and on the verge of breaking.
+      provider_use_cases: Audio Drama, Commercials & Trailers
+      custom_description: A high-pitched, youthful voice that sounds like a young boy. It has a tense, slightly anxious and teary quality with unstable pacing.
+      perceived_age: 5-11 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - commercials_&_trailers
+      character_types:
+      - child
+      - student
+      - son
+      - sidekick
+      custom_tags:
+      - anxious
+      - fast
+      - teary
+      - young
+      - emotional
+      - vulnerable
+    preview_url: https://filecdn.minimax.chat/public/297b78da-cc86-428b-8acd-11d5f299a46d.mp3
+  knowledge_pill:
+    config:
+      voice_id: moss_audio_737a299c-734a-11f0-918f-4e0486034804
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.6
+      energy: 0.65
+      pace: 0.65
+      performative: 0.7
+      pitch: 0.35
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: loud
+    description:
+      provider_name: KnowledgePill
+      provider_description: Presenting a distinct everyman character, this voice blends deep, smooth, warm tones with casual, conversational speech.
+      provider_use_cases: Commercials & Trailers, Podcasts & Social
+      custom_description: A smooth, warm, and deep masculine voice that perfectly captures an approachable 'everyman' persona. It sounds grounded and natural
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - friend
+      - storyteller
+      - professional
+      - father
+      - marketer
+      custom_tags:
+      - deep
+      - smooth
+      - warm
+      - casual
+      - conversational
+      - approachable
+    preview_url: https://filecdn.minimax.chat/public/75f9f923-d5b1-4636-a01c-67c62b4d9bf9.mp3
+  lively_male:
+    config:
+      voice_id: English_Lively_Male_11
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.65
+      energy: 0.8
+      pace: 0.65
+      performative: 0.75
+      pitch: 0.6
+      quality: 0.8
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Lively Man
+      provider_description: Bright, powerful, and big-voiced with fast, rhythmic delivery that feels hype and urgent.
+      provider_use_cases: Podcasts & Social
+      custom_description: A bright, powerful, and highly energetic masculine voice with a fast, rhythmic delivery. It naturally conveys a sense of urgency and hype
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - podcasts_&_social
+      character_types:
+      - presenter
+      - marketer
+      - influencer
+      - cheerleader
+      - coach
+      - salesman
+      custom_tags:
+      - bright
+      - energetic
+      - upbeat
+      - engaging
+      - confident
+      - dynamic
+      - expressive
+      - enthusiastic
+      - fast
+      - punchy
+    preview_url: https://filecdn.minimax.chat/public/932e6e27-9311-462f-b1c5-492e020bb1cd.mp3
+  lively_male_2:
+    config:
+      voice_id: English_Lively_Male_10
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.5
+      authority: 0.75
+      energy: 0.75
+      pace: 0.6
+      performative: 0.75
+      pitch: 0.55
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: News Presenter
+      provider_description: Bright, clear, and strongly projected with punchy, rhythmic delivery that feels modern and energetic.
+      provider_use_cases: Audio Drama, Documentary, Commercials & Trailers, Podcasts & Social, Corporate & Narration
+      custom_description: A bright, energetic British male voice with crisp articulation and a modern, punchy delivery. It seamlessly transitions between authoritative broadcasting and dynamic, theatrical character work.
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - documentary
+      - commercials_&_trailers
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - news_anchor
+      - presenter
+      - professional
+      - storyteller
+      - marketer
+      custom_tags:
+      - bright
+      - energetic
+      - punchy
+      - clear
+      - confident
+      - modern
+      - crisp
+      - dynamic
+    preview_url: https://filecdn.minimax.chat/public/d0409f45-0ba6-4d10-8626-fceffcf2fcc4.mp3
+  livestream_sales:
+    config:
+      voice_id: ttv-voice-2025062519422425-GrH4Wv1A
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.6
+      energy: 0.9
+      pace: 0.7
+      performative: 0.8
+      pitch: 0.65
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Livestream Sales
+      provider_description: This voice features an aggressive, high-octane, and punchy projection typical of high-stakes commercials.
+      provider_use_cases: Podcast & Social Media, Commercials & Trailers
+      custom_description: A high-octane, rapid-fire male voice with an aggressive, broadcast-style projection. It sounds like an energetic infomercial host, a fast-talking sports announcer, or a hyped-up influencer.
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - commercials_&_trailers
+      character_types:
+      - marketer
+      - presenter
+      - coach
+      - news_anchor
+      - orator
+      custom_tags:
+      - energetic
+      - punchy
+      - aggressive
+      - upbeat
+      - exaggerated
+      - enthusiastic
+    preview_url: https://file.cdn.minimax.io/public/923610ae-2b13-498b-9f1e-772b82d15014.wav
+  lovely_girl:
+    config:
+      voice_id: English_LovelyGirl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.15
+      authority: 0.15
+      energy: 0.5
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.8
+      quality: 0.85
+      range: 0.6
+      special_vocal_characteristics: inconsistent accent (slips between American and British)
+    description:
+      provider_name: Lovely Girl
+      provider_description: Soft, sweet, and light with thoughtful, gentle articulation that feels youthful and charming.
+      provider_use_cases: Anime & Animation, Commercials & Trailers, Podcasts & Social
+      custom_description: A sweet, youthful voice with a soft, breathy texture. It sounds gentle, innocent, and highly approachable, though lacking in commanding presence.
+      perceived_age: 7 -13 years
+    tags:
+      provider_use_cases:
+      - anime_&_animation
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - student
+      - friend
+      - child
+      - protagonist
+      - sidekick
+      - daughter
+      custom_tags:
+      - sweet
+      - breathy
+      - gentle
+      - youthful
+      - soft
+      - light
+      - charming
+      - innocent
+    preview_url: https://filecdn.minimax.chat/public/3587254e-c16e-4ca4-8799-a9539919fb6e.mp3
+  lovely_lady:
+    config:
+      voice_id: English_LovelyLady
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.5
+      authority: 0.65
+      energy: 0.6
+      pace: 0.5
+      performative: 0.55
+      pitch: 0.4
+      quality: 0.8
+      range: 0.65
+      special_vocal_characteristics: "very slight lisp\n"
+    description:
+      provider_name: Lovely Lady
+      provider_description: Throaty, rough, and booming with forceful, rhythmic articulation that carries threat and pain.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation
+      custom_description: A firm, slightly husky feminine voice with deliberate articulation. While it attempts dramatic range, the delivery carries a slightly stilted, rhythmic cadence.
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      character_types:
+      - friend
+      - caregiver
+      custom_tags:
+      - husky
+      - deliberate
+      - stilted
+      - confident
+      - assertive
+    preview_url: https://filecdn.minimax.chat/public/ede30a65-0a30-440d-ac96-61ab4c2ae3b6.mp3
+  lucky_robot:
+    config:
+      voice_id: English_Lucky_Robot
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.7
+      energy: 0.35
+      pace: 0.4
+      performative: 0.2
+      pitch: 0.2
+      quality: 0.65
+      range: 0.5
+      special_vocal_characteristics: Metallic, resonant, slightly processed or robotic undertone
+    description:
+      provider_name: Lucky Robot
+      provider_description: Deep, metallic, and resonant with steady, machine-like articulation that feels controlled and authoritative.
+      provider_use_cases: Games & RPG, Commercials & Trailers, Corporate & Narration
+      custom_description: A deep, resonant masculine voice with a distinct metallic or processed quality. It speaks with a steady, deliberate cadence that feels highly controlled and commanding.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - commercials_&_trailers
+      - corporate_&_narration
+      character_types:
+      - villain
+      - authority_figure
+      - god
+      custom_tags:
+      - deep
+      - metallic
+      - steady
+      - resonant
+      - commanding
+      - robotic
+      - authoritative
+      - booming
+    preview_url: https://filecdn.minimax.chat/public/c07e2dbf-376d-414e-9f51-e4701284bd3f.mp3
+  magnetic_male:
+    config:
+      voice_id: English_Magnetic_Male_2
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.8
+      energy: 0.5
+      pace: 0.4
+      performative: 0.7
+      pitch: 0.35
+      quality: 0.95
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Magnetic Man
+      provider_description: Rich, warm, and smooth with unhurried yet expressive diction that draws you in, carrying drama and a hint of mystery.
+      provider_use_cases: Audio Drama, Audiobooks & Novels, Character Dubbing, Podcasts & Social, Corporate & Narration
+      custom_description: A rich, resonant British baritone with a smooth, theatrical delivery. The voice carries a natural gravitas and mystery, effortlessly shifting from warm narration to intense character dialogue.
+      perceived_age: 35-55 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - audiobooks_&_novels
+      - character_dubbing
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - villain
+      - detective
+      - authority_figure
+      - storyteller
+      - butler
+      - wiseman
+      custom_tags:
+      - smooth
+      - resonant
+      - mysterious
+      - deep
+      - dramatic
+      - confident
+      - measured
+      - rich
+      - theatrical
+    preview_url: https://filecdn.minimax.chat/public/d027dd44-6f06-481f-b4de-3a7af06986de.mp3
+  magnetic_male_2:
+    config:
+      voice_id: English_Magnetic_Male_12
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.75
+      energy: 0.45
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.3
+      quality: 0.95
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Nature Show Host
+      provider_description: Smooth, deep, and elegant with a composed, flowing pace and an information-forward delivery that reads confident and clear.
+      provider_use_cases: Documentary, E-Learning, Corporate & Narration
+      custom_description: A deep, elegant, and highly resonant British male voice with a polished, documentary-style delivery. The tone is smooth, authoritative, and sophisticated, making it ideal for professional narration and storytelling.
+      perceived_age: 30-55 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - e-learning
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - professional
+      - guide
+      - authority_figure
+      - storyteller
+      - wiseman
+      - professor
+      custom_tags:
+      - smooth
+      - deep
+      - elegant
+      - composed
+      - confident
+      - sophisticated
+      - measured
+    preview_url: https://filecdn.minimax.chat/public/e4151a9d-a0ed-49e8-b382-de08daf38b99.mp3
+  magnetic_man:
+    config:
+      voice_id: English_magnetic_voiced_man
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.5
+      energy: 0.5
+      pace: 0.45
+      performative: 0.5
+      pitch: 0.35
+      quality: 1.0
+      range: 0.55
+      special_vocal_characteristics: Smooth, resonant chest voice with a gentle, slightly breathy quality.
+    description:
+      provider_name: Magnetic-voiced Male
+      provider_description: Warm, gentle, and soothing with a slow, unhurried pace that feels reflective and calm.
+      provider_use_cases: Commercials & Trailers, E-Learning, Corporate & Narration
+      custom_description: A semi-deep, conversational, and soothing male voice with a gentle delivery. Its smooth, unhurried pace makes it highly approachable, calming, and reflective. Conversational
+      perceived_age: 25 -50 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - e-learning
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - guide
+      - professional
+      - therapist
+      - friend
+      - storyteller
+      custom_tags:
+      - calm
+      - smooth
+      - measured
+      - warm
+      - gentle
+      - soothing
+      - reflective
+      - conversational
+    preview_url: https://filecdn.minimax.chat/public/fa9119d5-80c2-4aea-96cb-6c5ec12dbf7d.mp3
+  male_lecturer:
+    config:
+      voice_id: English_male_lecturer_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.75
+      energy: 0.8
+      pace: 0.6
+      performative: 0.7
+      pitch: 0.45
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Male Lecturer
+      provider_description: This voice features a distinctive, highly modulated, and persuasive cadence with high engagement energy.
+      provider_use_cases: Podcast & Social Media, Documentary, Online Education
+      custom_description: A highly engaging, persuasive male voice with a distinctive broadcaster cadence. The delivery is dynamic and highly modulated
+      perceived_age: 35-55 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - documentary
+      - online_education
+      character_types:
+      - teacher
+      - presenter
+      - professional
+      - narrator
+      - orator
+      - news_anchor
+      - actor
+      custom_tags:
+      - engaging
+      - persuasive
+      - confident
+      - dynamic
+      - expressive
+      - authoritative
+      - enthusiastic
+    preview_url: https://file.cdn.minimax.io/public/1e9a5861-5cb3-4dad-83ca-f3f59c05205c.wav
+  mature_boss:
+    config:
+      voice_id: English_MatureBoss
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.6
+      authority: 0.7
+      energy: 0.55
+      pace: 0.45
+      performative: 0.7
+      pitch: 0.35
+      quality: 0.75
+      range: 0.75
+      special_vocal_characteristics: Deep, resonant chest voice with smooth, deliberate articulation.
+    description:
+      provider_name: Bossy Lady
+      provider_description: Deep, bold, and smooth with a serious, steady delivery that feels cinematic and heavy.
+      provider_use_cases: Games & RPG, Audiobooks & Novels, Commercials & Trailers
+      custom_description: A deep, feminine voice. Her smooth, deliberate delivery carries significant weight, making her ideal for serious or authoritative roles.
+      perceived_age: 35-55 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      character_types:
+      - narrator
+      - villain
+      - authority_figure
+      - boss
+      - detective
+      - teacher
+      custom_tags:
+      - deep
+      - smooth
+      - confident
+      - bold
+      - gentle
+      - clam
+    preview_url: https://filecdn.minimax.chat/public/326727df-250c-46d6-b672-ea523b8cff25.mp3
+  mature_partner:
+    config:
+      voice_id: English_MaturePartner
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.65
+      authority: 0.65
+      energy: 0.35
+      pace: 0.6
+      performative: 0.8
+      pitch: 0.35
+      quality: 0.85
+      range: 0.4
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Mature Partner
+      provider_description: Bright, powerful, and big-voiced with fast, rhythmic delivery that feels hype and urgent.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Character Dubbing
+      custom_description: A mature, resonant male voice with a commanding and theatrical presence. It features a slight gravelly texture
+      perceived_age: 45-70 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - character_dubbing
+      character_types:
+      - narrator
+      - villain
+      - authority_figure
+      - storyteller
+      - rogue
+      custom_tags:
+      - theatrical
+      - powerful
+      - dynamic
+      - commanding
+      - gravelly
+      - confident
+      - expressive
+    preview_url: https://filecdn.minimax.chat/public/33d05762-facc-4aef-9420-c969a6555789.mp3
+  matured_host:
+    config:
+      voice_id: English_matured_host_vv1
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.65
+      energy: 0.55
+      pace: 0.5
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.9
+      range: 0.65
+      special_vocal_characteristics: Rich chest resonance with a polished, broadcast-ready smoothness.
+    description:
+      provider_name: Matured Host
+      provider_description: This voice features a sophisticated, rich, and polished British timbre with a classic broadcast quality.
+      provider_use_cases: Advertising & Trailers, Podcast & Social Media
+      custom_description: 'A sophisticated, rich British male voice with a polished broadcast quality. Smooth lower-mid resonance and clear articulation '
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - advertising_&_trailers
+      - podcast_&_social_media
+      character_types:
+      - news_anchor
+      - narrator
+      - professional
+      - orator
+      - butler
+      custom_tags:
+      - sophisticated
+      - polished
+      - rich
+      - confident
+      - smooth
+      - measured
+      - authoritative
+    preview_url: https://file.cdn.minimax.io/public/3336acdd-2cd6-409c-8635-9f10a9e8347f.wav
+  metalhead:
+    config:
+      voice_id: English_Husky_MetalHead
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.7
+      energy: 0.8
+      pace: 0.45
+      performative: 0.95
+      pitch: 0.1
+      quality: 0.85
+      range: 0.7
+      special_vocal_characteristics: Extreme vocal fry, heavy growl, very raspy and throaty texture.
+    description:
+      provider_name: Husky MetalHead
+      provider_description: Throaty, rough, and booming with forceful, rhythmic articulation that carries threat and pain.
+      provider_use_cases: Games & RPG, Character Dubbing
+      custom_description: A stylized, booming, and highly textured voice characterized by an extreme gravelly growl. It projects immense power, threat, and a rugged, battle-hardened persona.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - character_dubbing
+      character_types:
+      - villain
+      - antagonist
+      - warrior
+      - ogre
+      - demon
+      custom_tags:
+      - gravelly
+      - gruff
+      - aggressive
+      - rough
+      - edgy
+      - intimidating
+      - raspy
+      - deep
+      - stylized
+      - growling
+    preview_url: https://filecdn.minimax.chat/public/8528e25d-a0a8-4923-9797-2707168b6303.mp3
+  movie_commentator:
+    config:
+      voice_id: English_movie_commentato_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.7
+      energy: 0.4
+      pace: 0.4
+      performative: 0.25
+      pitch: 0.35
+      quality: 0.65
+      range: 0.6
+      special_vocal_characteristics: unnatural cadence
+    description:
+      provider_name: Movie Commentator
+      provider_description: This voice features a deep, textured, and serious resonance with a captivating gravity.
+      provider_use_cases: Documentary, Podcast & Social Media, Audiobooks & Novels
+      custom_description: A semi-deep voice with unnatural cadence
+      perceived_age: 40-55 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - podcast_&_social_media
+      - audiobooks_&_novels
+      character_types:
+      - detective
+      - orator
+      - server
+      custom_tags:
+      - dramatic
+      - drawn_out
+      - calm
+    preview_url: https://file.cdn.minimax.io/public/1a400302-f2b0-4686-bef4-4018bcaeeca1.wav
+  movie_narrator:
+    config:
+      voice_id: movie_trailer_deep
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.8
+      energy: 0.5
+      pace: 0.45
+      performative: 0.55
+      pitch: 0.25
+      quality: 0.95
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Movie Narrator
+      provider_description: Featuring deep, rich, warm resonance with steady, rhythmic speech, this voice embodies the professional narrator archetype.
+      provider_use_cases: Corporate & Narration, Documentary, Audiobooks & Novels
+      custom_description: A deep, resonant, and highly authoritative masculine voice with a classic cinematic quality. It transitions smoothly from warm, steady narration to dramatic, theatrical character acting.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - corporate_&_narration
+      - documentary
+      - audiobooks_&_novels
+      character_types:
+      - narrator
+      - authority_figure
+      - storyteller
+      - villain
+      - detective
+      - professional
+      - professor
+      custom_tags:
+      - deep
+      - resonant
+      - cinematic
+      - smooth
+      - commanding
+      - authoritative
+    preview_url: https://filecdn.minimax.chat/public/d936b3e0-07e6-4648-9952-0ce077bc17df.mp3
+  nursery_teacher:
+    config:
+      voice_id: English_nursery_teacher_vv2
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.35
+      energy: 0.65
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.7
+      quality: 0.6
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Nursery Teacher
+      provider_description: This voice features a bright, gentle, and highly enunciated tone with a smiling, encouraging quality.
+      provider_use_cases: Online Education, Podcast & Social Media
+      custom_description: A bright, gentle, and highly enunciated feminine voice with a persistent smiling quality. It sounds incredibly warm and encouraging
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - online_education
+      - podcast_&_social_media
+      character_types:
+      - teacher
+      - storyteller
+      - caregiver
+      - cheerleader
+      - guide
+      - mother
+      custom_tags:
+      - bright
+      - gentle
+      - enthusiastic
+      - encouraging
+      - warm
+      - smiling
+      - animated
+    preview_url: https://file.cdn.minimax.io/public/b1cf9760-39b1-4d2e-9490-20933d506382.wav
+  patient_man:
+    config:
+      voice_id: English_PatientMan
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.45
+      energy: 0.3
+      pace: 0.3
+      performative: 0.25
+      pitch: 0.3
+      quality: 0.7
+      range: 0.65
+      special_vocal_characteristics: unnatural cadence
+    description:
+      provider_name: Patient Man
+      provider_description: Deep, warm, and slightly grainy with slow, deliberate pacing that feels intimate and heartfelt.
+      provider_use_cases: Audiobooks & Novels, Podcasts & Social, Corporate & Narration
+      custom_description: 'A deep, warm, and slightly grainy British voice with a slow, deliberate cadence. '
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - wiseman
+      - storyteller
+      - therapist
+      - friend
+      custom_tags:
+      - deep
+      - warm
+      - soothing
+      - grainy
+      - calm
+      - gentle
+    preview_url: https://filecdn.minimax.chat/public/1c402890-7274-4a3a-8cb9-25072df7d7ab.mp3
+  patient_man_2:
+    config:
+      voice_id: English_patient_man_v1
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.6
+      authority: 0.55
+      energy: 0.4
+      pace: 0.35
+      performative: 0.4
+      pitch: 0.4
+      quality: 0.8
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Patient Man
+      provider_description: Warm, steady, and soothing with careful, unhurried delivery that feels empathetic and reassuring.
+      provider_use_cases: Audiobooks & Novels, E-Learning, Corporate & Narration
+      custom_description: A warm, steady, and soothing British male voice with a careful, unhurried delivery. It feels empathetic, reassuring, and mature
+      perceived_age: 35-50 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - e-learning
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - therapist
+      - teacher
+      - doctor
+      - guide
+      - wiseman
+      custom_tags:
+      - warm
+      - soothing
+      - steady
+      - patient
+      - empathetic
+      - reassuring
+      - calm
+      - measured
+    preview_url: https://filecdn.minimax.chat/public/022d0a8e-ee9a-4ee3-b1f0-f007255297f6.mp3
+  peaceful_lady:
+    config:
+      voice_id: peace_and_ease
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.5
+      authority: 0.3
+      energy: 0.35
+      pace: 0.4
+      performative: 0.35
+      pitch: 0.55
+      quality: 0.75
+      range: 0.5
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Peaceful Lady
+      provider_description: This Storyteller profile has a warm, flowing, and light quality with smooth, reflective delivery.
+      provider_use_cases: Audiobooks & Novels
+      custom_description: A warm, soothing, and slightly breathy feminine voice with a gentle, reflective delivery. It possesses a comforting, maternal quality ideal for storytelling and calm narration.
+      perceived_age: 25 - 45 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      character_types:
+      - narrator
+      - storyteller
+      - caregiver
+      - therapist
+      - mother
+      custom_tags:
+      - warm
+      - calm
+      - gentle
+      - soothing
+      - reflective
+      - breathy
+      - smooth
+    preview_url: https://filecdn.minimax.chat/public/c402254e-8767-4533-acf9-161a993a7289.mp3
+  persuasive_man:
+    config:
+      voice_id: English_Persuasive_Man
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.45
+      authority: 0.65
+      energy: 0.7
+      pace: 0.8
+      performative: 0.6
+      pitch: 0.45
+      quality: 0.8
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Persuasive Man
+      provider_description: Clear, energetic, and strong with fast, inspiring delivery that feels modern and helpful.
+      provider_use_cases: E-Learning, Podcasts & Social, Corporate & Narration
+      custom_description: A clear, energetic, and modern masculine voice with a brisk, enthusiastic delivery. It has a polished, commercial quality that sounds confident and inspiring
+      perceived_age: 25 -45 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - professional
+      - presenter
+      - teacher
+      - coach
+      - marketer
+      custom_tags:
+      - energetic
+      - clear
+      - confident
+      - engaging
+      - modern
+      - upbeat
+      - hurried
+    preview_url: https://filecdn.minimax.chat/public/ceba70ae-5f0a-4bc7-9fcd-4f78c03e0727.mp3
+  playful_girl:
+    config:
+      voice_id: English_PlayfulGirl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.3
+      energy: 0.8
+      pace: 0.75
+      performative: 0.8
+      pitch: 0.85
+      quality: 0.85
+      range: 0.85
+      special_vocal_characteristics: Bright, bouncy anime-dub style delivery with exaggerated emotional inflections
+    description:
+      provider_name: Playful Girl
+      provider_description: High, bright, and bouncy with fast, playful pacing and a lively animated feel.
+      provider_use_cases: Games & RPG, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A bright, high-pitched, and highly animated voice with a bouncy delivery. It heavily leans into an exaggerated, theatrical style reminiscent of anime or cartoon dubbing.
+      perceived_age: 15-25 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - teen
+      - cheerleader
+      - sidekick
+      - student
+      - fairy
+      custom_tags:
+      - playful
+      - bouncy
+      - animated
+      - youthful
+      - energetic
+      - high-pitched
+      - bright
+    preview_url: https://filecdn.minimax.chat/public/36d8f4d3-7db3-463c-89b9-302659059523.mp3
+  podcast_host:
+    config:
+      voice_id: Enlish_podcast_host_vv1
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.7
+      energy: 0.7
+      pace: 0.5
+      performative: 0.75
+      pitch: 0.4
+      quality: 0.95
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Podcast Host
+      provider_description: This voice features a crisp, energetic, and modern American broadcast style with excellent projection.
+      provider_use_cases: Podcast & Social Media, Character Voice Acting
+      custom_description: A crisp, resonant, and highly expressive masculine voice with a classic broadcast quality. It seamlessly transitions from authoritative narration to dynamic character acting with distinct emotional shifts.
+      perceived_age: 30-55 years
+    tags:
+      provider_use_cases:
+      - podcast_&_social_media
+      - character_voice_acting
+      character_types:
+      - news_anchor
+      - narrator
+      - professional
+      - storyteller
+      - orator
+      - presenter
+      custom_tags:
+      - crisp
+      - energetic
+      - confident
+      - expressive
+      - dynamic
+      - clear
+      - engaging
+      - professional
+    preview_url: https://file.cdn.minimax.io/public/3285c256-d718-4d02-bf27-bd7d75519c54.wav
+  radiant_girl:
+    config:
+      voice_id: English_radiant_girl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.45
+      energy: 0.65
+      pace: 0.5
+      performative: 0.75
+      pitch: 0.65
+      quality: 0.95
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Radiant Girl
+      provider_description: Bright, energetic, and polished with an upbeat, naturally flowing tone that feels optimistic and sincere.
+      provider_use_cases: Audiobooks & Novels, E-Learning, Podcasts & Social, Corporate & Narration
+      custom_description: A bright, energetic, and highly expressive young woman's voice. It features a polished, optimistic tone with excellent acting capabilities
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - e-learning
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - protagonist
+      - cheerleader
+      - student
+      - friend
+      - presenter
+      custom_tags:
+      - bright
+      - energetic
+      - optimistic
+      - polished
+      - friendly
+      - clear
+      - expressive
+      - upbeat
+    preview_url: https://filecdn.minimax.chat/public/43c3cda5-e0db-4796-bb70-ab72c58ac4e6.mp3
+  relatable_riley:
+    config:
+      voice_id: conversational_female_1_v1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.35
+      energy: 0.6
+      pace: 0.65
+      performative: 0.6
+      pitch: 0.55
+      quality: 0.5
+      range: 0.65
+      special_vocal_characteristics: some audio recording / quality issues
+    description:
+      provider_name: Relatable Riley
+      provider_description: Husky, breathy, and textured with fast, casual, spoken delivery that feels unfiltered and real.
+      provider_use_cases: Commercials & Trailers, Podcasts & Social
+      custom_description: A youthful, highly textured voice characterized by vocal fry and a breathy, husky quality. The fast, casual delivery makes it feel unfiltered and relatable
+      perceived_age: 16-35 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - friend
+      - influencer
+      - student
+      - protagonist
+      - sidekick
+      - marketer
+      custom_tags:
+      - husky
+      - breathy
+      - casual
+      - relatable
+      - fast
+      - conversational
+      - vocal fry
+      - modern
+    preview_url: https://filecdn.minimax.chat/public/53739e7d-f878-4071-a7ae-a7b513b85b64.mp3
+  reserved_man:
+    config:
+      voice_id: English_ReservedYoungMan
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.45
+      authority: 0.5
+      energy: 0.6
+      pace: 0.45
+      performative: 0.55
+      pitch: 0.65
+      quality: 0.95
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Reserved Young Man
+      provider_description: Soft, airy, and youthful with a thoughtful, friendly flow that feels polite, sincere, and a bit vulnerable.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A soft, airy, and youthful masculine voice with a gentle, vulnerable quality. It sounds polite, sincere, and emotionally expressive
+      perceived_age: 18 - 35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - student
+      - friend
+      - protagonist
+      - sidekick
+      - dreamer
+      custom_tags:
+      - soft
+      - breathy
+      - youthful
+      - vulnerable
+      - gentle
+      - sincere
+      - thoughtful
+      - reserved
+    preview_url: https://filecdn.minimax.chat/public/9aede1a4-71b8-4e4f-b15e-3e714dfbb0bc.mp3
+  resonant_storyteller:
+    config:
+      voice_id: English_resonant_storyteller_vv2
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.65
+      authority: 0.75
+      energy: 0.25
+      pace: 0.35
+      performative: 0.7
+      pitch: 0.3
+      quality: 0.85
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Resonant Storyteller
+      provider_description: This voice features a smooth, classic British accent with a calm and literary pacing.
+      provider_use_cases: Audiobooks & Novels, Documentary
+      custom_description: A deep, resonant British male voice with a measured and literary cadence. It carries a natural warmth and authority, but comes off as somewhat bored
+      perceived_age: 40-65 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - documentary
+      character_types:
+      - wiseman
+      - professor
+      - butler
+      - storyteller
+      - villain
+      - snob
+      custom_tags:
+      - resonant
+      - measured
+      - authoritative
+      - smooth
+      - classic
+      - calm
+      - literary
+      - deep
+      - bored
+    preview_url: https://file.cdn.minimax.io/public/571f49d5-96f3-4feb-8cde-a2f27705cbf4.wav
+  sad_teen:
+    config:
+      voice_id: English_SadTeen
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.4
+      authority: 0.4
+      energy: 0.75
+      pace: 0.55
+      performative: 0.75
+      pitch: 0.5
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Teen Boy
+      provider_description: "Nasal, husky, and youthful with quick, snappy pacing—perfect for a rebellious teen edge."
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation
+      custom_description: A youthful, energetic British voice with a distinctively husky and slightly nasal tone
+      perceived_age: 18-30 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      character_types:
+      - student
+      - protagonist
+      - sidekick
+      - adventurer
+      custom_tags:
+      - youthful
+      - husky
+      - nasal
+      - energetic
+      - expressive
+      - snappy
+      - theatrical
+    preview_url: https://filecdn.minimax.chat/public/2023783c-e3f5-4bb4-8bfe-e511cfa8a8be.mp3
+  sentimental_lady:
+    config:
+      voice_id: English_SentimentalLady
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.6
+      authority: 0.6
+      energy: 0.5
+      pace: 0.4
+      performative: 0.75
+      pitch: 0.6
+      quality: 0.9
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Sentimental Lady
+      provider_description: Elegant, lyrical, and soft with a clear, dramatic rhythm that feels regal and otherworldly.
+      provider_use_cases: Games & RPG, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: An elegant, lyrical British voice with a regal and slightly theatrical presence. Crisp enunciation and dynamic emotional range
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - narrator
+      - storyteller
+      - witch
+      - guide
+      - villain
+      - mother
+      custom_tags:
+      - regal
+      - elegant
+      - theatrical
+      - proper
+      - sophisticated
+      - crisp
+      - expressive
+      - lyrical
+    preview_url: https://filecdn.minimax.chat/public/bc3d302e-0c54-457b-aa91-746324393b75.mp3
+  serene_woman:
+    config:
+      voice_id: English_SereneWoman
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.3
+      energy: 0.4
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.65
+      quality: 0.8
+      range: 0.6
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Serene Woman
+      provider_description: Soft, airy, and fluid with delicate articulation that feels gentle and contemplative.
+      provider_use_cases: Games & RPG, Audio Drama, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A soft, airy, and gentle feminine voice with a distinctly breathy texture. It conveys a calm, contemplative, and delicate presence
+      perceived_age: 25-40 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - friend
+      - therapist
+      - caregiver
+      - guide
+      - storyteller
+      custom_tags:
+      - soft
+      - breathy
+      - gentle
+      - calm
+      - soothing
+      - airy
+      - intimate
+      - subdued
+    preview_url: https://filecdn.minimax.chat/public/bd00d743-a02f-4eed-8645-8a6d4e624436.mp3
+  sharp_commentator:
+    config:
+      voice_id: English_Sharp_Commentator
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.5
+      authority: 0.6
+      energy: 0.65
+      pace: 0.5
+      performative: 0.55
+      pitch: 0.55
+      quality: 0.8
+      range: 0.75
+      special_vocal_characteristics: slight lisp
+    description:
+      provider_name: Sharp Commentator
+      provider_description: Resonant, clear, and persuasive with confident, rhythmic pacing that feels authoritative and engaging.
+      provider_use_cases: E-Learning, Podcasts & Social
+      custom_description: A clear, resonant, and highly articulate feminine voice with a bright, conversational tone. It projects confidence and authority while maintaining an engaging, conversational warmth
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - podcasts_&_social
+      character_types:
+      - news_anchor
+      - professional
+      - teacher
+      - presenter
+      custom_tags:
+      - clear
+      - confident
+      - articulate
+      - engaging
+      - professional
+      - authoritative
+      - persuasive
+      - conversational
+      - lisp
+    preview_url: https://filecdn.minimax.chat/public/83113d94-e704-483f-abc6-c8d88be0b321.mp3
+  soft_spoken_girl:
+    config:
+      voice_id: English_Soft-spokenGirl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.3
+      authority: 0.2
+      energy: 0.3
+      pace: 0.4
+      performative: 0.7
+      pitch: 0.75
+      quality: 0.9
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Soft-Spoken Girl
+      provider_description: Deep, warm, and slightly grainy with slow, deliberate pacing that feels intimate and heartfelt.
+      provider_use_cases: Games & RPG, Audiobooks & Novels, Anime & Animation, Character Dubbing
+      custom_description: A highly breathy, intimate, and gentle feminine voice with a warm, slightly grainy texture. The delivery is slow and deliberate, creating a soothing, secretive, or heartfelt atmosphere.
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audiobooks_&_novels
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - friend
+      - caregiver
+      - storyteller
+      - student
+      - protagonist
+      - fairy
+      - siren
+      custom_tags:
+      - warm
+      - gentle
+      - breathy
+      - intimate
+      - soft
+      - slow
+      - soothing
+      - seductive
+    preview_url: https://filecdn.minimax.chat/public/1f117e17-dfee-4d71-a103-0083c10d425c.mp3
+  southern_dude:
+    config:
+      voice_id: moss_audio_076697ad-7144-11f0-a447-9613c873494c
+    voice_properties:
+      accent: american_southern
+      gender: masculine
+      age: 0.55
+      authority: 0.6
+      energy: 0.4
+      pace: 0.4
+      performative: 0.4
+      pitch: 0.35
+      quality: 0.75
+      range: 0.5
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Southern Dude
+      provider_description: With smooth, warm, resonant tones and clear, rhythmic speech, this voice fits the professional narrator archetype.
+      provider_use_cases: Corporate & Narration, E-Learning
+      custom_description: A smooth, resonant masculine voice with a mild Southern drawl. Its warm, relaxed tone and clear articulation make it highly approachable yet confident.
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - corporate_&_narration
+      - e-learning
+      character_types:
+      - narrator
+      - cowboy
+      - farmer
+      - professional
+      - father
+      - storyteller
+      - sheriff
+      custom_tags:
+      - warm
+      - smooth
+      - resonant
+      - relaxed
+      - approachable
+      - calm
+      - trustworthy
+    preview_url: https://filecdn.minimax.chat/public/3b85813d-0d15-4963-84c9-9dd25e9fd89a.mp3
+  steady_female:
+    config:
+      voice_id: English_Steady_Female_1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.55
+      authority: 0.65
+      energy: 0.45
+      pace: 0.5
+      performative: 0.35
+      pitch: 0.45
+      quality: 0.8
+      range: 0.4
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Steady Women
+      provider_description: "Rounded, clear, and steady with a moderate, well-paced delivery—classic anchor-style presence."
+      provider_use_cases: Documentary, Podcasts & Social, Corporate & Narration
+      custom_description: A clear, steady, and professional female voice with a rounded tone. It possesses a classic news anchor quality, delivering text with measured confidence and reliability.
+      perceived_age: 35-50 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - news_anchor
+      - professional
+      - guide
+      - presenter
+      custom_tags:
+      - clear
+      - steady
+      - professional
+      - measured
+      - confident
+    preview_url: https://filecdn.minimax.chat/public/de8a1520-4a64-474c-82a6-8bed6bf19a16.mp3
+  steady_female_2:
+    config:
+      voice_id: English_Steady_Female_5
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.35
+      authority: 0.35
+      energy: 0.8
+      pace: 0.75
+      performative: 0.75
+      pitch: 0.75
+      quality: 0.9
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Female Actor
+      provider_description: High-pitched, bright, and bouncy with fast, lively pacing that feels upbeat and playful.
+      provider_use_cases: Audio Drama, Audiobooks & Novels, Documentary
+      custom_description: A bright, bouncy, and highly expressive British voice with a youthful, energetic charm. It effortlessly transitions between cheerful narration and dramatic character acting
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - audiobooks_&_novels
+      - documentary
+      character_types:
+      - protagonist
+      - cheerleader
+      - student
+      - friend
+      - sidekick
+      - storyteller
+      custom_tags:
+      - bright
+      - bouncy
+      - energetic
+      - playful
+      - expressive
+      - upbeat
+      - youthful
+      - theatrical
+    preview_url: https://filecdn.minimax.chat/public/a91d7e05-5a83-430e-ae08-8f5526e5c1bb.mp3
+  steady_mentor:
+    config:
+      voice_id: English_Steadymentor
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.7
+      energy: 0.55
+      pace: 0.4
+      performative: 0.8
+      pitch: 0.35
+      quality: 0.9
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Reliable Man
+      provider_description: Husky, hollow, and dry with dramatic, threatening articulation that feels unnervingly sinister.
+      provider_use_cases: Games & RPG, Anime & Animation
+      custom_description: A semi-deep, husky, and resonant masculine voice with a dry, slightly gravelly texture. It carries a heavy, commanding presence that can easily shift from authoritative narration to sinister, theatrical character acting.
+      perceived_age: 35-55 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - anime_&_animation
+      character_types:
+      - villain
+      - antagonist
+      - narrator
+      - detective
+      - boss
+      custom_tags:
+      - husky
+      - sinister
+      - theatrical
+      - dramatic
+      - deep
+      - dry
+      - raspy
+      - growling
+    preview_url: https://filecdn.minimax.chat/public/ff437a61-bb85-4985-8b02-27b5eee37aff.mp3
+  storyteller:
+    config:
+      voice_id: English_CaptivatingStoryteller
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.65
+      authority: 0.8
+      energy: 0.55
+      pace: 0.4
+      performative: 0.65
+      pitch: 0.25
+      quality: 0.95
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Captivating Storyteller
+      provider_description: Deep, husky, and booming with a measured, rhythmic delivery that feels cinematic and awe-inspiring.
+      provider_use_cases: Audiobooks & Novels, Documentary
+      custom_description: A deep, highly resonant masculine voice with a cinematic quality. It carries authority and a measured, rhythmic cadence perfect for storytelling
+      perceived_age: 45-65 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - documentary
+      character_types:
+      - narrator
+      - villain
+      - authority_figure
+      - wiseman
+      - storyteller
+      - king
+      - father
+      custom_tags:
+      - deep
+      - resonant
+      - cinematic
+      - commanding
+      - theatrical
+      - husky
+      - caring
+    preview_url: https://filecdn.minimax.chat/public/6fa747d3-b0c1-49d7-9a80-fb549d38a06c.mp3
+  stressed_lady:
+    config:
+      voice_id: English_StressedLady
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.5
+      authority: 0.4
+      energy: 0.55
+      pace: 0.5
+      performative: 0.7
+      pitch: 0.6
+      quality: 0.4
+      range: 0.8
+      special_vocal_characteristics: tinny audio
+    description:
+      provider_name: Stressed Lady
+      provider_description: Breathless, trembling, and tense with broken, hesitant phrasing that sounds exhausted and on the edge.
+      provider_use_cases: Games & RPG, Audio Drama, Documentary, Podcasts & Social, Corporate & Narration
+      custom_description: A breathy, subdued, feminine voice with some audio issues
+      perceived_age: 30-45 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - documentary
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - survivor
+      - patient
+      custom_tags:
+      - breathy
+      - vulnerable
+      - exhausted
+      - subdued
+    preview_url: https://filecdn.minimax.chat/public/dcb5572d-c2be-4a41-8be3-f2688cec6255.mp3
+  strong_willed_boy:
+    config:
+      voice_id: English_Strong-WilledBoy
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.6
+      energy: 0.35
+      pace: 0.45
+      performative: 0.75
+      pitch: 0.4
+      quality: 0.85
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Strong-Willed Boy
+      provider_description: Husky, high-energy, and youthfully resonant with crisp, forceful diction and kinetic momentum.
+      provider_use_cases: Games & RPG, Anime & Animation, Commercials & Trailers
+      custom_description: A youthful male voice with a slightly husky texture and punchy articulation. It delivers lines with intense, anime-protagonist theatricality and kinetic momentum.
+      perceived_age: 16-25 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - anime_&_animation
+      - commercials_&_trailers
+      character_types:
+      - adventurer
+      - sidekick
+      custom_tags:
+      - husky
+      - energetic
+      - youthful
+      - expressive
+      - theatrical
+      - passionate
+      - assertive
+      - breathy
+      - self-assured
+      - dramatic
+    preview_url: https://filecdn.minimax.chat/public/9cb25390-f45f-49f9-b3ae-27da7024fe5d.mp3
+  sweet_female:
+    config:
+      voice_id: English_Sweet_Female_4
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.35
+      authority: 0.35
+      energy: 0.4
+      pace: 0.5
+      performative: 0.4
+      pitch: 0.7
+      quality: 0.85
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Sweet Girl
+      provider_description: Sweet, bright, and full of youthful energy with clear, lively intonation that rises naturally.
+      provider_use_cases: Audiobooks & Novels, Documentary, E-Learning, Podcasts & Social, Corporate & Narration
+      custom_description: A bright, youthful, and sweet feminine voice with a naturally upbeat, but even, tone.
+      perceived_age: 18-30 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - documentary
+      - e-learning
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - cheerleader
+      - student
+      - friend
+      custom_tags:
+      - bright
+      - youthful
+      - sweet
+      - friendly
+      - approachable
+      - even
+    preview_url: https://filecdn.minimax.chat/public/1a9b04ae-80d9-43ab-8074-c92d87b63139.mp3
+  terror_narrator:
+    config:
+      voice_id: ttv-voice-2025062518302725-Nrot8sG4
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.6
+      authority: 0.6
+      energy: 0.4
+      pace: 0.4
+      performative: 0.8
+      pitch: 0.35
+      quality: 0.85
+      range: 0.75
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Terror Story Narrator
+      provider_description: This voice features a terrified, breathless, and ominous delivery that conveys deep psychological horror.
+      provider_use_cases: Documentary, Audiobooks & Novels
+      custom_description: A raspy, and intensely breathy male voice that naturally conveys suspense. The delivery is highly theatrical, utilizing forced whispers and a strained texture to create an ominous, unsettling atmosphere.
+      perceived_age: 40-60 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - audiobooks_&_novels
+      character_types:
+      - narrator
+      - villain
+      - storyteller
+      - antagonist
+      - wiseman
+      custom_tags:
+      - ominous
+      - breathy
+      - raspy
+      - sinister
+      - theatrical
+      - suspenseful
+    preview_url: https://file.cdn.minimax.io/public/d9c5f211-6a9a-4b2d-be99-8141f0c21bdb.wav
+  thoughtful_man:
+    config:
+      voice_id: English_ThoughtfulMan
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.6
+      energy: 0.65
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.55
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Thoughtful Man
+      provider_description: Clear, smooth, and youthfully energetic with stable articulation and a serious, principled edge.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation, Character Dubbing
+      custom_description: A bright, youthful male voice with a smooth, energetic delivery. It has a theatrical, slightly stylized quality
+      perceived_age: 18-30 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - protagonist
+      - hero
+      - student
+      - adventurer
+      - detective
+      - sidekick
+      custom_tags:
+      - smooth
+      - expressive
+      - clear
+      - confident
+      - energetic
+    preview_url: https://filecdn.minimax.chat/public/2ef81000-26f4-4310-8fad-b30ca6e965f6.mp3
+  trustworthy_man:
+    config:
+      voice_id: English_Trustworth_Man
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.55
+      authority: 0.4
+      energy: 0.4
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.35
+      quality: 0.95
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Trustworthy Man
+      provider_description: Warm, resonant, and down-to-earth with an unhurried, natural pace that feels grounding.
+      provider_use_cases: Audio Drama, Audiobooks & Novels, Commercials & Trailers, Podcasts & Social, Corporate & Narration
+      custom_description: A warm, resonant, and grounded masculine voice with a natural, unhurried delivery. It conveys a sense of calm authority and trustworthiness, capable of smooth transitions into expressive dialogue.
+      perceived_age: 35-50 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - narrator
+      - father
+      - professional
+      - wiseman
+      - guide
+      custom_tags:
+      - warm
+      - resonant
+      - trustworthy
+      - grounded
+      - calm
+      - natural
+      - soothing
+      - deep
+      - measured
+      - african_american
+    preview_url: https://filecdn.minimax.chat/public/ad0c2c4f-080b-42ab-bbe8-f1f205199c5d.mp3
+  understated_camden:
+    config:
+      voice_id: moss_audio_4f4172f4-737b-11f0-9540-7ef9b4b62566
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.4
+      authority: 0.45
+      energy: 0.55
+      pace: 0.6
+      performative: 0.6
+      pitch: 0.45
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: UnderstatedCamden
+      provider_description: With bright, clear, friendly qualities and a quick, conversational rhythm, this voice is perfect for customer success representative roles.
+      provider_use_cases: Corporate & Narration, Commercials & Trailers
+      custom_description: 'A bright, clear, and friendly British male voice with a brisk, conversational rhythm. Approachable and engaging tone '
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - corporate_&_narration
+      - commercials_&_trailers
+      character_types:
+      - professional
+      - friend
+      - narrator
+      - assistant
+      - guide
+      - butler
+      custom_tags:
+      - bright
+      - friendly
+      - conversational
+      - clear
+      - approachable
+      - upbeat
+      - helpful
+    preview_url: https://filecdn.minimax.chat/public/7048bf5f-32e0-4dc7-9652-8d40ee09b63e.mp3
+  upbeat_ashley:
+    config:
+      voice_id: socialmedia_female_1_v1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.35
+      energy: 0.7
+      pace: 0.7
+      performative: 0.6
+      pitch: 0.7
+      quality: 0.45
+      range: 0.7
+      special_vocal_characteristics: some recording quality issues
+    description:
+      provider_name: Upbeat Ashley
+      provider_description: This voice has a bright, lively, and casual quality, with fast-paced, conversational speech, perfectly fitting the typical social media influencer persona.
+      provider_use_cases: Audiobooks & Novels, Commercials & Trailers, Podcasts & Social
+      custom_description: A bright, fast-paced, and highly energetic feminine voice with a casual, upbeat tone. It carries a distinct social media influencer quality, sounding enthusiastic, bubbly, and approachable.
+      perceived_age: 16 -28 years
+    tags:
+      provider_use_cases:
+      - audiobooks_&_novels
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - influencer
+      - cheerleader
+      - friend
+      - marketer
+      - student
+      custom_tags:
+      - upbeat
+      - energetic
+      - bright
+      - enthusiastic
+      - fast-paced
+      - friendly
+      - bubbly
+    preview_url: https://filecdn.minimax.chat/public/8a94de75-6ffa-4539-8f64-f533ea88d08b.mp3
+  upbeat_woman:
+    config:
+      voice_id: English_Upbeat_Woman
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.55
+      authority: 0.55
+      energy: 0.5
+      pace: 0.45
+      performative: 0.55
+      pitch: 0.4
+      quality: 0.9
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Upbeat Woman
+      provider_description: Deep, warm, and slightly grainy with slow, deliberate pacing that feels intimate and heartfelt.
+      provider_use_cases: E-Learning, Podcasts & Social, Corporate & Narration
+      custom_description: A warm, slightly grainy feminine voice with a grounded, intimate tone. It balances a calm, deliberate pacing with the ability to deliver dynamic emotional shifts.
+      perceived_age: 25 -45 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - professional
+      - friend
+      - therapist
+      - mother
+      - cashier
+      custom_tags:
+      - conversational
+      - warm
+    preview_url: https://filecdn.minimax.chat/public/276e324d-da2e-47b3-a950-fba2419ca702.mp3
+  upset_girl:
+    config:
+      voice_id: English_UpsetGirl
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.4
+      authority: 0.55
+      energy: 0.55
+      pace: 0.5
+      performative: 0.65
+      pitch: 0.6
+      quality: 0.9
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Upset Girl
+      provider_description: "Rounded, clear, and steady with a moderate, well-paced delivery—classic anchor-style presence."
+      provider_use_cases: Audio Drama, Audiobooks & Novels, Character Dubbing, Podcasts & Social, Corporate & Narration
+      custom_description: A clear, rounded British feminine voice with a steady, professional baseline and strong expressive capabilities. It transitions smoothly from an authoritative anchor-style delivery to dynamic character acting.
+      perceived_age: 18-35 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - audiobooks_&_novels
+      - character_dubbing
+      - podcasts_&_social
+      - corporate_&_narration
+      character_types:
+      - friend
+      - protagonist
+      - assistant
+      custom_tags:
+      - clear
+      - approachable
+      - expressive
+      - steady
+      - articulate
+      - wistful
+    preview_url: https://filecdn.minimax.chat/public/1977feae-c15d-4d21-8192-922b3a22c0d5.mp3
+  warrior:
+    config:
+      voice_id: English_PassionateWarrior
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.4
+      authority: 0.6
+      energy: 0.8
+      pace: 0.6
+      performative: 0.65
+      pitch: 0.5
+      quality: 0.9
+      range: 0.85
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Passionate Warrior
+      provider_description: Bright, booming, and high-energy with clear, forceful articulation that feels heroic.
+      provider_use_cases: Games & RPG, Anime & Animation, Character Dubbing
+      custom_description: A bright, highly energetic voice with a theatrical, heroic flair. It features crisp articulation and a dynamic range that easily shifts from intense whispers to commanding shouts.
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - protagonist
+      - hero
+      - adventurer
+      - knight
+      - sidekick
+      custom_tags:
+      - energetic
+      - theatrical
+      - heroic
+      - passionate
+      - expressive
+      - animated
+      - booming
+      - dramatic
+    preview_url: https://filecdn.minimax.chat/public/ccb5d195-a501-49ea-a441-f18a98f539b0.mp3
+  whimsical_girl:
+    config:
+      voice_id: English_WhimsicalGirl
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.3
+      authority: 0.3
+      energy: 0.75
+      pace: 0.6
+      performative: 0.75
+      pitch: 0.75
+      quality: 0.9
+      range: 0.8
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Whimsical Girl
+      provider_description: Bright, breezy, and crystal-clear with melodic, theatrical flow and a playful sparkle.
+      provider_use_cases: Games & RPG, Audio Drama, Anime & Animation, Character Dubbing
+      custom_description: A bright, youthful, and highly melodic voice with a playful, theatrical sparkle. It effortlessly shifts between sweet, breathy whispers and energetic, animated dialogue.
+      perceived_age: 18-25 years
+    tags:
+      provider_use_cases:
+      - games_&_rpg
+      - audio_drama
+      - anime_&_animation
+      - character_dubbing
+      character_types:
+      - cheerleader
+      - sidekick
+      - student
+      - friend
+      - adventurer
+      - fairy
+      custom_tags:
+      - bright
+      - playful
+      - melodic
+      - theatrical
+      - expressive
+      - youthful
+      - bubbly
+      - enthusiastic
+      - breezy
+      - breathy
+      - flirty
+    preview_url: https://filecdn.minimax.chat/public/b982fdd0-5ef7-4ccd-a0d8-bb9112822aa3.mp3
+  whisper_man:
+    config:
+      voice_id: whisper_man
+    voice_properties:
+      accent: american_general
+      gender: masculine
+      age: 0.5
+      authority: 0.1
+      energy: 0.1
+      pace: 0.3
+      performative: 0.2
+      pitch: 0.3
+      quality: 0.7
+      range: 0.2
+      special_vocal_characteristics: 'quiet whisper'
+    description:
+      provider_name: Whispering Man
+      provider_description: This ASMR narrator voice has soft, whispering, and gentle qualities with a slow, methodical pace.
+      provider_use_cases: Sleep Aids, Meditation Guides
+      custom_description: A highly breathy, ASMR-style male whisper. The voice is exceptionally soft, slow, and gentle, maintaining a hushed tone throughout all types of content. Very nice voice, only applicable to an all-whisper character
+      perceived_age: 30-50 years
+    tags:
+      provider_use_cases:
+      - sleep_aids
+      - meditation_guides
+      character_types:
+      - dreamer
+      custom_tags:
+      - breathy
+      - soothing
+      - gentle
+      - calm
+      - slow
+      - subdued
+      - ASMR
+      - relaxing
+      - monotone
+      - whisper
+    preview_url: https://filecdn.minimax.chat/public/ae5774cf-c42d-4668-add2-0990cff38661.mp3
+  whisper_woman:
+    config:
+      voice_id: whisper_woman_1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.1
+      energy: 0.2
+      pace: 0.4
+      performative: 0.75
+      pitch: 0.6
+      quality: 0.7
+      range: 0.45
+      special_vocal_characteristics: 'near whisper'
+    description:
+      provider_name: Whispering Woman
+      provider_description: Presenting a unique tech educator persona, this voice combines clear, energetic, and powerful tones with a fast-paced, instructive speaking style.
+      provider_use_cases: E-Learning
+      custom_description: A very soft, breathy, and gentle feminine voice that speaks in a near-whisper. It has an intimate, soothing quality but lacks the vocal weight for commanding or high-energy delivery.
+      perceived_age: 20-35 years
+    tags:
+      provider_use_cases:
+      - e-learning
+      character_types:
+      - friend
+      - therapist
+      - assistant
+      custom_tags:
+      - breathy
+      - soft
+      - gentle
+      - intimate
+      - subdued
+      - soothing
+      - calm
+      - quiet
+    preview_url: https://filecdn.minimax.chat/public/0d7a1bf6-732e-4f34-a30e-7abf7547512a.mp3
+  whispering_girl:
+    config:
+      voice_id: English_Whispering_girl_v3
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.3
+      authority: 0.1
+      energy: 0.2
+      pace: 0.25
+      performative: 0.7
+      pitch: 0.6
+      quality: 0.8
+      range: 0.25
+      special_vocal_characteristics: whispering
+    description:
+      provider_name: Whispering girl
+      provider_description: Gentle, soothing, and finely textured with a slow, friendly flow and a whisper-soft bedside tone.
+      provider_use_cases: Character Dubbing
+      custom_description: 'A delicate, highly breathy voice with an intimate, ASMR-like whisper quality. It sounds gentle and soothing, without much tone variation '
+      perceived_age: 18-25 years
+    tags:
+      provider_use_cases:
+      - character_dubbing
+      character_types:
+      - spirit
+      custom_tags:
+      - breathy
+      - soothing
+      - gentle
+      - intimate
+      - soft
+      - calm
+      - whisper
+      - asmr
+    preview_url: https://filecdn.minimax.chat/public/7b813583-ad6f-446b-9035-d130be56075f.mp3
+  wise_grandma:
+    config:
+      voice_id: moss_audio_6dc281eb-713c-11f0-a447-9613c873494c
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.8
+      authority: 0.65
+      energy: 0.4
+      pace: 0.4
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.85
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Wise Grandma
+      provider_description: Smooth, mature, and authoritative with calm, measured speech, this voice fits the wise mentor archetype.
+      provider_use_cases: Commercials & Trailers, Games & RPG, Podcasts & Social
+      custom_description: A warm, mature, and grounded voice with a smooth, soothing resonance. It naturally conveys wisdom and gentle authority, fitting a stereotypical "grandma"
+      perceived_age: 55-85 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - games_&_rpg
+      - podcasts_&_social
+      character_types:
+      - sage
+      - storyteller
+      - witch
+      - mother
+      - grandmother
+      - caregiver
+      custom_tags:
+      - mature
+      - wise
+      - warm
+      - measured
+      - raspy
+      - calm
+      - soothing
+    preview_url: https://filecdn.minimax.chat/public/28b9612e-bdbc-4bb2-9c47-a6446c9d0c0b.mp3
+  wise_lady:
+    config:
+      voice_id: English_Wiselady
+    voice_properties:
+      accent: british
+      gender: feminine
+      age: 0.6
+      authority: 0.75
+      energy: 0.55
+      pace: 0.45
+      performative: 0.75
+      pitch: 0.4
+      quality: 0.8
+      range: 0.8
+      special_vocal_characteristics: inconsistent accent (American / British)
+    description:
+      provider_name: Wise Lady
+      provider_description: Velvety, refined, and elegant with steady, clear pacing and a suspenseful, authoritative edge.
+      provider_use_cases: Audio Drama, E-Learning
+      custom_description: A refined voice with crisp articulation and a mature, elegant tone. She seamlessly transitions from authoritative, steady narration to highly theatrical, suspenseful character acting.
+      perceived_age: 45-60 years
+    tags:
+      provider_use_cases:
+      - audio_drama
+      - e-learning
+      character_types:
+      - professor
+      - authority_figure
+      - storyteller
+      custom_tags:
+      - refined
+      - elegant
+      - suspenseful
+      - theatrical
+      - crisp
+      - expressive
+      - authoritative
+    preview_url: https://filecdn.minimax.chat/public/4fbf75e3-345a-4eea-9efa-359f3a4ad2e2.mp3
+  wise_scholar:
+    config:
+      voice_id: English_WiseScholar
+    voice_properties:
+      accent: british
+      gender: masculine
+      age: 0.5
+      authority: 0.6
+      energy: 0.6
+      pace: 0.5
+      performative: 0.6
+      pitch: 0.4
+      quality: 0.95
+      range: 0.65
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Wise Scholar
+      provider_description: Warm, slightly grainy, and weathered with calm, conversational delivery that feels personal and sincere.
+      provider_use_cases: Documentary, Podcasts & Social
+      custom_description: A warm British voice with a slightly grainy texture and gentle gravitas. Its calm, conversational delivery feels personal, sincere, and highly knowledgeable
+      perceived_age: 28 -40 years
+    tags:
+      provider_use_cases:
+      - documentary
+      - podcasts_&_social
+      character_types:
+      - narrator
+      - professor
+      - storyteller
+      - guide
+      - butler
+      custom_tags:
+      - warm
+      - calm
+      - sincere
+      - gentle
+      - trustworthy
+    preview_url: https://filecdn.minimax.chat/public/02b2eb28-9268-450e-b071-a47000b5be6e.mp3
+  witty_woman:
+    config:
+      voice_id: English_witty_female_1
+    voice_properties:
+      accent: american_general
+      gender: feminine
+      age: 0.4
+      authority: 0.55
+      energy: 0.65
+      pace: 0.6
+      performative: 0.55
+      pitch: 0.6
+      quality: 0.9
+      range: 0.7
+      special_vocal_characteristics: ''
+    description:
+      provider_name: Witty woman
+      provider_description: Bright, elegant, and agile with a lively pace and natural flow that feels modern and reassuring.
+      provider_use_cases: Commercials & Trailers, Podcasts & Social
+      custom_description: A bright, elegant, and agile feminine voice with a lively pace and crisp articulation. Her modern, reassuring tone is highly versatile, easily shifting from professional narration to animated dialogue.
+      perceived_age: 25-35 years
+    tags:
+      provider_use_cases:
+      - commercials_&_trailers
+      - podcasts_&_social
+      character_types:
+      - narrator
+      - friend
+      - protagonist
+      - presenter
+      - professional
+      - teacher
+      custom_tags:
+      - bright
+      - modern
+      - expressive
+      - clear
+      - agile
+      - elegant
+      - reassuring
+      - upbeat
+    preview_url: https://filecdn.minimax.chat/public/94bd93e2-13aa-4b11-9c35-9702d463785f.mp3

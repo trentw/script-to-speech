@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [CLI] Feature: added ~100 addtional minimax voices with hand-labeling corrections
 - [CLI] Feature: added utility to sort voices in .yaml file
 - [CLI] Feature: added minimax voice library with 20 LLM-labeled and hand-tuned voices         
 - [Desktop] Feature: dev-mode only "voice editor" flow added to tweak voice library voices, with optional LLM labeling info integration
