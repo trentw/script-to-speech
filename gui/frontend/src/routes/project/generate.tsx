@@ -191,7 +191,8 @@ function ProjectAudioGeneration() {
         {/* Show controls when no task is running */}
         {!currentTaskId && (
           <AudiobookGenerationControls
-            projectName={displayTitle}
+            projectName={project.screenplayName}
+            displayTitle={displayTitle}
             inputJsonPath={inputJsonPath}
             voiceConfigPath={voiceConfigPath}
             onGenerate={handleGenerate}

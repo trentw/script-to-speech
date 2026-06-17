@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [Desktop] Feature: clickable character names in "other assignments" tooltip — click to scroll to that character
 
 ### Fixed
+- [Desktop] Fixed cache key mismatch that would disconnect silent audio clips check results if screenplay was renamed
 - [CLI] Fixed openai voices.yaml formatting and add missing fields
 - [Desktop] Fixed directory path issue for custom voice casting instructions / custom voices for production builds
 - [Desktop] Fixed scroll voice casting scroll position issues with voice assignment page / "back" button flow

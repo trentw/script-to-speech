@@ -25,7 +25,16 @@ import type {
 import { MODE_DESCRIPTIONS } from '@/types';
 
 interface AudiobookGenerationControlsProps {
+  /**
+   * Canonical project identifier (screenplay name). Sent in the generation
+   * request and used as the silent-clips cache key the Review page reads.
+   */
   projectName: string;
+  /**
+   * Optional friendly title (e.g. ID3 title) shown in the "Project:" label.
+   * Falls back to projectName when unset. Display-only — not sent in the request.
+   */
+  displayTitle?: string;
   inputJsonPath: string;
   voiceConfigPath: string;
   onGenerate: (request: AudiobookGenerationRequest) => void;
@@ -37,6 +46,7 @@ interface AudiobookGenerationControlsProps {
 
 export function AudiobookGenerationControls({
   projectName,
+  displayTitle,
   inputJsonPath,
   voiceConfigPath,
   onGenerate,
@@ -227,7 +237,7 @@ export function AudiobookGenerationControls({
 
         {/* Info about what will be generated */}
         <div className="text-muted-foreground text-center text-xs">
-          <p>Project: {projectName}</p>
+          <p>Project: {displayTitle ?? projectName}</p>
         </div>
       </div>
     </Card>

@@ -692,9 +692,13 @@ class AudiobookGenerationService:
         )
 
         # === CACHE SILENT CLIPS FOR REVIEW SERVICE ===
-        # Populate in-memory cache so review page can read without re-scanning
+        # Populate in-memory cache so review page can read without re-scanning.
+        # Key the cache off the input JSON stem (== the screenplay name the review
+        # page looks up), not request.project_name, which the GUI may set to a
+        # friendlier ID3 title. This guarantees the key always matches review's
+        # lookup and prevents drift.
         self._cache_silent_clips(
-            project_name=request.project_name,
+            project_name=base_name,
             reporting_state=combined_reporting_state,
             tts_manager=tts_manager,
             total_clips=len(all_tasks),
