@@ -168,8 +168,14 @@ tag = true
 tag_name = "v{new_version}"
 message = "release: v{new_version}"
 pre_commit_hooks = [
-    "cd gui/frontend/src-tauri && cargo generate-lockfile",
+    # Update only the workspace member version in Cargo.lock (not all transitive
+    # deps -- `cargo generate-lockfile` would churn the entire dependency graph).
+    "cd gui/frontend/src-tauri && cargo update --workspace",
     "git add gui/frontend/src-tauri/Cargo.lock",
+    # Refresh + stage uv.lock so a uv-invoking pre-commit hook can't rewrite it
+    # mid-commit and abort the auto-commit. `uv lock` is minimal by default.
+    "uv lock",
+    "git add uv.lock",
 ]
 
 [[tool.bumpversion.files]]
