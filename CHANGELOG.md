@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-06-18
+
 ### Added
 - [Desktop] Feature: added audio generation progress to project navigation + completion toast
 - [Desktop] Feature: resume and cancel audio generation sessions, including generation persistence between tabs in desktop app
