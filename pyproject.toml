@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "script_to_speech"
-version = "2.0.0"
+version = "2.1.0"
 description = "A set of tools to convert screenplays into multi-voiced audiobooks using various TTS providers"
 authors = [
     {name = "Trent Walkiewicz", email = "t.walkiewicz@gmail.com"}
@@ -162,7 +162,7 @@ ignore_missing_imports = true
 # Usage: uv run bump-my-version bump patch|minor|major
 #        uv run bump-my-version bump --dry-run -vv patch  (preview)
 [tool.bumpversion]
-current_version = "2.0.0"
+current_version = "2.1.0"
 commit = true
 tag = true
 tag_name = "v{new_version}"
