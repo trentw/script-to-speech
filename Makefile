@@ -2,7 +2,7 @@
 .PHONY: frontend-test frontend-test-ui frontend-test-coverage frontend-lint frontend-lint-fix
 .PHONY: frontend-format frontend-type-check frontend-analyze frontend-type-coverage help
 .PHONY: website-dev website-build website-preview
-.PHONY: bump-patch bump-minor bump-major bump-dry-run check-version release
+.PHONY: bump-patch bump-minor bump-major bump-dry-run-patch bump-dry-run-minor bump-dry-run-major check-version release
 
 help: ## Show available commands
 	@echo "Script-to-Speech GUI Commands:"
@@ -35,7 +35,9 @@ help: ## Show available commands
 	@echo "  make bump-patch         - Bump patch version (e.g., 2.0.0 -> 2.0.1)"
 	@echo "  make bump-minor         - Bump minor version (e.g., 2.0.0 -> 2.1.0)"
 	@echo "  make bump-major         - Bump major version (e.g., 2.0.0 -> 3.0.0)"
-	@echo "  make bump-dry-run       - Preview what a patch bump would change"
+	@echo "  make bump-dry-run-patch - Preview what a patch bump would change"
+	@echo "  make bump-dry-run-minor - Preview what a minor bump would change"
+	@echo "  make bump-dry-run-major - Preview what a major bump would change"
 	@echo "  make check-version      - Verify all version files are in sync"
 	@echo "  make release            - Show instructions to push release tag"
 	@echo ""
@@ -124,8 +126,14 @@ bump-minor: ## Bump minor version (e.g., 2.0.0 -> 2.1.0), commits and tags
 bump-major: ## Bump major version (e.g., 2.0.0 -> 3.0.0), commits and tags
 	uv run bump-my-version bump major
 
-bump-dry-run: ## Preview what a patch bump would change (no modifications)
+bump-dry-run-patch: ## Preview what a patch bump would change (no modifications)
 	uv run bump-my-version bump --dry-run -vv patch
+
+bump-dry-run-minor: ## Preview what a minor bump would change (no modifications)
+	uv run bump-my-version bump --dry-run -vv minor
+
+bump-dry-run-major: ## Preview what a major bump would change (no modifications)
+	uv run bump-my-version bump --dry-run -vv major
 
 check-version: ## Verify all version files are in sync
 	uv run python scripts/check_version_sync.py
