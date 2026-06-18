@@ -6,28 +6,53 @@ This project uses a **single unified version** across all components: the Python
 
 ### Creating a Release
 
+The release is a mix of local commands and a couple of manual actions on GitHub. The full end-to-end flow:
+
 ```bash
-# 1. Update CHANGELOG.md
+# 1. Update CHANGELOG.md AND COMMIT IT
 #    Move items from [Unreleased] to a new [X.Y.Z] section with today's date.
 #    Use component labels where helpful: [CLI], [Desktop], [Frontend], [Backend]
+#    Commit it on its own — the bump in step 3 requires a clean working tree:
+git add CHANGELOG.md && git commit -m "docs: changelog for vX.Y.Z"
 
-# 2. Bump the version (pick one)
+# 2. (Optional) Preview the bump — shows what would change, makes no modifications
+make bump-dry-run-patch    # or bump-dry-run-minor / bump-dry-run-major
+
+# 3. Bump the version (pick one)
 make bump-patch    # Bug fixes:        2.0.0 -> 2.0.1
 make bump-minor    # New features:     2.0.0 -> 2.1.0
 make bump-major    # Breaking changes: 2.0.0 -> 3.0.0
 
-# 3. Push to trigger the release build
+# 4. Push the commit and tag to trigger the release build
 git push origin master --tags
 ```
 
-That's it. Step 2 automatically updates all version files, commits, and creates a git tag. Step 3 triggers the GitHub Actions workflow that builds the desktop app for all platforms and creates a draft GitHub Release.
+Step 3 automatically updates all version files, commits them (as `release: vX.Y.Z`), and creates the git tag. Step 4 pushes that commit and tag to GitHub.
+
+> **Important:** `bump-my-version` requires a **clean working tree** (`allow_dirty` is not set, so it defaults to `false`). Commit the CHANGELOG edit *before* running `make bump-*`, otherwise the bump will abort. The CHANGELOG change is a separate commit from the auto-generated `release: vX.Y.Z` version-bump commit.
+
+#### What happens after the push, and what you do next
+
+Pushing the `v*` tag kicks off the rest of the pipeline. Some of it is automatic; two steps need you to act on GitHub:
+
+1. **(Automatic) CI builds the apps.** The `v*` tag triggers `.github/workflows/build-desktop.yml`, which builds the desktop app for all four platforms (macOS ARM64 + Intel, Linux, Windows), signs and notarizes the macOS builds, and creates a **draft** GitHub Release with the binaries attached and the changelog as the release notes. This takes a while (the macOS notarization steps are the slowest). Watch progress under the repo's **Actions** tab.
+
+2. **(You) Review and publish the draft release.** When the workflow finishes, go to the repo's **Releases** page on GitHub. You'll find a new draft titled **"Script to Speech vX.Y.Z"**. Confirm all the expected assets are attached (`.dmg` ×2, `.exe`/`.msi`, `.AppImage`/`.deb`) and the notes look right, then click **Publish release**. *Nothing is public until you do this — the tag push alone does not publish anything.*
+
+3. **(Automatic) The website updates.** Publishing fires `.github/workflows/deploy-website.yml`, which rebuilds scripttospeech.com and points its download buttons at the new release. See [Website Update](#website-update) for why this only happens on publish (not on the tag push).
+
+4. **(You) Verify.** Once the website workflow is green, load scripttospeech.com and confirm the download buttons resolve to the new `vX.Y.Z` assets.
 
 ### Preview Before Bumping
 
 ```bash
-make bump-dry-run        # Shows exactly what would change (no modifications)
+make bump-dry-run-patch  # Preview a patch bump (no modifications)
+make bump-dry-run-minor  # Preview a minor bump (no modifications)
+make bump-dry-run-major  # Preview a major bump (no modifications)
 make check-version       # Verifies all version files are in sync
 ```
+
+> Note: even `--dry-run` requires a clean working tree, so commit the CHANGELOG edit first (or stash other changes) before previewing.
 
 ### Using bump-my-version Directly
 
@@ -169,6 +194,24 @@ Pushing a tag matching `v*` (e.g., `v2.0.1`) triggers `.github/workflows/build-d
 ### After the Build
 
 The release is created in **draft** mode. Review it on GitHub, then publish when ready. The release body includes the changelog content followed by a download table.
+
+### Website Update
+
+Publishing the draft release is also what updates the marketing site at **scripttospeech.com**.
+
+Publishing fires `.github/workflows/deploy-website.yml` (triggered by `release: published`), which rebuilds the Astro site and deploys it to GitHub Pages. The download buttons are not hardcoded to a version — `website/src/components/Downloads.astro` fetches the GitHub `/releases/latest` API at **build time** and wires each platform's button to the matching asset.
+
+Because `/releases/latest` **excludes drafts**, the website only reflects a new version *after* the draft is published — pushing the tag (which creates the draft) is not enough. So the full chain is:
+
+```
+git push --tags  →  build-desktop.yml  →  draft release with binaries
+                                              │  (you publish it)
+                                              ▼
+                          release: published  →  deploy-website.yml
+                                              →  scripttospeech.com shows new version
+```
+
+(The site's own `website/package.json` version is unrelated and is not bumped — see "Version Not Managed Here" above.)
 
 ---
 
