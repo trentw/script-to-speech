@@ -1,4 +1,4 @@
-import { Link, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
   FileText,
   Home,
@@ -8,18 +8,22 @@ import {
   Settings,
   Users,
 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
+import { Progress } from '@/components/ui/progress';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useActiveAudiobookTask } from '@/hooks/queries/useActiveAudiobookTask';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { getNavigationItemClassName } from '@/lib/navigation-styles';
 import { cn } from '@/lib/utils';
 import { useHasProject, useProject } from '@/stores/appStore';
+import type { AudiobookGenerationProgress } from '@/types';
 
 interface NavigationItem {
   label: string;
@@ -29,6 +33,8 @@ interface NavigationItem {
   tooltip?: string;
   activePathPrefixes?: string[];
   matchStrategy?: 'exact' | 'prefix';
+  /** 0-100 progress bar rendered beneath the item (e.g. live audio generation). */
+  progress?: number | null;
 }
 
 interface NavigationSection {
@@ -50,6 +56,20 @@ export function ProjectModeNavigation({
   const projectInputPath =
     mode === 'project' && project ? project.inputPath : undefined;
   const { status } = useProjectStatus(projectInputPath);
+
+  // Track the project's audiobook generation globally (the nav is always
+  // mounted) so progress is visible from any tab and we can fire a completion
+  // toast even when the user is elsewhere.
+  const projectName =
+    mode === 'project' && project ? project.screenplayName : null;
+  const { data: activeTask } = useActiveAudiobookTask(projectName);
+  const isGenerationRunning =
+    activeTask?.status === 'processing' || activeTask?.status === 'pending';
+  const generationProgress = isGenerationRunning
+    ? (activeTask?.overallProgress ?? 0) * 100
+    : null;
+
+  useGenerationCompletionToast(activeTask ?? null, projectName);
 
   // Centralized helper: Determine if an item should be disabled
   const shouldDisableItem = (item: NavigationItem): boolean => {
@@ -127,6 +147,7 @@ export function ProjectModeNavigation({
           to: '/project/generate',
           icon: Mic,
           enabled: true,
+          progress: generationProgress,
         },
         {
           label: 'Review Audio',
@@ -250,18 +271,78 @@ function NavigationItem({ item, isExpanded }: NavigationItemProps) {
   );
 
   // Wrap with tooltip for disabled items or when collapsed
-  if ((!item.enabled && item.tooltip) || (!isExpanded && item.enabled)) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right">
-            <p>{item.tooltip || item.label}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
+  const needsTooltip =
+    (!item.enabled && item.tooltip) || (!isExpanded && item.enabled);
+  const itemNode = needsTooltip ? (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{content}</TooltipTrigger>
+        <TooltipContent side="right">
+          <p>{item.tooltip || item.label}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  ) : (
+    content
+  );
+
+  // Render a live progress bar beneath the item (e.g. audio generation in
+  // progress). Works in both expanded and collapsed (icon-only) modes.
+  if (item.progress == null) {
+    return itemNode;
   }
 
-  return content;
+  return (
+    <div>
+      {itemNode}
+      <div className={cn('pt-1', isExpanded ? 'px-3' : 'px-2')}>
+        <Progress value={item.progress} className="h-1" />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Fires a toast when the project's audiobook generation reaches a terminal
+ * state, so the user is notified even when they've navigated to another tab.
+ * Clicking the completion toast deep-links back to the generate page.
+ */
+function useGenerationCompletionToast(
+  activeTask: AudiobookGenerationProgress | null,
+  projectName: string | null
+) {
+  const navigate = useNavigate();
+  const prevStatusRef = useRef<AudiobookGenerationProgress['status'] | null>(
+    null
+  );
+
+  useEffect(() => {
+    const status = activeTask?.status ?? null;
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+
+    // Only react to a transition out of an in-flight state we actually observed.
+    if (prev !== 'processing' && prev !== 'pending') {
+      return;
+    }
+    const name = projectName ?? 'audiobook';
+
+    if (status === 'completed') {
+      toast.success(`Audiobook ready: ${name}`, {
+        action: {
+          label: 'View',
+          onClick: () => navigate({ to: '/project/generate' }),
+        },
+      });
+    } else if (status === 'failed') {
+      toast.error(`Generation failed: ${name}`, {
+        action: {
+          label: 'View',
+          onClick: () => navigate({ to: '/project/generate' }),
+        },
+      });
+    } else if (status === 'cancelled') {
+      toast(`Generation cancelled: ${name}`);
+    }
+  }, [activeTask?.status, projectName, navigate]);
 }

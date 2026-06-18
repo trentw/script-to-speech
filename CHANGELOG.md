@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Feature: added audio generation progress to project navigation + completion toast
 - [Desktop] Feature: resume and cancel audio generation sessions, including generation persistence between tabs in desktop app
 - [CLI] Feature: added ~100 addtional minimax voices with hand-labeling corrections
 - [CLI] Feature: added utility to sort voices in .yaml file
