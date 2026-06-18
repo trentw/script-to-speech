@@ -24,6 +24,7 @@ from script_to_speech.audio_generation.utils import load_json_chunks
 from script_to_speech.text_processors.processor_manager import TextProcessorManager
 from script_to_speech.text_processors.utils import get_text_processor_configs
 from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
+from script_to_speech.utils.audio_utils import configure_ffmpeg
 
 from ..config import settings
 from ..models import (
@@ -268,6 +269,13 @@ class ReviewService:
         Returns:
             SilentClipsResponse with silent clips list and metadata
         """
+        # Point pydub at the bundled static-ffmpeg/ffprobe binaries. Without this,
+        # pydub falls back to a bare "ffprobe" on PATH (absent in the packaged
+        # app), so every audio read fails and no clips are detected as silent.
+        # The generation pipeline does this in its own setup; the review scan
+        # must too.
+        configure_ffmpeg()
+
         dialogues, tts_manager, processor, cache_folder = self._load_project_config(
             project_name
         )

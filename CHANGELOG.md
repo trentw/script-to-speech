@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [Desktop] Unified silence checking processes across review audio and generate audio, allowing for better caching + progress reporting on review audio
 
 ### Fixed
+- [Desktop] Fixed ffmpeg bug that occurred when review audio was run before generate audio
 - [Desktop] Fixed cache key mismatch that would disconnect silent audio clips check results if screenplay was renamed
 - [CLI] Fixed openai voices.yaml formatting and add missing fields
 - [Desktop] Fixed directory path issue for custom voice casting instructions / custom voices for production builds
