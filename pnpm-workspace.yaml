@@ -2,5 +2,13 @@ packages:
   - gui/frontend
   - website
 
+# Dependencies allowed to run install/build scripts. pnpm v10 does not run these
+# by default and errors (ERR_PNPM_IGNORED_BUILDS) in CI until each is classified.
+# These build native binaries the app needs (esbuild/sharp) or a service worker (msw).
+onlyBuiltDependencies:
+  - esbuild
+  - msw
+  - sharp
+
 ignoredBuiltDependencies:
   - canvas

@@ -206,8 +206,7 @@ gui/frontend/*.local
 .DS_Store
 Thumbs.db
 
-# pnpm
-pnpm-lock.yaml
+# pnpm: lockfile is committed for reproducible CI builds (see pnpm-workspace.yaml)
 
 # Tauri output
 gui/frontend/src-tauri/binaries/

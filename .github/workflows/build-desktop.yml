@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Linux dependencies
       - name: Install Linux dependencies
@@ -56,14 +56,17 @@ jobs:
             librsvg2-dev \
             patchelf
 
-      # Node.js + pnpm
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-
+      # pnpm + Node.js (pnpm is set up first so setup-node can resolve it).
+      # pnpm is pinned to match the committed pnpm-lock.yaml for reproducible builds.
       - name: Install pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.29.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
 
       # Rust
       - name: Install Rust stable
@@ -78,7 +81,7 @@ jobs:
 
       # Python + Backend Sidecar (uv-managed - no separate Python setup needed)
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v6
 
       - name: Build backend sidecar
         run: uv run --extra build --extra gui python build_backend.py
@@ -133,7 +136,7 @@ jobs:
       # Frontend
       - name: Install frontend dependencies
         working-directory: gui/frontend
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       # Extract changelog for release notes
       - name: Extract changelog for release
