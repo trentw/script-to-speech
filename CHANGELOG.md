@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [Desktop] Feature: click voice name on voice assignemnt page to replace — shows current voice and "Replace Voice" header on voice assignment page
 - [Desktop] Feature: clickable character names in "other assignments" tooltip — click to scroll to that character
 
+### Changed
+- [Desktop] Unified silence checking processes across review audio and generate audio, allowing for better caching + progress reporting on review audio
+
 ### Fixed
 - [Desktop] Fixed cache key mismatch that would disconnect silent audio clips check results if screenplay was renamed
 - [CLI] Fixed openai voices.yaml formatting and add missing fields

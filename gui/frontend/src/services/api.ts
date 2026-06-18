@@ -738,12 +738,27 @@ class ApiService {
   }
 
   async getSilentClips(
-    projectName: string,
-    refresh: boolean = false
+    projectName: string
   ): Promise<ApiResponse<import('../types/review').SilentClipsResponse>> {
-    const params = refresh ? '?refresh=true' : '';
     return this.request<import('../types/review').SilentClipsResponse>(
-      `/review/silent-clips/${encodeURIComponent(projectName)}${params}`
+      `/review/silent-clips/${encodeURIComponent(projectName)}`
+    );
+  }
+
+  async startSilentClipsScan(
+    projectName: string
+  ): Promise<ApiResponse<import('../types/review').SilentClipsScanProgress>> {
+    return this.request<import('../types/review').SilentClipsScanProgress>(
+      `/review/silent-clips/${encodeURIComponent(projectName)}/scan`,
+      { method: 'POST' }
+    );
+  }
+
+  async getSilentClipsScanProgress(
+    projectName: string
+  ): Promise<ApiResponse<import('../types/review').SilentClipsScanProgress>> {
+    return this.request<import('../types/review').SilentClipsScanProgress>(
+      `/review/silent-clips/${encodeURIComponent(projectName)}/scan-progress`
     );
   }
 

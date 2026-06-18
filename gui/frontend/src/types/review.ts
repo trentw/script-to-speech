@@ -64,6 +64,28 @@ export interface SilentClipsResponse {
 }
 
 /**
+ * Progress of an in-flight (or most recent) silence scan for a project.
+ * Corresponds to SilenceScanProgress on the backend. Shared by review-initiated
+ * scans and the generation pipeline's silence phase.
+ */
+export interface SilentClipsScanProgress {
+  /** "idle" | "running" | "completed" | "failed" */
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  /** Fraction complete, 0.0-1.0 */
+  progress: number;
+  /** Number of clips to scan */
+  totalClips: number;
+  /** Number of clips scanned so far */
+  completedClips: number;
+  /** Which side started the scan: "generation" | "review" (null when idle) */
+  source?: string | null;
+  /** Error message when status is "failed" */
+  error?: string | null;
+  /** ISO timestamp of when the scan completed (null until done) */
+  scannedAt?: string | null;
+}
+
+/**
  * Request to commit a variant to the project cache.
  * Corresponds to CommitVariantRequest on the backend.
  */

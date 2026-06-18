@@ -4,6 +4,7 @@ import asyncio
 import logging
 import threading
 import uuid
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -58,6 +59,7 @@ from ..models import (
     AudiobookGenerationResult,
     AudiobookGenerationStats,
     ProblemClipInfo,
+    SilenceScanProgress,
     SilentClipsResponse,
     TaskStatus,
 )
@@ -77,6 +79,22 @@ PHASE_WEIGHTS = {
     AudiobookGenerationPhase.COMPLETED: (1.0, 1.0),
     AudiobookGenerationPhase.FAILED: (0.0, 0.0),
 }
+
+
+@dataclass
+class _SilenceScanState:
+    """In-memory state for a project's most recent / in-flight silence scan.
+
+    Shared between the generation pipeline's silence phase and review-initiated
+    scans via AudiobookGenerationService, so the review page can poll one
+    registry regardless of which side started the scan.
+    """
+
+    tracker: "SilenceCheckProgressTracker"
+    source: str  # "generation" or "review"
+    status: str = "running"  # "running" | "completed" | "failed"
+    error: Optional[str] = None
+    scanned_at: Optional[str] = None
 
 
 class AudiobookGenerationTask:
@@ -166,6 +184,12 @@ class AudiobookGenerationService:
         # Cache of silent clips by project name (shared with review service)
         self._silent_clips_cache: Dict[str, SilentClipsResponse] = {}
 
+        # Registry of in-flight / most-recent silence scans by project name.
+        # Written by both the generation silence phase and review-initiated
+        # scans so the review page can poll progress from one place.
+        self._silence_scans: Dict[str, _SilenceScanState] = {}
+        self._silence_scans_lock = threading.Lock()
+
         # Use provided workspace_dir or fall back to settings
         if workspace_dir is None:
             workspace_dir = settings.WORKSPACE_DIR
@@ -209,6 +233,85 @@ class AudiobookGenerationService:
             f"Updated silent clips cache for '{project_name}': "
             f"{len(data.silent_clips)} clips"
         )
+
+    # === Silence scan progress registry ===
+
+    def register_silence_scan(
+        self,
+        project_name: str,
+        tracker: "SilenceCheckProgressTracker",
+        source: str,
+    ) -> None:
+        """Register an in-flight silence scan for a project.
+
+        Args:
+            project_name: Name of the project
+            tracker: The progress tracker driving this scan
+            source: "generation" or "review"
+        """
+        with self._silence_scans_lock:
+            self._silence_scans[project_name] = _SilenceScanState(
+                tracker=tracker,
+                source=source,
+                status="running",
+            )
+
+    def complete_silence_scan(
+        self,
+        project_name: str,
+        scanned_at: Optional[str] = None,
+        error: Optional[str] = None,
+    ) -> None:
+        """Mark a registered silence scan as completed or failed.
+
+        Completion coincides with the silent-clips cache having been (re)written,
+        so the review page can safely refetch results when it observes this.
+
+        Args:
+            project_name: Name of the project
+            scanned_at: ISO timestamp of completion (for the "completed" case)
+            error: Error message; if provided the scan is marked "failed"
+        """
+        with self._silence_scans_lock:
+            state = self._silence_scans.get(project_name)
+            if state is None:
+                return
+            if error is not None:
+                state.status = "failed"
+                state.error = error
+            else:
+                state.status = "completed"
+                state.scanned_at = scanned_at
+
+    def is_silence_scan_running(self, project_name: str) -> bool:
+        """Return True if a silence scan is currently running for the project."""
+        with self._silence_scans_lock:
+            state = self._silence_scans.get(project_name)
+            return state is not None and state.status == "running"
+
+    def get_silence_scan_progress(self, project_name: str) -> SilenceScanProgress:
+        """Get the progress of a project's in-flight / most-recent silence scan.
+
+        Args:
+            project_name: Name of the project
+
+        Returns:
+            SilenceScanProgress; status="idle" if no scan has run for the project.
+        """
+        with self._silence_scans_lock:
+            state = self._silence_scans.get(project_name)
+            if state is None:
+                return SilenceScanProgress(status="idle")
+            snapshot = state.tracker.get_progress_snapshot()
+            return SilenceScanProgress(
+                status=state.status,
+                progress=snapshot.get("progress", 0.0),
+                total_clips=snapshot.get("total_tasks", 0),
+                completed_clips=snapshot.get("completed_tasks", 0),
+                source=state.source,
+                error=state.error,
+                scanned_at=state.scanned_at,
+            )
 
     def create_task(self, request: AudiobookGenerationRequest) -> str:
         """Create a new audiobook generation task.
@@ -405,6 +508,11 @@ class AudiobookGenerationService:
             task.message = f"Generation failed: {str(e)}"
             task.completed_at = datetime.now(timezone.utc)
 
+            # Mark any registered silence scan for this project as failed so the
+            # review page stops showing an in-flight bar.
+            project_key = Path(task.request.input_json_path).stem
+            self.complete_silence_scan(project_key, error=str(e))
+
     def _run_generation(self, task: AudiobookGenerationTask) -> None:
         """Run the audiobook generation pipeline (blocking).
 
@@ -545,6 +653,12 @@ class AudiobookGenerationService:
             # Create tracker for GUI polling (snapshot-based)
             silence_tracker = SilenceCheckProgressTracker()
             task.set_silence_tracker(silence_tracker)
+
+            # Register in the shared registry so the review page can show this
+            # scan's progress live. Stays "running" until the whole generation
+            # finishes and the silent-clips cache is written (see end of method),
+            # so observers refetch results only once they're ready.
+            self.register_silence_scan(base_name, silence_tracker, "generation")
 
             silence_reporting_state = check_for_silence(
                 tasks=all_tasks,
@@ -704,6 +818,13 @@ class AudiobookGenerationService:
             total_clips=len(all_tasks),
             cache_folder=cache_folder,
         )
+
+        # Mark the registered silence scan (if any) complete now that the cache
+        # is written, so review observers refetch fresh results.
+        if request.silence_threshold is not None:
+            self.complete_silence_scan(
+                base_name, scanned_at=datetime.now(timezone.utc).isoformat()
+            )
 
         # === COMPLETION ===
         log_completion(

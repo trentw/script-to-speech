@@ -49,4 +49,6 @@ export const queryKeys = {
     ['review', 'cache-misses', projectName] as const,
   silentClips: (projectName: string) =>
     ['review', 'silent-clips', projectName] as const,
+  silentClipsScan: (projectName: string) =>
+    ['review', 'silent-clips-scan', projectName] as const,
 } as const;

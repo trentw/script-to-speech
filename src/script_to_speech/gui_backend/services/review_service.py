@@ -4,17 +4,19 @@ Provides functionality to detect problem clips (silent clips and cache misses)
 and manage variant audio files for review and replacement.
 """
 
+import asyncio
 import logging
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import yaml
 
 from script_to_speech.audio_generation.constants import DEFAULT_SILENCE_THRESHOLD
 from script_to_speech.audio_generation.models import AudioClipInfo
 from script_to_speech.audio_generation.processing import (
+    SilenceCheckProgressTracker,
     check_for_silence,
     plan_audio_generation,
 )
@@ -27,6 +29,7 @@ from ..config import settings
 from ..models import (
     CacheMissesResponse,
     ProblemClipInfo,
+    SilenceScanProgress,
     SilentClipsResponse,
 )
 
@@ -149,17 +152,15 @@ class ReviewService:
             scanned_at=datetime.now(timezone.utc).isoformat(),
         )
 
-    def get_silent_clips(
-        self, project_name: str, refresh: bool = False
-    ) -> SilentClipsResponse:
-        """Get silent clips for a project.
+    def get_silent_clips(self, project_name: str) -> SilentClipsResponse:
+        """Get silent clips for a project from cache.
 
-        Returns cached data if available. Only scans when refresh=True.
-        If no cache and refresh=False, returns empty response.
+        Returns cached data populated by audio generation or a completed scan.
+        Never scans on its own (scans are started via ``start_scan`` and run in
+        the background); if no cache exists yet, returns an empty response.
 
         Args:
             project_name: Name of the project to analyze
-            refresh: If True, force rescan of audio files
 
         Returns:
             SilentClipsResponse with silent clips list and metadata
@@ -167,46 +168,102 @@ class ReviewService:
         # Import here to avoid circular import
         from .audiobook_generation_service import audiobook_generation_service
 
-        # Check cache first (always)
         cached = audiobook_generation_service.get_cached_silent_clips(project_name)
-
-        if not refresh:
-            # Normal fetch: return cache or empty (never scan automatically)
-            if cached is not None:
-                logger.info(
-                    f"Returning cached silent clips for project '{project_name}': "
-                    f"{len(cached.silent_clips)} clips"
-                )
-                return cached
-
-            # No cache and not refreshing - return empty response
+        if cached is not None:
             logger.info(
-                f"No cached silent clips for project '{project_name}', "
-                "returning empty (refresh not requested)"
+                f"Returning cached silent clips for project '{project_name}': "
+                f"{len(cached.silent_clips)} clips"
             )
-            return SilentClipsResponse(
-                silent_clips=[],
-                total_clips_scanned=0,
-                cache_folder="",
-                scanned_at=None,  # Indicates never scanned
+            return cached
+
+        logger.info(
+            f"No cached silent clips for project '{project_name}', returning empty"
+        )
+        return SilentClipsResponse(
+            silent_clips=[],
+            total_clips_scanned=0,
+            cache_folder="",
+            scanned_at=None,  # Indicates never scanned
+        )
+
+    def start_scan(self, project_name: str) -> SilenceScanProgress:
+        """Start a background silent-clips scan, returning its initial progress.
+
+        If a silence scan is already running for this project (e.g. an in-flight
+        audio generation run), this piggybacks on it instead of starting a
+        second scan and returns that scan's current progress.
+
+        Must be called from within the running event loop (i.e. an async route),
+        since it schedules the scan via ``asyncio.create_task``.
+
+        Args:
+            project_name: Name of the project to scan
+
+        Returns:
+            SilenceScanProgress snapshot for the (new or in-flight) scan.
+        """
+        # Import here to avoid circular import
+        from .audiobook_generation_service import audiobook_generation_service
+
+        if audiobook_generation_service.is_silence_scan_running(project_name):
+            logger.info(
+                f"Silence scan already running for '{project_name}', piggybacking"
+            )
+            return audiobook_generation_service.get_silence_scan_progress(project_name)
+
+        tracker = SilenceCheckProgressTracker()
+        audiobook_generation_service.register_silence_scan(
+            project_name, tracker, "review"
+        )
+        asyncio.create_task(asyncio.to_thread(self._run_scan, project_name, tracker))
+        logger.info(f"Started silent-clips scan for project: {project_name}")
+        return audiobook_generation_service.get_silence_scan_progress(project_name)
+
+    def get_scan_progress(self, project_name: str) -> SilenceScanProgress:
+        """Get progress of a project's in-flight / most-recent silence scan."""
+        # Import here to avoid circular import
+        from .audiobook_generation_service import audiobook_generation_service
+
+        return audiobook_generation_service.get_silence_scan_progress(project_name)
+
+    def _run_scan(
+        self, project_name: str, tracker: SilenceCheckProgressTracker
+    ) -> None:
+        """Run a silent-clips scan to completion (blocking; runs in a thread).
+
+        Writes results into the shared silent-clips cache and marks the scan
+        completed (or failed) in the registry.
+        """
+        # Import here to avoid circular import
+        from .audiobook_generation_service import audiobook_generation_service
+
+        try:
+            result = self._scan_for_silent_clips(project_name, progress_tracker=tracker)
+            audiobook_generation_service.set_cached_silent_clips(project_name, result)
+            audiobook_generation_service.complete_silence_scan(
+                project_name, scanned_at=result.scanned_at
+            )
+            logger.info(
+                f"Silent-clips scan complete for '{project_name}': "
+                f"{len(result.silent_clips)} silent clips"
+            )
+        except Exception as e:
+            logger.error(f"Silent-clips scan failed for '{project_name}': {e}")
+            audiobook_generation_service.complete_silence_scan(
+                project_name, error=str(e)
             )
 
-        # Refresh requested: scan audio files and update cache
-        logger.info(f"Refreshing silent clips for project: {project_name}")
-        result = self._scan_for_silent_clips(project_name)
-
-        # Update cache with fresh scan results
-        audiobook_generation_service.set_cached_silent_clips(project_name, result)
-
-        return result
-
-    def _scan_for_silent_clips(self, project_name: str) -> SilentClipsResponse:
+    def _scan_for_silent_clips(
+        self,
+        project_name: str,
+        progress_tracker: Optional[SilenceCheckProgressTracker] = None,
+    ) -> SilentClipsResponse:
         """Scan audio files for silence (slow operation).
-
-        This is the fallback when no cached data is available from generation.
 
         Args:
             project_name: Name of the project to analyze
+            progress_tracker: Optional tracker updated as each clip is scanned,
+                for live progress reporting.
 
         Returns:
             SilentClipsResponse with silent clips list and metadata
@@ -232,6 +289,7 @@ class ReviewService:
         silence_reporting_state = check_for_silence(
             tasks=all_tasks,
             silence_threshold=DEFAULT_SILENCE_THRESHOLD,
+            progress_tracker=progress_tracker,
         )
         logger.info(
             f"Silence check complete: {len(silence_reporting_state.silent_clips)} silent clips"

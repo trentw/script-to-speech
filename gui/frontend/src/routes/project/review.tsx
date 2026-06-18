@@ -96,14 +96,17 @@ function ProjectAudioReview() {
     refresh: refreshCacheMisses,
   } = useCacheMisses(projectName, isFullyCast);
 
-  // Silent clips - auto-fetches (backend caches data from generation)
+  // Silent clips - auto-fetches (backend caches data from generation) and
+  // surfaces live scan progress (review- or generation-initiated)
   const {
     data: silentClipsData,
     isLoading: silentClipsLoading,
     isFetching: silentClipsFetching,
     error: silentClipsError,
     refresh: refreshSilentClips,
-  } = useSilentClips(projectName);
+    isScanning: silentClipsScanning,
+    scanProgress: silentClipsScanProgress,
+  } = useSilentClips(projectName, isFullyCast);
 
   // Type guard and redirect if not in project mode (after hooks)
   if (projectState.mode !== 'project') {
@@ -164,6 +167,8 @@ function ProjectAudioReview() {
             hasScanned={!!silentClipsData?.scannedAt}
             scannedAt={silentClipsData?.scannedAt ?? undefined}
             isLoading={silentClipsLoading || silentClipsFetching}
+            isScanning={silentClipsScanning}
+            scanProgress={silentClipsScanProgress}
             onRefresh={refreshSilentClips}
             disabled={!isFullyCast}
             disabledReason="Complete voice casting before scanning"

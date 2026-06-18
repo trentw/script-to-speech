@@ -12,6 +12,7 @@ from ..models import (
     CommitVariantRequest,
     CommitVariantResponse,
     DeleteVariantRequest,
+    SilenceScanProgress,
     SilentClipsResponse,
 )
 from ..services.review_service import review_service
@@ -43,28 +44,76 @@ async def get_cache_misses(project_name: str) -> CacheMissesResponse:
 
 
 @router.get("/review/silent-clips/{project_name}", response_model=SilentClipsResponse)
-async def get_silent_clips(
-    project_name: str, refresh: bool = False
-) -> SilentClipsResponse:
-    """Get silent clips for a project.
+async def get_silent_clips(project_name: str) -> SilentClipsResponse:
+    """Get silent clips for a project from cache.
 
-    Returns cached data from audio generation if available. Use refresh=true
-    to force a rescan of audio files (slower but ensures fresh data).
+    Returns cached data populated by audio generation or a completed scan.
+    To (re)scan, start a background scan via the scan endpoint and poll
+    scan-progress; results land in this cache when the scan completes.
 
     Args:
         project_name: The project name
-        refresh: If true, bypass cache and rescan audio files
 
     Returns:
         SilentClipsResponse with silent clips list
     """
     try:
-        return review_service.get_silent_clips(project_name, refresh=refresh)
+        return review_service.get_silent_clips(project_name)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to get silent clips: {str(e)}"
+        )
+
+
+@router.post(
+    "/review/silent-clips/{project_name}/scan",
+    response_model=SilenceScanProgress,
+)
+async def start_silent_clips_scan(project_name: str) -> SilenceScanProgress:
+    """Start a background silent-clips scan for a project.
+
+    Returns immediately with the scan's initial progress. Poll the
+    scan-progress endpoint to track completion; results are written to the
+    silent-clips cache when the scan finishes. If a scan is already running
+    (e.g. an in-flight generation run), this returns that scan's progress
+    instead of starting a second one.
+
+    Args:
+        project_name: The project name
+
+    Returns:
+        SilenceScanProgress for the new or in-flight scan
+    """
+    try:
+        return review_service.start_scan(project_name)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to start silent-clips scan: {str(e)}"
+        )
+
+
+@router.get(
+    "/review/silent-clips/{project_name}/scan-progress",
+    response_model=SilenceScanProgress,
+)
+async def get_silent_clips_scan_progress(project_name: str) -> SilenceScanProgress:
+    """Get progress of a project's in-flight / most-recent silence scan.
+
+    Args:
+        project_name: The project name
+
+    Returns:
+        SilenceScanProgress (status="idle" if no scan has run)
+    """
+    try:
+        return review_service.get_scan_progress(project_name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get scan progress: {str(e)}"
         )
 
 

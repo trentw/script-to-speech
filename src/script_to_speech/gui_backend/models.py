@@ -442,6 +442,24 @@ class SilentClipsResponse(CamelModel):
     )
 
 
+class SilenceScanProgress(CamelModel):
+    """Progress of an in-flight (or most recent) silence scan for a project.
+
+    Shared by both review-initiated scans and the generation pipeline's silence
+    phase, so the Review page can show live progress regardless of which side
+    started the scan. ``status`` is one of: "idle" (no scan has run),
+    "running", "completed", or "failed".
+    """
+
+    status: str = "idle"
+    progress: float = Field(0.0, ge=0.0, le=1.0)  # 0.0-1.0
+    total_clips: int = 0  # Number of clips to scan
+    completed_clips: int = 0  # Number of clips scanned so far
+    source: Optional[str] = None  # "generation" or "review"
+    error: Optional[str] = None
+    scanned_at: Optional[str] = None  # ISO timestamp when the scan completed
+
+
 class CommitVariantRequest(BaseModel):
     """Request to commit a variant to the project cache."""
 

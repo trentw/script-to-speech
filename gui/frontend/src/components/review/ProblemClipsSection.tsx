@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import {
   Tooltip,
   TooltipContent,
@@ -30,6 +31,10 @@ interface ProblemClipsSectionProps {
   scannedAt?: string;
   /** Whether currently loading/refreshing */
   isLoading?: boolean;
+  /** Whether a scan is actively running (drives the progress indicator) */
+  isScanning?: boolean;
+  /** Scan progress as a fraction 0.0-1.0 (only meaningful while scanning) */
+  scanProgress?: number;
   /** Callback to refresh the data */
   onRefresh?: () => void;
   /** Whether the refresh button is disabled (e.g., voice casting incomplete) */
@@ -78,11 +83,16 @@ export function ProblemClipsSection({
   hasScanned = true,
   scannedAt,
   isLoading = false,
+  isScanning = false,
+  scanProgress = 0,
   onRefresh,
   disabled = false,
   disabledReason,
   warningMessage,
 }: ProblemClipsSectionProps) {
+  // Whole-number percent; once at 100% but still scanning, show "Finishing…"
+  const scanPercent = Math.round(Math.min(Math.max(scanProgress, 0), 1) * 100);
+  const scanLabel = scanPercent < 100 ? `${scanPercent}%` : 'Finishing…';
   // Group clips by speaker
   const speakerGroups = useMemo(() => {
     const groups = new Map<string, SpeakerGroup>();
@@ -130,7 +140,7 @@ export function ProblemClipsSection({
             <p className="text-muted-foreground mt-1 text-sm">{description}</p>
           </div>
           {onRefresh && (
-            <div className="flex flex-col items-end gap-1">
+            <div className="flex w-fit flex-col items-end gap-1">
               <Tooltip>
                 <TooltipTrigger asChild>
                   {/* Wrap button in span so tooltip works when button is disabled */}
@@ -141,10 +151,10 @@ export function ProblemClipsSection({
                         size: 'sm',
                       })}
                       onClick={onRefresh}
-                      disabled={isLoading || disabled}
+                      disabled={isLoading || isScanning || disabled}
                       style={disabled ? { pointerEvents: 'none' } : undefined}
                     >
-                      {isLoading ? (
+                      {isLoading || isScanning ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (
                         <RefreshCw className={cn('mr-2 h-4 w-4')} />
@@ -157,15 +167,28 @@ export function ProblemClipsSection({
                   <TooltipContent>{disabledReason}</TooltipContent>
                 )}
               </Tooltip>
-              {scannedAt && (
-                <span className="text-muted-foreground text-xs">
-                  Last refreshed: {formatRelativeTime(scannedAt)}
-                </span>
-              )}
-              {!hasScanned && !scannedAt && (
-                <span className="text-muted-foreground text-xs">
-                  Not yet scanned
-                </span>
+              {/* While scanning, show live progress here so it's visible even
+                  when existing clips are displayed (central spinner hidden). */}
+              {isScanning ? (
+                <div className="flex w-full flex-col items-end gap-1">
+                  <Progress value={scanPercent} className="h-1.5 w-full" />
+                  <span className="text-muted-foreground text-xs whitespace-nowrap">
+                    Scanning… {scanLabel}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  {scannedAt && (
+                    <span className="text-muted-foreground text-xs">
+                      Last refreshed: {formatRelativeTime(scannedAt)}
+                    </span>
+                  )}
+                  {!hasScanned && !scannedAt && (
+                    <span className="text-muted-foreground text-xs">
+                      Not yet scanned
+                    </span>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -180,8 +203,20 @@ export function ProblemClipsSection({
           </div>
         )}
 
-        {/* Loading state */}
-        {isLoading && !hasClips && (
+        {/* Scanning with no existing clips: show a progress bar + percentage */}
+        {isScanning && !hasClips && (
+          <div className="flex flex-col items-center justify-center gap-3 py-8">
+            <div className="w-64 max-w-full">
+              <Progress value={scanPercent} className="h-2 w-full" />
+            </div>
+            <span className="text-muted-foreground text-sm">
+              Scanning for silent clips… {scanLabel}
+            </span>
+          </div>
+        )}
+
+        {/* Loading state (initial fetch, not an active scan) */}
+        {isLoading && !isScanning && !hasClips && (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
             <span className="text-muted-foreground ml-2">Scanning...</span>
@@ -189,14 +224,14 @@ export function ProblemClipsSection({
         )}
 
         {/* Not scanned state */}
-        {!hasScanned && !isLoading && notScannedMessage && (
+        {!hasScanned && !isLoading && !isScanning && notScannedMessage && (
           <p className="text-muted-foreground py-4 text-center text-sm">
             {notScannedMessage}
           </p>
         )}
 
         {/* Empty state (after scanning) */}
-        {hasScanned && !isLoading && !hasClips && (
+        {hasScanned && !isLoading && !isScanning && !hasClips && (
           <p className="text-muted-foreground py-4 text-center text-sm">
             {emptyMessage}
           </p>
