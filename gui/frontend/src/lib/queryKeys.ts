@@ -43,6 +43,8 @@ export const queryKeys = {
   audiobookTasks: ['audiobook', 'tasks'] as const,
   audiobookStatus: (taskId: string) => ['audiobook', 'status', taskId] as const,
   audiobookResult: (taskId: string) => ['audiobook', 'result', taskId] as const,
+  audiobookActive: (projectName: string) =>
+    ['audiobook', 'active', projectName] as const,
 
   // Review/clips
   cacheMisses: (projectName: string) =>

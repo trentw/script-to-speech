@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 import threading
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -332,6 +332,7 @@ def check_for_silence(
     tasks: List[AudioGenerationTask],
     silence_threshold: Optional[float],
     progress_tracker: Optional[SilenceCheckProgressTracker] = None,
+    should_stop: Optional[Callable[[], bool]] = None,
 ) -> ReportingState:
     """
     Checks existing cache files for silence.
@@ -341,9 +342,14 @@ def check_for_silence(
         tasks: List of AudioGenerationTask objects from plan_audio_generation.
         silence_threshold: dBFS threshold for detecting silence.
         progress_tracker: Optional tracker for GUI polling (snapshot-based progress).
+        should_stop: Optional callable returning True to abort the scan early.
+            Inert by default (None) so the CLI path is unchanged; the GUI passes
+            a cancel-flag check so a stop during this (sometimes minutes-long)
+            phase takes effect immediately rather than at the next phase boundary.
 
     Returns:
-        A ReportingState object containing info about silent clips.
+        A ReportingState object containing info about silent clips. May be
+        partial if the scan was stopped early.
     """
     logger.info("Starting silence check for existing cache files...")
     reporting_state = ReportingState()
@@ -376,6 +382,12 @@ def check_for_silence(
         dynamic_ncols=True,  # Adapt to terminal resizing
     ) as progress_bar:
         for idx, task in enumerate(tasks_to_check):
+            # Honor a cancellation request immediately rather than scanning the
+            # remaining (potentially many) files.
+            if should_stop is not None and should_stop():
+                logger.info("Stop requested; halting silence check early")
+                break
+
             # Remove the per-task logging that would clutter the console
             # logger.info(f"Checking task #{task.idx} for silence (threshold: {silence_threshold} dBFS)")
             logger.debug(

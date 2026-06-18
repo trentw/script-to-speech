@@ -1,6 +1,6 @@
 """Audiobook generation API routes."""
 
-from typing import List
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 
@@ -11,7 +11,10 @@ from ..models import (
     AudiobookTaskResponse,
     TaskStatus,
 )
-from ..services.audiobook_generation_service import audiobook_generation_service
+from ..services.audiobook_generation_service import (
+    ActiveTaskExistsError,
+    audiobook_generation_service,
+)
 
 router = APIRouter()
 
@@ -24,6 +27,9 @@ async def create_audiobook_task(
 
     This starts the audio generation pipeline in the background.
     Use the /audiobook/status/{task_id} endpoint to poll for progress.
+
+    Only one live generation is allowed per project; starting a second while one
+    is already running returns HTTP 409.
 
     Args:
         request: AudiobookGenerationRequest with input paths and generation options
@@ -38,10 +44,62 @@ async def create_audiobook_task(
             status=TaskStatus.PENDING.value,
             message="Audiobook generation task created",
         )
+    except ActiveTaskExistsError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to create audiobook task: {str(e)}"
         )
+
+
+@router.get("/audiobook/active/{project_name}")
+async def get_active_audiobook_task(
+    project_name: str,
+) -> Optional[AudiobookGenerationProgress]:
+    """Get the most-recent generation task for a project (any status).
+
+    Returns the task's progress, or null when no generation has run for the
+    project. Used by the frontend to re-adopt a running session on navigation
+    and to drive the global progress indicator / completion toast.
+
+    Args:
+        project_name: The project name (input JSON stem / screenplay name)
+
+    Returns:
+        AudiobookGenerationProgress or null
+    """
+    try:
+        return audiobook_generation_service.get_active_task_for_project(project_name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get active task: {str(e)}"
+        )
+
+
+@router.post("/audiobook/{task_id}/cancel", response_model=AudiobookGenerationProgress)
+async def cancel_audiobook_task(task_id: str) -> AudiobookGenerationProgress:
+    """Request cooperative cancellation of a running generation task.
+
+    Completed clips are kept and the run can be resumed by generating again.
+    The status may still read 'processing' on return until the worker observes
+    the signal; poll status to see it transition to 'cancelled'.
+
+    Args:
+        task_id: The unique task identifier
+
+    Returns:
+        AudiobookGenerationProgress reflecting the (in-progress) cancellation
+    """
+    cancelled = audiobook_generation_service.cancel_task(task_id)
+    progress = audiobook_generation_service.get_progress(task_id)
+    if progress is None:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    if not cancelled:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Task {task_id} is not cancellable (already finished)",
+        )
+    return progress
 
 
 @router.get("/audiobook/status/{task_id}", response_model=AudiobookGenerationProgress)

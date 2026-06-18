@@ -85,8 +85,20 @@ class AudioDownloadManager:
         # Thread locks
         self.state_lock = threading.RLock()  # For thread-safe state updates
 
+        # Cooperative stop signal. Inert by default: the CLI never sets it, so
+        # run() behaves identically. The GUI calls request_stop() to cancel.
+        self._stop_event = threading.Event()
+
         # Set up provider-specific semaphores
         self._setup_provider_semaphores()
+
+    def request_stop(self) -> None:
+        """Request the download loop to stop as soon as possible.
+
+        Already in-flight clips finish and write their cache files (safe to
+        resume on a later run); queued-but-unstarted clips are skipped.
+        """
+        self._stop_event.set()
 
     def _setup_provider_semaphores(self) -> None:
         """Initialize semaphores for each provider based on their recommended thread limits."""
@@ -433,6 +445,13 @@ class AudioDownloadManager:
         )
 
         while self.pending_tasks or any(self.rate_limited_tasks.values()):
+            # Stop requested: abandon remaining work. In-flight clips from the
+            # previous batch have already been awaited by the executor's context
+            # manager, so the cache is left in a consistent, resumable state.
+            if self._stop_event.is_set():
+                logger.info("Stop requested; halting audio download manager")
+                break
+
             # Check for rate-limited tasks that can be retried
             retry_tasks = self._retry_rate_limited_tasks()
             if retry_tasks:
@@ -485,6 +504,13 @@ class AudioDownloadManager:
                         self.global_semaphore.acquire()
 
                         try:
+                            # Stop requested after this task was submitted: skip it
+                            # quickly so queued clips no-op instead of generating.
+                            # Returning None routes it back to pending; the main
+                            # loop's stop check then breaks immediately.
+                            if self._stop_event.is_set():
+                                return None
+
                             # Check rate limit status AFTER acquiring semaphores
                             # This prevents tasks from executing if rate limit was hit
                             # by another concurrent task after initial submission

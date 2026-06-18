@@ -18,7 +18,8 @@ export type AudiobookGenerationPhase =
   | 'exporting'
   | 'finalizing'
   | 'completed'
-  | 'failed';
+  | 'failed'
+  | 'cancelled';
 
 /**
  * Statistics from the generation process.
@@ -66,7 +67,7 @@ export interface AudiobookGenerationRequest {
  */
 export interface AudiobookGenerationProgress {
   taskId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   phase: AudiobookGenerationPhase;
   phaseProgress: number; // 0.0-1.0 within current phase
   overallProgress: number; // 0.0-1.0 across all phases
@@ -111,7 +112,7 @@ export interface AudiobookGenerationResult {
  */
 export interface AudiobookTaskResponse {
   taskId: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   message: string;
 }
 
@@ -129,6 +130,7 @@ export const PHASE_LABELS: Record<AudiobookGenerationPhase, string> = {
   finalizing: 'Finalizing audiobook',
   completed: 'Completed',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 };
 
 /**

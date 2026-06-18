@@ -1,25 +1,48 @@
 import {
   AlertCircle,
   AlertTriangle,
+  Ban,
   CheckCircle2,
   Clock,
   Loader2,
+  X,
   XCircle,
 } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import {
+  appButtonVariants,
+  buttonUtils,
+} from '@/components/ui/button-variants';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import type { AudiobookGenerationProgress as ProgressType } from '@/types';
 import { PHASE_LABELS } from '@/types';
 
 interface AudiobookGenerationProgressProps {
   progress: ProgressType;
+  /** Called when the user confirms cancelling the generation. */
+  onCancel?: () => void;
+  /** True while a cancel request is in flight (button shows a spinner). */
+  isCancelling?: boolean;
 }
+
+// Phases during which concatenation/export has started: cancelling here is a
+// no-op (we let it finish to avoid a partial/corrupt output MP3).
+const NON_CANCELLABLE_PHASES = ['concatenating', 'exporting', 'finalizing'];
 
 export function AudiobookGenerationProgress({
   progress,
+  onCancel,
+  isCancelling = false,
 }: AudiobookGenerationProgressProps) {
   const getStatusIcon = () => {
     switch (progress.status) {
@@ -31,6 +54,8 @@ export function AudiobookGenerationProgress({
         return <CheckCircle2 className="h-5 w-5 text-green-500" />;
       case 'failed':
         return <XCircle className="text-destructive h-5 w-5" />;
+      case 'cancelled':
+        return <Ban className="text-muted-foreground h-5 w-5" />;
     }
   };
 
@@ -48,6 +73,8 @@ export function AudiobookGenerationProgress({
         return 'success';
       case 'failed':
         return 'destructive';
+      case 'cancelled':
+        return 'secondary';
       default:
         return 'secondary';
     }
@@ -56,6 +83,11 @@ export function AudiobookGenerationProgress({
   const overallPercentage = progress.overallProgress * 100;
   const phasePercentage = progress.phaseProgress * 100;
   const phaseLabel = PHASE_LABELS[progress.phase] || progress.phase;
+
+  const isRunning =
+    progress.status === 'processing' || progress.status === 'pending';
+  const isFinishing = NON_CANCELLABLE_PHASES.includes(progress.phase);
+  const showCancel = !!onCancel && isRunning;
 
   return (
     <Card className="p-6">
@@ -97,6 +129,22 @@ export function AudiobookGenerationProgress({
 
         {/* Message */}
         <p className="text-sm">{progress.message}</p>
+
+        {/* Cancelled summary — generated clips are kept and reused */}
+        {progress.status === 'cancelled' && (
+          <Alert>
+            <Ban className="h-4 w-4" />
+            <AlertTitle>Generation cancelled</AlertTitle>
+            <AlertDescription>
+              {progress.stats
+                ? `${
+                    progress.stats.cachedClips + progress.stats.generatedClips
+                  } of ${progress.stats.totalClips} clips are cached. `
+                : ''}
+              Generate again to continue — already generated clips are reused.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Stats during generation */}
         {progress.stats && progress.phase === 'generating' && (
@@ -168,6 +216,55 @@ export function AudiobookGenerationProgress({
             <p>Completed: {new Date(progress.completedAt).toLocaleString()}</p>
           )}
         </div>
+
+        {/* Cancel action (bottom-right) */}
+        {showCancel && (
+          <div className="flex justify-end pt-2">
+            {isFinishing ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-disabled
+                      onClick={(e) => e.preventDefault()}
+                      className={cn(
+                        appButtonVariants({ variant: 'secondary', size: 'sm' }),
+                        buttonUtils.ariaDisabled
+                      )}
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel generation
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>
+                      Finishing audiobook — generation can&apos;t be cancelled
+                      now.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isCancelling}
+                className={appButtonVariants({
+                  variant: 'secondary',
+                  size: 'sm',
+                })}
+              >
+                {isCancelling ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <X className="h-4 w-4" />
+                )}
+                {isCancelling ? 'Cancelling…' : 'Cancel generation'}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </Card>
   );

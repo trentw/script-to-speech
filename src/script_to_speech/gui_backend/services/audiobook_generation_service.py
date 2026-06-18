@@ -7,7 +7,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import yaml
 
@@ -78,7 +78,36 @@ PHASE_WEIGHTS = {
     AudiobookGenerationPhase.FINALIZING: (0.98, 1.0),
     AudiobookGenerationPhase.COMPLETED: (1.0, 1.0),
     AudiobookGenerationPhase.FAILED: (0.0, 0.0),
+    AudiobookGenerationPhase.CANCELLED: (0.0, 0.0),
 }
+
+
+class ActiveTaskExistsError(Exception):
+    """Raised when a generation is already running for a project.
+
+    Enforces a single live generation session per project (keyed off the input
+    JSON stem). The router translates this into an HTTP 409.
+    """
+
+
+class _GenerationCancelled(Exception):
+    """Internal signal that a generation task was cancelled by the user.
+
+    Raised at phase boundaries in ``_run_generation`` so the remaining pipeline
+    (recheck / concatenate / finalize) is skipped cleanly and the task ends in
+    the terminal CANCELLED state instead of falling through to a partial output.
+    """
+
+
+def _check_cancelled(task: "AudiobookGenerationTask") -> None:
+    """Raise _GenerationCancelled if the task has been cancelled.
+
+    Checks ONLY the cancellation signal — never generation completeness. A
+    normal run with a few legitimately-missing clips proceeds to concatenation
+    unaffected (concatenate_tasks_batched skips missing files).
+    """
+    if task.cancel_event.is_set():
+        raise _GenerationCancelled()
 
 
 @dataclass
@@ -118,6 +147,10 @@ class AudiobookGenerationTask:
 
         # Error tracking
         self.error: Optional[str] = None
+
+        # Cooperative cancellation signal (set by cancel_task; observed at phase
+        # boundaries in _run_generation and inside the download manager).
+        self.cancel_event = threading.Event()
 
         # Timestamps
         self.created_at = datetime.now(timezone.utc)
@@ -324,14 +357,85 @@ class AudiobookGenerationService:
         """
         task_id = str(uuid.uuid4())
         task = AudiobookGenerationTask(task_id, request)
+        project_name = Path(request.input_json_path).stem
 
+        # Enforce a single live session per project. The check-and-insert is done
+        # under one lock acquisition to close the check-then-insert race.
         with self._lock:
+            for existing in self._tasks.values():
+                if Path(
+                    existing.request.input_json_path
+                ).stem == project_name and existing.status in (
+                    TaskStatus.PENDING,
+                    TaskStatus.PROCESSING,
+                ):
+                    raise ActiveTaskExistsError(
+                        f"A generation is already running for '{project_name}'."
+                    )
             self._tasks[task_id] = task
 
         # Start the generation in the background
         asyncio.create_task(self._process_task(task))
 
         return task_id
+
+    def get_active_task_id_for_project(self, project_name: str) -> Optional[str]:
+        """Return the task_id of the most-recent task for a project, or None.
+
+        "Most recent" is by created_at. Keyed off the input JSON stem (the same
+        key the silent-clips cache and the frontend's screenplayName use), never
+        request.project_name.
+        """
+        with self._lock:
+            candidates = [
+                (task.created_at, task_id)
+                for task_id, task in self._tasks.items()
+                if Path(task.request.input_json_path).stem == project_name
+            ]
+
+        if not candidates:
+            return None
+        return max(candidates, key=lambda c: c[0])[1]
+
+    def get_active_task_for_project(
+        self, project_name: str
+    ) -> Optional[AudiobookGenerationProgress]:
+        """Return progress of the most-recent task for a project (any status).
+
+        Returns None when no task has run for the project. Used by the frontend
+        to re-adopt a running session on navigation and to drive the global
+        progress indicator / completion toast.
+        """
+        task_id = self.get_active_task_id_for_project(project_name)
+        if task_id is None:
+            return None
+        return self.get_progress(task_id)
+
+    def cancel_task(self, task_id: str) -> bool:
+        """Request cooperative cancellation of a generation task.
+
+        Sets the task's cancel_event and signals its active download manager (if
+        any) to stop. Returns False if the task is unknown or already terminal.
+        The task transitions to CANCELLED once the worker observes the signal.
+        """
+        with self._lock:
+            task = self._tasks.get(task_id)
+
+        if task is None:
+            return False
+        if task.status in (
+            TaskStatus.COMPLETED,
+            TaskStatus.FAILED,
+            TaskStatus.CANCELLED,
+        ):
+            return False
+
+        task.cancel_event.set()
+        download_manager = task._download_manager
+        if download_manager is not None:
+            download_manager.request_stop()
+        task.message = "Cancelling generation…"
+        return True
 
     def get_progress(self, task_id: str) -> Optional[AudiobookGenerationProgress]:
         """Get the current progress of a generation task.
@@ -470,7 +574,8 @@ class AudiobookGenerationService:
             task_ids_to_remove = [
                 task_id
                 for task_id, task in self._tasks.items()
-                if task.status in (TaskStatus.COMPLETED, TaskStatus.FAILED)
+                if task.status
+                in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED)
                 and task.completed_at
                 and task.completed_at.timestamp() < cutoff_time
             ]
@@ -496,6 +601,18 @@ class AudiobookGenerationService:
             task.phase_progress = 1.0
             task.completed_at = datetime.now(timezone.utc)
             task.message = "Audiobook generation completed"
+
+        except _GenerationCancelled:
+            logger.info(f"Audiobook generation task {task.task_id} was cancelled")
+            task.status = TaskStatus.CANCELLED
+            task.phase = AudiobookGenerationPhase.CANCELLED
+            task.completed_at = datetime.now(timezone.utc)
+            task.message = "Generation cancelled"
+
+            # Clear any registered silence scan so the review page stops showing
+            # an in-flight bar for this project.
+            project_key = Path(task.request.input_json_path).stem
+            self.complete_silence_scan(project_key, error="Cancelled")
 
         except Exception as e:
             logger.error(
@@ -537,6 +654,8 @@ class AudiobookGenerationService:
         )
 
         logger.info(f"Starting {run_mode.upper()} mode for task {task.task_id}")
+
+        _check_cancelled(task)
 
         # === SETUP ===
         task.phase = AudiobookGenerationPhase.PLANNING
@@ -628,6 +747,8 @@ class AudiobookGenerationService:
 
         task.phase_progress = 1.0
 
+        _check_cancelled(task)
+
         # === PHASE 2: APPLY CACHE OVERRIDES ===
         if not is_dry_run and request.cache_overrides_dir:
             log_phase(logger, PipelinePhase.OVERRIDES)
@@ -642,6 +763,8 @@ class AudiobookGenerationService:
             )
 
             task.phase_progress = 1.0
+
+        _check_cancelled(task)
 
         # === PHASE 3: CHECK FOR SILENCE ===
         if request.silence_threshold is not None:
@@ -664,10 +787,15 @@ class AudiobookGenerationService:
                 tasks=all_tasks,
                 silence_threshold=request.silence_threshold,
                 progress_tracker=silence_tracker,
+                should_stop=task.cancel_event.is_set,
             )
 
             # Clear tracker reference after completion
             task.set_silence_tracker(None)
+
+            # Silence checking can run for minutes; honour a cancel that arrived
+            # mid-scan before doing any further work.
+            _check_cancelled(task)
 
             # Merge silence report state into combined state
             combined_reporting_state.silent_clips.update(
@@ -682,6 +810,8 @@ class AudiobookGenerationService:
             task.stats.silent_clips = len(task.silent_clips)
 
             task.phase_progress = 1.0
+
+        _check_cancelled(task)
 
         # === PHASE 4: FETCH/GENERATE AUDIO ===
         if not is_dry_run:
@@ -717,8 +847,24 @@ class AudiobookGenerationService:
             # Run generation (blocking)
             fetch_reporting_state = download_manager.run()
 
-            # Clear reference after completion
+            # Capture accurate counts from the manager before clearing it, so a
+            # cancelled run reports how many clips are actually cached at cancel
+            # time (cached + generated so far) rather than the count from the
+            # start of generation.
+            final_snapshot = download_manager.get_progress_snapshot()
             task.set_download_manager(None)
+            if final_snapshot:
+                by_status = final_snapshot.get("by_status", {})
+                task.stats.total_clips = final_snapshot.get(
+                    "total_tasks", task.stats.total_clips
+                )
+                task.stats.cached_clips = by_status.get("cached", 0)
+                task.stats.generated_clips = by_status.get("generated", 0)
+
+            # The download manager returns a partial reporting state when stopped
+            # (it does not raise). Bail here so we never run recheck/concat/finalize
+            # on a cancelled run and never produce a partial output MP3.
+            _check_cancelled(task)
 
             # Merge fetch report state into combined state
             combined_reporting_state.silent_clips.update(
@@ -757,6 +903,10 @@ class AudiobookGenerationService:
             )
 
             task.phase_progress = 1.0
+
+        # Last cancellation checkpoint: once concatenation starts we let it run
+        # to completion to avoid leaving a partial/corrupt output MP3.
+        _check_cancelled(task)
 
         # === PHASE 5: CONCATENATE ===
         if not is_dry_run and not is_populate_cache:

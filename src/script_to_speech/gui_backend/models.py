@@ -35,6 +35,7 @@ class TaskStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class FieldType(str, Enum):
@@ -311,6 +312,7 @@ class AudiobookGenerationPhase(str, Enum):
     FINALIZING = "finalizing"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
 
 
 class AudiobookGenerationRequest(BaseModel):

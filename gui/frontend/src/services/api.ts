@@ -716,6 +716,23 @@ class ApiService {
     return this.request<AudiobookGenerationProgress[]>('/audiobook/tasks');
   }
 
+  async getActiveAudiobookTask(
+    projectName: string
+  ): Promise<ApiResponse<AudiobookGenerationProgress | null>> {
+    return this.request<AudiobookGenerationProgress | null>(
+      `/audiobook/active/${encodeURIComponent(projectName)}`
+    );
+  }
+
+  async cancelAudiobookTask(
+    taskId: string
+  ): Promise<ApiResponse<AudiobookGenerationProgress>> {
+    return this.request<AudiobookGenerationProgress>(
+      `/audiobook/${taskId}/cancel`,
+      { method: 'POST' }
+    );
+  }
+
   async cleanupAudiobookTasks(
     maxAgeHours: number = 24
   ): Promise<ApiResponse<{ message: string }>> {

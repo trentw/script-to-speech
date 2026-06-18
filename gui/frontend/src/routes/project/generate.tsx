@@ -1,7 +1,8 @@
 import { createFileRoute, Navigate } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
-import { AlertTriangle, FileAudio, Tag } from 'lucide-react';
+import { AlertTriangle, FileAudio, Tag, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import {
   AudiobookGenerationControls,
@@ -25,7 +26,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useCancelAudiobookTask } from '@/hooks/mutations/useCancelAudiobookTask';
 import { useCreateAudiobookTask } from '@/hooks/mutations/useCreateAudiobookTask';
+import { useActiveAudiobookTask } from '@/hooks/queries/useActiveAudiobookTask';
 import {
   useAudiobookResult,
   useAudiobookStatus,
@@ -53,22 +56,39 @@ export const Route = createFileRoute('/project/generate')({
 
 function ProjectAudioGeneration() {
   const projectState = useProject();
-  const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
+  // Task id from a generation started in this component instance.
+  const [localTaskId, setLocalTaskId] = useState<string | null>(null);
+  // Task id the user has dismissed (via "Start New") so a terminal card hides.
+  const [dismissedTaskId, setDismissedTaskId] = useState<string | null>(null);
 
   // Get input path for project status check (before type guard)
   const inputPath =
     projectState.mode === 'project'
       ? projectState.project.inputPath
       : undefined;
+  const projectName =
+    projectState.mode === 'project'
+      ? projectState.project.screenplayName
+      : null;
 
   // Check voice casting status
   const { status } = useProjectStatus(inputPath);
   const isFullyCast = isVoiceCastingComplete(status);
 
   const createTask = useCreateAudiobookTask();
-  const { data: progress } = useAudiobookStatus(currentTaskId);
+  const cancelTask = useCancelAudiobookTask();
+
+  // The backend owns the authoritative task registry, so re-adopt any running
+  // (or most-recent) task for this project — this is what makes a session
+  // resume after navigating away and back.
+  const { data: activeTask } = useActiveAudiobookTask(projectName);
+  const adoptedTaskId = localTaskId ?? activeTask?.taskId ?? null;
+  const effectiveTaskId =
+    adoptedTaskId && adoptedTaskId !== dismissedTaskId ? adoptedTaskId : null;
+
+  const { data: progress } = useAudiobookStatus(effectiveTaskId);
   const { data: result } = useAudiobookResult(
-    currentTaskId,
+    effectiveTaskId,
     progress?.status === 'completed'
   );
 
@@ -81,6 +101,8 @@ function ProjectAudioGeneration() {
     useState<AudiobookGenerationRequest | null>(null);
   // Incrementing key to retrigger highlight animation each time
   const [highlightKey, setHighlightKey] = useState(0);
+  // Cancel-confirmation dialog
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   // Type guard and redirect if not in project mode
   if (projectState.mode !== 'project') {
@@ -103,6 +125,16 @@ function ProjectAudioGeneration() {
   const inputJsonPath = `${project.inputPath}/${project.screenplayName}.json`;
   const voiceConfigPath = `${project.inputPath}/${project.screenplayName}_voice_config.yaml`;
 
+  // Render gating derived from the (backend-owned) task status.
+  const isRunning =
+    progress?.status === 'pending' || progress?.status === 'processing';
+  // Progress card: while running, or for a stopped/failed terminal run (so the
+  // user keeps the "stopped — N clips cached" feedback). Completed shows result.
+  const showProgressCard =
+    !!effectiveTaskId && !!progress && progress.status !== 'completed';
+  // Controls: when there is no task, or the task has reached a terminal state.
+  const showControls = !effectiveTaskId || (!!progress && !isRunning);
+
   const handleGenerate = async (request: AudiobookGenerationRequest) => {
     if (hasMissingFields) {
       setPendingRequest(request);
@@ -115,10 +147,35 @@ function ProjectAudioGeneration() {
   const doGenerate = async (request: AudiobookGenerationRequest) => {
     try {
       const response = await createTask.mutateAsync(request);
-      setCurrentTaskId(response.taskId);
+      setLocalTaskId(response.taskId);
+      setDismissedTaskId(null);
     } catch (error) {
-      console.error('Failed to start generation:', error);
+      const message =
+        error instanceof Error ? error.message : 'Failed to start generation';
+      // A generation is already running for this project (HTTP 409). Adopt it
+      // instead of erroring — the active-task query already tracks it.
+      if (message.toLowerCase().includes('already running')) {
+        setDismissedTaskId(null);
+        setLocalTaskId(null);
+        toast.info('A generation is already running for this screenplay.');
+      } else {
+        console.error('Failed to start generation:', error);
+      }
     }
+  };
+
+  const handleCancelConfirmed = () => {
+    setShowCancelConfirm(false);
+    if (effectiveTaskId) {
+      cancelTask.mutate(effectiveTaskId);
+    }
+  };
+
+  const handleStartNew = () => {
+    if (effectiveTaskId) {
+      setDismissedTaskId(effectiveTaskId);
+    }
+    setLocalTaskId(null);
   };
 
   const handleConfigureClick = () => {
@@ -188,8 +245,26 @@ function ProjectAudioGeneration() {
           </Alert>
         )}
 
-        {/* Show controls when no task is running */}
-        {!currentTaskId && (
+        {/* Show progress card while running, or for a stopped/failed run */}
+        {showProgressCard && progress && (
+          <AudiobookGenerationProgress
+            progress={progress}
+            onCancel={() => setShowCancelConfirm(true)}
+            isCancelling={cancelTask.isPending}
+          />
+        )}
+
+        {/* Show result when task is complete */}
+        {result && (
+          <AudiobookGenerationResult
+            result={result}
+            projectName={project.screenplayName}
+            onStartNew={handleStartNew}
+          />
+        )}
+
+        {/* Show controls when nothing is actively running */}
+        {showControls && (
           <AudiobookGenerationControls
             projectName={project.screenplayName}
             displayTitle={displayTitle}
@@ -203,20 +278,6 @@ function ProjectAudioGeneration() {
                 ? 'Complete voice casting to enable audio generation'
                 : undefined
             }
-          />
-        )}
-
-        {/* Show progress when task is running */}
-        {currentTaskId && progress && (
-          <AudiobookGenerationProgress progress={progress} />
-        )}
-
-        {/* Show result when task is complete */}
-        {result && (
-          <AudiobookGenerationResult
-            result={result}
-            projectName={project.screenplayName}
-            onStartNew={() => setCurrentTaskId(null)}
           />
         )}
 
@@ -293,6 +354,40 @@ function ProjectAudioGeneration() {
               onClick={handleGenerateAnyway}
             >
               Generate Anyway
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Generation Confirmation Dialog */}
+      <Dialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <X className="text-destructive h-5 w-5" />
+              Cancel generation?
+            </DialogTitle>
+          </DialogHeader>
+
+          <Alert>
+            <AlertDescription>
+              Already generated clips will be preserved and reused in future
+              generations.
+            </AlertDescription>
+          </Alert>
+
+          <DialogFooter>
+            <button
+              className={appButtonVariants({ variant: 'secondary' })}
+              onClick={() => setShowCancelConfirm(false)}
+            >
+              Keep generating
+            </button>
+            <button
+              className={appButtonVariants({ variant: 'primary' })}
+              onClick={handleCancelConfirmed}
+            >
+              Cancel generation
             </button>
           </DialogFooter>
         </DialogContent>
