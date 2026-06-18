@@ -94,7 +94,7 @@ When you run `make bump-patch` (for example), this is the full sequence:
 
 1. **Version calculation** — bump-my-version reads the current version and calculates the new one (e.g., `2.0.0` -> `2.0.1`)
 2. **File updates** — All 5 files listed above are updated with the new version string via search/replace
-3. **Pre-commit hooks** — `cargo generate-lockfile` runs in `gui/frontend/src-tauri/` to regenerate `Cargo.lock`, which is then staged
+3. **Lockfile sync** — `cargo update --workspace` updates the `app` version in `Cargo.lock`, and `uv lock` updates it in `uv.lock`; both lockfiles are then staged. (These are `[tool.bumpversion] pre_commit_hooks`. `--workspace`/`uv lock` are deliberately *minimal* — they touch only the project's own version line, not the whole dependency graph. Staging `uv.lock` here also prevents a `uv`-invoking pre-commit hook from rewriting it mid-commit and aborting the auto-commit.)
 4. **Git commit** — All changed files are staged and committed with message `release: vX.Y.Z`
 5. **Git tag** — An annotated tag `vX.Y.Z` is created
 
