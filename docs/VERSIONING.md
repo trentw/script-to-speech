@@ -37,9 +37,13 @@ Pushing the `v*` tag kicks off the rest of the pipeline. Some of it is automatic
 
 1. **(Automatic) CI builds the apps.** The `v*` tag triggers `.github/workflows/build-desktop.yml`, which builds the desktop app for all four platforms (macOS ARM64 + Intel, Linux, Windows), signs and notarizes the macOS builds, and creates a **draft** GitHub Release with the binaries attached and the changelog as the release notes. This takes a while (the macOS notarization steps are the slowest). Watch progress under the repo's **Actions** tab.
 
+   > **Transient macOS signing failure — just re-run the job.** A macOS build sometimes fails in the *Build Tauri app* step with `A timestamp was expected but was not found`. This is an intermittent hiccup reaching Apple's secure-timestamp server during code signing — not a real problem with the build, the certificate, or the release. **Fix:** on the Actions run, click **Re-run failed jobs**. Only the failed macOS job rebuilds; the platforms that already passed keep their results, and no code change or new tag is needed. (Re-running the same run also uploads to the existing draft, so you don't lose the other platforms' assets.)
+
 2. **(You) Review and publish the draft release.** When the workflow finishes, go to the repo's **Releases** page on GitHub. You'll find a new draft titled **"Script to Speech vX.Y.Z"**. Confirm all the expected assets are attached (`.dmg` ×2, `.exe`/`.msi`, `.AppImage`/`.deb`) and the notes look right, then click **Publish release**. *Nothing is public until you do this — the tag push alone does not publish anything.*
 
 3. **(Automatic) The website updates.** Publishing fires `.github/workflows/deploy-website.yml`, which rebuilds scripttospeech.com and points its download buttons at the new release. See [Website Update](#website-update) for why this only happens on publish (not on the tag push).
+
+   > **Infra dependency (not in the repo):** the publish-triggered deploy runs in the release **tag's** context, so the `github-pages` environment must allow the `v*` tag to deploy (Settings → Environments → `github-pages` → Deployment branches and tags). Without it, the deploy fails with *"Tag vX.Y.Z is not allowed to deploy to github-pages due to environment protection rules."* This rule is a GitHub repo setting, so it won't carry over to forks or survive recreating the environment.
 
 4. **(You) Verify.** Once the website workflow is green, load scripttospeech.com and confirm the download buttons resolve to the new `vX.Y.Z` assets.
 
