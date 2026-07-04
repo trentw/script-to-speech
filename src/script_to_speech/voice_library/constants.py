@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 
-def _get_user_workspace_dir() -> Path:
+def get_user_workspace_dir() -> Path:
     """Get the workspace directory for user-writable config/data.
 
     Mirrors gui_backend/config.py:get_default_workspace_dir() to ensure
@@ -61,15 +61,15 @@ def _get_voice_library_config_path() -> Path:
 # Voice library data paths
 REPO_VOICE_LIBRARY_PATH = _get_voice_library_path()
 USER_VOICE_LIBRARY_PATH = (
-    _get_user_workspace_dir() / "voice_library" / "voice_library_data"
+    get_user_workspace_dir() / "voice_library" / "voice_library_data"
 )
 
 # Voice library config paths
 REPO_CONFIG_PATH = _get_voice_library_config_path()
-USER_CONFIG_PATH = _get_user_workspace_dir() / "voice_library" / "voice_library_config"
+USER_CONFIG_PATH = get_user_workspace_dir() / "voice_library" / "voice_library_config"
 
 # Voice library script paths
 REPO_VOICE_LIBRARY_SCRIPTS_PATH = _get_voice_library_scripts_path()
 USER_VOICE_LIBRARY_SCRIPTS_PATH = (
-    _get_user_workspace_dir() / "voice_library" / "voice_library_scripts"
+    get_user_workspace_dir() / "voice_library" / "voice_library_scripts"
 )
