@@ -46,6 +46,7 @@ from script_to_speech.gui_backend.routers import (
 )
 from script_to_speech.gui_backend.routers import settings as settings_router
 from script_to_speech.gui_backend.routers import (
+    text_processors,
     voice_casting,
     voice_library,
 )
@@ -146,6 +147,7 @@ app.include_router(
 )
 app.include_router(review.router, prefix="/api", tags=["review"])
 app.include_router(optional_config.router, prefix="/api", tags=["optional-config"])
+app.include_router(text_processors.router, prefix="/api", tags=["text-processors"])
 app.include_router(settings_router.router, tags=["settings"])
 
 # Mount static files directory for generated audio

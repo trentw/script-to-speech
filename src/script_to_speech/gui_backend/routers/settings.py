@@ -11,7 +11,12 @@ from pydantic import BaseModel
 
 from ..config import get_default_workspace_dir
 from ..constants import ALLOWED_ENV_KEYS
-from ..models import ApiResponse
+from ..models import ApiResponse, TextProcessorGlobalDefaultUpdate
+from ..services.text_processor_config_service import (
+    ConfigConflictError,
+    ConfigValidationError,
+    text_processor_config_service,
+)
 
 CASTING_INSTRUCTIONS_FILENAME = "casting_instructions.yaml"
 
@@ -280,4 +285,60 @@ async def update_casting_instructions(update: CastingInstructionsUpdate) -> ApiR
         return ApiResponse(
             ok=False,
             error=f"Failed to update casting instructions: {str(e)}",
+        )
+
+
+@router.get("/text-processor-default")
+async def get_text_processor_default() -> ApiResponse:
+    """Read the user's global default text processor config."""
+    try:
+        data = text_processor_config_service.read_global_default()
+        return ApiResponse(ok=True, data=data)
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=f"Failed to read text processor default: {str(e)}",
+        )
+
+
+@router.put("/text-processor-default")
+async def update_text_processor_default(
+    update: TextProcessorGlobalDefaultUpdate,
+) -> ApiResponse:
+    """Write the user's global default text processor config."""
+    try:
+        entries = [entry.model_dump() for entry in update.entries]
+        data = text_processor_config_service.write_global_default(
+            entries, update.based_on_default_sha256, update.base_file_hash
+        )
+        return ApiResponse(ok=True, data=data)
+    except ConfigConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except ConfigValidationError as e:
+        return ApiResponse(
+            ok=False,
+            error="Text processor config validation failed",
+            details={"errors": e.errors},
+        )
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=f"Failed to update text processor default: {str(e)}",
+        )
+
+
+@router.delete("/text-processor-default")
+async def delete_text_processor_default(
+    base_file_hash: Optional[str] = None,
+) -> ApiResponse:
+    """Delete the user's global default text processor config."""
+    try:
+        data = text_processor_config_service.delete_global_default(base_file_hash)
+        return ApiResponse(ok=True, data=data)
+    except ConfigConflictError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        return ApiResponse(
+            ok=False,
+            error=f"Failed to delete text processor default: {str(e)}",
         )
