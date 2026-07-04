@@ -2,6 +2,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+import yaml
+
 
 def _get_default_text_processor_config() -> Path:
     """Get the path to the default text processor config.
@@ -32,6 +34,31 @@ def _get_default_text_processor_config() -> Path:
 DEFAULT_TEXT_PROCESSOR_CONFIG = _get_default_text_processor_config()
 
 
+def is_standalone_config(config_path: Path) -> bool:
+    """Check whether a text processor config is marked as standalone.
+
+    A standalone config (sts_metadata.mode == "standalone") fully replaces the
+    default config instead of being chained after it. Configs without the
+    marker (including files that fail to parse here) are treated as legacy
+    additive configs; any real YAML errors will surface when the
+    TextProcessorManager loads the file.
+    """
+    try:
+        with open(config_path, "r", encoding="utf-8") as config_file:
+            data = yaml.safe_load(config_file)
+    except Exception:
+        return False
+
+    if not isinstance(data, dict):
+        return False
+
+    metadata = data.get("sts_metadata")
+    if not isinstance(metadata, dict):
+        return False
+
+    return metadata.get("mode") == "standalone"
+
+
 def get_text_processor_configs(
     chunk_file_path: Optional[Path] = None,
     cmd_line_configs: Optional[List[Path]] = None,
@@ -48,7 +75,10 @@ def get_text_processor_configs(
 
     Logic:
         - If command line configs are supplied, use only those
-        - If chunk file exists and has matching config, use [DEFAULT_CONFIG, chunk_config]
+        - If chunk file has a matching standalone config (sts_metadata.mode ==
+          "standalone"), use [chunk_config] as a complete replacement
+        - If chunk file has a matching legacy (unmarked) config, use
+          [DEFAULT_CONFIG, chunk_config]
         - Otherwise use [DEFAULT_CONFIG]
     """
     # If command line configs provided, use those exclusively
@@ -64,8 +94,11 @@ def get_text_processor_configs(
     chunk_name = chunk_file_path.stem
     custom_config = chunk_dir / f"{chunk_name}_text_processor_config.yaml"
 
-    # If matching config exists, return default + custom
     if custom_config.exists():
+        # Standalone configs fully replace the default config
+        if is_standalone_config(custom_config):
+            return [custom_config]
+        # Legacy (unmarked) configs chain after the default config
         return [DEFAULT_TEXT_PROCESSOR_CONFIG, custom_config]
 
     # Otherwise return default only

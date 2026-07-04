@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from pathvalidate import sanitize_filename
 
+from ..text_processors.config_generation import generate_text_processor_config
 from ..utils.file_system_utils import (
     PathSecurityValidator,
     create_output_folders,
@@ -333,6 +334,7 @@ def process_screenplay(
                     "text": str(text_path) if text_path.exists() else None,
                     "json": None,
                     "config": None,
+                    "text_processor_config": None,
                 },
                 "screenplay_name": sanitized_name,
                 "text_only": True,
@@ -354,6 +356,10 @@ def process_screenplay(
         config_path = generate_optional_config(str(json_path))
         logger.info(f"Optional configuration file: {config_path}")
 
+        # Generate the text processor config file (seeded from defaults)
+        text_processor_config_path = generate_text_processor_config(str(json_path))
+        logger.info(f"Text processor configuration file: {text_processor_config_path}")
+
         # Analyze the chunks for metadata
         analysis = analyze_chunks(chunks, log_results=False)
 
@@ -368,6 +374,11 @@ def process_screenplay(
                 "text": str(text_path) if text_path.exists() else None,
                 "json": str(json_path) if json_path.exists() else None,
                 "config": str(Path(config_path)) if config_path else None,
+                "text_processor_config": (
+                    str(Path(text_processor_config_path))
+                    if text_processor_config_path
+                    else None
+                ),
             },
             "screenplay_name": sanitized_name,
             "text_only": False,

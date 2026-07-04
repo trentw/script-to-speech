@@ -178,6 +178,9 @@ AGENTS.md
 output/
 input/
 uploads/
+# User text processor config written to the workspace dir (= repo root in dev);
+# anchored so src/script_to_speech/text_processors/ stays tracked
+/text_processors/
 
 # Node.js / Frontend
 node_modules/

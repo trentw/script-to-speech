@@ -28,6 +28,7 @@ class TestProcessScreenplay:
     @patch("script_to_speech.parser.process.create_output_folders")
     @patch("script_to_speech.parser.process.setup_parser_logging")
     @patch("script_to_speech.parser.process.generate_optional_config")
+    @patch("script_to_speech.parser.process.generate_text_processor_config")
     @patch("shutil.copy2")
     @patch("os.path.exists")
     @patch("os.path.samefile")
@@ -38,6 +39,7 @@ class TestProcessScreenplay:
         mock_samefile,
         mock_exists,
         mock_copy,
+        mock_generate_tp_config,
         mock_generate_config,
         mock_setup_logging,
         mock_create_folders,
@@ -71,9 +73,10 @@ class TestProcessScreenplay:
 
         # Mock config generation
         mock_generate_config.return_value = "/path/to/config"
+        mock_generate_tp_config.return_value = "/path/to/tp_config"
 
         # Call function
-        process_screenplay("test.pdf")
+        result = process_screenplay("test.pdf")
 
         # Check that text was extracted
         mock_extract_text.assert_called_once()
@@ -85,14 +88,17 @@ class TestProcessScreenplay:
         # Check that JSON was written
         mock_file_open.assert_called()
 
-        # Check that config was generated
+        # Check that configs were generated
         mock_generate_config.assert_called_once()
+        mock_generate_tp_config.assert_called_once()
+        assert result["files"]["text_processor_config"] == "/path/to/tp_config"
 
     @patch("script_to_speech.parser.process.extract_text_preserving_whitespace")
     @patch("script_to_speech.parser.process.ScreenplayParser")
     @patch("script_to_speech.parser.process.create_output_folders")
     @patch("script_to_speech.parser.process.setup_parser_logging")
     @patch("script_to_speech.parser.process.generate_optional_config")
+    @patch("script_to_speech.parser.process.generate_text_processor_config")
     @patch("shutil.copy2")
     @patch("os.path.exists")
     @patch("os.path.samefile")
@@ -103,6 +109,7 @@ class TestProcessScreenplay:
         mock_samefile,
         mock_exists,
         mock_copy,
+        mock_generate_tp_config,
         mock_generate_config,
         mock_setup_logging,
         mock_create_folders,
@@ -138,6 +145,7 @@ class TestProcessScreenplay:
 
         # Mock config generation
         mock_generate_config.return_value = "/path/to/config"
+        mock_generate_tp_config.return_value = "/path/to/tp_config"
 
         # Call function
         process_screenplay("test.txt")
@@ -151,8 +159,9 @@ class TestProcessScreenplay:
             "Text file content"
         )
 
-        # Check that config was generated
+        # Check that configs were generated
         mock_generate_config.assert_called_once()
+        mock_generate_tp_config.assert_called_once()
 
     @patch("os.path.exists")
     def test_process_nonexistent_file(self, mock_exists):

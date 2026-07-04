@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- [CLI] Newly parsed screenplays now get a standalone text processor config, seeded from your default (or the built-in default), making each screenplay's processing pipeline explicit and fully editable. Existing and legacy configs keep their previous additive behavior.
+
 ## [2.1.0] - 2026-06-18
 
 ### Added
