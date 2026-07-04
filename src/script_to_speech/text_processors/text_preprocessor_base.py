@@ -1,10 +1,13 @@
 # text_processors/text_preprocessor_base.py
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 
 class TextPreProcessor(ABC):
     """Base class for text pre-processors that can modify the entire chunk list."""
+
+    #: Config name this instance was created from (set by the loader)
+    sts_config_name: str = ""
 
     def __init__(self, config: Dict):
         self.config = config
@@ -47,3 +50,13 @@ class TextPreProcessor(ABC):
             bool: True if configuration is valid
         """
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        """
+        Declarative schema describing this pre-processor's config for UIs.
+
+        Returns None when no schema is available; consumers (e.g. the GUI)
+        fall back to raw YAML editing for such pre-processors.
+        """
+        return None

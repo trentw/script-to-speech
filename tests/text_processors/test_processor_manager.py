@@ -904,3 +904,97 @@ class TestTextProcessorManager:
                 pattern_replace_calls = processors["pattern_replace"].call_args_list
                 last_config = pattern_replace_calls[-1][0][0]
                 assert last_config["replacements"][0]["match_pattern"] == "test3"
+
+
+class TestFromDicts:
+    """Tests for the TextProcessorManager.from_dicts classmethod."""
+
+    def test_from_dicts_initializes_without_files(self):
+        """A manager built from parsed dicts loads real processors with no file IO."""
+        configs = [
+            {
+                "preprocessors": [
+                    {
+                        "name": "skip_and_merge",
+                        "config": {"skip_types": ["page_number"]},
+                    }
+                ],
+                "processors": [
+                    {"name": "skip_empty", "config": {"skip_types": ["page_number"]}}
+                ],
+            }
+        ]
+
+        manager = TextProcessorManager.from_dicts(configs)
+
+        assert len(manager.preprocessors) == 1
+        assert len(manager.processors) == 1
+        assert manager.preprocessed_chunks is None
+
+    def test_from_dicts_matches_file_based_manager(self):
+        """from_dicts and file-based init produce identical processing results."""
+        config_yaml = """
+        processors:
+          - name: skip_empty
+            config:
+              skip_types:
+                - page_number
+        """
+        chunks = [
+            {"type": "page_number", "speaker": "", "raw_text": "12", "text": "12"},
+            {"type": "dialogue", "speaker": "BOB", "raw_text": "Hi", "text": "Hi"},
+        ]
+
+        with patch("builtins.open", mock_open(read_data=config_yaml)):
+            file_manager = TextProcessorManager(["fake_config.yaml"])
+        dict_manager = TextProcessorManager.from_dicts([yaml.safe_load(config_yaml)])
+
+        assert file_manager.process_chunks([dict(c) for c in chunks]) == (
+            dict_manager.process_chunks([dict(c) for c in chunks])
+        )
+
+    def test_processors_record_config_name(self):
+        """Loaded processors record the config name they were created from."""
+        configs = [
+            {
+                "preprocessors": [
+                    {
+                        "name": "skip_and_merge",
+                        "config": {"skip_types": ["page_number"]},
+                    }
+                ],
+                "processors": [
+                    {"name": "skip_empty", "config": {"skip_types": ["page_number"]}}
+                ],
+            }
+        ]
+
+        manager = TextProcessorManager.from_dicts(configs)
+
+        assert manager.preprocessors[0].sts_config_name == "skip_and_merge"
+        assert manager.processors[0].sts_config_name == "skip_empty"
+
+
+class TestShippedDefaultConfig:
+    """The shipped default config (with `notes` annotations) must stay loadable."""
+
+    def test_shipped_default_loads_and_validates(self):
+        """Loading the real default config validates every processor's config.
+
+        Manager construction instantiates each processor and runs its
+        validate_config(); the documentary `notes` keys added for the UI must
+        not trip that validation.
+        """
+        from script_to_speech.text_processors.utils import (
+            DEFAULT_TEXT_PROCESSOR_CONFIG,
+        )
+
+        with open(DEFAULT_TEXT_PROCESSOR_CONFIG, "r", encoding="utf-8") as f:
+            default_config = yaml.safe_load(f)
+
+        manager = TextProcessorManager.from_dicts([default_config])
+
+        assert len(manager.preprocessors) == len(
+            default_config.get("preprocessors", [])
+        )
+        assert len(manager.processors) == len(default_config.get("processors", []))

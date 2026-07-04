@@ -1,10 +1,10 @@
-import importlib
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Type, Union, cast
 
 import yaml
 
 from ..utils.logging import get_screenplay_logger
+from .registry import load_processor_class
 from .text_preprocessor_base import TextPreProcessor
 from .text_processor_base import TextProcessor
 
@@ -22,11 +22,29 @@ class TextProcessorManager:
         Args:
             config_paths: List of Path objects to YAML config files
         """
-        self.configs = []
+        configs = []
         for path in config_paths:
             with open(path, "r") as config_file:
-                self.configs.append(yaml.safe_load(config_file))
+                configs.append(yaml.safe_load(config_file))
 
+        self._init_from_configs(configs)
+
+    @classmethod
+    def from_dicts(cls, configs: List[Dict]) -> "TextProcessorManager":
+        """
+        Create a manager from already-parsed config dicts, without config files.
+        Used to run draft configs (e.g. unsaved GUI edits).
+
+        Args:
+            configs: List of parsed config dicts, processed in order
+        """
+        instance = cls.__new__(cls)
+        instance._init_from_configs(list(configs))
+        return instance
+
+    def _init_from_configs(self, configs: List[Dict]) -> None:
+        """Initialize processors and pre-processors from parsed configs."""
+        self.configs = configs
         self.preprocessors = self._initialize_preprocessors()
         self.processors = self._initialize_processors()
         self.preprocessed_chunks: Optional[List[Dict]] = None
@@ -71,15 +89,9 @@ class TextProcessorManager:
                 config_params = preproc_config.get("config", {})
 
                 try:
-                    # Import from preprocessors subdirectory
-                    module = importlib.import_module(
-                        f"script_to_speech.text_processors.preprocessors.{module_name}_preprocessor"
+                    preprocessor_class = load_processor_class(
+                        "preprocessor", module_name
                     )
-                    class_name = (
-                        "".join(word.capitalize() for word in module_name.split("_"))
-                        + "PreProcessor"
-                    )
-                    preprocessor_class = getattr(module, class_name)
 
                     # Create and validate pre-processor
                     preprocessor = preprocessor_class(config_params)
@@ -87,6 +99,7 @@ class TextProcessorManager:
                         raise ValueError(
                             f"Invalid configuration for pre-processor {module_name}"
                         )
+                    preprocessor.sts_config_name = module_name
 
                     all_preprocessors.append(preprocessor)
                     logger.info(
@@ -112,22 +125,14 @@ class TextProcessorManager:
                 config_params = text_processor_config.get("config", {})
 
                 try:
-                    # Import from processors subdirectory
-                    module = importlib.import_module(
-                        f"script_to_speech.text_processors.processors.{module_name}_processor"
-                    )
-                    # Convert module_name to class name (e.g., skip_empty -> SkipEmptyProcessor)
-                    class_name = (
-                        "".join(word.capitalize() for word in module_name.split("_"))
-                        + "Processor"
-                    )
-                    processor_class = getattr(module, class_name)
+                    processor_class = load_processor_class("processor", module_name)
 
                     processor = processor_class(config_params)
                     if not processor.validate_config():
                         raise ValueError(
                             f"Invalid configuration for processor {module_name}"
                         )
+                    processor.sts_config_name = module_name
 
                     all_processors.append(processor)
                     logger.info(

@@ -1,6 +1,6 @@
 import copy
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 
 class TextProcessor(ABC):
@@ -11,6 +11,9 @@ class TextProcessor(ABC):
     The configuration is set at initialization time and should not change.
     Processors MUST NOT maintain state between process() calls.
     """
+
+    #: Config name this instance was created from (set by the loader)
+    sts_config_name: str = ""
 
     def __init__(self, config: Dict):
         """
@@ -52,3 +55,13 @@ class TextProcessor(ABC):
         Return True if the configuration is valid, False otherwise.
         """
         pass
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        """
+        Declarative schema describing this processor's config for UIs.
+
+        Returns None when no schema is available; consumers (e.g. the GUI)
+        fall back to raw YAML editing for such processors.
+        """
+        return None
