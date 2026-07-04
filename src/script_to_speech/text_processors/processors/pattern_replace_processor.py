@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..text_processor_base import TextProcessor
 
@@ -101,3 +101,105 @@ class PatternReplaceProcessor(TextProcessor):
                 return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Pattern Replace",
+            "description": (
+                "Regex-based replacement, applied to chunks whose match field "
+                "matches a pattern."
+            ),
+            "help": (
+                "Each replacement is a two-step rule:\n\n"
+                "1. Match: a line is eligible when the Match pattern (a "
+                'regex) matches its Match field — usually "type", so a rule '
+                "only applies to, say, dialogue_modifier lines.\n\n"
+                "2. Replace: within the eligible line's Replace field "
+                '(usually "text"), every occurrence of the Replace pattern '
+                "is swapped for the Replacement string. The replacement "
+                "supports backreferences like \\1 for groups captured by the "
+                'Replace pattern. An empty "replace" will remove the matched string. \n\n'
+                "Patterns use Python regex syntax and are validated as you "
+                "type. Example: match pattern ^dialogue_modifier$ on field "
+                "type, replace pattern ^\\(|\\)$ with an empty replacement "
+                'strips the parentheses from "(gasps)".'
+            ),
+            "fields": [
+                {
+                    "name": "replacements",
+                    "type": "list",
+                    "required": True,
+                    "label": "Replacements",
+                    "item_schema": {
+                        "type": "object",
+                        "fields": [
+                            {
+                                "name": "match_field",
+                                "type": "string",
+                                "required": True,
+                                "default": "type",
+                                "label": "Match field",
+                                "description": (
+                                    "Chunk field checked against the match pattern."
+                                ),
+                                "advanced": True,
+                                "suggestions_ref": "chunk_fields",
+                            },
+                            {
+                                "name": "match_pattern",
+                                "type": "string",
+                                "format": "regex",
+                                "required": True,
+                                "label": "Match pattern",
+                                "description": (
+                                    "Chunk is eligible when this regex matches the "
+                                    "match field (anchored at the start)."
+                                ),
+                            },
+                            {
+                                "name": "replace_field",
+                                "type": "string",
+                                "required": True,
+                                "default": "text",
+                                "label": "Replace field",
+                                "description": (
+                                    "Chunk field the replacement is applied to."
+                                ),
+                                "advanced": True,
+                                "suggestions_ref": "chunk_fields",
+                            },
+                            {
+                                "name": "replace_pattern",
+                                "type": "string",
+                                "format": "regex",
+                                "required": True,
+                                "label": "Replace pattern",
+                                "description": "Regex replaced within the replace field.",
+                            },
+                            {
+                                "name": "replace_string",
+                                "type": "string",
+                                "required": True,
+                                "label": "Replacement",
+                                "description": (
+                                    "Replacement text; supports backreferences "
+                                    "like \\1. Leave empty to remove matched string"
+                                ),
+                            },
+                            {
+                                "name": "notes",
+                                "type": "string",
+                                "label": "Notes",
+                                "description": (
+                                    "Optional note kept in the config file "
+                                    "(why this rule exists). Shown above the "
+                                    "rule in the editor."
+                                ),
+                                "advanced": True,
+                            },
+                        ],
+                    },
+                },
+            ],
+        }

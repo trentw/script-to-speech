@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ...utils.logging import get_screenplay_logger
 from ..text_preprocessor_base import TextPreProcessor
@@ -73,6 +73,68 @@ class ExtractDialogueParentheticalsPreProcessor(TextPreProcessor):
                 return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Extract Dialogue Parentheticals",
+            "description": (
+                "Split parentheticals like (gasps) out of dialogue so the "
+                "narrator speaks them instead of the character."
+            ),
+            "help": (
+                'A parenthetical inside a speech — "I never (coughs) said '
+                "that\" — is a stage direction, not the character's words. "
+                "This step splits it into its own chunk so the narrator "
+                "voice reads it, and the character's dialogue continues "
+                "around it.\n\n"
+                "Maximum words keeps long asides from being extracted "
+                "(they're usually real dialogue in parentheses). The "
+                "advanced filters take patterns — case insensitive, with a "
+                'trailing * as a prefix wildcard, e.g. "whisper*": '
+                '"Extract only" limits extraction to matching '
+                'parentheticals, "Extract all except" inverts that. The '
+                "two filters are mutually exclusive."
+            ),
+            "fields": [
+                {
+                    "name": "max_words",
+                    "type": "integer",
+                    "min": 1,
+                    "label": "Maximum words",
+                    "description": (
+                        "Skip parentheticals with more words than this. Leave "
+                        "empty for no limit."
+                    ),
+                },
+                {
+                    "name": "extract_only",
+                    "type": "list",
+                    "label": "Extract only",
+                    "description": (
+                        "Only extract parentheticals matching these patterns "
+                        "(case insensitive; trailing * matches from the start). "
+                        "Cannot be combined with 'Extract all except'."
+                    ),
+                    "advanced": True,
+                    "xor_group": "extract_filter",
+                    "item_schema": {"type": "string"},
+                },
+                {
+                    "name": "extract_all_except",
+                    "type": "list",
+                    "label": "Extract all except",
+                    "description": (
+                        "Extract all parentheticals except those matching these "
+                        "patterns (case insensitive; trailing * matches from the "
+                        "start). Cannot be combined with 'Extract only'."
+                    ),
+                    "advanced": True,
+                    "xor_group": "extract_filter",
+                    "item_schema": {"type": "string"},
+                },
+            ],
+        }
 
     def _count_words(self, text: str) -> int:
         """Count words in text by splitting on whitespace."""

@@ -43,44 +43,49 @@ processors:
   - name: pattern_replace
     config:
       replacements:
-        # Replace the speaker for "dialogue modifiers" -- parenteticals in dialogue, e.g. "(gasps)" --
-        # with an empty speaker, so that these are read using the narrator / default speaker
         - match_field: "type"
           match_pattern: "^dialogue_modifier$"
           replace_field: "speaker"
           replace_pattern: ".*"
           replace_string: ""
-        # Remove the parenthesis in "dialogue modifiers" -- parenteticals in dialogue, e.g. "(gasps)" --
-        # as some TTS providers try to generate a sound instead of providing the literal text when
-        # it is wrapped in parentheses
+          notes: >-
+            Replace the speaker for "dialogue modifiers" -- parentheticals in dialogue, e.g. "(gasps)" --
+            with the narrator / default speaker by blanking their speaker
         - match_field: "type"
           match_pattern: "^dialogue_modifier$"
           replace_field: "text"
           replace_pattern: '^\(|\)$'
           replace_string: ""
-        # Remove the parenthesis in "speaker attributions" -- e.g. TOM (CONTINUED) --
-        # as some TTS providers (such as OpenAI) seem to occasionally drop parentheticals
-        # in short phrases
+          notes: >-
+            Remove the parentheses around "dialogue modifiers" -- parentheticals in dialogue, e.g. "(gasps)" --
+            as some TTS providers try to generate a sound effect instead of reading the literal text
+            when it is wrapped in parentheses
         - match_field: "type"
           match_pattern: "^speaker_attribution$"
           replace_field: "text"
           replace_pattern: '\(([^\)]*)\)'
           replace_string: '\1'
-        # Remove second occurrence of scene number in scene headings,
-        # e.g. "22 INT. HEADQUARTERS -- NIGHT 22" -> "22 INT. HEADQUARTERS -- NIGHT"
+          notes: >-
+            Remove the parentheses in speaker attributions -- e.g. TOM (CONTINUED) --
+            as some TTS providers (such as OpenAI) seem to occasionally drop
+            parentheticals in short phrases.
         - match_field: "type"
           match_pattern: "^scene_heading$"
           replace_field: "text"
           replace_pattern: '^(?P<scene_num>[A-Z]?\d+(\.\d+)?)\b(.*)\b(?P=scene_num)$'
           replace_string: '\1\3'
+          notes: >-
+            Remove the second occurrence of the scene number in scene headings, e.g.
+            "22 INT. HEADQUARTERS -- NIGHT 22" -> "22 INT. HEADQUARTERS -- NIGHT".
   - name: capitalization_transform
     config:
-      # Some TTS providers (like OpenAI) have trouble generating audio for short ALL CAPS
-      # strings, which is exactly how speaker attributions are formatted (e.g. DAVE OFF SCREEN).
-      # This will change the string to "sentence case", e.g. "Dave off screen"
       transformations:
         - chunk_type: speaker_attribution
           case: sentence_case
+          notes: >-
+            Some TTS providers (like OpenAI) have trouble generating audio for short
+            ALL CAPS strings, which is exactly how speaker attributions are formatted
+            (e.g. DAVE OFF SCREEN). Sentence case reads as "Dave off screen".
         - chunk_type: scene_heading
           case: sentence_case
         - chunk_type: dialogue_modifier

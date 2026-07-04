@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from ...utils.logging import get_screenplay_logger
 from ..text_preprocessor_base import TextPreProcessor
@@ -18,6 +18,36 @@ class SkipAndMergePreProcessor(TextPreProcessor):
     def validate_config(self) -> bool:
         """Validate that skip_types is a list."""
         return isinstance(self.config.get("skip_types"), list)
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Skip and Merge",
+            "description": (
+                "Remove chunks of specific types and merge the surrounding "
+                "chunks when they belong together (e.g. dialogue split by a "
+                "page number)."
+            ),
+            "help": (
+                "Deletes every chunk of the listed types from the "
+                "screenplay. When a deleted chunk sat between two pieces of "
+                "the same element — a speech interrupted by a page number, "
+                "for instance — the pieces are merged back into one chunk "
+                "(dialogue merges only when the speaker matches).\n\n"
+                "This changes the chunk structure (fewer chunks out than "
+                "in). If you only want a chunk type silenced without "
+                "restructuring, use the Skip Empty text step instead."
+            ),
+            "fields": [
+                {
+                    "name": "skip_types",
+                    "type": "list",
+                    "required": True,
+                    "label": "Chunk types to remove",
+                    "item_schema": {"type": "string", "suggestions_ref": "chunk_types"},
+                },
+            ],
+        }
 
     def _can_merge_chunks(self, chunk1: Dict, chunk2: Dict) -> bool:
         """

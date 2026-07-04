@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..text_processor_base import TextProcessor
 
@@ -51,3 +51,77 @@ class TextSubstitutionProcessor(TextProcessor):
                 return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Text Substitution",
+            "description": (
+                'Replace exact text with a substitution (e.g. "V.O." -> '
+                '"VOICE OVER").'
+            ),
+            "help": (
+                "Finds exact text and replaces it — no regex, no case "
+                "folding. Use it to expand screenplay abbreviations the TTS "
+                'voice would otherwise read literally ("V.O.", "INT.", '
+                '"CONT\'D").\n\n'
+                "Substitutions run top to bottom on each line; a later rule "
+                "sees the output of earlier ones. By default only the spoken "
+                '"text" field is touched — the advanced Fields setting can '
+                "also target the speaker or other chunk fields.\n\n"
+                "For pattern-based matching (anything beyond an exact "
+                "string), use Pattern Replace instead."
+            ),
+            "fields": [
+                {
+                    "name": "substitutions",
+                    "type": "list",
+                    "required": True,
+                    "label": "Substitutions",
+                    "item_schema": {
+                        "type": "object",
+                        "fields": [
+                            {
+                                "name": "from",
+                                "type": "string",
+                                "required": True,
+                                "label": "Replace",
+                                "description": "Exact text to find (not a regex).",
+                            },
+                            {
+                                "name": "to",
+                                "type": "string",
+                                "required": True,
+                                "label": "With",
+                            },
+                            {
+                                "name": "fields",
+                                "type": "list",
+                                "required": True,
+                                "default": ["text"],
+                                "label": "Fields",
+                                "description": (
+                                    "Chunk fields the substitution is applied to."
+                                ),
+                                "advanced": True,
+                                "item_schema": {
+                                    "type": "string",
+                                    "suggestions_ref": "chunk_fields",
+                                },
+                            },
+                            {
+                                "name": "notes",
+                                "type": "string",
+                                "label": "Notes",
+                                "description": (
+                                    "Optional note kept in the config file "
+                                    "(why this rule exists). Shown above the "
+                                    "rule in the editor."
+                                ),
+                                "advanced": True,
+                            },
+                        ],
+                    },
+                },
+            ],
+        }

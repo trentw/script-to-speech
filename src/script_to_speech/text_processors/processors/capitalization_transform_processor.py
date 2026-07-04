@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ..text_processor_base import TextProcessor
 
@@ -89,3 +89,84 @@ class CapitalizationTransformProcessor(TextProcessor):
                     return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Capitalization Transform",
+            "description": (
+                "Change text case for specific chunk types (some TTS providers "
+                "treat ALL CAPS text as yelling)."
+            ),
+            "help": (
+                "Screenplays format some elements in ALL CAPS (speaker "
+                "attributions, scene headings), which several TTS providers "
+                "read as yelling or mangle entirely. Each transformation "
+                "picks a chunk type and a target case: sentence_case "
+                '("DAVE OFF SCREEN" -> "Dave off screen"), lower_case, or '
+                "upper_case.\n\n"
+                'The advanced "Only when…" settings restrict a '
+                "transformation to lines containing an exact string or "
+                "matching a regex — useful when only some lines of a type "
+                "need fixing."
+            ),
+            "fields": [
+                {
+                    "name": "transformations",
+                    "type": "list",
+                    "required": True,
+                    "label": "Transformations",
+                    "item_schema": {
+                        "type": "object",
+                        "fields": [
+                            {
+                                "name": "chunk_type",
+                                "type": "string",
+                                "required": True,
+                                "label": "Chunk type",
+                                "suggestions_ref": "chunk_types",
+                            },
+                            {
+                                "name": "case",
+                                "type": "enum",
+                                "required": True,
+                                "label": "Case",
+                                "enum": ["upper_case", "lower_case", "sentence_case"],
+                            },
+                            {
+                                "name": "text_must_contain_string",
+                                "type": "string",
+                                "label": "Only when text contains",
+                                "description": (
+                                    "Only apply when the chunk text contains this "
+                                    "exact string."
+                                ),
+                                "advanced": True,
+                            },
+                            {
+                                "name": "text_must_contain_pattern",
+                                "type": "string",
+                                "format": "regex",
+                                "label": "Only when text matches",
+                                "description": (
+                                    "Only apply when the chunk text matches this "
+                                    "regex."
+                                ),
+                                "advanced": True,
+                            },
+                            {
+                                "name": "notes",
+                                "type": "string",
+                                "label": "Notes",
+                                "description": (
+                                    "Optional note kept in the config file "
+                                    "(why this rule exists). Shown above the "
+                                    "rule in the editor."
+                                ),
+                                "advanced": True,
+                            },
+                        ],
+                    },
+                },
+            ],
+        }

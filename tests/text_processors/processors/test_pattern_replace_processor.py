@@ -27,6 +27,24 @@ class TestPatternReplaceProcessor:
         # Act & Assert
         assert processor.validate_config() is True
 
+    def test_validate_config_allows_notes(self):
+        """A documentary `notes` key on a replacement must not fail validation."""
+        config = {
+            "replacements": [
+                {
+                    "match_field": "type",
+                    "match_pattern": "^dialogue_modifier$",
+                    "replace_field": "speaker",
+                    "replace_pattern": ".*",
+                    "replace_string": "",
+                    "notes": "Blank the speaker so parentheticals read as narrator.",
+                }
+            ]
+        }
+        processor = PatternReplaceProcessor(config)
+
+        assert processor.validate_config() is True
+
     def test_validate_config_invalid_not_list(self):
         """Test validate_config with invalid configuration (not a list)."""
         # Arrange

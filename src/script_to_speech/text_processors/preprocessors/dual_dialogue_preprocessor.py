@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Dict, List, Literal, Tuple
+from typing import Dict, List, Literal, Optional, Tuple
 
 from ...utils.logging import get_screenplay_logger
 from ..text_preprocessor_base import TextPreProcessor
@@ -81,6 +81,49 @@ class DualDialoguePreProcessor(TextPreProcessor):
             return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Dual Dialogue",
+            "description": (
+                "Convert side-by-side (dual) dialogue into sequential dialogue."
+            ),
+            "help": (
+                "When two characters speak simultaneously, screenplays print "
+                "their dialogue in two side-by-side columns. Audio has no "
+                '"simultaneous", so this step splits the columns back into '
+                "two sequential speeches, left speaker first.\n\n"
+                "The advanced spacing settings tune how column boundaries "
+                "are detected in the raw text; the defaults work for "
+                "standard screenplay formatting and rarely need changing. "
+                "Only one instance of this step can exist in the pipeline."
+            ),
+            "fields": [
+                {
+                    "name": "min_speaker_spacing",
+                    "type": "integer",
+                    "min": 1,
+                    "default": cls.DEFAULT_MIN_SPEAKER_SPACING,
+                    "label": "Minimum speaker spacing",
+                    "description": (
+                        "Minimum number of spaces between the two speaker names."
+                    ),
+                    "advanced": True,
+                },
+                {
+                    "name": "min_dialogue_spacing",
+                    "type": "integer",
+                    "min": 1,
+                    "default": cls.DEFAULT_MIN_DIALOGUE_SPACING,
+                    "label": "Minimum dialogue spacing",
+                    "description": (
+                        "Minimum number of spaces between the two dialogue columns."
+                    ),
+                    "advanced": True,
+                },
+            ],
+        }
 
     def _split_speakers_full(self, speaker_text: str) -> Tuple[str, str]:
         """

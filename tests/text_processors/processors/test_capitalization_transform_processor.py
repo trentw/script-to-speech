@@ -24,6 +24,21 @@ class TestCapitalizationTransformProcessor:
         # Act & Assert
         assert processor.validate_config() is True
 
+    def test_validate_config_allows_notes(self):
+        """A documentary `notes` key on a transformation must not fail validation."""
+        config = {
+            "transformations": [
+                {
+                    "chunk_type": "speaker_attribution",
+                    "case": "sentence_case",
+                    "notes": "Short ALL CAPS strings read poorly on some providers.",
+                }
+            ]
+        }
+        processor = CapitalizationTransformProcessor(config)
+
+        assert processor.validate_config() is True
+
     def test_validate_config_invalid_not_list(self):
         """Test validate_config with invalid configuration (not a list)."""
         # Arrange

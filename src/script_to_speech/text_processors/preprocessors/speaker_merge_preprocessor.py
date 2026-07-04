@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from ...utils.logging import get_screenplay_logger
 from ..text_preprocessor_base import TextPreProcessor
@@ -44,6 +44,40 @@ class SpeakerMergePreProcessor(TextPreProcessor):
                 return False
 
         return True
+
+    @classmethod
+    def get_config_schema(cls) -> Optional[Dict]:
+        return {
+            "label": "Speaker Merge",
+            "description": (
+                "Merge speaker name variations into one canonical speaker "
+                '(e.g. "BOB O.S." -> "BOB").'
+            ),
+            "help": (
+                "Screenplays often credit the same character several ways — "
+                '"BOB", "BOB (O.S.)", "BOB (CONT\'D)" — which would cast '
+                "each variant as a separate voice. Map the canonical name to "
+                "its variations and every variant's lines are re-attributed "
+                "to the one speaker.\n\n"
+                "Setup: the left side is the name to keep; the list contains "
+                "the exact variant strings as they appear in the parsed "
+                "screenplay (check the Screenplay Info page for the speaker "
+                "list). Matching also updates on-screen speaker "
+                "attributions."
+            ),
+            "fields": [
+                {
+                    "name": "speakers_to_merge",
+                    "type": "dict_of_string_lists",
+                    "required": True,
+                    "label": "Speakers to merge",
+                    "description": (
+                        "Map of canonical speaker name to the variations that "
+                        "should be merged into it."
+                    ),
+                },
+            ],
+        }
 
     def _build_speaker_mapping(self) -> Dict[str, str]:
         """

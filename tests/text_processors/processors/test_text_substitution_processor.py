@@ -19,6 +19,22 @@ class TestTextSubstitutionProcessor:
         # Act & Assert
         assert processor.validate_config() is True
 
+    def test_validate_config_allows_notes(self):
+        """A documentary `notes` key on a substitution must not fail validation."""
+        config = {
+            "substitutions": [
+                {
+                    "from": "INT.",
+                    "to": "INTERIOR",
+                    "fields": ["text"],
+                    "notes": "Expand common screenplay abbreviations.",
+                }
+            ]
+        }
+        processor = TextSubstitutionProcessor(config)
+
+        assert processor.validate_config() is True
+
     def test_validate_config_invalid_not_list(self):
         """Test validate_config with invalid configuration (not a list)."""
         # Arrange
