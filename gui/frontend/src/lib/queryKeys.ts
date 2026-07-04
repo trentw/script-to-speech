@@ -53,4 +53,10 @@ export const queryKeys = {
     ['review', 'silent-clips', projectName] as const,
   silentClipsScan: (projectName: string) =>
     ['review', 'silent-clips-scan', projectName] as const,
+
+  // Text processors
+  textProcessorRegistry: ['text-processors', 'registry'] as const,
+  textProcessorConfig: (inputPath: string) =>
+    ['projects', 'text-processor-config', inputPath] as const,
+  textProcessorGlobalDefault: ['settings', 'text-processor-default'] as const,
 } as const;
