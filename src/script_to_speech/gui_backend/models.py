@@ -1,7 +1,7 @@
 """Pydantic models for API requests and responses."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -584,6 +584,74 @@ class LLMRunImportResponse(CamelModel):
     provider: str
     voices: Dict[str, LLMRunVoiceData]
     audio_dir: str
+
+
+class TextProcessorEntry(BaseModel):
+    """One preprocessor/processor entry in a text processor config.
+
+    config_yaml, when present and non-empty, is authoritative over config: it
+    round-trips comments for entries the structured form editor didn't touch.
+    The form editor clears config_yaml after editing an entry.
+    """
+
+    id: Optional[str] = None
+    kind: Literal["preprocessor", "processor"]
+    name: str
+    known: bool = True
+    config: Optional[Dict[str, Any]] = None
+    config_yaml: Optional[str] = None
+
+
+class TextProcessorConfigUpdate(BaseModel):
+    """Request to write a project's text processor config."""
+
+    entries: List[TextProcessorEntry]
+    base_file_hash: str
+
+
+class TextProcessorValidateRequest(BaseModel):
+    """Request to validate text processor config entries."""
+
+    entries: List[TextProcessorEntry]
+
+
+class TextProcessorResetRequest(BaseModel):
+    """Request to re-seed a project's text processor config."""
+
+    source: Literal["shipped_default", "user_default"]
+
+
+class TextProcessorGlobalDefaultUpdate(BaseModel):
+    """Request to save the user's global default text processor config."""
+
+    entries: List[TextProcessorEntry]
+    based_on_default_sha256: Optional[str] = None
+    base_file_hash: Optional[str] = None
+
+
+class TextProcessorPreviewRequest(BaseModel):
+    """Request to preview a pipeline over a project's screenplay.
+
+    entries, when provided, previews an unsaved draft; when omitted, the
+    project's configs are resolved exactly as audio generation would.
+    """
+
+    entries: Optional[List[TextProcessorEntry]] = None
+    include_preprocessor_snapshots: bool = False
+    max_changed_chunks: Optional[int] = Field(None, ge=1, le=500)
+
+
+class TextProcessorPreviewDiffRequest(BaseModel):
+    """Request to diff a draft pipeline against a baseline over a screenplay.
+
+    baseline_entries is typically the editor's snapshot of what's on disk;
+    when omitted, the baseline is resolved from disk exactly as audio
+    generation would resolve it.
+    """
+
+    draft_entries: List[TextProcessorEntry]
+    baseline_entries: Optional[List[TextProcessorEntry]] = None
+    max_changed_chunks: int = Field(50, ge=1, le=200)
 
 
 # Rebuild models to resolve forward references
