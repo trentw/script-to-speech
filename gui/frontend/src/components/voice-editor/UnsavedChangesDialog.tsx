@@ -9,6 +9,8 @@ import {
 
 interface UnsavedChangesDialogProps {
   open: boolean;
+  /** Defaults to the voice-editor copy this dialog was born with */
+  description?: string;
   onSaveAndContinue: () => void;
   onDiscard: () => void;
   onCancel: () => void;
@@ -16,6 +18,7 @@ interface UnsavedChangesDialogProps {
 
 export function UnsavedChangesDialog({
   open,
+  description = 'You have unsaved changes to this voice. What would you like to do?',
   onSaveAndContinue,
   onDiscard,
   onCancel,
@@ -24,9 +27,7 @@ export function UnsavedChangesDialog({
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent>
         <DialogTitle>Unsaved Changes</DialogTitle>
-        <DialogDescription>
-          You have unsaved changes to this voice. What would you like to do?
-        </DialogDescription>
+        <DialogDescription>{description}</DialogDescription>
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onCancel}>
             Cancel
