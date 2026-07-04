@@ -30,12 +30,43 @@ Any number of text processors can be chained together in the processing pipeline
    uv run sts-generate-audio --text-processor-configs custom1.yaml custom2.yaml
    ```
 
-2. **Matching Dialogue Chunk Config**: If exists, combines with default config
-   - File: `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml`
+2. **Standalone Screenplay Config**: Fully replaces the default config
+   - File: `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` containing `sts_metadata.mode: standalone`
+   - Load order: `[chunk_config]` (the default config is not loaded)
+   - This file is generated automatically when a screenplay is parsed -- see [Generated Screenplay Configs](#generated-screenplay-configs)
+
+3. **Legacy Additive Screenplay Config**: If exists, combines with default config
+   - File: `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` *without* an `sts_metadata` block
    - Load order: `[DEFAULT_CONFIG, chunk_config]`
 
-3. **Default Config Only**: No other configs found. Should be sufficient for most use cases
+4. **Default Config Only**: No other configs found
    - File: `src/script_to_speech/text_processors/configs/default_text_processor_config.yaml`
+
+## Generated Screenplay Configs
+
+When a screenplay is parsed (via `sts-parse-screenplay` or the desktop app), a standalone text processor config is generated at `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml`. It is seeded from your [user default config](#user-default-config) if one exists, otherwise from the shipped default config. An existing config file is never overwritten.
+
+The generated file begins with an `sts_metadata` block:
+
+```yaml
+sts_metadata:
+  mode: standalone                  # This config fully replaces the shipped default
+  seeded_from: shipped_default      # "shipped_default" or "user_default"
+  seeded_by_version: 2.1.0          # Script to Speech version at generation time
+  default_config_sha256: ab34...    # Hash of the shipped default pipeline at seed time
+```
+
+- `mode: standalone` tells Script to Speech to use this file as the complete pipeline instead of chaining it after the shipped default. Removing the `sts_metadata` block reverts the file to the legacy additive behavior.
+- The remaining fields record provenance so Script to Speech can detect when a config was seeded from an older version of the shipped defaults (e.g. after upgrading). Leave them as is.
+- Everything below `sts_metadata` is a normal text processor config -- edit, add, remove, and reorder entries freely.
+
+## User Default Config
+
+To customize the pipeline used to seed *future* screenplays, create a user default config at:
+
+`[workspace]/text_processors/configs/user_default_text_processor_config.yaml`
+
+`[workspace]` is the directory you run the CLI from when using the repo directly (the project root), or the app data directory for the desktop app (e.g. `~/Library/Application Support/Script to Speech` on macOS). When present, this file is used instead of the shipped default when seeding new screenplay configs. It has no effect on screenplays that already have a config file.
 
 ## Configuration Syntax
 
@@ -58,7 +89,10 @@ processors:
           to: "Interior"
           fields:
             - text
+          notes: Expand the scene-heading abbreviation so it is spoken naturally.
 ```
+
+Rule items in `substitutions`, `replacements`, and `transformations` accept an optional `notes` key: a free-text reminder of why the rule exists. Notes are ignored during processing, but the GUI editor displays them above the rule (and offers the field under each rule's Advanced section). Prefer `notes` over YAML comments for per-rule documentation — comments survive most round-trips of the GUI editor, but are dropped from a rule when it is edited in the form, while `notes` always survive.
 
 ### Multiple Instances of Preprocessor / Processor in Chained Configs
 Processors support two modes when multiple instances of the same configuration are present. Check text processor documentation for which mode a specific config operates under:
@@ -239,14 +273,17 @@ processors:
 ## Custom Text Processor Configuration
 There are a number of default preprocessors / processors that are applied by default and can be seen in the [default_text_processor_config.yaml](../src/script_to_speech/text_processors/configs/default_text_processor_config.yaml)
 
-### Adding to the default_text_processor_config.yaml
-Additional preprocessors / processors can be run in addition to the default by creating a text_processor_config file with the filename of `[screenplay_name]_text_processor_config.yaml` and placing it in the same directory 
+### Editing the generated screenplay config (recommended)
+Parsing a screenplay generates a standalone config at `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` containing the full pipeline (see [Generated Screenplay Configs](#generated-screenplay-configs)). Edit it directly: add, remove, reorder, or change any preprocessor / processor entry.
+
+### Adding to the default_text_processor_config.yaml (legacy additive)
+A `[screenplay_name]_text_processor_config.yaml` file *without* an `sts_metadata` block runs in addition to the default config: the default config is loaded first and the custom config is chained after it. This is how per-screenplay configs behaved before they were auto-generated, and existing configs continue to work this way.
 
 ### Replacing the default_text_processor_config.yaml
 When `uv run sts-generate-audio` is run with the `--text-processor-configs` argument, only the supplied config(s) will be used
 
 ### Example Custom Config
-If the following config was placed at `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` these preprocessors / processors would be run in addition to the defaults.
+If the following config was placed at `input/[screenplay_name]/[screenplay_name]_text_processor_config.yaml` (with no `sts_metadata` block) these preprocessors / processors would be run in addition to the defaults.
 
 The following call would use this custom config instead of the default (assuming the custom config is named `my_custom_config.yaml`)
 ```bash
@@ -370,6 +407,12 @@ class MyCustomPreProcessor(TextPreProcessor):
         # Validate self.config for required fields, correct types, etc.
         return True
 ```
+
+### Registering with the desktop app (optional)
+
+The desktop app's Text Processing editor enumerates processors from `src/script_to_speech/text_processors/registry.py` -- add your processor's name to `AVAILABLE_PREPROCESSORS` / `AVAILABLE_PROCESSORS` for it to appear in the "Add" picker (a test verifies these lists match the modules on disk).
+
+To get a generated settings form in the editor, also implement the `get_config_schema()` classmethod, returning a dict describing your config fields (see any shipped processor for the format: `label`, `description`, and `fields` with types like `string`, `integer`, `enum`, `list`, `dict_of_string_lists`, plus UX hints like `advanced` or `format: regex`). Two optional extras improve the editor experience: a top-level `help` string (multi-paragraph usage/setup notes, shown behind the card's help button) and per-field `description` strings (shown behind each field's "?" tooltip). Without a schema (the base classes return `None`), config entries for your processor are edited as raw YAML in the app -- everything still works.
 
 ## Example Recipes
 

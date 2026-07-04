@@ -141,6 +141,7 @@ This creates:
 - `input/your_script/your_script.pdf` (copy of original)
 - `input/your_script/your_script.json` (parsed dialogue chunks)
 - `input/your_script/your_script_optional_config.yaml` (configuration file to set values like ID3 tags for .mp3 file)
+- `input/your_script/your_script_text_processor_config.yaml` (text processing pipeline for this screenplay, seeded from defaults)
 
 ### Step 4: Generate TTS Provider Configuration
 
@@ -431,9 +432,7 @@ For sensitive screenplays, you can skip character notes generation and manually 
 
 Script to Speech allows you to customize how text is processed before being sent to TTS providers. This is useful for expanding abbreviations, handling special formatting, or adjusting capitalization.
 
-Custom text processor configurations will chain with the default configuration. By default, the program looks for a file named after your dialogue chunk file with `_text_processor_config.yaml` appended.
-
-To create a custom config, create `input/your_script/your_script_text_processor_config.yaml`:
+Parsing a screenplay generates `input/your_script/your_script_text_processor_config.yaml`, a standalone config containing the full processing pipeline for that screenplay (seeded from the defaults). Edit it directly to customize processing -- for example, by adding substitutions:
 
 ```yaml
 processors:
@@ -449,6 +448,8 @@ processors:
           fields:
             - text
 ```
+
+A config file without an `sts_metadata` block (the previous convention) instead chains with the default configuration, and continues to work as before.
 
 For more information about text processor transformations and creating your own, see the [Text Processing Guide](docs/TEXT_PROCESSORS.md).
 
@@ -540,7 +541,7 @@ input/
     ├── [screenplay_name].txt         # Extracted text (if parser run with --text-only)
     ├── [screenplay_name].json        # Parsed dialogue chunks
     ├── [screenplay_name]_optional_config.yaml          # ID3 tag configuration
-    ├── [screenplay_name]_text_processor_config.yaml    # (optional) Custom text processors
+    ├── [screenplay_name]_text_processor_config.yaml    # Text processing pipeline (generated at parse, editable)
     ├── [screenplay_name]_voice_config.yaml             # TTS provider config
     ├── [screenplay_name]_voice_config_populated.yaml   # TTS provider config populated with multi-provider options
     ├── [screenplay_name]_character_notes_prompt.txt      # (optional) LLM character notes prompt

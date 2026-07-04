@@ -77,14 +77,27 @@ The **Test Voices** tab is a playground for experimenting with different TTS pro
 - **Parameters**: Adjust specific parameters (if supported by the provider).
 - **History**: Play back previously generated test clips.
 
-### 7. Audio Generation & Exporting (Coming Soon)
+### 7. Text Processing
 
-*Note: Full audio generation and exporting features are currently in development. The "Text Processing" and "Generate Audio" sections in the sidebar are currently placeholders.*
+The **Text Processing** screen configures how your screenplay's text is transformed before audio generation (e.g. expanding "V.O." to "VOICE OVER", removing page numbers, adjusting capitalization).
 
-Once implemented, you will be able to:
-- Configure text processing rules.
-- Generate audio for the entire script.
-- Export the final audiobook as an MP3 file.
+When a screenplay is parsed, a text processor config file is created for the project (seeded from sensible defaults). This screen edits that file directly — the same file the CLI uses — so changes made here and via the command line stay in sync.
+
+- **Structure / Text sections**: The pipeline in two ordered lists — steps that reshape the screenplay's structure (merging, splitting, removing chunks) and steps that transform each line's spoken text. Steps run top to bottom (arrows between the cards show the flow); use a card's arrow buttons to reorder it, the trash button to remove it, and **Add** to insert new steps. The Structure section starts collapsed since it rarely needs changes — click the chevron to expand it.
+- **Step configuration**: Each step shows a form for its settings, with a **?** next to each field explaining what it does and a help button on the card describing the step and any setup notes. Less common options sit behind an **Advanced options** collapse. Rules support an optional **Notes** field (under Advanced) — a note is kept in the config file and displayed above the rule.
+- **Saving changes**: An edited step shows an amber *modified* chip with inline buttons to **save**, **discard**, or **test** just that change; removed steps stay visible as ghost rows until the removal is saved or the step restored, and reordering a section shows an *order changed* chip with its own save/revert. The same works one level down: inside a step, an edited rule (a single substitution or replacement) gets an amber edge and its own test/save/discard buttons, and deleted rules stay visible as ghost lines until the removal is saved or the rule restored. The **Save all** / **Discard all** buttons at the top show how many changes are pending (hover for the list). Navigating away with unsaved changes prompts you to save or discard first.
+- **Testing changes**: The flask button on a modified step or rule — and **Preview unsaved changes** on the Preview tab — runs your screenplay through both the saved config and your edited one, and shows only what the edits *add* (e.g. "6 chunks change", with diffs). The full-pipeline preview (everything the config does, with per-step attribution) remains available below it.
+- **Defaults menu**:
+    - **Save as my default**: Use the current pipeline as the starting configuration for future screenplays you parse.
+    - **Load my default into this project**: Replace this project's pipeline with your saved default.
+    - **Reset**: Re-seed this project (or your saved default) from the built-in defaults.
+- **Update notices**: If a new version of Script to Speech changes the built-in defaults, a banner notes that your config was seeded from an older version and offers to re-seed it. Projects using the older add-on style config are offered a one-click conversion to the editable format (processing behavior is unchanged).
+
+For the underlying configuration format and CLI usage, see the [Text Processing Guide](TEXT_PROCESSORS.md).
+
+### 8. Audio Generation & Exporting
+
+Generate audio for the entire script from the **Generate Audio** tab, then review problem clips and export the final audiobook as an MP3 file.
 
 ## Manual Mode
 
