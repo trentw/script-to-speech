@@ -189,13 +189,14 @@ function ProjectOverview() {
           status="ready"
         />
 
-        {/* Text Processing */}
+        {/* Text Processing (needs the parsed screenplay JSON, like the
+            sidebar nav gating) */}
         <ProjectToolCard
           title="Text Processing"
           description="Configure dialogue processing and substitutions"
           icon={Settings2}
           href="/project/processing"
-          status="disabled"
+          status={status?.hasJson ? 'ready' : 'disabled'}
         />
 
         {/* Audio Generation */}

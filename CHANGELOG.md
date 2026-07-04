@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] New in-app Text Processing editor: configure a screenplay's preprocessor/processor pipeline with per-processor forms, live preview and a diff of unsaved changes, inline per-change saving, add/remove/reorder, a raw-YAML fallback, and save/load of a reusable default configuration.
 - [CLI] Newly parsed screenplays now get a standalone text processor config, seeded from your default (or the built-in default), making each screenplay's processing pipeline explicit and fully editable. Existing and legacy configs keep their previous additive behavior.
 
 ## [2.1.0] - 2026-06-18
