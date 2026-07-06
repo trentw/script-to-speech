@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Find Chunks on the Review Audio page: search every screenplay chunk by text, speaker, type, or status and re-record any of them (play existing audio, regenerate, or edit the text sent to the provider), with badges showing how many chunks share a cached clip.
 - [Desktop] Committed review variants are now marked user-modified in the audio cache (`~~edit` / `~~retake` filename flags with the generation text stamped into ID3 tags). User-modified clips count as normal cache hits and are scanned for silence like any other clip, but are only reported — never auto-regenerated — when silent, so manual work is never silently overwritten. Existing files are unaffected (fix-forward).
 - [Desktop] New chunk inventory API mapping every screenplay chunk to its cached audio (status, user-modified flag, shared-audio occurrences), recomputed on demand from on-disk state.
 - [Desktop] New in-app Text Processing editor: configure a screenplay's preprocessor/processor pipeline with per-processor forms, live preview and a diff of unsaved changes, inline per-change saving, add/remove/reorder, a raw-YAML fallback, and save/load of a reusable default configuration.
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - [Docs] Documentation for the Text Processing editor and standalone per-screenplay text processor configs.
 
 ### Changed
+- [Desktop] Review Audio play buttons (cached clips and generated variants) now use the app-wide audio player: one clip plays at a time, the button toggles play/pause with a loading state, and playback appears in the mini/universal player — previously each press spawned a separate, unpausable clip that could overlap others.
 - [CLI] The audio cache filename convention now allows an optional trailing `~~retake` / `~~edit` sentinel; `generate_standalone_speech` writes it (and stamps ID3 generation provenance) when given a generation kind. Default output — including the `sts-generate-standalone-speech` CLI — is byte-identical to before.
 
 ## [2.1.0] - 2026-06-18

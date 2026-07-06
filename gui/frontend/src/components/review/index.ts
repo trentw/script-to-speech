@@ -1,3 +1,4 @@
+export { ChunkSearchSection } from './ChunkSearchSection';
 export { DialogueItem } from './DialogueItem';
 export { EditInputItem } from './EditInputItem';
 export { ProblemClipsSection } from './ProblemClipsSection';

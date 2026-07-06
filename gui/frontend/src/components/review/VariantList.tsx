@@ -1,4 +1,12 @@
-import { AlertCircle, Check, Play, Trash2, X } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Loader2,
+  Pause,
+  Play,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useCallback, useState } from 'react';
 
 import { appButtonVariants } from '@/components/ui/button-variants';
@@ -7,9 +15,55 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useSharedAudioPlayback } from '@/hooks/audio/useSharedAudioPlayback';
 import { useCommitVariant } from '@/hooks/mutations/useCommitVariant';
 import { useDeleteVariant } from '@/hooks/mutations/useDeleteVariant';
 import type { VariantInfo } from '@/types/review';
+
+/**
+ * Compact play/pause toggle for one variant, backed by the app-wide audio
+ * service (playing a different clip replaces the current one).
+ */
+function VariantPlayButton({
+  variant,
+  label,
+}: {
+  variant: VariantInfo;
+  label: string;
+}) {
+  const { isPlaying, isLoading, toggle } = useSharedAudioPlayback(
+    variant.audioUrl,
+    { primaryText: label, secondaryText: 'Generated variant' }
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          className={appButtonVariants({
+            variant: 'list-action',
+            size: 'icon-sm',
+          })}
+          onClick={toggle}
+          disabled={isLoading}
+          aria-label={isPlaying ? `Pause ${label}` : `Play ${label}`}
+          aria-pressed={isPlaying}
+        >
+          {isLoading ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : isPlaying ? (
+            <Pause className="h-3 w-3" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{isPlaying ? 'Pause variant' : 'Play variant'}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 interface VariantListProps {
   variants: VariantInfo[];
@@ -32,11 +86,6 @@ export function VariantList({
   const commitVariant = useCommitVariant();
   const deleteVariant = useDeleteVariant();
   const [error, setError] = useState<string | null>(null);
-
-  const handlePlay = useCallback((audioUrl: string) => {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(console.error);
-  }, []);
 
   const handleCommit = useCallback(
     async (variant: VariantInfo) => {
@@ -112,22 +161,10 @@ export function VariantList({
               )}
             </span>
             <div className="flex items-center gap-1">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    className={appButtonVariants({
-                      variant: 'list-action',
-                      size: 'icon-sm',
-                    })}
-                    onClick={() => handlePlay(variant.audioUrl)}
-                  >
-                    <Play className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Play variant</p>
-                </TooltipContent>
-              </Tooltip>
+              <VariantPlayButton
+                variant={variant}
+                label={`Variant ${index + 1}`}
+              />
               {!variant.committed && (
                 <>
                   <Tooltip>

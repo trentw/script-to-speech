@@ -5,9 +5,11 @@ import {
   Circle,
   Edit2,
   Loader2,
+  Pause,
   Play,
   Plus,
   RefreshCw,
+  Users,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -28,10 +30,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useSharedAudioPlayback } from '@/hooks/audio/useSharedAudioPlayback';
 import { useCreateTask } from '@/hooks/mutations/useTasks';
 import { useTaskStatus } from '@/hooks/queries/useTaskStatus';
 import { cn } from '@/lib/utils';
 import { apiService } from '@/services/api';
+import type { GenerationKind } from '@/types/chunks';
 import type {
   EditInputInstance,
   ProblemClipInfo,
@@ -39,6 +43,7 @@ import type {
 } from '@/types/review';
 
 import { EditInputItem } from './EditInputItem';
+import { GENERATION_KIND_BADGES } from './generationKind';
 import { VariantList } from './VariantList';
 
 interface DialogueItemProps {
@@ -46,6 +51,18 @@ interface DialogueItemProps {
   projectName: string;
   cacheFolder: string;
   showDbfs?: boolean;
+  /** Always show the play button for existing cached audio (e.g., search results) */
+  showPlayExisting?: boolean;
+  /**
+   * Number of chunks sharing this clip's audio file (including this one).
+   * Shows a "shared audio" badge when greater than 1.
+   */
+  occurrenceCount?: number;
+  /**
+   * User-modified flag for the cached audio: "edit" (modified text) or
+   * "retake" (regenerated original text). Shows a badge when set.
+   */
+  userModified?: GenerationKind | null;
 }
 
 /**
@@ -57,6 +74,9 @@ export function DialogueItem({
   projectName,
   cacheFolder: _cacheFolder,
   showDbfs = false,
+  showPlayExisting = false,
+  occurrenceCount,
+  userModified = null,
 }: DialogueItemProps) {
   // Multiple edit inputs - each manages its own generation
   const [editInputs, setEditInputs] = useState<EditInputInstance[]>([]);
@@ -93,11 +113,15 @@ export function DialogueItem({
     clip.cacheFilename
   );
 
-  // Play existing audio
-  const handlePlayExisting = useCallback(() => {
-    const audio = new Audio(existingAudioUrl);
-    audio.play().catch(console.error);
-  }, [existingAudioUrl]);
+  // Play/pause existing cached audio via the app-wide audio service
+  const {
+    isPlaying: isPlayingExisting,
+    isLoading: isLoadingExisting,
+    toggle: toggleExisting,
+  } = useSharedAudioPlayback(existingAudioUrl, {
+    primaryText: clip.text,
+    secondaryText: `${clip.speaker} • ${clip.provider}`,
+  });
 
   // Add a new edit input instance
   const addEditInput = useCallback(() => {
@@ -146,6 +170,8 @@ export function DialogueItem({
         config: clip.speakerConfig,
         text: clip.text,
         variants: variantCount,
+        // Regenerate always uses the original clip text, so this is a "retake"
+        generation_kind: 'retake',
       });
 
       setCurrentTaskId(response.task_id);
@@ -281,12 +307,41 @@ export function DialogueItem({
               {clip.dbfsLevel.toFixed(1)} dBFS
             </Badge>
           )}
+          {(occurrenceCount ?? 1) > 1 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="mt-1 mr-1 text-xs">
+                  <Users className="mr-1 h-3 w-3" />
+                  audio shared by {occurrenceCount} chunks
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {occurrenceCount} chunks use this same audio file;
+                  re-recording it changes all of them.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {userModified && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge variant="outline" className="mt-1 text-xs">
+                  {GENERATION_KIND_BADGES[userModified].label}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{GENERATION_KIND_BADGES[userModified].description}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-1">
-          {/* Play cached audio (for silent clips or after variant is committed) */}
-          {(showDbfs || hasCommittedVariant) && (
+          {/* Play cached audio (for silent clips, search results with cached
+              audio, or after a variant is committed) */}
+          {(showDbfs || showPlayExisting || hasCommittedVariant) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -294,16 +349,27 @@ export function DialogueItem({
                     variant: 'list-action',
                     size: 'icon-sm',
                   })}
-                  onClick={handlePlayExisting}
+                  onClick={toggleExisting}
+                  disabled={isLoadingExisting}
+                  aria-label={isPlayingExisting ? 'Pause audio' : 'Play audio'}
+                  aria-pressed={isPlayingExisting}
                 >
-                  <Play className="h-3 w-3" />
+                  {isLoadingExisting ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : isPlayingExisting ? (
+                    <Pause className="h-3 w-3" />
+                  ) : (
+                    <Play className="h-3 w-3" />
+                  )}
                 </button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>
-                  {hasCommittedVariant
-                    ? 'Play committed audio'
-                    : 'Play existing audio'}
+                  {isPlayingExisting
+                    ? 'Pause audio'
+                    : hasCommittedVariant
+                      ? 'Play committed audio'
+                      : 'Play existing audio'}
                 </p>
               </TooltipContent>
             </Tooltip>

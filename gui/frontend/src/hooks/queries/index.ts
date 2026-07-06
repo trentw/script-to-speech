@@ -4,6 +4,7 @@ export * from './useAudiobookStatus';
 export * from './useBackendStatus';
 export * from './useCacheMisses';
 export * from './useCastingInstructions';
+export * from './useChunkInventory';
 export * from './useDiscoverProjects';
 export * from './useId3TagConfig';
 export * from './useParseYaml';

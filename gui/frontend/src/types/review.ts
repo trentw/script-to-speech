@@ -5,6 +5,8 @@
  * and are used for managing problem clips (silent clips and cache misses).
  */
 
+import type { GenerationKind } from './chunks';
+
 /**
  * Information about a problem audio clip (silent or cache miss).
  * Corresponds to ProblemClipInfo on the backend.
@@ -29,6 +31,11 @@ export interface ProblemClipInfo {
    * Only available for voices defined in the voice library; null for custom voices.
    */
   stsId?: string | null;
+  /**
+   * Set when the clip's cached audio was hand-committed from the review flow:
+   * "edit" (generated from modified text) or "retake" (hand-picked re-roll).
+   */
+  userModified?: GenerationKind | null;
 }
 
 /**

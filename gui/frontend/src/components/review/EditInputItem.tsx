@@ -22,6 +22,7 @@ import type {
   VariantInfo,
 } from '@/types/review';
 
+import { getGenerationKind } from './generationKind';
 import { VariantList } from './VariantList';
 
 // Timeout for generation - spinner will stop after this even if variants haven't arrived
@@ -82,6 +83,9 @@ export function EditInputItem({
         config: clip.speakerConfig,
         text: input.text,
         variants: input.variantCount,
+        // Decided at generation time by strict text comparison: unchanged
+        // text is a "retake" even when generated from an edit input
+        generation_kind: getGenerationKind(input.text, clip.text),
       });
 
       onUpdate({ currentTaskId: response.task_id });
@@ -98,6 +102,7 @@ export function EditInputItem({
     createTask,
     clip.provider,
     clip.speakerConfig,
+    clip.text,
     input.text,
     input.variantCount,
     onUpdate,

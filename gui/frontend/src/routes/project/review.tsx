@@ -7,9 +7,11 @@ import {
 import { Search } from 'lucide-react';
 import { useEffect } from 'react';
 
+import { ChunkSearchSection } from '@/components/review/ChunkSearchSection';
 import { ProblemClipsSection } from '@/components/review/ProblemClipsSection';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCacheMisses } from '@/hooks/queries/useCacheMisses';
+import { useChunkInventory } from '@/hooks/queries/useChunkInventory';
 import { useProjectStatus } from '@/hooks/queries/useProjectStatus';
 import { useSilentClips } from '@/hooks/queries/useSilentClips';
 import { isVoiceCastingComplete } from '@/lib/project-status';
@@ -108,6 +110,16 @@ function ProjectAudioReview() {
     scanProgress: silentClipsScanProgress,
   } = useSilentClips(projectName, isFullyCast);
 
+  // Chunk inventory ("Find Chunks") - only auto-fetch when voice casting is
+  // complete (the inventory needs a full voice config to resolve filenames)
+  const {
+    data: chunkInventoryData,
+    isLoading: chunkInventoryLoading,
+    isRefetching: chunkInventoryRefetching,
+    error: chunkInventoryError,
+    refresh: refreshChunkInventory,
+  } = useChunkInventory(projectName, isFullyCast);
+
   // Type guard and redirect if not in project mode (after hooks)
   if (projectState.mode !== 'project') {
     return <Navigate to="/" replace />;
@@ -115,12 +127,15 @@ function ProjectAudioReview() {
 
   const { project } = projectState;
 
-  // Cache folder from either response (they should be the same)
+  // Cache folder from any response (they should be the same)
   const cacheFolder =
-    cacheMissesData?.cacheFolder || silentClipsData?.cacheFolder || '';
+    cacheMissesData?.cacheFolder ||
+    silentClipsData?.cacheFolder ||
+    chunkInventoryData?.cacheFolder ||
+    '';
 
   // Error states
-  const hasError = cacheMissesError || silentClipsError;
+  const hasError = cacheMissesError || silentClipsError || chunkInventoryError;
 
   return (
     <div className="container mx-auto max-w-4xl px-6 py-8">
@@ -142,13 +157,32 @@ function ProjectAudioReview() {
           <AlertDescription>
             {cacheMissesError?.message ||
               silentClipsError?.message ||
+              chunkInventoryError?.message ||
               'An unknown error occurred'}
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Both sections always shown */}
+      {/* All sections always shown */}
       <div className="space-y-8">
+        {/* Find Chunks Section - search all chunks and re-record any of them */}
+        <div id="review-find-chunks">
+          <ChunkSearchSection
+            inventory={chunkInventoryData}
+            projectName={project.screenplayName}
+            cacheFolder={cacheFolder}
+            isLoading={chunkInventoryLoading || chunkInventoryRefetching}
+            onRefresh={refreshChunkInventory}
+            disabled={!isFullyCast}
+            disabledReason="Complete voice casting before loading chunks"
+            warningMessage={
+              !isFullyCast
+                ? 'Complete voice casting before searching chunks.'
+                : undefined
+            }
+          />
+        </div>
+
         {/* Silent Clips Section - only scans on user request or after generation */}
         <div id="review-silent-clips">
           <ProblemClipsSection

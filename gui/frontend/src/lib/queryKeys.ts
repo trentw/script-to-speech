@@ -53,6 +53,8 @@ export const queryKeys = {
     ['review', 'silent-clips', projectName] as const,
   silentClipsScan: (projectName: string) =>
     ['review', 'silent-clips-scan', projectName] as const,
+  chunkInventory: (projectName: string) =>
+    ['review', 'chunk-inventory', projectName] as const,
 
   // Text processors
   textProcessorRegistry: ['text-processors', 'registry'] as const,

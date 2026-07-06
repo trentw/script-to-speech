@@ -808,6 +808,15 @@ class ApiService {
     return `${API_BASE_URL}/review/cache-audio/${encodeURIComponent(projectName)}/${encodeURIComponent(filename)}`;
   }
 
+  async getChunkInventory(
+    projectName: string,
+    refresh: boolean = false
+  ): Promise<ApiResponse<import('../types/chunks').ChunkInventoryResponse>> {
+    return this.request<import('../types/chunks').ChunkInventoryResponse>(
+      `/chunks/${encodeURIComponent(projectName)}/inventory${refresh ? '?refresh=true' : ''}`
+    );
+  }
+
   // Voice Editor endpoints
   async listLLMRuns(): Promise<
     ApiResponse<

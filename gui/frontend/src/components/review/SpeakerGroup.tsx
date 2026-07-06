@@ -48,6 +48,7 @@ export function SpeakerGroupComponent({
             projectName={projectName}
             cacheFolder={cacheFolder}
             showDbfs={showDbfs}
+            userModified={clip.userModified}
           />
         ))}
       </div>

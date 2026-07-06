@@ -1,5 +1,7 @@
 // API Types
 
+import type { GenerationKind } from './chunks';
+
 export const TaskStatus = {
   PENDING: 'pending',
   PROCESSING: 'processing',
@@ -89,6 +91,12 @@ export interface GenerationRequest {
   sts_id?: string;
   variants?: number;
   output_filename?: string;
+  /**
+   * Review-flow generation kind: "retake" when the text being generated
+   * exactly matches the chunk's processed text, "edit" when the text was
+   * modified. Must be one of the backend-validated GENERATION_KINDS.
+   */
+  generation_kind?: GenerationKind;
 }
 
 export interface TaskResponse {
@@ -283,6 +291,10 @@ export type {
   SpeakerGroup,
   VariantInfo,
 } from './review';
+
+// Re-export chunk inventory / generation-kind types
+export type { GenerationKind } from './chunks';
+export { GENERATION_KINDS } from './chunks';
 
 // Header/Footer Detection Types
 
