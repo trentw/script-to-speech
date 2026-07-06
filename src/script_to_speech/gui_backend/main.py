@@ -36,6 +36,7 @@ from script_to_speech._version import __version__ as _APP_VERSION
 from script_to_speech.gui_backend.config import settings
 from script_to_speech.gui_backend.routers import (
     audiobook_generation,
+    chunks,
     files,
     generation,
     optional_config,
@@ -146,6 +147,7 @@ app.include_router(
     audiobook_generation.router, prefix="/api", tags=["audiobook-generation"]
 )
 app.include_router(review.router, prefix="/api", tags=["review"])
+app.include_router(chunks.router, prefix="/api", tags=["chunks"])
 app.include_router(optional_config.router, prefix="/api", tags=["optional-config"])
 app.include_router(text_processors.router, prefix="/api", tags=["text-processors"])
 app.include_router(settings_router.router, tags=["settings"])

@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from script_to_speech.audio_generation.cache_filenames import variant_kind_suffix
 from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 from script_to_speech.utils.generate_standalone_speech import (
     _build_tts_provider_config_data,
@@ -314,6 +315,7 @@ class GenerationService:
                         output_dir=str(settings.AUDIO_OUTPUT_DIR),
                         split_audio=False,  # Keep simple for GUI
                         output_filename=request.output_filename,
+                        generation_kind=request.generation_kind,
                     )
 
                 await loop.run_in_executor(None, generate_audio)
@@ -356,14 +358,19 @@ class GenerationService:
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             text_preview = clean_filename(request.text[:30])
             variant_suffix = f"_variant{variant}" if request.variants > 1 else ""
+            kind_suffix = (
+                variant_kind_suffix(request.generation_kind)
+                if request.generation_kind
+                else ""
+            )
 
             provider_id = tts_manager.get_provider_identifier("default")
             voice_id = tts_manager.get_speaker_identifier("default")
 
             if request.output_filename:
-                filename = f"{request.output_filename}{variant_suffix}.mp3"
+                filename = f"{request.output_filename}{variant_suffix}{kind_suffix}.mp3"
             else:
-                filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}.mp3"
+                filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}{kind_suffix}.mp3"
 
             file_path = settings.AUDIO_OUTPUT_DIR / filename
 

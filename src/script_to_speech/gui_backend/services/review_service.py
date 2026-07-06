@@ -11,8 +11,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-import yaml
-
+from script_to_speech.audio_generation.cache_filenames import (
+    get_cache_flag,
+    parse_variant_kind,
+    sibling_cache_filenames,
+    strip_cache_flag,
+    with_cache_flag,
+)
 from script_to_speech.audio_generation.constants import DEFAULT_SILENCE_THRESHOLD
 from script_to_speech.audio_generation.models import AudioClipInfo
 from script_to_speech.audio_generation.processing import (
@@ -20,9 +25,7 @@ from script_to_speech.audio_generation.processing import (
     check_for_silence,
     plan_audio_generation,
 )
-from script_to_speech.audio_generation.utils import load_json_chunks
 from script_to_speech.text_processors.processor_manager import TextProcessorManager
-from script_to_speech.text_processors.utils import get_text_processor_configs
 from script_to_speech.tts_providers.tts_provider_manager import TTSProviderManager
 from script_to_speech.utils.audio_utils import configure_ffmpeg
 
@@ -33,6 +36,7 @@ from ..models import (
     SilenceScanProgress,
     SilentClipsResponse,
 )
+from .project_loader import load_project_analysis_context
 
 logger = logging.getLogger(__name__)
 
@@ -60,43 +64,7 @@ class ReviewService:
         Raises:
             FileNotFoundError: If required files don't exist
         """
-        # Build paths
-        input_path = self.workspace_dir / "input" / project_name
-        output_path = self.workspace_dir / "output" / project_name
-        cache_folder = output_path / "cache"
-
-        json_path = input_path / f"{project_name}.json"
-        voice_config_path = input_path / f"{project_name}_voice_config.yaml"
-
-        # Validate paths exist
-        if not json_path.exists():
-            raise FileNotFoundError(f"Screenplay JSON not found: {json_path}")
-        if not voice_config_path.exists():
-            raise FileNotFoundError(f"Voice config not found: {voice_config_path}")
-
-        # Create cache folder if it doesn't exist
-        cache_folder.mkdir(parents=True, exist_ok=True)
-
-        # Load dialogues
-        dialogues = load_json_chunks(str(json_path))
-        logger.info(f"Loaded {len(dialogues)} dialogue chunks")
-
-        # Load voice config
-        with open(voice_config_path, "r") as f:
-            tts_config_data = yaml.safe_load(f)
-
-        # Initialize TTS provider manager
-        tts_manager = TTSProviderManager(
-            config_data=tts_config_data,
-            overall_provider=None,
-            dummy_tts_provider_override=False,
-        )
-
-        # Load text processor configs (project-specific or default)
-        text_processor_configs = get_text_processor_configs(json_path, None)
-        processor = TextProcessorManager(text_processor_configs)
-
-        return dialogues, tts_manager, processor, cache_folder
+        return load_project_analysis_context(project_name)
 
     def get_cache_misses(self, project_name: str) -> CacheMissesResponse:
         """Get cache misses for a project (fast operation).
@@ -322,9 +290,17 @@ class ReviewService:
     ) -> Tuple[bool, str, str]:
         """Copy a variant from standalone_speech to the project cache.
 
+        The variant carries its provenance ("retake"/"edit") as a filename token
+        set at generation time; tagged variants land under the matching
+        user-modified cache flavor (e.g. ``...~~edit.mp3``). Untagged variants
+        (including all pre-convention files) commit to the plain name exactly
+        as before -- fix forward only. Superseded flavors of the same base
+        name are removed so at most one file exists per base.
+
         Args:
             source_path: Filename (or path) of the variant file in standalone_speech
-            target_cache_filename: Target filename in the cache folder
+            target_cache_filename: Target filename in the cache folder (any
+                flavor; flags are stripped to find the base name)
             project_name: Name of the project
 
         Returns:
@@ -339,14 +315,44 @@ class ReviewService:
         if not source.exists():
             return False, "", f"Source file not found: {filename}"
 
+        # Determine target flavor from the variant's generation-time token
+        kind = parse_variant_kind(filename)
+        try:
+            base_filename = strip_cache_flag(Path(target_cache_filename).name)
+        except ValueError:
+            return (
+                False,
+                "",
+                f"Invalid target cache filename: {target_cache_filename}",
+            )
+        target_filename = (
+            with_cache_flag(base_filename, kind) if kind else base_filename
+        )
+
         # Build target path
         cache_folder = self.workspace_dir / "output" / project_name / "cache"
         cache_folder.mkdir(parents=True, exist_ok=True)
-        target = cache_folder / target_cache_filename
+        target = cache_folder / target_filename
 
         try:
-            # Copy file (preserve metadata)
+            # Copy file (preserve metadata, including the ID3 provenance stamp)
             shutil.copy2(source, target)
+
+            # Remove superseded flavors of the same base name
+            for sibling in sibling_cache_filenames(base_filename):
+                if sibling == target_filename:
+                    continue
+                sibling_path = cache_folder / sibling
+                if sibling_path.exists():
+                    sibling_path.unlink()
+                    logger.info(f"Removed superseded cache file: {sibling}")
+
+            # The inventory is recomputed on demand; drop the stale snapshot
+            # Import here to avoid circular import
+            from .chunk_inventory_service import chunk_inventory_service
+
+            chunk_inventory_service.invalidate(project_name)
+
             logger.info(f"Committed variant: {source} -> {target}")
             return True, str(target), "Variant committed successfully"
         except Exception as e:
@@ -442,6 +448,7 @@ class ReviewService:
                     dbfs_level=clip_info.dbfs_level if include_dbfs else None,
                     speaker_config=speaker_config,
                     sts_id=sts_id,
+                    user_modified=get_cache_flag(cache_filename),
                 )
             )
         return result

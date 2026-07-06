@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from script_to_speech.audio_generation.cache_filenames import CacheFlag
 from script_to_speech.audio_generation.constants import DEFAULT_SILENCE_THRESHOLD
 
 
@@ -141,6 +142,13 @@ class GenerationRequest(BaseModel):
     sts_id: Optional[str] = None
     variants: int = Field(1, ge=1, le=10)
     output_filename: Optional[str] = None
+    # Review-flow provenance, decided by the caller at generate time:
+    # "retake" = re-roll of the unmodified processed text, "edit" =
+    # user-modified text. Validated against the CacheFlag registry (the single
+    # source of flag tokens). Encoded into the variant filename so commits
+    # carry it into the cache; None (default) generates untagged,
+    # byte-identical to before.
+    generation_kind: Optional[CacheFlag] = None
 
 
 class TaskResponse(BaseModel):
@@ -421,6 +429,9 @@ class ProblemClipInfo(CamelModel):
     # Human-readable voice library identifier (e.g., "sarah" instead of "9BWtsMINqrJLrRacOk9x")
     # Only available for voices defined in the voice library; None for custom voices
     sts_id: Optional[str] = None
+    # Cache filename flag ("edit"/"retake") when the clip's audio was
+    # user-committed from the review flow; None otherwise
+    user_modified: Optional[str] = None
 
 
 class CacheMissesResponse(CamelModel):
@@ -476,6 +487,60 @@ class CommitVariantResponse(CamelModel):
     success: bool
     target_path: str
     message: str
+
+
+# Chunk Inventory Models
+
+
+class ChunkSpeakerConfig(CamelModel):
+    """Per-speaker generation info, shared across chunk inventory entries.
+
+    Keyed by voice-config speaker key ("default" for unattributed chunks) so
+    the full config isn't repeated on every entry.
+    """
+
+    provider: str
+    voice_id: str
+    speaker_config: Dict[str, Any] = {}
+    sts_id: Optional[str] = None
+
+
+class ChunkInventoryEntry(CamelModel):
+    """One post-preprocessed chunk with its audio-cache state."""
+
+    idx: int  # Position in the post-preprocessed chunk list
+    chunk_type: str  # e.g., "dialogue", "action", "scene_heading"
+    speaker: Optional[str] = None  # Voice-config key; None -> "default"
+    speaker_display: str  # e.g., "JOHN" or "(default)"
+    original_text: str  # Pre-text-processor text
+    processed_text: str  # Post-text-processor text (what is spoken)
+    cache_filename: str  # Resolved on-disk name (expected plain name if missing)
+    status: Literal["cached", "missing", "expected_silence"]
+    # Cache filename flag ("edit"/"retake") when the cached audio was
+    # user-committed from the review flow; None otherwise
+    user_modified: Optional[str] = None
+    # Idxs of all chunks sharing this audio file (including this one) --
+    # identical text+speaker deduplicates to a single cached clip
+    occurrences: List[int] = []
+
+
+class ChunkInventoryResponse(CamelModel):
+    """Full chunk inventory for a project.
+
+    Recomputed on demand from the on-disk sources of truth (screenplay JSON,
+    voice config, text-processor config, cache folder); never incrementally
+    synced.
+    """
+
+    project_name: str
+    entries: List[ChunkInventoryEntry]
+    speaker_configs: Dict[str, ChunkSpeakerConfig]  # Keyed by speaker key
+    total_chunks: int = 0
+    cached_count: int = 0
+    missing_count: int = 0
+    user_modified_count: int = 0
+    cache_folder: str
+    generated_at: str  # ISO timestamp of when this inventory was computed
 
 
 class DeleteVariantRequest(BaseModel):

@@ -630,6 +630,14 @@ class AudiobookGenerationService:
             project_key = Path(task.request.input_json_path).stem
             self.complete_silence_scan(project_key, error=str(e))
 
+        finally:
+            # A run (even partial) may have written cache files; drop any stale
+            # chunk inventory snapshot so the next request recomputes from disk.
+            # Import here to avoid circular import
+            from .chunk_inventory_service import chunk_inventory_service
+
+            chunk_inventory_service.invalidate(Path(task.request.input_json_path).stem)
+
     def _run_generation(self, task: AudiobookGenerationTask) -> None:
         """Run the audiobook generation pipeline (blocking).
 

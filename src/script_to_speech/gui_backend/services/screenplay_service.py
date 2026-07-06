@@ -212,6 +212,12 @@ class ScreenplayService:
             task.message = "Screenplay parsing completed successfully"
             task.progress = 1.0
 
+            # Parsing rewrites the chunk JSON; drop any stale inventory snapshot
+            # Import here to avoid circular import
+            from .chunk_inventory_service import chunk_inventory_service
+
+            chunk_inventory_service.invalidate(result["screenplay_name"])
+
         except Exception as e:
             logger.error(
                 f"Error processing screenplay parsing task {task.task_id}: {str(e)}",
