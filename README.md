@@ -612,6 +612,21 @@ Generated audio is cached in `output/[screenplay_name]/cache/`. Cache files are 
 
 Changes in any of the above will mark just the relevant clips for regeneration upon the next run 
 
+Cache filenames follow the convention:
+
+```
+[original_hash]~~[processed_hash]~~[provider_id]~~[speaker_id].mp3
+```
+
+An optional fifth field marks clips whose audio was hand-committed from the
+desktop app's review flow: `~~edit` (generated from user-modified text) or
+`~~retake` (a hand-picked re-roll of the unmodified text). These files behave
+exactly like normal cache hits and are scanned for silence like any other
+clip, but a silent user-modified clip is only reported — never automatically
+regenerated — and the flags let tooling recognize manual work before
+overwriting it. Identical text + speaker combinations share a single cache
+file, so one clip can serve many lines (e.g., a repeated speaker name).
+
 ## Troubleshooting
 
 ### Common Issues

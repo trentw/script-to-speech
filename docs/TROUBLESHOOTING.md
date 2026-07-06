@@ -306,6 +306,12 @@ Reducing the amount of concurrent downloads can help reduce memory usage
    ```bash
    # Cache filename structure:
    # [original_hash]~~[processed_hash]~~[provider_id]~~[speaker_id].mp3
+   #
+   # A fifth "~~edit" / "~~retake" field marks clips hand-committed from the
+   # desktop app's review flow (user-modified audio). They count as cache
+   # hits and are scanned for silence like any other file, but are never
+   # auto-regenerated when silent; deleting one discards that manual fix
+   # and regenerates on the next run.
    ```
 
 2. **Check File Paths**

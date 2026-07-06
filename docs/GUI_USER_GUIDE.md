@@ -99,6 +99,30 @@ For the underlying configuration format and CLI usage, see the [Text Processing 
 
 Generate audio for the entire script from the **Generate Audio** tab, then review problem clips and export the final audiobook as an MP3 file.
 
+### 9. Reviewing & Re-recording Audio
+
+The **Review Audio** tab helps you find and fix individual clips:
+
+- **Silent Clips / Missing Clips**: clips that failed generation or came back
+  silent, grouped by speaker. Play the existing audio, regenerate with the
+  current voice settings, or edit the text sent to the provider (useful for
+  pronunciation fixes) and generate variants. Committing a variant replaces
+  the clip in the project's audio cache.
+- **Find Chunks**: search every chunk in the screenplay — not just problem
+  clips — by text, speaker, type, or status, and re-record any of them with
+  the same tools.
+
+Things to know when re-recording:
+
+- **Shared audio**: identical text + speaker combinations share one audio
+  file (a repeated speaker name may serve dozens of lines). A badge shows
+  how many chunks share a clip; re-recording changes all of them.
+- **User-modified clips**: committing a variant marks the cached file as
+  user-modified (an "edited text" or "custom take" badge). These clips are
+  still scanned for silence and surfaced for review, but are never
+  automatically regenerated — that decision stays with you; editing the text
+  here changes only the audio, never the screenplay itself.
+
 ## Manual Mode
 
 **Manual Mode** allows you to use the GUI's tools independently of a specific project. This is particularly useful for CLI users who want to use specific GUI features (like the Voice Caster or Test Voices playground) to assist their command-line workflow.
