@@ -1114,3 +1114,217 @@ class TestCheckAudioSilence:
         # Assert
         assert result is False  # Not silent (can't determine)
         assert len(reporting_state.silent_clips) == 0
+
+
+class TestUserModifiedCacheResolution:
+    """Tests for user-modified (~~edit / ~~retake) cache filename resolution.
+
+    User-committed files must count as cache hits exactly like plain names
+    (the flag has zero effect on cache behavior), with the authority ladder
+    (edit > retake > plain) picking the winner when multiple flavors coexist.
+    """
+
+    PLAIN = "cached_hash1~~cached_hash2~~elevenlabs~~voice_id_123.mp3"
+    EDIT = "cached_hash1~~cached_hash2~~elevenlabs~~voice_id_123~~edit.mp3"
+    RETAKE = "cached_hash1~~cached_hash2~~elevenlabs~~voice_id_123~~retake.mp3"
+
+    def _plan(self, sample_dialogues, tts_manager, processor):
+        """Run planning with hashes pinned so the first task targets PLAIN."""
+        with patch(
+            "script_to_speech.audio_generation.processing.generate_chunk_hash"
+        ) as mock_hash:
+            mock_hash.side_effect = [
+                "cached_hash1",
+                "cached_hash2",
+                "hash3",
+                "hash4",
+                "hash5",
+                "hash6",
+            ]
+            return plan_audio_generation(
+                dialogues=sample_dialogues,
+                tts_provider_manager=tts_manager,
+                processor=processor,
+                cache_folder="/tmp/cache",
+                cache_overrides_dir=None,
+            )
+
+    @patch("os.listdir")
+    def test_edit_flavor_is_cache_hit(
+        self,
+        mock_listdir,
+        sample_dialogues,
+        mock_tts_provider_manager,
+        mock_text_processor_manager,
+        mock_logger,
+    ):
+        """A ~~edit file alone must be a cache hit with the task pointing at it."""
+        # Arrange
+        mock_listdir.return_value = [self.EDIT]
+
+        # Act
+        tasks, reporting_state = self._plan(
+            sample_dialogues, mock_tts_provider_manager, mock_text_processor_manager
+        )
+
+        # Assert
+        assert tasks[0].is_cache_hit is True
+        assert tasks[0].cache_filename == self.EDIT
+        assert tasks[0].cache_filepath == os.path.join("/tmp/cache", self.EDIT)
+        assert tasks[0].user_modified_flag == "edit"
+        # Not reported as a miss
+        assert self.PLAIN not in reporting_state.cache_misses
+        assert self.EDIT not in reporting_state.cache_misses
+
+    @patch("os.listdir")
+    def test_authority_ladder_edit_beats_take_beats_plain(
+        self,
+        mock_listdir,
+        sample_dialogues,
+        mock_tts_provider_manager,
+        mock_text_processor_manager,
+        mock_logger,
+    ):
+        """When multiple flavors coexist, edit > retake > plain decides the winner."""
+        # Arrange
+        mock_listdir.return_value = [self.PLAIN, self.RETAKE, self.EDIT]
+
+        # Act
+        tasks, _ = self._plan(
+            sample_dialogues, mock_tts_provider_manager, mock_text_processor_manager
+        )
+
+        # Assert
+        assert tasks[0].is_cache_hit is True
+        assert tasks[0].cache_filename == self.EDIT
+        assert tasks[0].user_modified_flag == "edit"
+
+    @patch("os.listdir")
+    def test_take_beats_plain(
+        self,
+        mock_listdir,
+        sample_dialogues,
+        mock_tts_provider_manager,
+        mock_text_processor_manager,
+        mock_logger,
+    ):
+        # Arrange
+        mock_listdir.return_value = [self.PLAIN, self.RETAKE]
+
+        # Act
+        tasks, _ = self._plan(
+            sample_dialogues, mock_tts_provider_manager, mock_text_processor_manager
+        )
+
+        # Assert
+        assert tasks[0].cache_filename == self.RETAKE
+        assert tasks[0].user_modified_flag == "retake"
+
+    @patch("os.listdir")
+    def test_plain_hit_has_no_flag(
+        self,
+        mock_listdir,
+        sample_dialogues,
+        mock_tts_provider_manager,
+        mock_text_processor_manager,
+        mock_logger,
+    ):
+        """Plain-name hits behave exactly as before, with no user_modified_flag."""
+        # Arrange
+        mock_listdir.return_value = [self.PLAIN]
+
+        # Act
+        tasks, _ = self._plan(
+            sample_dialogues, mock_tts_provider_manager, mock_text_processor_manager
+        )
+
+        # Assert
+        assert tasks[0].is_cache_hit is True
+        assert tasks[0].cache_filename == self.PLAIN
+        assert tasks[0].user_modified_flag is None
+
+    @patch("os.listdir")
+    def test_miss_keeps_plain_name_and_no_flag(
+        self,
+        mock_listdir,
+        sample_dialogues,
+        mock_tts_provider_manager,
+        mock_text_processor_manager,
+        mock_logger,
+    ):
+        """A miss must keep targeting the plain name for regeneration."""
+        # Arrange
+        mock_listdir.return_value = []
+
+        # Act
+        tasks, reporting_state = self._plan(
+            sample_dialogues, mock_tts_provider_manager, mock_text_processor_manager
+        )
+
+        # Assert
+        assert tasks[0].is_cache_hit is False
+        assert tasks[0].cache_filename == self.PLAIN
+        assert tasks[0].user_modified_flag is None
+        assert self.PLAIN in reporting_state.cache_misses
+
+
+class TestSilenceCheckUserModifiedProtection:
+    """User-modified cache files are scanned and reported like any other clip,
+    but never flipped to a miss (regeneration would overwrite manual work)."""
+
+    def _make_task(self, idx, cache_filename, user_modified_flag=None):
+        return AudioGenerationTask(
+            idx=idx,
+            original_dialogue={"speaker": "JOHN", "text": "Hello"},
+            processed_dialogue={"speaker": "JOHN", "text": "Hello"},
+            text_to_speak="Hello",
+            speaker="JOHN",
+            provider_id="elevenlabs",
+            speaker_id="voice_id_123",
+            speaker_display="JOHN",
+            cache_filename=cache_filename,
+            cache_filepath=os.path.join("/tmp/cache", cache_filename),
+            is_cache_hit=True,
+            user_modified_flag=user_modified_flag,
+        )
+
+    @patch("script_to_speech.audio_generation.processing.check_audio_silence")
+    @patch("builtins.open")
+    def test_user_modified_tasks_scanned_but_never_flipped(
+        self, mock_open, mock_check_silence, mock_logger
+    ):
+        """All cache hits are scanned; silent user-modified files are reported
+        (via check_audio_silence) but keep is_cache_hit so they are never
+        auto-regenerated."""
+        # Arrange
+        normal_task = self._make_task(
+            0, "h1~~h2~~elevenlabs~~voice_id_123.mp3", user_modified_flag=None
+        )
+        edited_task = self._make_task(
+            1, "h3~~h4~~elevenlabs~~voice_id_123~~edit.mp3", user_modified_flag="edit"
+        )
+        retake_task = self._make_task(
+            2,
+            "h5~~h6~~elevenlabs~~voice_id_123~~retake.mp3",
+            user_modified_flag="retake",
+        )
+        mock_check_silence.return_value = True  # Everything checked reads as silent
+
+        # Act
+        check_for_silence(
+            tasks=[normal_task, edited_task, retake_task],
+            silence_threshold=-40.0,
+        )
+
+        # Assert
+        # Every cache hit was read and checked, user-modified or not
+        assert mock_open.call_count == 3
+        assert mock_check_silence.call_count == 3
+        checked_tasks = [
+            call.kwargs["task"] for call in mock_check_silence.call_args_list
+        ]
+        assert checked_tasks == [normal_task, edited_task, retake_task]
+        # The silent normal task flips to miss; user-modified tasks never do
+        assert normal_task.is_cache_hit is False
+        assert edited_task.is_cache_hit is True
+        assert retake_task.is_cache_hit is True

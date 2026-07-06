@@ -10,11 +10,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
+from ..audio_generation.cache_filenames import CacheFlag, variant_kind_suffix
 from ..tts_providers.base.exceptions import TTSError, VoiceNotFoundError
 from ..tts_providers.base.stateful_tts_provider import StatefulTTSProviderBase
 from ..tts_providers.base.stateless_tts_provider import StatelessTTSProviderBase
 from ..tts_providers.tts_provider_manager import TTSProviderManager
 from .audio_utils import configure_ffmpeg, split_audio_on_silence
+from .id3_tag_utils import set_generation_metadata
 from .logging import get_screenplay_logger
 
 logger = get_screenplay_logger("utils.generate_standalone_speech")
@@ -65,6 +67,7 @@ def generate_standalone_speech(
     min_silence_len: int = 500,
     keep_silence: int = 100,
     output_filename: Optional[str] = None,
+    generation_kind: Optional[CacheFlag] = None,
 ) -> None:
     """
     Generate speech using specified provider via TTSProviderManager.
@@ -79,6 +82,13 @@ def generate_standalone_speech(
         min_silence_len: Minimum silence length in ms for splitting
         keep_silence: Amount of silence to keep in ms after splitting
         output_filename: Optional custom filename (without extension)
+        generation_kind: Review-flow provenance for this variant (retake = re-roll
+            of unmodified processed text, edit = user-modified text). When set,
+            the kind is encoded as a trailing token in the filename and the
+            kind + text are stamped into ID3 frames so they travel with the
+            file when it is committed into a project's audio cache. When None
+            (the default, and always for the CLI), output is byte-identical to
+            the historical behavior.
     """
     try:
         # Prepend constant sentence if split mode is enabled
@@ -129,15 +139,19 @@ def generate_standalone_speech(
                 return
 
         # Create final filename and path
+        kind_suffix = variant_kind_suffix(generation_kind) if generation_kind else ""
         if output_filename:
-            filename = f"{output_filename}{variant_suffix}.mp3"
+            filename = f"{output_filename}{variant_suffix}{kind_suffix}.mp3"
         else:
-            filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}.mp3"
+            filename = f"{provider_id}--{voice_id}--{text_preview}{variant_suffix}--{timestamp}{kind_suffix}.mp3"
         output_path = os.path.join(output_dir, filename)
 
         # Save audio
         with open(output_path, "wb") as f:
             f.write(audio_data)
+
+        if generation_kind is not None:
+            set_generation_metadata(output_path, generation_kind.value, text)
 
         logger.info(f"Generated speech file: {output_path}")
 

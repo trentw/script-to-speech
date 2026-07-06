@@ -332,3 +332,41 @@ class TestSetId3TagsFromConfig:
 
                 # Verify result is False due to exception
                 assert result is False
+
+
+class TestSetGenerationMetadata:
+    """Tests for set_generation_metadata (review-flow variant provenance)."""
+
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
+    def test_set_generation_metadata_success(self, mock_load):
+        """Kind and text are written as TXXX user-text frames and saved."""
+        from script_to_speech.utils.id3_tag_utils import (
+            GENERATION_KIND_FRAME,
+            GENERATION_TEXT_FRAME,
+            set_generation_metadata,
+        )
+
+        mock_audiofile = MagicMock()
+        mock_load.return_value = mock_audiofile
+
+        result = set_generation_metadata("test.mp3", "edit", "Doctor Smith says hi")
+
+        assert result is True
+        mock_audiofile.tag.user_text_frames.set.assert_any_call(
+            "edit", GENERATION_KIND_FRAME
+        )
+        mock_audiofile.tag.user_text_frames.set.assert_any_call(
+            "Doctor Smith says hi", GENERATION_TEXT_FRAME
+        )
+        mock_audiofile.tag.save.assert_called_once()
+
+    @patch("script_to_speech.utils.id3_tag_utils.eyed3.load")
+    def test_set_generation_metadata_nonfatal_on_error(self, mock_load):
+        """Tagging failures are logged, not raised."""
+        from script_to_speech.utils.id3_tag_utils import set_generation_metadata
+
+        mock_load.return_value = None  # Unloadable file
+
+        result = set_generation_metadata("bad.mp3", "retake", "text")
+
+        assert result is False

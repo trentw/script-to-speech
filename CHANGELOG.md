@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Committed review variants are now marked user-modified in the audio cache (`~~edit` / `~~retake` filename flags with the generation text stamped into ID3 tags). User-modified clips count as normal cache hits and are scanned for silence like any other clip, but are only reported — never auto-regenerated — when silent, so manual work is never silently overwritten. Existing files are unaffected (fix-forward).
 - [Desktop] New in-app Text Processing editor: configure a screenplay's preprocessor/processor pipeline with per-processor forms, live preview and a diff of unsaved changes, inline per-change saving, add/remove/reorder, a raw-YAML fallback, and save/load of a reusable default configuration.
 - [CLI] Newly parsed screenplays now get a standalone text processor config, seeded from your default (or the built-in default), making each screenplay's processing pipeline explicit and fully editable. Existing and legacy configs keep their previous additive behavior.
 - [Docs] Documentation for the Text Processing editor and standalone per-screenplay text processor configs.
+
+### Changed
+- [CLI] The audio cache filename convention now allows an optional trailing `~~retake` / `~~edit` sentinel; `generate_standalone_speech` writes it (and stamps ID3 generation provenance) when given a generation kind. Default output — including the `sts-generate-standalone-speech` CLI — is byte-identical to before.
 
 ## [2.1.0] - 2026-06-18
 

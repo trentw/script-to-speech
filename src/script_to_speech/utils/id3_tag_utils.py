@@ -9,6 +9,12 @@ from .logging import get_screenplay_logger
 
 logger = get_screenplay_logger("id3_tag_utils")
 
+# TXXX frame descriptions for generation provenance stamped on review-flow
+# variants (see utils/generate_standalone_speech.py). The frames travel with
+# the file when a variant is committed into a project's audio cache.
+GENERATION_KIND_FRAME = "STS_GENERATION_KIND"
+GENERATION_TEXT_FRAME = "STS_GENERATION_TEXT"
+
 
 def set_id3_tags(mp3_path: str, title: str, screenplay_author: str, date: str) -> None:
     """
@@ -45,6 +51,41 @@ def set_id3_tags(mp3_path: str, title: str, screenplay_author: str, date: str) -
     except Exception as e:
         logger.error(f"Error setting ID3 tags: {str(e)}")
         raise
+
+
+def set_generation_metadata(
+    mp3_path: str, generation_kind: str, generation_text: str
+) -> bool:
+    """
+    Stamp generation provenance into ID3 user-text (TXXX) frames.
+
+    Records the generation kind ("retake"/"edit") and the exact text that
+    produced the audio, so the provenance travels with the file when a
+    review-flow variant is copied into a project's audio cache.
+
+    Non-fatal by design: a tagging failure must not fail an otherwise
+    successful generation.
+
+    Returns:
+        True if the tags were written, False otherwise.
+    """
+    try:
+        audiofile = eyed3.load(mp3_path)
+        if audiofile is None:
+            raise ValueError(f"Could not load MP3 file: {mp3_path}")
+        tag = audiofile.tag
+        if tag is None:
+            audiofile.initTag()
+            tag = audiofile.tag
+        if tag is None:
+            raise ValueError(f"Could not initialize ID3 tag: {mp3_path}")
+        tag.user_text_frames.set(generation_kind, GENERATION_KIND_FRAME)
+        tag.user_text_frames.set(generation_text, GENERATION_TEXT_FRAME)
+        tag.save()
+        return True
+    except Exception as e:
+        logger.warning(f"Could not set generation metadata on {mp3_path}: {e}")
+        return False
 
 
 def set_id3_tags_from_config(mp3_path: str, config_path: str) -> bool:

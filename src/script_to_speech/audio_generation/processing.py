@@ -13,12 +13,10 @@ from tqdm import tqdm
 from ..text_processors.processor_manager import TextProcessorManager
 from ..tts_providers.tts_provider_manager import TTSProviderManager
 from ..utils.logging import get_screenplay_logger
+from .cache_filenames import DELIMITER, get_cache_flag, resolve_cache_filename
 from .models import AudioClipInfo, AudioGenerationTask, ReportingState, TaskStatus
 from .reporting import print_audio_task_details
 from .utils import check_audio_level, check_audio_silence, truncate_text
-
-# Use a less common delimiter (consistent with original)
-DELIMITER = "~~"
 
 # Get logger for this module
 logger = get_screenplay_logger("audio_generation.processing")
@@ -188,6 +186,15 @@ def plan_audio_generation(
 
                 # Define filenames and paths
                 cache_filename = f"{original_hash}{DELIMITER}{processed_hash}{DELIMITER}{provider_id}{DELIMITER}{speaker_id}.mp3"
+                # A user-modified flavor of this name (committed from the review
+                # flow, e.g. "...~~edit.mp3") counts as a cache hit exactly like
+                # the plain name; the task points at whichever file the
+                # authority ladder selects so downstream reads/writes just work.
+                resolved_cache_filename = resolve_cache_filename(
+                    cache_filename, existing_cache_files
+                )
+                if resolved_cache_filename is not None:
+                    cache_filename = resolved_cache_filename
                 cache_filepath = os.path.join(cache_folder, cache_filename)
                 logger.debug(f"  Cache filepath: {cache_filepath}")
 
@@ -215,6 +222,7 @@ def plan_audio_generation(
                     cache_filepath=cache_filepath,
                     expected_silence=not text.strip(),  # Mark if text is empty/whitespace
                     expected_cache_duplicate=expected_cache_duplicate,  # Set duplicate flag
+                    user_modified_flag=get_cache_flag(cache_filename),
                 )
 
                 # Check if cache override *exists*
@@ -228,7 +236,7 @@ def plan_audio_generation(
 
                 # Check if cache file *exists* (independent of override check)
                 task.is_cache_hit = False
-                if cache_filename in existing_cache_files:
+                if resolved_cache_filename is not None:
                     logger.debug(f"  Cache file exists: {cache_filename}")
                     task.is_cache_hit = True  # Assume hit initially, silence check might change this later
                 task.checked_cache = True
@@ -406,11 +414,21 @@ def check_for_silence(
                 )
 
                 if is_silent:
-                    logger.warning(
-                        f"  Existing cache file is silent: {task.cache_filepath}. Will be treated as miss unless overridden."
-                    )
-                    # Mark as cache miss so it will be regenerated
-                    task.is_cache_hit = False
+                    if task.user_modified_flag is not None:
+                        # User-committed audio is scanned and reported like any
+                        # other clip (so review surfaces it), but never flipped
+                        # to a miss: regeneration would silently overwrite
+                        # deliberate manual work.
+                        logger.warning(
+                            f"  User-modified cache file is silent: {task.cache_filepath}. "
+                            "Reported for review but will not be regenerated automatically."
+                        )
+                    else:
+                        logger.warning(
+                            f"  Existing cache file is silent: {task.cache_filepath}. Will be treated as miss unless overridden."
+                        )
+                        # Mark as cache miss so it will be regenerated
+                        task.is_cache_hit = False
             except Exception as e:
                 logger.error(
                     f"  Error checking audio file {task.cache_filepath}: {e}. Cannot confirm silence level."

@@ -959,3 +959,99 @@ class TestGetCommandString:
 
         # Result should be empty string on error
         assert result == ""
+
+
+class TestGenerationKind:
+    """Tests for the generation_kind parameter (review-flow variant provenance)."""
+
+    def _make_tts_manager(self):
+        speaker_config = {"voice_id": "test_voice"}
+        config_data = {"default": {"provider": "test_provider", **speaker_config}}
+        mock_tts_manager = TTSProviderManager(
+            config_data=config_data, dummy_tts_provider_override=False
+        )
+        mock_tts_manager.generate_audio = MagicMock(return_value=b"test audio data")
+        mock_tts_manager.get_provider_identifier = MagicMock(
+            return_value="test_provider"
+        )
+        mock_tts_manager.get_speaker_identifier = MagicMock(return_value="test_voice")
+        return mock_tts_manager
+
+    @patch("script_to_speech.utils.generate_standalone_speech.set_generation_metadata")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    def test_default_filename_unchanged_without_kind(
+        self, mock_datetime, mock_makedirs, mock_set_metadata
+    ):
+        """Without generation_kind, filename and behavior are byte-identical to before."""
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+        tts_manager = self._make_tts_manager()
+
+        with patch("builtins.open", mock_open()) as mock_file:
+            generate_standalone_speech(
+                tts_manager=tts_manager,
+                text="Hello world",
+                output_dir="test_output",
+            )
+
+        written_path = mock_file.call_args[0][0]
+        assert written_path == os.path.join(
+            "test_output",
+            "test_provider--test_voice--Hello_world--20230101_120000.mp3",
+        )
+        mock_set_metadata.assert_not_called()
+
+    @patch("script_to_speech.utils.generate_standalone_speech.set_generation_metadata")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    def test_retake_kind_appends_token_and_stamps_metadata(
+        self, mock_datetime, mock_makedirs, mock_set_metadata
+    ):
+        """generation_kind=TAKE appends --retake and stamps ID3 provenance."""
+        from script_to_speech.audio_generation.cache_filenames import CacheFlag
+
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+        tts_manager = self._make_tts_manager()
+
+        with patch("builtins.open", mock_open()) as mock_file:
+            generate_standalone_speech(
+                tts_manager=tts_manager,
+                text="Hello world",
+                output_dir="test_output",
+                generation_kind=CacheFlag.RETAKE,
+            )
+
+        written_path = mock_file.call_args[0][0]
+        assert written_path == os.path.join(
+            "test_output",
+            "test_provider--test_voice--Hello_world--20230101_120000--retake.mp3",
+        )
+        mock_set_metadata.assert_called_once_with(written_path, "retake", "Hello world")
+
+    @patch("script_to_speech.utils.generate_standalone_speech.set_generation_metadata")
+    @patch("script_to_speech.utils.generate_standalone_speech.os.makedirs")
+    @patch("script_to_speech.utils.generate_standalone_speech.datetime")
+    def test_edit_kind_with_variants(
+        self, mock_datetime, mock_makedirs, mock_set_metadata
+    ):
+        """generation_kind=EDIT composes with variant suffixes."""
+        from script_to_speech.audio_generation.cache_filenames import CacheFlag
+
+        mock_datetime.now.return_value = datetime(2023, 1, 1, 12, 0, 0)
+        tts_manager = self._make_tts_manager()
+
+        with patch("builtins.open", mock_open()) as mock_file:
+            generate_standalone_speech(
+                tts_manager=tts_manager,
+                text="Hello world",
+                variant_num=2,
+                output_dir="test_output",
+                generation_kind=CacheFlag.EDIT,
+            )
+
+        written_path = mock_file.call_args[0][0]
+        assert written_path == os.path.join(
+            "test_output",
+            "test_provider--test_voice--Hello_world_variant2--20230101_120000--edit.mp3",
+        )
+        mock_set_metadata.assert_called_once_with(written_path, "edit", "Hello world")
