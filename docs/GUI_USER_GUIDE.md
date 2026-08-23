@@ -123,6 +123,58 @@ Things to know when re-recording:
   automatically regenerated — that decision stays with you; editing the text
   here changes only the audio, never the screenplay itself.
 
+### 10. Screenplay Viewer
+
+The **Screenplay Viewer** tab shows the whole screenplay as a readable,
+script-styled list of chunks — scene headings, action, speakers and dialogue —
+with each chunk's audio status in the margin (a marker for missing audio, a
+dimmed glyph for intentional silence, and an icon for user-modified clips).
+The viewer needs a fully cast project: finish **Voice Casting** first, or the
+tab shows a reminder instead of the screenplay.
+
+- **Play a chunk**: hover a row (the controls stay visible on the selected
+  and currently playing rows) and press play to hear just that chunk through
+  the app's audio player (the transport bar at the bottom of the page).
+- **Play in sequence**: press **Play all** in the toolbar, or a row's
+  "play from here" button, to listen through the screenplay from that point.
+  Chunks are chained with the same 500 ms gap the generated audiobook uses;
+  missing chunks are skipped. The active row is highlighted and kept in
+  view — scrolling away pauses the auto-follow until you press **Jump to
+  current**. Pausing in the transport bar pauses the sequence; resuming
+  continues it.
+- **Inspect and re-record**: click any chunk to open a side panel with its
+  details — original vs. processed (spoken) text, the cache filename, and
+  how many chunks share the same audio (with links to jump to each) — plus
+  the same re-record/edit/commit tools as Review Audio, and play /
+  play-from-here buttons in the panel header. Committed changes show up in
+  the viewer immediately.
+- **PDF view**: if the screenplay was parsed from a PDF, use the **List | PDF**
+  toggle in the toolbar to switch to the original rendered screenplay with each
+  source region's audio-status highlight drawn directly on the page. Click a
+  highlight to select it and open the persistent detail panel; playback and
+  editing stay in that panel so reading the page doesn't trigger audio by
+  accident — the panel's play-from-here button starts sequential playback
+  from any selected region. If preprocessing split one source region into
+  several audio chunks, the highlight shows their count and the panel provides
+  a short navigator for choosing the segment to inspect or re-record.
+  Highlight color reports audio availability (cached, missing, or intentional
+  silence), while separate edit and retake markers preserve user-modified
+  provenance. Sequential playback highlights the current region and scrolls to
+  follow it. A few chunks that can't be confidently located on the page aren't
+  drawn (a small "N chunks not shown" note appears); the List view always
+  shows every chunk. Text-only screenplays (no source PDF) don't have a PDF
+  view. PDFs with cropped or shifted page boxes remain readable in PDF view,
+  but audio highlights are disabled with an on-screen explanation until that
+  page geometry can be validated against a real example; use List view to
+  select and edit chunks in that case.
+- **Your place is kept**: the viewer remembers the chunk at the top of your
+  viewport. Switching between List and PDF lands on the same spot in the
+  other view, and returning to the viewer tab later in the session restores
+  it too.
+- **Refresh**: the toolbar's **Refresh** button (with its "Last refreshed"
+  time) recomputes everything from disk — use it after making changes outside
+  the GUI (e.g. CLI runs) so statuses match reality.
+
 ## Manual Mode
 
 **Manual Mode** allows you to use the GUI's tools independently of a specific project. This is particularly useful for CLI users who want to use specific GUI features (like the Voice Caster or Test Voices playground) to assist their command-line workflow.
