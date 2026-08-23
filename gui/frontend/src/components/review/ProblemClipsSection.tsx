@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { formatRelativeTime } from '@/lib/formatRelativeTime';
 import { cn } from '@/lib/utils';
 import type { ProblemClipInfo, SpeakerGroup } from '@/types/review';
 
@@ -43,28 +44,6 @@ interface ProblemClipsSectionProps {
   disabledReason?: string;
   /** Warning message to show above clips (e.g., when voice casting incomplete but cached data exists) */
   warningMessage?: string;
-}
-
-/**
- * Format relative time (e.g., "2 minutes ago")
- */
-function formatRelativeTime(isoTimestamp: string): string {
-  const date = new Date(isoTimestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffSeconds < 60) {
-    return 'just now';
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  } else {
-    return date.toLocaleDateString();
-  }
 }
 
 /**

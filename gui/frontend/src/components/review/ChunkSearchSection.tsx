@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { formatRelativeTime } from '@/lib/formatRelativeTime';
 import type { ChunkInventoryResponse } from '@/types/chunks';
 
 import {
@@ -62,28 +63,6 @@ interface ChunkSearchSectionProps {
   disabledReason?: string;
   /** Warning message to show above the results */
   warningMessage?: string;
-}
-
-/**
- * Format relative time (e.g., "2 minutes ago")
- */
-function formatRelativeTime(isoTimestamp: string): string {
-  const date = new Date(isoTimestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-
-  if (diffSeconds < 60) {
-    return 'just now';
-  } else if (diffMinutes < 60) {
-    return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
-  } else {
-    return date.toLocaleDateString();
-  }
 }
 
 /**
