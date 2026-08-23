@@ -55,6 +55,8 @@ export const queryKeys = {
     ['review', 'silent-clips-scan', projectName] as const,
   chunkInventory: (projectName: string) =>
     ['review', 'chunk-inventory', projectName] as const,
+  pdfAnchors: (projectName: string) =>
+    ['viewer', 'pdf-anchors', projectName] as const,
 
   // Text processors
   textProcessorRegistry: ['text-processors', 'registry'] as const,

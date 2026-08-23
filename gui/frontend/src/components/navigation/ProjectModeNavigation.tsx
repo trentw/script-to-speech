@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import {
+  BookOpen,
   FileText,
   Home,
   Mic,
@@ -154,6 +155,13 @@ export function ProjectModeNavigation({
           to: '/project/review',
           icon: Search,
           enabled: true,
+        },
+        {
+          label: 'Screenplay Viewer',
+          to: '/project/viewer',
+          icon: BookOpen,
+          enabled: status?.hasJson ?? false,
+          tooltip: !status?.hasJson ? 'Parse screenplay first' : undefined,
         },
       ],
     },

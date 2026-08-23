@@ -21,6 +21,25 @@ interface UpdateConfigParams {
   baseFileHash: string;
 }
 
+function projectNameFromInputPath(inputPath: string): string | null {
+  const normalized = inputPath.replace(/[\\/]+$/, '');
+  return normalized.split(/[\\/]/).pop() || null;
+}
+
+function invalidateViewerQueries(
+  queryClient: ReturnType<typeof useQueryClient>,
+  inputPath: string
+) {
+  const projectName = projectNameFromInputPath(inputPath);
+  if (!projectName) return;
+  queryClient.invalidateQueries({
+    queryKey: queryKeys.chunkInventory(projectName),
+  });
+  queryClient.invalidateQueries({
+    queryKey: queryKeys.pdfAnchors(projectName),
+  });
+}
+
 export const useUpdateTextProcessorConfig = () => {
   const queryClient = useQueryClient();
 
@@ -38,6 +57,7 @@ export const useUpdateTextProcessorConfig = () => {
     },
     onSuccess: (data: TextProcessorConfig, { inputPath }) => {
       queryClient.setQueryData(queryKeys.textProcessorConfig(inputPath), data);
+      invalidateViewerQueries(queryClient, inputPath);
     },
     onError: (_error, { inputPath }) => {
       // On conflict/validation errors, refetch so the editor can reconcile
@@ -57,6 +77,7 @@ export const useConvertTextProcessorConfig = () => {
     },
     onSuccess: (data: TextProcessorConfig, inputPath) => {
       queryClient.setQueryData(queryKeys.textProcessorConfig(inputPath), data);
+      invalidateViewerQueries(queryClient, inputPath);
     },
   });
 };
@@ -75,6 +96,7 @@ export const useResetTextProcessorConfig = () => {
     },
     onSuccess: (data: TextProcessorConfig, { inputPath }) => {
       queryClient.setQueryData(queryKeys.textProcessorConfig(inputPath), data);
+      invalidateViewerQueries(queryClient, inputPath);
     },
   });
 };

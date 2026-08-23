@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- [Desktop] Screenplay Viewer page: read the whole screenplay as a formatted script with per-chunk audio status, play any chunk or listen in sequence from any point, and re-record any chunk from a side panel — your reading position is kept across views and visits
+- [Desktop] Screenplay Viewer PDF view: for PDF-parsed screenplays, toggle from the list to the original rendered PDF with audio-status highlights anchored on the page; chunks that can't be confidently located are noted and always remain available in the list view
 - [Desktop] Find Chunks on the Review Audio page: search every screenplay chunk by text, speaker, type, or status and re-record any of them (play existing audio, regenerate, or edit the text sent to the provider), with badges showing how many chunks share a cached clip.
 - [Desktop] Committed review variants are now marked user-modified in the audio cache (`~~edit` / `~~retake` filename flags with the generation text stamped into ID3 tags). User-modified clips count as normal cache hits and are scanned for silence like any other clip, but are only reported — never auto-regenerated — when silent, so manual work is never silently overwritten. Existing files are unaffected (fix-forward).
 - [Desktop] New chunk inventory API mapping every screenplay chunk to its cached audio (status, user-modified flag, shared-audio occurrences), recomputed on demand from on-disk state.
@@ -135,4 +137,3 @@ Starting with 2.0.0, this changelog covers all components (CLI, backend, fronten
 
 ### Changed
 - Moved to proper `src`-based directory structure for proper packaging
-

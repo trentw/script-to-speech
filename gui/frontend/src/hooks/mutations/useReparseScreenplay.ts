@@ -32,9 +32,16 @@ export const useReparseScreenplay = () => {
     },
 
     onSuccess: (_data, variables) => {
-      // Invalidate project status to reflect new parse results
+      // Re-parsing can change chunk text, ordering, and PDF positions. Mark all
+      // derived client views stale alongside the backend's cache invalidation.
       queryClient.invalidateQueries({
         queryKey: queryKeys.projectStatus(variables.inputPath),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chunkInventory(variables.screenplayName),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pdfAnchors(variables.screenplayName),
       });
 
       console.log('Screenplay re-parsed successfully');

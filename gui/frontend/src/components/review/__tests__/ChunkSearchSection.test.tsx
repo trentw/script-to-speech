@@ -67,6 +67,7 @@ function makeInventory(entries: ChunkInventoryEntry[]): ChunkInventoryResponse {
     missingCount: entries.filter((e) => e.status === 'missing').length,
     userModifiedCount: entries.filter((e) => e.userModified !== null).length,
     cacheFolder: '/tmp/cache',
+    chunkLayoutRevision: 'layout-rev-1',
     generatedAt: '2026-07-05T00:00:00+00:00',
   };
 }

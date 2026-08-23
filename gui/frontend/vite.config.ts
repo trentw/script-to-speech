@@ -70,6 +70,10 @@ export default defineConfig(({ mode }) => {
               '@radix-ui/react-tabs',
             ],
             'query-vendor': ['@tanstack/react-query'],
+            // pdf.js + react-pdf are large and only loaded on the PDF lens
+            // (dynamically imported), so keep them in their own chunk. This
+            // chunk exceeds chunkSizeWarningLimit by design.
+            'pdf-vendor': ['react-pdf', 'pdfjs-dist'],
           },
         },
       },

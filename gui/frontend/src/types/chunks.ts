@@ -95,6 +95,11 @@ export interface ChunkInventoryResponse {
   userModifiedCount: number;
   /** Path to cache folder for audio serving */
   cacheFolder: string;
+  /**
+   * Hash of the ordered post-preprocessed chunk layout. PDF anchors must carry
+   * the same revision before their idxs can address these entries.
+   */
+  chunkLayoutRevision: string;
   /** ISO timestamp of when this inventory was computed */
   generatedAt: string;
 }

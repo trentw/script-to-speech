@@ -86,6 +86,7 @@ function ProjectLayout() {
   return (
     <motion.div
       key={location.pathname}
+      className="h-full"
       initial="initial"
       animate="animate"
       variants={pageVariants}

@@ -19,6 +19,7 @@ export const ROUTES = {
     PROCESSING: '/project/processing',
     GENERATE: '/project/generate',
     REVIEW: '/project/review',
+    VIEWER: '/project/viewer',
   },
   VOICE_CASTING: {
     ROOT: '/voice-casting',

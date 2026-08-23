@@ -817,6 +817,19 @@ class ApiService {
     );
   }
 
+  async getPdfAnchors(
+    projectName: string,
+    refresh: boolean = false
+  ): Promise<ApiResponse<import('../types/pdfAnchors').ChunkAnchorsResponse>> {
+    return this.request<import('../types/pdfAnchors').ChunkAnchorsResponse>(
+      `/chunks/${encodeURIComponent(projectName)}/pdf-anchors${refresh ? '?refresh=true' : ''}`
+    );
+  }
+
+  getSourcePdfUrl(projectName: string): string {
+    return `${API_BASE_URL}/chunks/${encodeURIComponent(projectName)}/source-pdf`;
+  }
+
   // Voice Editor endpoints
   async listLLMRuns(): Promise<
     ApiResponse<
