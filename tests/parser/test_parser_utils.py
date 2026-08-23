@@ -13,7 +13,10 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 
 from script_to_speech.parser.utils.logging_utils import setup_parser_logging
-from script_to_speech.parser.utils.text_utils import extract_text_preserving_whitespace
+from script_to_speech.parser.utils.text_utils import (
+    extract_text_preserving_whitespace,
+    extract_words_by_page,
+)
 from script_to_speech.utils.file_system_utils import (
     sanitize_name,
 )
@@ -83,6 +86,59 @@ class TestTextUtils:
 
         # Check return value
         assert result == "Page 1 text\nwith multiple linesPage 2 text\nwith more lines"
+
+    @patch("pdfplumber.open")
+    def test_extract_words_by_page(self, mock_pdf_open):
+        """Test extracting word boxes with parse-time-consistent settings."""
+        mock_page1 = MagicMock()
+        mock_page1.width = 612.0
+        mock_page1.height = 792.0
+        mock_page1.cropbox = (0.0, 0.0, 612.0, 792.0)
+        mock_page1.mediabox = (0.0, 0.0, 612.0, 792.0)
+        mock_page1.dedupe_chars.return_value = mock_page1
+        mock_page1.extract_words.return_value = [
+            {"text": "Café", "x0": 108.0, "x1": 140.5, "top": 72.0, "bottom": 83.0},
+            {"text": "INT.", "x0": 144.0, "x1": 168.0, "top": 72.0, "bottom": 83.0},
+        ]
+
+        mock_page2 = MagicMock()
+        mock_page2.width = 612.0
+        mock_page2.height = 792.0
+        mock_page2.cropbox = (18.0, 24.0, 594.0, 768.0)
+        mock_page2.mediabox = (0.0, 0.0, 612.0, 792.0)
+        mock_page2.dedupe_chars.return_value = mock_page2
+        mock_page2.extract_words.return_value = []
+
+        mock_pdf = MagicMock()
+        mock_pdf.pages = [mock_page1, mock_page2]
+        mock_pdf_open.return_value.__enter__.return_value = mock_pdf
+
+        result = extract_words_by_page("test.pdf")
+
+        mock_pdf_open.assert_called_once_with("test.pdf")
+        # Same dedup + tolerances as extract_text_by_page (parse-time parity)
+        mock_page1.dedupe_chars.assert_called_once_with()
+        mock_page1.extract_words.assert_called_once_with(x_tolerance=1, y_tolerance=1)
+        mock_page2.extract_words.assert_called_once_with(x_tolerance=1, y_tolerance=1)
+
+        assert len(result) == 2
+        assert result[0].page_number == 0
+        assert result[1].page_number == 1
+        assert result[0].width == 612.0
+        assert result[0].height == 792.0
+        assert result[0].overlay_geometry_supported is True
+        assert result[1].overlay_geometry_supported is False
+
+        words = result[0].words
+        assert len(words) == 2
+        # unidecode applied, matching extract_text_by_page normalization
+        assert words[0].text == "Cafe"
+        assert words[0].x0 == 108.0
+        assert words[0].x1 == 140.5
+        assert words[0].top == 72.0
+        assert words[0].bottom == 83.0
+        assert words[1].text == "INT."
+        assert result[1].words == []
 
 
 class TestLoggingUtils:
