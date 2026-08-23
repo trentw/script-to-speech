@@ -329,17 +329,17 @@ class TextProcessorConfigService:
             config[section].append(item)
         return config
 
-    def _invalidate_chunk_inventory(self) -> None:
-        """Drop chunk inventory snapshots after a config write.
+    def _invalidate_project_analysis(self) -> None:
+        """Drop chunk inventory and PDF anchor snapshots after a config write.
 
-        Processed text (and thus cache mapping) derives from these configs;
-        invalidating all projects is the simple, always-correct choice for a
-        rare operation.
+        Processed text (and thus cache mapping) derives from these configs, and
+        preprocessor changes reshape the chunk list itself (splits/merges),
+        shifting which raw_text each idx anchors to. Invalidating all projects
+        is the simple, always-correct choice for a rare operation.
         """
-        # Import here to avoid circular import
-        from .chunk_inventory_service import chunk_inventory_service
+        from .project_analysis_cache import invalidate_project_analysis
 
-        chunk_inventory_service.invalidate()
+        invalidate_project_analysis()
 
     def write_config(
         self, input_path: str, entries: List[Dict[str, Any]], base_file_hash: str
@@ -376,7 +376,7 @@ class TextProcessorConfigService:
         config_path.write_text(output.getvalue(), encoding="utf-8")
         logger.info(f"Wrote text processor config at {config_path}")
 
-        self._invalidate_chunk_inventory()
+        self._invalidate_project_analysis()
 
         return self._read_config_file(config_path)
 
@@ -423,7 +423,7 @@ class TextProcessorConfigService:
         config_path.write_text(output.getvalue(), encoding="utf-8")
         logger.info(f"Converted legacy text processor config at {config_path}")
 
-        self._invalidate_chunk_inventory()
+        self._invalidate_project_analysis()
 
         return self._read_config_file(config_path)
 
@@ -439,7 +439,7 @@ class TextProcessorConfigService:
         config_text = seed_config_text(source)
         config_path.write_text(config_text, encoding="utf-8")
         logger.info(f"Reset text processor config at {config_path} from {source}")
-        self._invalidate_chunk_inventory()
+        self._invalidate_project_analysis()
         return self._read_config_file(config_path)
 
     # ------------------------------------------------------------------

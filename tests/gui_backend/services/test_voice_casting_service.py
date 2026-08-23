@@ -481,3 +481,34 @@ class TestYamlCommentPreservation:
 
         # Assert
         assert result.updated_at > original_updated
+
+
+class TestExportInvalidation:
+    """Exporting a voice config re-keys cache filenames, so it must drop the
+    cached chunk inventory (but never PDF anchors — text doesn't move)."""
+
+    @pytest.mark.asyncio
+    async def test_export_invalidates_chunk_inventory(
+        self, voice_casting_service, mock_session, tmp_path
+    ):
+        service = voice_casting_service
+        service._sessions = {"test-session": mock_session}
+
+        with (
+            patch(
+                "script_to_speech.gui_backend.services.voice_casting_service.settings"
+            ) as mock_settings,
+            patch(
+                "script_to_speech.gui_backend.services.chunk_inventory_service.chunk_inventory_service.invalidate"
+            ) as mock_invalidate,
+            patch(
+                "script_to_speech.gui_backend.services.pdf_anchor_service.pdf_anchor_service.invalidate"
+            ) as mock_anchor_invalidate,
+        ):
+            mock_settings.WORKSPACE_DIR = tmp_path
+            path = await service.export_to_filesystem("test-session")
+
+        assert (tmp_path / "input" / "test" / "test_voice_config.yaml").exists()
+        assert path.endswith("test_voice_config.yaml")
+        mock_invalidate.assert_called_once_with("test")
+        mock_anchor_invalidate.assert_not_called()

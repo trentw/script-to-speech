@@ -22,6 +22,38 @@ from ..config import settings
 logger = logging.getLogger(__name__)
 
 
+def load_project_text_context(
+    project_name: str,
+) -> Tuple[list, TextProcessorManager]:
+    """Load only the screenplay chunks and text processor for a project.
+
+    Lighter sibling of ``load_project_analysis_context`` for callers that
+    never plan audio (e.g. PDF anchoring): requires no voice config and
+    builds no TTS provider manager.
+
+    Args:
+        project_name: Name of the project
+
+    Returns:
+        Tuple of (dialogues, processor)
+
+    Raises:
+        FileNotFoundError: If the screenplay JSON doesn't exist
+    """
+    json_path = settings.WORKSPACE_DIR / "input" / project_name / f"{project_name}.json"
+    if not json_path.exists():
+        raise FileNotFoundError(f"Screenplay JSON not found: {json_path}")
+
+    dialogues = load_json_chunks(str(json_path))
+    logger.info(f"Loaded {len(dialogues)} dialogue chunks")
+
+    # Load text processor configs (project-specific or default)
+    text_processor_configs = get_text_processor_configs(json_path, None)
+    processor = TextProcessorManager(text_processor_configs)
+
+    return dialogues, processor
+
+
 def load_project_analysis_context(
     project_name: str,
 ) -> Tuple[list, TTSProviderManager, TextProcessorManager, Path]:
@@ -43,21 +75,15 @@ def load_project_analysis_context(
     output_path = workspace_dir / "output" / project_name
     cache_folder = output_path / "cache"
 
-    json_path = input_path / f"{project_name}.json"
     voice_config_path = input_path / f"{project_name}_voice_config.yaml"
 
-    # Validate paths exist
-    if not json_path.exists():
-        raise FileNotFoundError(f"Screenplay JSON not found: {json_path}")
+    dialogues, processor = load_project_text_context(project_name)
+
     if not voice_config_path.exists():
         raise FileNotFoundError(f"Voice config not found: {voice_config_path}")
 
     # Create cache folder if it doesn't exist
     cache_folder.mkdir(parents=True, exist_ok=True)
-
-    # Load dialogues
-    dialogues = load_json_chunks(str(json_path))
-    logger.info(f"Loaded {len(dialogues)} dialogue chunks")
 
     # Load voice config
     with open(voice_config_path, "r") as f:
@@ -69,9 +95,5 @@ def load_project_analysis_context(
         overall_provider=None,
         dummy_tts_provider_override=False,
     )
-
-    # Load text processor configs (project-specific or default)
-    text_processor_configs = get_text_processor_configs(json_path, None)
-    processor = TextProcessorManager(text_processor_configs)
 
     return dialogues, tts_manager, processor, cache_folder

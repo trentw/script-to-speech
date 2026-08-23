@@ -547,6 +547,17 @@ async def reparse_screenplay(request: ReparseRequest) -> ReparseResponse:
                 remove_lines=remove_lines,
             )
 
+            # Re-parsing rewrites the chunk JSON in place. Invalidate both
+            # derived views before reporting success so the next reader request
+            # cannot receive stale idxs or PDF geometry. The parser sanitizes
+            # the screenplay name, so key the invalidation on what it actually
+            # wrote, not on the client-supplied name.
+            from ..services.project_analysis_cache import invalidate_project_analysis
+
+            invalidate_project_analysis(
+                result.get("screenplay_name", request.screenplay_name)
+            )
+
             return ReparseResponse(
                 success=True,
                 message=f"Successfully re-parsed screenplay with {len(strings_to_remove)} patterns removed",

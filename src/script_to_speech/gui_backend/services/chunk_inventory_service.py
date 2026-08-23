@@ -19,6 +19,7 @@ from typing import Dict, List, Literal, Optional
 from script_to_speech.audio_generation.processing import plan_audio_generation
 
 from ..models import ChunkInventoryEntry, ChunkInventoryResponse, ChunkSpeakerConfig
+from .project_analysis_cache import compute_chunk_layout_revision
 from .project_loader import load_project_analysis_context
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,13 @@ class ChunkInventoryService:
         cached_count = sum(1 for e in entries if e.status == "cached")
         missing_count = sum(1 for e in entries if e.status == "missing")
         user_modified_count = sum(1 for e in entries if e.user_modified is not None)
+        # Hash the full preprocessed list (set on the processor by planning),
+        # not the tasks: planning drops chunks whose planning raises, and the
+        # PDF-anchor service fingerprints the full list. Hashing anything less
+        # would make the two revisions disagree forever for such projects.
+        chunk_layout_revision = compute_chunk_layout_revision(
+            processor.preprocessed_chunks or []
+        )
 
         logger.info(
             f"Chunk inventory for '{project_name}': {len(entries)} chunks, "
@@ -156,6 +164,7 @@ class ChunkInventoryService:
             missing_count=missing_count,
             user_modified_count=user_modified_count,
             cache_folder=str(cache_folder),
+            chunk_layout_revision=chunk_layout_revision,
             generated_at=datetime.now(timezone.utc).isoformat(),
         )
 

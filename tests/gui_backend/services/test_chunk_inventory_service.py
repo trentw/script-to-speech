@@ -97,6 +97,11 @@ def mock_context():
         ),
     ]
 
+    # Planning sets processor.preprocessed_chunks; the revision hashes that
+    # full list (not the tasks, which may have dropped chunks)
+    processor = MagicMock()
+    processor.preprocessed_chunks = [task.original_dialogue for task in tasks]
+
     with (
         patch(
             "script_to_speech.gui_backend.services.chunk_inventory_service.load_project_analysis_context"
@@ -105,7 +110,7 @@ def mock_context():
             "script_to_speech.gui_backend.services.chunk_inventory_service.plan_audio_generation"
         ) as mock_plan,
     ):
-        mock_load.return_value = ([], tts_manager, MagicMock(), CACHE_FOLDER)
+        mock_load.return_value = ([], tts_manager, processor, CACHE_FOLDER)
         mock_plan.return_value = (tasks, MagicMock())
         yield mock_load, mock_plan
 
@@ -131,6 +136,7 @@ class TestChunkInventoryComputation:
         assert inventory.cached_count == 3
         assert inventory.missing_count == 1
         assert inventory.user_modified_count == 1
+        assert len(inventory.chunk_layout_revision) == 64
 
     def test_occurrences_group_shared_audio(self, mock_context):
         service = ChunkInventoryService()
@@ -163,6 +169,41 @@ class TestChunkInventoryComputation:
         assert john.voice_id == "nova_tts-1"
         assert john.speaker_config == {"provider": "openai", "voice": "nova"}
         assert john.sts_id == "sarah"
+
+    def test_revision_hashes_full_list_when_planning_drops_a_chunk(self):
+        """Planning silently drops chunks whose planning raises. The revision
+        must still hash the full preprocessed list so it always agrees with
+        the PDF-anchor service's hash (else the frontend sees permanent skew).
+        """
+        from script_to_speech.gui_backend.services.project_analysis_cache import (
+            compute_chunk_layout_revision,
+        )
+
+        chunks = [
+            {"type": "dialogue", "speaker": "JOHN", "text": f"Line {i}"}
+            for i in range(3)
+        ]
+        processor = MagicMock()
+        processor.preprocessed_chunks = chunks
+        tts_manager = MagicMock()
+        tts_manager.get_speaker_configuration.return_value = {}
+        tts_manager.get_library_sts_id_for_voice.return_value = None
+        # Chunk 1 failed planning: only tasks 0 and 2 exist
+        tasks = [_make_task(0, "Line 0"), _make_task(2, "Line 2")]
+
+        with (
+            patch(
+                "script_to_speech.gui_backend.services.chunk_inventory_service.load_project_analysis_context"
+            ) as mock_load,
+            patch(
+                "script_to_speech.gui_backend.services.chunk_inventory_service.plan_audio_generation"
+            ) as mock_plan,
+        ):
+            mock_load.return_value = ([], tts_manager, processor, CACHE_FOLDER)
+            mock_plan.return_value = (tasks, MagicMock())
+            inventory = ChunkInventoryService().get_inventory("proj")
+
+        assert inventory.chunk_layout_revision == compute_chunk_layout_revision(chunks)
 
 
 class TestChunkInventoryCache:

@@ -212,11 +212,10 @@ class ScreenplayService:
             task.message = "Screenplay parsing completed successfully"
             task.progress = 1.0
 
-            # Parsing rewrites the chunk JSON; drop any stale inventory snapshot
-            # Import here to avoid circular import
-            from .chunk_inventory_service import chunk_inventory_service
+            # Parsing rewrites the chunk JSON; drop all derived snapshots.
+            from .project_analysis_cache import invalidate_project_analysis
 
-            chunk_inventory_service.invalidate(result["screenplay_name"])
+            invalidate_project_analysis(result["screenplay_name"])
 
         except Exception as e:
             logger.error(

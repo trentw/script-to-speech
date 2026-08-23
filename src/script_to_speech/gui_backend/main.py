@@ -131,6 +131,9 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    # Let pdf.js (viewer PDF lens) see range-request headers cross-origin so
+    # it can stream the source PDF instead of buffering the whole file
+    expose_headers=["Accept-Ranges", "Content-Range", "Content-Length"],
 )
 
 # Include routers

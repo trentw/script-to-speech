@@ -540,7 +540,73 @@ class ChunkInventoryResponse(CamelModel):
     missing_count: int = 0
     user_modified_count: int = 0
     cache_folder: str
+    # Hash of the ordered post-preprocessed chunk layout. PDF anchors carry
+    # the same token so the frontend can reject same-length stale mappings.
+    chunk_layout_revision: str
     generated_at: str  # ISO timestamp of when this inventory was computed
+
+
+# PDF Anchor Models (M3 — PDF overlay view)
+
+
+class AnchorRect(CamelModel):
+    """One line's bounding box for a chunk anchored onto the rendered PDF.
+
+    Coordinates are in PDF points with a top-left origin (pdfplumber's
+    convention), so ``top`` maps directly to CSS ``top`` after the frontend
+    scales by renderedWidth / pageWidth. A chunk spanning multiple lines (or
+    pages) produces several rects.
+    """
+
+    page: int  # 0-indexed page number
+    x0: float
+    top: float
+    x1: float
+    bottom: float
+
+
+class ChunkAnchor(CamelModel):
+    """Where a single post-preprocessed chunk sits on the rendered PDF."""
+
+    idx: int  # Matches ChunkInventoryEntry.idx (post-preprocessed position)
+    rects: List[AnchorRect]  # One per rendered line; may span pages
+    match_ratio: float  # Fraction of the chunk's tokens matched on the page
+
+
+class PdfPageInfo(CamelModel):
+    """Dimensions of one PDF page, so the frontend can lay out before render."""
+
+    page: int  # 0-indexed page number
+    width: float
+    height: float
+
+
+class ChunkAnchorsResponse(CamelModel):
+    """Chunk-to-PDF anchoring for a project's overlay view.
+
+    Computed at view time (never persisted) by matching each post-preprocessed
+    chunk's ``raw_text`` against the PDF's word boxes. Chunks that cannot be
+    confidently anchored are omitted from ``anchors`` and listed in
+    ``unanchored_idxs``; the sequential list view remains the complete
+    fallback. Chunks with empty ``raw_text`` (expected-silence) have nothing
+    to place and appear in neither list.
+    """
+
+    project_name: str
+    pages: List[PdfPageInfo]
+    anchors: List[ChunkAnchor]  # Anchored chunks only
+    unanchored_idxs: List[int]  # Chunks with text that could not be placed
+    total_chunks: int = 0
+    anchored_count: int = 0
+    # Must match ChunkInventoryResponse.chunk_layout_revision before anchor
+    # idxs are allowed to address inventory entries.
+    chunk_layout_revision: str
+    # pdfplumber currently extracts MediaBox-relative word coordinates while
+    # pdf.js renders and origin-normalizes the visible page box. Disable
+    # overlays rather than draw known-bad geometry until a real fixture
+    # validates the coordinate translation.
+    unsupported_geometry_pages: List[int] = Field(default_factory=list)
+    generated_at: str  # ISO timestamp of when these anchors were computed
 
 
 class DeleteVariantRequest(BaseModel):

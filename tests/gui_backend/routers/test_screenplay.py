@@ -406,6 +406,44 @@ class TestScreenplayCleanup:
         mock_screenplay_service.cleanup_old_tasks.assert_called_once_with(max_age_hours)
 
 
+class TestScreenplayReparse:
+    """Tests for re-parsing an existing project."""
+
+    def test_success_invalidates_derived_project_analysis(
+        self, client: TestClient, tmp_path
+    ):
+        project_dir = tmp_path / "input" / "demo"
+        project_dir.mkdir(parents=True)
+        (project_dir / "demo.pdf").write_bytes(b"%PDF-1.4\n")
+
+        with (
+            patch(
+                "script_to_speech.gui_backend.routers.screenplay.settings.WORKSPACE_DIR",
+                tmp_path,
+            ),
+            patch(
+                "script_to_speech.gui_backend.routers.screenplay.process_screenplay",
+                return_value={"removal_metadata": {"total_removals": 1}},
+            ),
+            patch(
+                "script_to_speech.gui_backend.services.project_analysis_cache.invalidate_project_analysis"
+            ) as mock_invalidate,
+        ):
+            response = client.post(
+                "/api/screenplay/reparse",
+                json={
+                    "input_path": str(project_dir),
+                    "screenplay_name": "demo",
+                    "strings_to_remove": ["PAGE 1"],
+                    "remove_lines": 2,
+                    "global_replace": False,
+                },
+            )
+
+        assert response.status_code == 200
+        mock_invalidate.assert_called_once_with("demo")
+
+
 class TestScreenplayDownload:
     """Tests for file download endpoints."""
 

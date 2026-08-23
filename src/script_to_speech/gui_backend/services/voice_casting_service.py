@@ -411,6 +411,14 @@ class VoiceCastingService:
         with open(yaml_path, "w", encoding="utf-8") as f:
             f.write(session.yaml_content)
 
+        # Recasting a speaker re-keys that speaker's cache filenames
+        # (provider/speaker ids are part of the name), so the cached chunk
+        # inventory is now stale. PDF anchors are untouched: a voice change
+        # cannot move text on the page.
+        from .chunk_inventory_service import chunk_inventory_service
+
+        chunk_inventory_service.invalidate(session.screenplay_name)
+
         logger.info(f"Exported YAML for session {session_id} to {yaml_path}")
 
         return str(yaml_path)
