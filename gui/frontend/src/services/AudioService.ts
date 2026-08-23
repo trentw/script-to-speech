@@ -37,6 +37,16 @@ export interface AudioServiceState {
   primaryText: string;
   secondaryText: string;
   downloadFilename: string;
+
+  // Monotonic counter incremented each time audio finishes naturally
+  // (HTML 'ended' event). Consumers detect end-of-audio via subscribeEnded().
+  endedCount: number;
+
+  // Opaque token identifying which controller loaded the current source.
+  // Distinct chunks can share one cached audio file (same URL), so URL
+  // equality cannot tell "my clip" from "someone else's clip"; the token can.
+  // Null for loads that don't claim ownership (row buttons, previews).
+  ownerToken: string | null;
 }
 
 // Metadata interface for command parameters
@@ -60,12 +70,20 @@ const createAudioStore = () =>
     primaryText: '',
     secondaryText: '',
     downloadFilename: '',
+
+    endedCount: 0,
+
+    ownerToken: null,
   }));
 
 class AudioService {
   private static instance: AudioService | null = null;
   private audio: HTMLAudioElement;
   private playPromise: Promise<void> | null = null;
+  // Every source replacement or explicit stop advances this token. Async
+  // load-and-play operations verify it before starting audio, so a pending load
+  // cannot outlive a user's Stop action or a newer source selection.
+  private playbackRequestId: number = 0;
   private lastCommandTime: number = 0;
   private readonly commandDebounceMs: number = 50; // Prevent rapid command bursts
 
@@ -136,15 +154,17 @@ class AudioService {
   }
 
   private onLoadedMetadata = (): void => {
-    // Transition from loading to idle state when metadata loads
     const currentState = this.store.getState();
-    if (currentState.playbackState === 'loading') {
-      this.updateState({
-        playbackState: 'idle',
-        duration: this.audio.duration,
-        currentTime: this.audio.currentTime,
-      });
-    }
+    // Always record the real duration/position: a Stop during the load window
+    // forces 'idle' before metadata arrives, and skipping the write here would
+    // leave duration at 0 (breaking the transport display and seek clamping).
+    this.updateState({
+      duration: this.audio.duration,
+      currentTime: this.audio.currentTime,
+      ...(currentState.playbackState === 'loading' && {
+        playbackState: 'idle' as AudioPlaybackState,
+      }),
+    });
   };
 
   private onTimeUpdate = (): void => {
@@ -172,6 +192,7 @@ class AudioService {
     this.updateState({
       playbackState: 'idle',
       currentTime: 0,
+      endedCount: this.store.getState().endedCount + 1,
     });
   };
 
@@ -231,6 +252,8 @@ class AudioService {
   public load(src: string): void {
     if (!this.guardCommand()) return;
 
+    this.playbackRequestId += 1;
+
     // Validate URL for security
     if (src && !/^https?:\/\//i.test(src)) {
       this.updateState({
@@ -250,6 +273,7 @@ class AudioService {
       currentTime: 0,
       duration: 0,
       src,
+      ownerToken: null,
     });
 
     // Load new source (will trigger onLoadStart -> onLoadedMetadata)
@@ -262,7 +286,13 @@ class AudioService {
    * Used internally by atomic operations like loadAndPlay() to avoid debounce conflicts
    * Only plays if in idle or paused state
    */
-  private async _play(): Promise<void> {
+  private async _play(expectedRequestId?: number): Promise<void> {
+    if (
+      expectedRequestId !== undefined &&
+      expectedRequestId !== this.playbackRequestId
+    ) {
+      return;
+    }
     const currentState = this.store.getState();
     // State guard - only play from idle or paused states
     if (
@@ -272,6 +302,7 @@ class AudioService {
       return;
     }
 
+    let currentPlayPromise: Promise<void> | null = null;
     try {
       // Cancel any previous play promise to avoid race conditions
       if (this.playPromise) {
@@ -282,12 +313,38 @@ class AudioService {
         }
       }
 
+      if (
+        expectedRequestId !== undefined &&
+        expectedRequestId !== this.playbackRequestId
+      ) {
+        return;
+      }
+
       this.updateState({ error: null });
-      this.playPromise = this.audio.play();
-      await this.playPromise;
+      currentPlayPromise = this.audio.play();
+      this.playPromise = currentPlayPromise;
+      await currentPlayPromise;
+
+      // A Stop can arrive after play() is requested but before the browser
+      // settles its promise. Enforce that terminal intent even in that narrow
+      // window instead of allowing late playback to escape cancellation.
+      if (
+        expectedRequestId !== undefined &&
+        expectedRequestId !== this.playbackRequestId
+      ) {
+        this.audio.pause();
+      }
 
       // State will be updated by onPlay event handler
     } catch (error) {
+      // Browsers may reject play() when a Stop/new source interrupts it. That
+      // is an expected cancellation, not a playback failure to surface.
+      if (
+        expectedRequestId !== undefined &&
+        expectedRequestId !== this.playbackRequestId
+      ) {
+        return;
+      }
       console.error('Error playing audio:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'Playback failed';
@@ -295,6 +352,10 @@ class AudioService {
         playbackState: 'error',
         error: errorMessage,
       });
+    } finally {
+      if (this.playPromise === currentPlayPromise) {
+        this.playPromise = null;
+      }
     }
   }
 
@@ -315,6 +376,11 @@ class AudioService {
   public pause(): void {
     if (!this.guardCommand()) return;
 
+    this._pause();
+  }
+
+  /** Pause without applying the public command debounce a second time. */
+  private _pause(): void {
     const currentState = this.store.getState();
     // State guard - only pause if playing
     if (currentState.playbackState !== 'playing') {
@@ -323,6 +389,23 @@ class AudioService {
 
     this.audio.pause();
     // State will be updated by onPause event handler
+  }
+
+  /**
+   * Cancel pending auto-play and pause current playback immediately.
+   *
+   * Unlike the public pause command, this is deliberately not debounced: Stop
+   * is a terminal user intent and must win even while metadata is still loading.
+   * The source remains loaded so the footer can resume it explicitly later.
+   */
+  public stopPlayback(): void {
+    this.playbackRequestId += 1;
+    if (this.store.getState().playbackState === 'loading') {
+      // Release loading UI and any waitForState('idle') caller immediately;
+      // its request token is now stale, so it cannot proceed to play.
+      this.updateState({ playbackState: 'idle' });
+    }
+    this._pause();
   }
 
   /**
@@ -355,7 +438,7 @@ class AudioService {
 
     const currentState = this.store.getState();
     if (currentState.playbackState === 'playing') {
-      this.pause();
+      this._pause();
     } else if (
       currentState.playbackState === 'idle' ||
       currentState.playbackState === 'paused'
@@ -370,6 +453,8 @@ class AudioService {
   public clear(): void {
     if (!this.guardCommand()) return;
 
+    this.playbackRequestId += 1;
+
     const currentState = this.store.getState();
     // Only clear if there's actually audio loaded or in an error state
     if (currentState.src || currentState.playbackState === 'error') {
@@ -383,6 +468,7 @@ class AudioService {
         duration: 0,
         error: null,
         src: null,
+        ownerToken: null,
         // Keep metadata - don't clear display text
       });
     }
@@ -396,9 +482,13 @@ class AudioService {
    */
   public async loadAndPlay(
     src: string,
-    metadata?: AudioMetadata
+    metadata?: AudioMetadata,
+    ownerToken?: string
   ): Promise<void> {
-    if (!this.guardCommand()) return;
+    // Source replacement is already serialized by playbackRequestId. Do not
+    // silently debounce it: callers need every accepted selection to either
+    // become current or be explicitly superseded.
+    const requestId = ++this.playbackRequestId;
 
     // Atomic update - set both audio source and metadata in one operation
     this.updateState({
@@ -407,6 +497,7 @@ class AudioService {
       error: null,
       currentTime: 0,
       duration: 0,
+      ownerToken: ownerToken ?? null,
       // Update metadata if provided
       ...(metadata && {
         primaryText: metadata.primaryText,
@@ -423,7 +514,7 @@ class AudioService {
     // Wait for loading to complete, then play using internal method
     // Use _play() instead of play() to avoid command guard debounce conflict
     await this.waitForState('idle');
-    await this._play();
+    await this._play(requestId);
   }
 
   /**
@@ -431,6 +522,8 @@ class AudioService {
    */
   public loadWithMetadata(src: string, metadata: AudioMetadata): void {
     if (!this.guardCommand()) return;
+
+    this.playbackRequestId += 1;
 
     // Validate URL for security
     if (src && !/^https?:\/\//i.test(src)) {
@@ -451,6 +544,7 @@ class AudioService {
       error: null,
       currentTime: 0,
       duration: 0,
+      ownerToken: null,
       primaryText: metadata.primaryText,
       secondaryText: metadata.secondaryText,
       downloadFilename: metadata.downloadFilename || '',
@@ -502,6 +596,23 @@ class AudioService {
           reject(new Error(state.error || 'Audio error'));
         }
       });
+    });
+  }
+
+  /**
+   * Subscribe to natural end-of-audio events (the HTML 'ended' event).
+   * Fires the callback exactly once per ended event; never fires at
+   * subscribe time (late subscribers don't replay past events). Only
+   * natural endings count — clear()/loadAndPlay() never trigger it.
+   * Returns an unsubscribe function.
+   */
+  public subscribeEnded(callback: () => void): () => void {
+    let lastCount = this.store.getState().endedCount;
+    return this.store.subscribe((state) => {
+      if (state.endedCount !== lastCount) {
+        lastCount = state.endedCount;
+        callback();
+      }
     });
   }
 
@@ -579,6 +690,9 @@ let lastAudioStateSnapshot: string | null = null;
 let cachedAudioMetadata: AudioMetadataResult | null = null;
 let lastMetadataSnapshot: string | null = null;
 
+let cachedAudioPlayback: AudioPlaybackResult | null = null;
+let lastPlaybackSnapshot: string | null = null;
+
 // Type definitions for selector results
 type AudioStateResult = {
   playbackState: AudioPlaybackState;
@@ -592,6 +706,15 @@ type AudioMetadataResult = {
   primaryText: string;
   secondaryText: string;
   downloadFilename: string;
+};
+
+// Playback status without currentTime/duration - for consumers (e.g. per-row
+// play/pause buttons) that only care whether *this* clip is the active one and
+// its play state. Excluding currentTime avoids re-rendering on every
+// 'timeupdate' tick (~4x/sec), which matters when many buttons are mounted.
+type AudioPlaybackResult = {
+  playbackState: AudioPlaybackState;
+  src: string | null;
 };
 
 // Stable selectors defined outside hooks
@@ -609,6 +732,13 @@ const audioMetadataSelector = (
   primaryText: state.primaryText,
   secondaryText: state.secondaryText,
   downloadFilename: state.downloadFilename,
+});
+
+const audioPlaybackSelector = (
+  state: AudioServiceState
+): AudioPlaybackResult => ({
+  playbackState: state.playbackState,
+  src: state.src,
 });
 
 // Generic hook for subscribing to AudioService internal store with proper caching
@@ -642,6 +772,19 @@ function useAudioServiceStore<T>(selector: (state: AudioServiceState) => T): T {
       return result as T;
     }
 
+    // Handle playback selector (play state + src, no currentTime) so per-row
+    // buttons don't re-render on every timeupdate
+    if (selector === audioPlaybackSelector) {
+      const stateSnapshot = `${currentState.playbackState}|${currentState.src}`;
+      if (lastPlaybackSnapshot === stateSnapshot && cachedAudioPlayback) {
+        return cachedAudioPlayback as T; // Same reference to prevent re-renders
+      }
+      const result = selector(currentState) as AudioPlaybackResult;
+      cachedAudioPlayback = result;
+      lastPlaybackSnapshot = stateSnapshot;
+      return result as T;
+    }
+
     // For unknown selectors, call directly (no caching)
     return selector(currentState);
   }, [service, selector]);
@@ -662,6 +805,16 @@ export function useAudioMetadata(): AudioMetadataResult {
   return useAudioServiceStore(audioMetadataSelector);
 }
 
+/**
+ * Subscribe to play state + current src only (no currentTime/duration).
+ * For per-row play/pause buttons that just need to know whether this clip is
+ * the active one and whether it's playing - avoids a re-render on every
+ * 'timeupdate' tick.
+ */
+export function useAudioPlaybackStatus(): AudioPlaybackResult {
+  return useAudioServiceStore(audioPlaybackSelector);
+}
+
 export function useAudioCommands() {
   return useMemo(
     () => ({
@@ -670,8 +823,11 @@ export function useAudioCommands() {
       toggle: () => audioService.toggle(),
       seek: (time: number) => audioService.seek(time),
       load: (src: string) => audioService.load(src),
-      loadAndPlay: (src: string, metadata?: AudioMetadata) =>
-        audioService.loadAndPlay(src, metadata),
+      loadAndPlay: (
+        src: string,
+        metadata?: AudioMetadata,
+        ownerToken?: string
+      ) => audioService.loadAndPlay(src, metadata, ownerToken),
       loadWithMetadata: (src: string, metadata: AudioMetadata) =>
         audioService.loadWithMetadata(src, metadata),
       setMetadata: (metadata: AudioMetadata) =>

@@ -1,7 +1,10 @@
 import { useCallback, useMemo } from 'react';
 
 import type { AudioMetadata } from '@/services/AudioService';
-import { useAudioCommands, useAudioState } from '@/services/AudioService';
+import {
+  useAudioCommands,
+  useAudioPlaybackStatus,
+} from '@/services/AudioService';
 import { normalizeAudioUrl } from '@/utils/audioUtils';
 
 /**
@@ -14,6 +17,12 @@ import { normalizeAudioUrl } from '@/utils/audioUtils';
  * app-wide convention. `toggle()` pauses when this clip is playing, resumes
  * when it is paused, and load-and-plays otherwise.
  *
+ * Identity is by URL: chunks that share one cached audio file share one URL,
+ * so every button bound to that file reflects (and controls) the same playback.
+ * That is accepted behavior — the audio genuinely is the same clip. Controllers
+ * that must distinguish *which* consumer loaded the player (e.g. sequential
+ * playback) use AudioService ownerToken instead.
+ *
  * @param audioUrl - The clip's URL (compared against the service's current
  *                   src, ignoring query params, to know if "this" clip is
  *                   the active one)
@@ -23,7 +32,7 @@ export function useSharedAudioPlayback(
   audioUrl: string | null | undefined,
   metadata?: AudioMetadata
 ) {
-  const audioState = useAudioState();
+  const audioState = useAudioPlaybackStatus();
   const { loadAndPlay, pause, play } = useAudioCommands();
 
   // Normalize URLs so cache-busting query params don't break identity checks

@@ -157,6 +157,8 @@ describe('AudioService', () => {
         primaryText: '',
         secondaryText: '',
         downloadFilename: '',
+        endedCount: 0,
+        ownerToken: null,
       });
     });
 
@@ -283,6 +285,77 @@ describe('AudioService', () => {
       });
     });
 
+    it('does not start a pending load after stopPlayback', async () => {
+      const service = AudioService.getInstance();
+
+      const pending = service.loadAndPlay('https://example.com/audio.mp3', {
+        primaryText: 'Test Audio',
+        secondaryText: 'Test Provider',
+      });
+      service.stopPlayback();
+      expect(service.getState().playbackState).toBe('idle');
+      await pending;
+
+      expect(mockAudio.play).not.toHaveBeenCalled();
+      expect(service.getState().playbackState).toBe('idle');
+    });
+
+    it('records duration when metadata arrives after stopPlayback interrupted the load', async () => {
+      const service = AudioService.getInstance();
+
+      const pending = service.loadAndPlay('https://example.com/audio.mp3');
+      // Stop during the load window forces 'idle' before metadata arrives
+      service.stopPlayback();
+      expect(service.getState().playbackState).toBe('idle');
+      expect(service.getState().duration).toBe(0);
+
+      // The element still finishes loading; duration must not be lost
+      await vi.waitFor(() => {
+        expect(service.getState().duration).toBe(100);
+      });
+      await pending;
+      expect(service.getState().playbackState).toBe('idle');
+    });
+
+    it('tracks which controller loaded the source via ownerToken', async () => {
+      const service = AudioService.getInstance();
+
+      const first = service.loadAndPlay(
+        'https://example.com/shared.mp3',
+        undefined,
+        'sequential-1'
+      );
+      expect(service.getState().ownerToken).toBe('sequential-1');
+
+      // An unowned load of the SAME url (distinct chunks can share one cache
+      // file) must clear ownership - URL equality cannot detect the takeover
+      const second = service.loadAndPlay('https://example.com/shared.mp3');
+      expect(service.getState().ownerToken).toBeNull();
+      await Promise.allSettled([first, second]);
+    });
+
+    it('stops playback when stopPlayback races with a pending play promise', async () => {
+      const service = AudioService.getInstance();
+      let resolvePlay: (() => void) | undefined;
+      mockAudio.play.mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            resolvePlay = resolve;
+          })
+      );
+
+      const pending = service.loadAndPlay('https://example.com/audio.mp3');
+      await vi.waitFor(() => expect(mockAudio.play).toHaveBeenCalledTimes(1));
+      mockAudio.pause.mockClear();
+
+      service.stopPlayback();
+      resolvePlay?.();
+      await pending;
+
+      expect(mockAudio.pause).toHaveBeenCalledTimes(1);
+      expect(service.getState().error).toBeNull();
+    });
+
     it('should handle loadWithMetadata', () => {
       const service = AudioService.getInstance();
 
@@ -396,12 +469,9 @@ describe('AudioService', () => {
       });
       expect(mockAudio.play).toHaveBeenCalled();
 
-      // For the pause test, use the pause() method directly to avoid the double-guard issue
-      // This is a known limitation where toggle() uses a guard and then calls pause() which also has a guard
       await new Promise((resolve) => setTimeout(resolve, 60));
 
-      // Call pause directly instead of toggle to avoid guard conflict
-      service.pause();
+      await service.toggle();
 
       // Verify pause was called and state changed
       expect(mockAudio.pause).toHaveBeenCalled();
@@ -486,6 +556,87 @@ describe('AudioService', () => {
 
       expect(service.getState().playbackState).toBe('idle');
       expect(service.getState().currentTime).toBe(0);
+    });
+  });
+
+  describe('Ended Event Subscription', () => {
+    it('should increment endedCount on each natural ending', async () => {
+      const service = AudioService.getInstance();
+
+      service.load('https://example.com/audio.mp3');
+      await vi.waitFor(() => {
+        expect(service.getState().playbackState).toBe('idle');
+      });
+      await service.play();
+
+      expect(service.getState().endedCount).toBe(0);
+      mockAudio.simulateEnded();
+      expect(service.getState().endedCount).toBe(1);
+      mockAudio.simulateEnded();
+      expect(service.getState().endedCount).toBe(2);
+    });
+
+    it('should fire subscribeEnded callback exactly once per ended event', async () => {
+      const service = AudioService.getInstance();
+      const callback = vi.fn();
+
+      service.subscribeEnded(callback);
+
+      // Never fires at subscribe time
+      expect(callback).not.toHaveBeenCalled();
+
+      service.load('https://example.com/audio.mp3');
+      await vi.waitFor(() => {
+        expect(service.getState().playbackState).toBe('idle');
+      });
+      await service.play();
+
+      // Unrelated state changes don't fire it
+      expect(callback).not.toHaveBeenCalled();
+
+      mockAudio.simulateEnded();
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      mockAudio.simulateEnded();
+      expect(callback).toHaveBeenCalledTimes(2);
+    });
+
+    it('should stop delivering after unsubscribe', async () => {
+      const service = AudioService.getInstance();
+      const callback = vi.fn();
+
+      const unsubscribe = service.subscribeEnded(callback);
+
+      service.load('https://example.com/audio.mp3');
+      await vi.waitFor(() => {
+        expect(service.getState().playbackState).toBe('idle');
+      });
+      await service.play();
+
+      mockAudio.simulateEnded();
+      expect(callback).toHaveBeenCalledTimes(1);
+
+      unsubscribe();
+      mockAudio.simulateEnded();
+      expect(callback).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not fire on clear() or loadAndPlay()', async () => {
+      const service = AudioService.getInstance();
+      const callback = vi.fn();
+
+      service.subscribeEnded(callback);
+
+      await service.loadAndPlay('https://example.com/audio.mp3', {
+        primaryText: 'Test',
+        secondaryText: 'Test',
+      });
+      expect(callback).not.toHaveBeenCalled();
+
+      // Wait past the command guard, then clear
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      service.clear();
+      expect(callback).not.toHaveBeenCalled();
     });
   });
 

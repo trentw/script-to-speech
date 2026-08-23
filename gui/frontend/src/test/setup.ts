@@ -107,6 +107,10 @@ class MockAudio extends EventTarget {
 
   load = vi.fn();
 
+  removeAttribute = vi.fn().mockImplementation((name: string) => {
+    if (name === 'src') this.src = '';
+  });
+
   // Helper method for tests to simulate time progression
   advanceTime(seconds: number) {
     if (!this.paused && !this.ended) {
