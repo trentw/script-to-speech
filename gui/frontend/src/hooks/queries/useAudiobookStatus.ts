@@ -38,6 +38,12 @@ export const useAudiobookStatus = (taskId: string | null) => {
           queryClient.invalidateQueries({
             queryKey: ['review', 'silent-clips'],
           });
+          // A run fills cache files, so chunk inventories (viewer + Find
+          // Chunks) are stale too. The task id doesn't carry the project
+          // name, so invalidate the key prefix across projects.
+          queryClient.invalidateQueries({
+            queryKey: ['review', 'chunk-inventory'],
+          });
         }
 
         // Clean up query after some time

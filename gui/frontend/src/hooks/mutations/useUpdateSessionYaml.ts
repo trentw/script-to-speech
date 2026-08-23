@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { produce } from 'immer';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { apiService } from '@/services/api';
 import type { VoiceCastingSession } from '@/types/voice-casting';
 import { handleApiError } from '@/utils/apiErrorHandler';
@@ -96,6 +97,15 @@ export function useUpdateSessionYaml() {
       // Also invalidate the sessions list to update counts/status
       queryClient.invalidateQueries({
         queryKey: ['voice-casting-sessions'],
+      });
+
+      // Saving YAML auto-exports the project's voice config, just like the
+      // assignment/clear endpoints. Provider and speaker ids participate in
+      // cache filenames, so the project's cached inventory may now point at
+      // the wrong files or carry stale generation settings. The returned
+      // session names the project.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chunkInventory(data.session.screenplay_name),
       });
     },
   });

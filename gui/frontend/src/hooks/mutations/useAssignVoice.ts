@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { queryKeys } from '@/lib/queryKeys';
 import { apiService } from '@/services/api';
 import type {
   VoiceAssignment,
@@ -62,6 +63,13 @@ export function useAssignVoice() {
       // Also invalidate the sessions list to update counts/status
       queryClient.invalidateQueries({
         queryKey: ['voice-casting-sessions'],
+      });
+
+      // The assignment auto-exports the voice config, which re-keys cache
+      // filenames - the project's chunk inventory (viewer + Find Chunks) is
+      // now stale. The returned session names the project.
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chunkInventory(data.session.screenplay_name),
       });
     },
   });
